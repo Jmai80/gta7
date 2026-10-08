@@ -1,0 +1,18 @@
+{
+  "name": "GTA 7 – Grovt Tillgrepp av Automobil",
+  "short_name": "GTA 7",
+  "description": "Sno en röd bil i småstaden Sjuby. Ett litet 3D-spel som körs direkt i webbläsaren.",
+  "lang": "sv",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0e1117",
+  "theme_color": "#0e1117",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "gta7",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GTA 7 – ett litet GTA-inspirerat skämtspel i three.js, byggt för mobilen.",
+  "type": "module",
+  "scripts": {
+    "test": "node test/sim.mjs && node test/extras.mjs",
+    "start": "python3 -m http.server 8000"
+  }
+}
