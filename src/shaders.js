@@ -65,6 +65,14 @@ void main() {
   vec3 n = normal;
   vColor = aColor;
   vLight = 0.0;
+#if !defined(VEHICLE) && !defined(HUMAN)
+  if (aMat > 26.5 && aMat < 27.5) {
+    // leaves sway a little in the wind (the merged town is in world coordinates)
+    float w = sin(uTime * 1.25 + p.x * 0.29 + p.z * 0.21) + 0.45 * sin(uTime * 2.3 + p.x * 0.83 - p.z * 0.6);
+    float k = clamp(p.y - 1.6, 0.0, 6.0) * 0.011;
+    p.x += w * k; p.z += w * k * 0.55;
+  }
+#endif
 #ifdef VEHICLE
   int bone = int(aBone + 0.5);
   if (bone == 0) {
@@ -181,7 +189,7 @@ void main() {
   vec3 N = normalize(vN);
   vec3 V = normalize(cameraPosition - vW);
   vec3 albedo = vColor;
-  float glass = 0.0, interior = 0.0, spec = 0.0, emit = 0.0;
+  float glass = 0.0, interior = 0.0, spec = 0.0, emit = 0.0, chrome = 0.0, wrap = 0.0;
   int m = int(vMat + 0.5);
   vec2 aa = fwidth(vUv) * 0.75 + 1e-4;
   float far = smoothstep(0.22, 0.55, max(aa.x, aa.y));
@@ -200,6 +208,10 @@ void main() {
     emit = 0.6 + vLight * 1.8;
   } else if (m == 5) {
     albedo = texture2D(uSigns, vUv).rgb;
+  } else if (m == 7) {
+    chrome = 1.0;
+  } else if (m == 8) {
+    spec = 0.85;          // paint that keeps its own colour (two-tone vans)
   } else if (m >= 10) {
     vec2 p = vUv;
     vec2 c = fract(p);
@@ -285,6 +297,15 @@ void main() {
       float t = abs(N.y) > 0.5 ? vUv.y : vW.y;
       albedo *= 1.0 - gridLine(t * 4.0, 0.05) * 0.3;
       albedo *= 0.92 + 0.14 * tn(vec2(t * 0.25, hw * 0.05));
+    } else if (m == 27) {
+      // foliage: clumps of leaves, and light shining through the crown
+      albedo *= (0.8 + 0.32 * tn(vW.xz * 0.23 + vW.y * 0.17)) * (0.84 + 0.3 * tn(vW.xz * 1.15 - vW.y * 0.9));
+      wrap = 0.4;
+    } else if (m == 28) {
+      // birch bark: white with black marks
+      vec2 bp = vec2(atan(N.z, N.x) * 1.4, vW.y * 6.5);
+      float mark = step(0.72, hash12(floor(bp))) * step(0.4, fract(bp.y));
+      albedo = mix(albedo, vec3(0.07, 0.07, 0.065), mark * 0.9);
     }
   }
 #endif
@@ -305,7 +326,7 @@ void main() {
     ao = mix(0.7, 1.0, smoothstep(0.1, 2.4, vW.y));
   }
 #endif
-  float ndl = max(dot(N, uSunDir), 0.0);
+  float ndl = max((dot(N, uSunDir) + wrap) / (1.0 + wrap), 0.0);
   vec3 hemi = mix(uGndCol, uSkyCol, N.y * 0.5 + 0.5);
   vec3 col = albedo * (hemi * ao + uSunCol * ndl * sh);
 
@@ -316,6 +337,13 @@ void main() {
     vec3 R = reflect(-V, N);
     float fr = 0.05 + 0.55 * pow(1.0 - max(dot(N, V), 0.0), 5.0);
     col = mix(col, skyRefl(R) * mix(0.55, 1.0, sh), fr * 0.7);
+  }
+  if (chrome > 0.0) {
+    vec3 R = reflect(-V, N);
+    float fr = 0.35 + 0.65 * pow(1.0 - max(dot(N, V), 0.0), 3.0);
+    vec3 env = skyRefl(R) * mix(0.55, 1.0, sh) * vec3(0.93, 0.94, 0.96);
+    col = mix(col * 0.55, env, 0.55 * fr + 0.3);
+    col += uSunCol * pow(max(dot(reflect(-uSunDir, N), V), 0.0), 50.0) * 1.3 * sh;
   }
   if (glass > 0.0) {
     vec3 R = reflect(-V, N);

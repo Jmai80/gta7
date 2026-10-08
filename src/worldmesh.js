@@ -5,6 +5,7 @@ import { GeomBuilder } from './geom.js';
 import { M, COL } from './layout.js';
 import { CURB_H, WATER_Y } from './config.js';
 import { wreckInto, boatInto } from './models.js';
+import { treeInto } from './trees.js';
 
 const CH = 80, X0 = -160, NC = 4;
 
@@ -108,6 +109,7 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
       case 'cyl': B.cyl(p.x, p.z, p.y0, p.y1, p.r, p.r1 ?? p.r, p.n, p.c, p.m || 0, !!p.cap); break;
       case 'hcyl': B.hcyl(p.x, p.y, p.z, p.len, p.r, p.axis, p.n, p.c, p.m || 0); break;
       case 'ico': B.ico(p.x, p.y, p.z, p.r, p.sy, p.c, 0, seed++); break;
+      case 'tree': treeInto(B, p); break;
       case 'poly': B.poly(p.pts, p.y, p.c, p.m || 0); break;
       case 'wall': B.wall(p.x0, p.z0, p.x1, p.z1, p.y0, p.y1, p.c, p.m || 0, !!p.flip); break;
       case 'sign': sign(B, p, atlas); break;

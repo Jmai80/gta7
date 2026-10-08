@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.3 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.3 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. I 0.3.1 fick bilarna och träden ett lyft.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -39,6 +39,8 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 ## Övrigt i stan
 
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Det går även folk på trottoarerna.
+- **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
+- **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten och en biltvätt som lagar bucklor.
 - **HUD:** minikarta med GPS och uppdragsbokstäver, SMS från uppdragsgivarna, fartmätare och bilens skick.
 

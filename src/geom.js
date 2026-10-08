@@ -71,6 +71,41 @@ export class GeomBuilder {
     this.tri(a, c, d, hex, m, U[0], U[2], U[3]);
   }
 
+  // triangle with its own normal and colour per corner (smooth shading, gradients); colours are
+  // linear rgb arrays. The winding is fixed to agree with the normals.
+  triN(a, b, c, na, nb, nc, ca, cb, cc, m = 0) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const fx = uy * vz - uz * vy, fy = uz * vx - ux * vz, fz = ux * vy - uy * vx;
+    if (fx * (na[0] + nb[0] + nc[0]) + fy * (na[1] + nb[1] + nc[1]) + fz * (na[2] + nb[2] + nc[2]) < 0) {
+      let t = b; b = c; c = t;
+      t = nb; nb = nc; nc = t;
+      t = cb; cb = cc; cc = t;
+    }
+    this.vert(a[0], a[1], a[2], na[0], na[1], na[2], ca, 0, 0, m);
+    this.vert(b[0], b[1], b[2], nb[0], nb[1], nb[2], cb, 0, 0, m);
+    this.vert(c[0], c[1], c[2], nc[0], nc[1], nc[2], cc, 0, 0, m);
+  }
+
+  // tapered tube between two points (branches, exhaust pipes); n sides, open ends unless caps
+  tube(a, b, r0, r1, n, hex, m = 0, caps = false) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+    const L = Math.hypot(dx, dy, dz) || 1;
+    const ax = [dx / L, dy / L, dz / L];
+    // any vector not parallel to the axis → two perpendicular unit vectors
+    const t = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    let ux = ax[1] * t[2] - ax[2] * t[1], uy = ax[2] * t[0] - ax[0] * t[2], uz = ax[0] * t[1] - ax[1] * t[0];
+    const ul = Math.hypot(ux, uy, uz); ux /= ul; uy /= ul; uz /= ul;
+    const vx = ax[1] * uz - ax[2] * uy, vy = ax[2] * ux - ax[0] * uz, vz = ax[0] * uy - ax[1] * ux;
+    const ring = (p, r, ang) => [p[0] + (ux * Math.cos(ang) + vx * Math.sin(ang)) * r, p[1] + (uy * Math.cos(ang) + vy * Math.sin(ang)) * r, p[2] + (uz * Math.cos(ang) + vz * Math.sin(ang)) * r];
+    for (let i = 0; i < n; i++) {
+      const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, am = (a0 + a1) / 2;
+      const out = [ux * Math.cos(am) + vx * Math.sin(am), uy * Math.cos(am) + vy * Math.sin(am), uz * Math.cos(am) + vz * Math.sin(am)];
+      this.quad(ring(a, r0, a0), ring(b, r1, a0), ring(b, r1, a1), ring(a, r0, a1), hex, m, null, out);
+      if (caps) this.tri(b, ring(b, r1, a0), ring(b, r1, a1), hex, m, undefined, undefined, undefined, ax);
+    }
+  }
+
   // axis aligned box. opts: cell [cw,ch] facade cells, top {c,m}, skipTop, skipBottom (default true), yBase
   box(x0, y0, z0, x1, y1, z1, hex, m = 0, opts = {}) {
     const p = (x, y, z) => [x, y, z];

@@ -6,13 +6,14 @@ import {
   blockRange, DELIVERY, CARWASH, GUN,
 } from './config.js';
 import { makeRng } from './rng.js';
+import { treeCasters } from './trees.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
-  PLAIN: 0, PAINT: 1, GLASS: 2, LIGHT: 3, TAIL: 4, SIGN: 5, WATER: 6,
+  PLAIN: 0, PAINT: 1, GLASS: 2, LIGHT: 3, TAIL: 4, SIGN: 5, WATER: 6, CHROME: 7, PAINT2: 8,
   RESI: 10, OFFICE: 11, SHOP: 12, FALU: 13, BRICKWIN: 14, GARAGE: 15, CORR: 16,
   TILES: 17, LAWN: 18, PAVING: 19, BRICK: 20, BOARDS: 21, ASPHALT: 22, DIRT: 23,
-  LATTICE: 24, STONE: 25, PLANKS: 26,
+  LATTICE: 24, STONE: 25, PLANKS: 26, FOLIAGE: 27, BIRCH: 28,
 };
 
 export const COL = {
@@ -125,21 +126,8 @@ export function createLayout(seed = 7) {
   function tree(x, z, kind = 'oak', s = 1) {
     s *= R.range(0.85, 1.15);
     const green = [0x4f8a2e, 0x5e9636, 0x467d2a, 0x6a9a3a][R.int(0, 3)];
-    if (kind === 'birch') {
-      P({ t: 'cyl', x, z, y0: CURB_H, y1: CURB_H + 3.4 * s, r: 0.16 * s, n: 5, c: 0xe9e5dc });
-      P({ t: 'ico', x, y: CURB_H + 4.3 * s, z, r: 1.55 * s, sy: 1.45, c: 0x79ab40 });
-      casters.push({ t: 'sphere', x, y: CURB_H + 4.3 * s, z, r: 1.4 * s, sy: 1.45 });
-    } else if (kind === 'pine') {
-      P({ t: 'cyl', x, z, y0: CURB_H, y1: CURB_H + 1.5 * s, r: 0.2 * s, n: 5, c: 0x6b4a32 });
-      P({ t: 'cyl', x, z, y0: CURB_H + 1.0 * s, y1: CURB_H + 4.2 * s, r: 1.9 * s, r1: 0.6 * s, n: 7, c: 0x2f5f2c });
-      P({ t: 'cyl', x, z, y0: CURB_H + 3.2 * s, y1: CURB_H + 6.6 * s, r: 1.35 * s, r1: 0.05, n: 7, c: 0x356a31 });
-      casters.push({ t: 'sphere', x, y: CURB_H + 3.6 * s, z, r: 1.4 * s, sy: 2 });
-    } else {
-      P({ t: 'cyl', x, z, y0: CURB_H, y1: CURB_H + 2.4 * s, r: 0.24 * s, n: 5, c: 0x6b4a32 });
-      P({ t: 'ico', x, y: CURB_H + 3.7 * s, z, r: 2.1 * s, sy: 1.0, c: green });
-      P({ t: 'ico', x: x + 0.7 * s, y: CURB_H + 4.6 * s, z: z - 0.4 * s, r: 1.4 * s, sy: 1.0, c: green });
-      casters.push({ t: 'sphere', x, y: CURB_H + 3.9 * s, z, r: 2.0 * s, sy: 1.1 });
-    }
+    const t = P({ t: 'tree', kind, x, z, s, c: green, y: CURB_H }); // shape: trees.js
+    for (const c of treeCasters(t)) casters.push(c);
     colCircle(x, z, 0.32 * s, 6);
   }
 
@@ -164,7 +152,7 @@ export function createLayout(seed = 7) {
   }
 
   function hedge(x0, z0, x1, z1, h = 1.15) {
-    solid(x0, CURB_H, z0, x1, CURB_H + h, z1, 0x3f6f2a, M.PLAIN);
+    solid(x0, CURB_H, z0, x1, CURB_H + h, z1, 0x3f6f2a, M.FOLIAGE);
   }
 
   function woodFence(x0, z0, x1, z1, h = 1.1, c = COL.trim) {
