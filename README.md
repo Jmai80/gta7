@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.3 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. I 0.3.1 fick bilarna och träden ett lyft.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.3 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. I 0.3.1 fick bilarna och träden ett lyft, och i 0.3.2 blev gatloppet lättare att vinna på mobilen.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -31,7 +31,7 @@ Pizzabudet och gatloppet körs ett i taget. Lasses bil och tant Guns flagga räk
 
 - **L – Lasse (Verkstan):** sno en röd bil (1 000 kr) och kör den till Lasses Verkstad (upp till 5 000 kr, minus bucklor). Uppdraget kommer som ett SMS när spelet börjar.
 - **S – Sanna (Pizzeria Sjuan):** Pizzabudet. Gå in i den gröna markören vid pizzerian på Kungsgatan och ta pizzabilen på parkeringen mittemot. Tre pizzor ska till tre adresser innan de kallnar. Du får 250 kr plus dricks per pizza (krockar sänker dricksen), och 500 kr i bonus om alla är varma.
-- **K – Kim (Macken):** Gatloppet. Kör in i den blå markören på Macken med en bil. Det blir två varv runt stan mot Kim och Bosse, och ringarna visar vägen. Vinnaren får 2 500 kr.
+- **K – Kim (Macken):** Gatloppet. Kör in i den blå markören på Macken med en bil. Det blir två varv runt stan mot Kim och Bosse, och ringarna visar vägen. Vinnaren får 2 500 kr. Med pekskärm kör Kim och Bosse lugnare (80 % av sin vanliga fart), eftersom det är svårare att styra på telefonen.
 - **G – Tant Gun (sidouppdrag):** tant Gun står i trädgården vid en villa på Storgatan och vinkar. Prata med henne och håll sedan inne knappen vid flaggstången för att hissa flaggan. Hon ger dig 300 kr och en kanelbulle.
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.

@@ -2,7 +2,7 @@
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
 import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN } from '../src/config.js';
-import { raceRoute } from '../src/race.js';
+import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp } from '../src/rng.js';
 
 const DT = 1 / 60;
@@ -211,6 +211,38 @@ function startRace(g) {
   check(g.player.state !== 'car' && g.mission.objective === 'Hoppa in i en bil!', 'out of the car: get back in');
   run(g, 15);
   check(!g.mission.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'race lost after 15 s on foot');
+}
+
+// ---------- 5b. with the touch controls Kim and Bosse take it easier ----------
+{
+  console.log('Gatloppet med pekskärm');
+  const race = (touch, skill, switchAt = -1) => {
+    const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+    const ev = record(g, ['banner']);
+    run(g, 19);
+    const car = g.addVehicle('sedan', 'blue', MACKEN.x - 12, MACKEN.z, Math.PI / 2);
+    enterCar(g, car);
+    car.x = MACKEN.x; car.z = MACKEN.z; car.h = Math.PI / 2; car.vx = car.vz = car.w = 0;
+    run(g, 5, { ...idle, touch: touch && switchAt < 0 });
+    const job = g.mission.active;
+    const paceAtStart = job.racers.map((r) => r.skill / r.baseSkill);
+    const route = raceRoute(), st = { dist: -4 };
+    let t = 0;
+    while (g.mission.active && t < 300) {
+      car.repair();
+      g.step(DT, { ...autopilot(g, route, st, skill), touch: touch && t >= switchAt });
+      t += DT;
+      if (switchAt >= 0 && Math.abs(t - switchAt - 0.5) < DT / 2) job.paceMid = job.racers.map((r) => r.skill / r.baseSkill);
+    }
+    const b = ev.filter(([n]) => n === 'banner').pop();
+    return { won: !!(b && b[1].kind !== 'fail' && g.mission.done.has('race')), t, paceAtStart, paceMid: job.paceMid };
+  };
+  const keys = race(false, 0.7), phone = race(true, 0.7), late = race(true, 0.7, 10);
+  console.log(`  autopilot at 70 %: keyboard ${keys.won ? 'wins' : 'loses'} (${keys.t.toFixed(0)} s), touch ${phone.won ? 'wins' : 'loses'} (${phone.t.toFixed(0)} s)`);
+  check(keys.paceAtStart.every((k) => Math.abs(k - 1) < 1e-9), 'keyboard: Kim and Bosse at full pace');
+  check(phone.paceAtStart.every((k) => Math.abs(k - TOUCH_PACE) < 1e-9), `touch: Kim and Bosse at ${Math.round(TOUCH_PACE * 100)} % pace`);
+  check(!keys.won && phone.won, 'a driver who loses with the keyboard wins on the phone');
+  check(late.paceMid && late.paceMid.every((k) => Math.abs(k - TOUCH_PACE) < 1e-9), 'touching the screen mid-race slows them down too');
 }
 
 // ---------- 6. saving, restoring and the end card ----------

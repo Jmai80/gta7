@@ -494,6 +494,7 @@ function frame(now) {
     if (inp.answer && hud.smsShown && hud.smsShown.offer) { openOffer(hud.smsShown.offer); return; }
     if (inp.mute) { settings.sound = !settings.sound; audio.setMuted(!settings.sound); saveSettings(); refreshMenu(); }
     inp.camYaw = camYaw;
+    inp.touch = input.lastKind === 'touch'; // the street race is kinder to touch drivers
     acc += dt;
     let n = 0;
     while (acc >= FIXED && n < 5 && state === 'play') { game.step(FIXED, inp); inp.action = false; acc -= FIXED; n++; }

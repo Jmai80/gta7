@@ -14,6 +14,9 @@ const CP_R = 9;          // checkpoint radius: anywhere on the road counts
 const OUT_LIMIT = 15;    // seconds without a working car before the race is lost
 const GRID_BACK = 4;     // the grid is 4 m behind the line
 const GRID = [3.2, 0, -3.2]; // lateral slots (right of the route is positive): player, Kim, Bosse
+// With the touch controls it is much harder to drive fast, so on a phone Kim and Bosse take it
+// easier: their pace is scaled by this (decided on the grid, and as soon as you touch the screen).
+export const TOUCH_PACE = 0.8;
 const RIVALS = [
   { name: 'Kim', paint: 'yellow', skill: 0.86, base: 0.6, slot: 1, line: 'Lycka till. Du behöver det!',
     look: { shirt: 0xe5b923, pants: 0x1f2a36, skin: 0xe8b996, hair: 0x1a1a1a, height: 1.0, bulk: 0.95 } },
@@ -79,13 +82,16 @@ export class RaceJob {
     place(car, GRID[0]);
     p.x = car.x; p.z = car.z; p.y = car.y; p.h = car.h;
     g.emit('teleport', { car });
+    this.touch = !!(g.input && g.input.touch);
+    const pace = this.touch ? TOUCH_PACE : 1;
     for (const def of RIVALS) {
       g.makeRoom('sedan');
       const v = g.addVehicle('sedan', def.paint, s0.x, s0.z, 0);
       if (!v) continue;
       place(v, GRID[def.slot]);
       v.driverLook = def.look;
-      const r = new RaceDriver(g, v, this.route, { name: def.name, line: def.line, skill: def.skill, base: def.base, off: GRID[def.slot], dist: -GRID_BACK, ctx: this.ctx });
+      const r = new RaceDriver(g, v, this.route, { name: def.name, line: def.line, skill: def.skill * pace, base: def.base, off: GRID[def.slot], dist: -GRID_BACK, ctx: this.ctx });
+      r.baseSkill = def.skill;
       this.racers.push(r);
       g.racers.push(r);
     }
@@ -122,6 +128,10 @@ export class RaceJob {
       this.drop(r);
     }
     const car = p.inCar && !p.car.dead ? p.car : null;
+    if (!this.touch && this.racers.length && g.input && g.input.touch) {
+      this.touch = true;
+      for (const r of this.racers) r.skill = r.baseSkill * TOUCH_PACE;
+    }
     if (this.stage === 'race') {
       this.time += dt;
       for (const r of this.racers) if (!r.finished && r.dist >= this.total) { r.finished = true; r.finishT = this.time; }
