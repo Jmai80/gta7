@@ -6,6 +6,7 @@ import { M, COL } from './layout.js';
 import { CURB_H, WATER_Y } from './config.js';
 import { wreckInto, boatInto } from './models.js';
 import { treeInto } from './trees.js';
+import { interiorInto } from './interior.js';
 
 const CH = 80, X0 = -160, NC = 4;
 
@@ -84,7 +85,7 @@ function sign(B, p, atlas) {
 
 const GROUND_MATS = new Set([M.PLAIN, M.LAWN, M.PAVING, M.ASPHALT, M.DIRT, M.WATER]);
 
-export function buildWorld(layout, material, groundMaterial, fenceMaterial, atlas) {
+export function buildWorld(layout, material, groundMaterial, fenceMaterial, atlas, interiorMaterial = null) {
   // two builders per chunk: flat ground (cheap shader variant) and everything standing on it
   const chunks = new Map();
   const getChunk = (x, z, ground) => {
@@ -161,5 +162,15 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
     crane.position.set(layout.zones.crane.x, 0, layout.zones.crane.z);
     group.add(crane);
   }
-  return { group, crane, tris: Math.round(tris), chunks: chunks.size };
+  // the inside of the tower: its own mesh (not in the group), shown only while you are in there
+  let interior = null;
+  if (interiorMaterial) {
+    const IB = new GeomBuilder();
+    interiorInto(IB);
+    for (const p of layout.interiorSigns || []) sign(IB, p, atlas);
+    interior = new THREE.Mesh(IB.toGeometry(THREE), interiorMaterial);
+    interior.matrixAutoUpdate = false;
+    interior.visible = false;
+  }
+  return { group, crane, interior, tris: Math.round(tris), chunks: chunks.size };
 }

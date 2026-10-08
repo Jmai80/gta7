@@ -231,6 +231,24 @@ export class AudioFX {
     this.tone(130.8, 0.9, 'triangle', 0.1, 0.5);
   }
 
+  // a bunch of keys picked up off a table
+  jingle() {
+    if (!this.ctx) return;
+    for (let i = 0; i < 5; i++) {
+      const f = 2600 + Math.random() * 2200;
+      this.tone(f, 0.07, 'triangle', 0.035, i * 0.045 + Math.random() * 0.02);
+    }
+    this.burst(0.05, 6500, 0.18, 'highpass', 0.02);
+  }
+
+  // spotted! a sharp sting
+  caught() {
+    if (!this.ctx) return;
+    this.tone(220, 0.35, 'sawtooth', 0.08, 0, 330);
+    this.tone(1046.5, 0.16, 'square', 0.06, 0.02);
+    this.tone(784, 0.4, 'square', 0.05, 0.16);
+  }
+
   wanted() {
     if (!this.ctx) return;
     for (let i = 0; i < 3; i++) { this.tone(880, 0.14, 'square', 0.05, i * 0.3); this.tone(660, 0.14, 'square', 0.05, i * 0.3 + 0.15); }

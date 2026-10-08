@@ -246,6 +246,23 @@ kbd {
   padding: 5px 9px 4px; border-radius: 10px; white-space: nowrap; box-shadow: 0 6px 14px rgba(0,0,0,0.35); will-change: transform;
 }
 .bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; }
+/* Samuel's attention: phone · ? · eye · ! with a ring that fills as he notices you */
+#eye {
+  position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  pointer-events: none; display: grid; place-items: center; will-change: transform;
+  background: conic-gradient(#ff4d3a calc(var(--m, 0) * 1turn), rgba(16, 18, 24, 0.7) 0);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+#eye::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #15181d; }
+#eye span { position: relative; display: grid; place-items: center; font: 900 20px/1 var(--display); color: #9fd2ff; }
+#eye.warn span { color: var(--gold); font-size: 24px; }
+#eye.warn { animation: eyepop 0.35s cubic-bezier(.2,1.6,.4,1) both; }
+#eye.look::before { background: #2a3038; }
+#eye.alert::before { background: #5a1f1a; }
+#eye.caught { background: #ff3b2f; animation: eyepop 0.3s cubic-bezier(.2,1.6,.4,1) both; }
+#eye.caught::before { background: #ff3b2f; }
+#eye.caught span { color: #fff; font-size: 26px; }
+@keyframes eyepop { from { scale: 0.4; } to { scale: 1; } }
 
 /* ---------------- touch controls ---------------- */
 #touch { position: absolute; inset: 0; pointer-events: none; display: none; }
@@ -421,7 +438,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 0.3.2 · en bit av Sjuby</div>
+    <div class="ver">Version 0.4 · en bit av Sjuby</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -461,6 +478,7 @@ kbd {
     <div id="keyhint" hidden></div>
     <div id="carinfo"><div id="speed">0</div><div id="cond"><i id="condBar"></i></div></div>
     <div id="bubbles"></div>
+    <div id="eye" hidden><span></span></div>
     <div id="count" hidden></div>
     <div id="touch">
       <div id="stick"><div id="knob"></div></div>
@@ -522,9 +540,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 0.3 klar">
-      <h2>VERSION 0.3 KLAR!</h2>
-      <p class="note">Lasse, Sanna och Kim är nöjda. Så här gick din tid i Sjuby:</p>
+    <div class="panel" role="dialog" aria-label="Version 0.4 klar">
+      <h2>VERSION 0.4 KLAR!</h2>
+      <p class="note">Lasse, Sanna och Kim är nöjda, och Samuels cykelnycklar ligger i din ficka. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

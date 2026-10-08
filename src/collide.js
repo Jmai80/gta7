@@ -10,6 +10,7 @@ export class CollisionWorld {
     this.cells = new Array(this.n * this.n);
     this.cols = layout.colliders;
     this.ramps = layout.ramps;
+    this.floors = layout.floors || []; // flat floors somewhere else (the inside of the tower)
     this.stamp = new Uint32Array(this.cols.length);
     this.stampId = 1;
     this.out = [];
@@ -59,6 +60,7 @@ export class CollisionWorld {
 
   groundHeight(x, z) {
     this.lastRamp = null;
+    for (const f of this.floors) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1) return f.y;
     for (const r of this.ramps) {
       if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) {
         const t = r.axis === 'z' ? (z - r.z0) / (r.z1 - r.z0) : (x - r.x0) / (r.x1 - r.x0);

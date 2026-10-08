@@ -106,6 +106,10 @@ export class Ped {
     const g = this.game, b = this.body;
     this.stateT += dt;
     this.sayT -= dt;
+    if (this.state === 'lounge') { // on a sofa (Samuel): someone else poses the body
+      b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
+      return;
+    }
     let tvx = 0, tvz = 0, run = false, anim = true;
     switch (this.state) {
       case 'walk': {
@@ -250,7 +254,7 @@ export class Peds {
     const list = this.list;
     // dodge danger: fast cars heading at us
     for (const p of list) {
-      if (p.state === 'down' || p.state === 'getup' || p.state === 'dodge') continue;
+      if (p.state === 'down' || p.state === 'getup' || p.state === 'dodge' || p.state === 'lounge') continue;
       for (const v of g.vehicles) {
         const sp = v.speed;
         if (sp < 6.5 || v.y > 1.5) continue;

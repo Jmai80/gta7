@@ -405,13 +405,15 @@ export function buildHumanGeometry() {
   }
   part(0, 1, [0, 0, 0]);
   B.box(-0.245, 0.9, -0.14, 0.245, 1.52, 0.14, WHITE, M.PLAIN, { skipBottom: false });
-  part(0, 3, [0, 0, 0]);
+  // the head is its own bone (turned at the neck when someone lounges on a sofa and looks around)
+  const NECK = [0, 1.53, 0];
+  part(1, 3, NECK);
   B.box(-0.06, 1.5, -0.06, 0.06, 1.57, 0.06, WHITE);
   B.box(-0.13, 1.56, -0.13, 0.13, 1.83, 0.13, WHITE, M.PLAIN, { skipTop: true });
-  part(0, 4, [0, 0, 0]);
+  part(1, 4, NECK);
   B.box(-0.14, 1.79, -0.145, 0.14, 1.9, 0.14, WHITE);
   B.box(-0.14, 1.6, -0.15, 0.14, 1.8, -0.12, WHITE);
-  part(0, 0, [0, 0, 0]);
+  part(1, 0, NECK);
   B.box(0.035, 1.69, 0.13, 0.08, 1.73, 0.136, 0x1a1a1a);
   B.box(-0.08, 1.69, 0.13, -0.035, 1.73, 0.136, 0x1a1a1a);
   for (const [sx, bone] of [[1, 3], [-1, 4]]) {
@@ -421,6 +423,28 @@ export function buildHumanGeometry() {
     part(bone, 3, [x, 1.47, 0]);
     B.box(x - 0.055, 0.84, -0.065, x + 0.055, 1.18, 0.065, WHITE, M.PLAIN, { skipBottom: false });
   }
+  return B.toGeometry(THREE);
+}
+
+// Samuel's phone: screen on +z (it is turned to face him)
+export function buildPhone() {
+  const B = new GeomBuilder();
+  B.box(-0.042, -0.08, -0.006, 0.042, 0.08, 0.006, 0x1a1b1e, M.PLAIN, { skipBottom: false });
+  B.quad([-0.036, -0.07, 0.0065], [-0.036, 0.07, 0.0065], [0.036, 0.07, 0.0065], [0.036, -0.07, 0.0065], 0x9fd2ff, M.LIGHT, null, [0, 0, 1]);
+  return B.toGeometry(THREE);
+}
+
+// a bunch of keys on a ring with a red fob (a little larger than life, so you can spot them)
+export function buildKeys() {
+  const B = new GeomBuilder();
+  for (let i = 0; i < 10; i++) {
+    const a0 = (i / 10) * Math.PI * 2, a1 = ((i + 1) / 10) * Math.PI * 2;
+    B.tube([Math.cos(a0) * 0.035, 0.006, Math.sin(a0) * 0.035], [Math.cos(a1) * 0.035, 0.006, Math.sin(a1) * 0.035], 0.005, 0.005, 5, 0xc9ccd0, M.CHROME);
+  }
+  B.box(0.02, 0, -0.012, 0.13, 0.008, 0.012, 0xd8b45a, M.CHROME, { skipBottom: false });
+  B.box(0.1, 0, -0.022, 0.13, 0.008, 0.022, 0xd8b45a, M.CHROME, { skipBottom: false });
+  B.box(-0.03, 0, 0.03, 0.0, 0.008, 0.12, 0xc9ccd0, M.CHROME, { skipBottom: false });
+  B.box(-0.06, 0, -0.1, -0.01, 0.022, -0.035, 0xd2342c, M.PLAIN, { skipBottom: false });
   return B.toGeometry(THREE);
 }
 

@@ -3,10 +3,11 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
+import { interiorLayout } from './interior.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
@@ -14,6 +15,8 @@ export const M = {
   RESI: 10, OFFICE: 11, SHOP: 12, FALU: 13, BRICKWIN: 14, GARAGE: 15, CORR: 16,
   TILES: 17, LAWN: 18, PAVING: 19, BRICK: 20, BOARDS: 21, ASPHALT: 22, DIRT: 23,
   LATTICE: 24, STONE: 25, PLANKS: 26, FOLIAGE: 27, BIRCH: 28,
+  // inside the tower (interior.js): walls the camera can see through, floors, TV, sofa fabric
+  IWALL: 29, PARQUET: 30, FLOORTILE: 31, TV: 32, FABRIC: 33, ITRIM: 34, IGLASS: 35,
 };
 
 export const COL = {
@@ -587,6 +590,18 @@ export function createLayout(seed = 7) {
     P({ t: 'rbox', cx: b.x1 - 13, cy: CURB_H + 51.9, cz: b.z0 + 13, sx: 0.35, sy: 0.35, sz: 0.35, rot: 0, c: 0xff3020, m: M.LIGHT });
     box(b.x1 - 24.4, CURB_H, b.z0 + 1.6, b.x1 - 1.6, CURB_H + 4.2, b.z0 + 24.4, 0x2f3540, M.OFFICE, { cell: [4.4, 4.2] });
     sign('kontor', { lines: ['SJUBY CITY'], bg: '#1f2733', fg: '#e8edf2', font: 0.62 }, b.x1 - 13, CURB_H + 4.9, b.z0 + 24.45, 6, 1.0, 0);
+    // the way in (v0.4): glass doors under a canopy on the south side, toward the square
+    {
+      const dx = TOWER_DOOR.x, dz = b.z0 + 24.4;
+      box(dx - 1.4, CURB_H, dz, dx + 1.4, CURB_H + 2.78, dz + 0.06, 0x171a1f);
+      box(dx - 1.22, CURB_H, dz + 0.06, dx - 0.03, CURB_H + 2.62, dz + 0.085, 0x9fb7c4, M.GLASS);
+      box(dx + 0.03, CURB_H, dz + 0.06, dx + 1.22, CURB_H + 2.62, dz + 0.085, 0x9fb7c4, M.GLASS);
+      box(dx - 0.12, CURB_H + 0.95, dz + 0.085, dx - 0.07, CURB_H + 1.35, dz + 0.13, 0xc9ccd0, M.CHROME);
+      box(dx + 0.07, CURB_H + 0.95, dz + 0.085, dx + 0.12, CURB_H + 1.35, dz + 0.13, 0xc9ccd0, M.CHROME);
+      box(dx - 1.7, CURB_H + 2.95, dz, dx + 1.7, CURB_H + 3.12, dz + 1.4, 0x171a1f);
+      sign('bostader', { lines: ['BOSTÄDER · HISS'], bg: '#1d2128', fg: '#f4efe4', font: 0.6 }, dx, CURB_H + 3.42, dz + 0.02, 2.2, 0.32, 0);
+      poly([[dx - 1.5, dz], [dx + 1.5, dz], [dx + 1.5, dz + 1.3], [dx - 1.5, dz + 1.3]], 0x3a3f46, M.PAVING, OVERLAY_H + 0.006);
+    }
     // shop row along the west side (faces Kungsgatan, where the player starts)
     building({ x0: b.x0 + 1, z0: b.z0 + 1, x1: b.x0 + 15, z1: b.cz + 10, h: 10.2, c: 0xd9b48a, m: M.SHOP, cell: [3.4, 3.4], mapC: 0xa88a6a });
     box(b.x0 - 0.3, CURB_H + 3.2, b.z0 + 3, b.x0 + 1, CURB_H + 3.35, b.z0 + 17, 0x2e7a46);   // awning (pizzeria)
@@ -953,8 +968,13 @@ export function createLayout(seed = 7) {
   }
   loops.push({ x0: -RING - 1.5, x1: RING + 1.5, z0: -RING - 1.5, z1: RING + 1.5, outer: true });
 
+  // the inside of the tower (built out at sea): walls and furniture to bump into, its floor and door plates
+  const inside = interiorLayout();
+  colliders.push(...inside.colliders);
+  Object.assign(signs, inside.signs);
+
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,
-    zones, kioskSpots, marks, nodes,
+    zones, kioskSpots, marks, nodes, floors: inside.floors, interiorSigns: inside.signPrims,
   };
 }

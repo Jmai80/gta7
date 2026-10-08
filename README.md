@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.3 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. I 0.3.1 fick bilarna och träden ett lyft, och i 0.3.2 blev gatloppet lättare att vinna på mobilen.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.4 är en bit av småstaden Sjuby med tre uppdragsgivare, ett sidouppdrag, första delen av ett huvuduppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig för första gången in i ett hus: höghuset vid torget, där du smyger in hos Samuel på plan 7.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -23,16 +23,20 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.3
+## Uppdrag i version 0.4
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
-Pizzabudet och gatloppet körs ett i taget. Lasses bil och tant Guns flagga räknas däremot när du än gör dem, även mitt i ett annat uppdrag. Misslyckas du kan du försöka igen.
+Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant Guns flagga räknas däremot när du än gör dem, även mitt i ett annat uppdrag. Misslyckas du kan du försöka igen.
 
 - **L – Lasse (Verkstan):** sno en röd bil (1 000 kr) och kör den till Lasses Verkstad (upp till 5 000 kr, minus bucklor). Uppdraget kommer som ett SMS när spelet börjar.
 - **S – Sanna (Pizzeria Sjuan):** Pizzabudet. Gå in i den gröna markören vid pizzerian på Kungsgatan och ta pizzabilen på parkeringen mittemot. Tre pizzor ska till tre adresser innan de kallnar. Du får 250 kr plus dricks per pizza (krockar sänker dricksen), och 500 kr i bonus om alla är varma.
 - **K – Kim (Macken):** Gatloppet. Kör in i den blå markören på Macken med en bil. Det blir två varv runt stan mot Kim och Bosse, och ringarna visar vägen. Vinnaren får 2 500 kr. Med pekskärm kör Kim och Bosse lugnare (80 % av sin vanliga fart), eftersom det är svårare att styra på telefonen.
 - **G – Tant Gun (sidouppdrag):** tant Gun står i trädgården vid en villa på Storgatan och vinkar. Prata med henne och håll sedan inne knappen vid flaggstången för att hissa flaggan. Hon ger dig 300 kr och en kanelbulle.
+- **? – Okänt nummer (huvuduppdrag, del 1): Samuels cykelnycklar.** Ett sms från ett okänt nummer kommer efter en stund, eller strax efter att du klarat något annat. Gå in genom porten på höghusets södra sida (vid torget) och ta hissen till plan 7. Samuel ligger i soffan och tittar i telefonen. Ta cykelnycklarna från köksbordet och smyg ut igen, så får du 1 500 kr.
+  - **Smyga:** gå lugnt. På mobilen drar du spaken bara en bit, på datorn går du som vanligt (spring inte med Shift). Springer du hör han dig och vänder sig mot ljudet.
+  - **Samuels uppmärksamhet:** ikonen över hans huvud visar telefonen när han är upptagen, **?** precis innan han tittar upp och ett öga när han ser sig om. Då syns hans blick som en gul solfjäder på golvet. Står du i den fylls ringen runt ikonen, och blir den full blir du utkastad (och får försöka igen). Den korta väggen i köket skymmer hans blick.
+  - Nycklarna skramlar när du tar dem, så han tittar upp. Ta hissen (**HISS**) ner för att gå ut. Går du ut utan nycklarna ligger de kvar till nästa gång.
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
 
@@ -42,13 +46,14 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten och en biltvätt som lagar bucklor.
-- **HUD:** minikarta med GPS och uppdragsbokstäver, SMS från uppdragsgivarna, fartmätare och bilens skick.
+- **HUD:** minikarta med GPS och uppdragsbokstäver (inomhus visar den en planritning med Samuel och nycklarna), SMS från uppdragsgivarna, fartmätare och bilens skick.
 
 ## Teknik
 
 - three.js 0.184 (WebGL2) laddas från jsDelivr. Det finns inget byggsteg, bara vanliga ES-moduler.
 - Allt genereras av kod: inga bilder, 3D-modeller eller ljudfiler. Ljudet syntetiseras med Web Audio.
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
+- Höghusets insida byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar ner i rummen, och väggar som skymmer dig löses upp i shadern.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 

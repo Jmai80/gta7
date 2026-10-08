@@ -1,7 +1,8 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD } from '../src/config.js';
+import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp } from '../src/rng.js';
 
@@ -270,12 +271,16 @@ function startRace(g) {
   run(g2, 7);
   check(sms2.some(([n, d]) => n === 'sms' && d.offer === 'pizza'), 'quests not offered yet arrive on schedule');
   check(/Nytt uppdrag/.test(g2.mission.objective), `objective asks you to pick a quest (${g2.mission.objective})`);
-  // finish the other two through the manager and get the end card
+  // finish the other three through the manager and get the end card
   g2.mission.done.add('pizza');
   g2.mission.done.add('race');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all three are done');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the main quest is left');
+  g2.mission.done.add('samuel');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all four are done');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -398,6 +403,134 @@ function startRace(g) {
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
   g2.mission.restore(save);
   check(g2.mission.flag.h === 1 && g2.mission.done.has('flag'), 'the flag stays up after a restore');
+}
+
+// ---------- 10. main quest, part 1: Samuel's bike keys ----------
+// walk toward (x, z) at a sneaking pace (the stick half way), camera behind facing north
+function walkTo(g, x, z, mag = 0.5, max = 15) {
+  const p = g.player;
+  for (let t = 0; t < max; t += DT) {
+    if (!g.mission.active && p.frozen) return false;
+    const dx = x - p.x, dz = z - p.z, d = Math.hypot(dx, dz);
+    if (d < 0.2) { g.step(DT, idle); return true; }
+    const ux = dx / d, uz = dz / d, y = Math.PI;
+    g.step(DT, { ...idle, moveX: (-ux * Math.cos(y) + uz * Math.sin(y)) * mag, moveY: (ux * Math.sin(y) + uz * Math.cos(y)) * mag, camYaw: y });
+  }
+  return false;
+}
+function waitUntil(g, cond, max = 30) { for (let t = 0; t < max; t += DT) { if (cond()) return true; g.step(DT, idle); } return false; }
+function intoTower(g) {
+  g.mission.offer('samuel'); g.mission.accept('samuel');
+  g.player.x = TOWER_DOOR.x; g.player.z = TOWER_DOOR.z;
+  run(g, 1.4);
+}
+const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
+{
+  console.log('Samuels cykelnycklar (huvuduppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'toast', 'fade', 'indoor', 'keys', 'caught', 'say']);
+  run(g, 30);
+  check(!m.known.has('samuel'), 'no main quest in the first half minute');
+  run(g, 11);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'samuel');
+  check(offer && offer[1].from === 'Okänt nummer', 'after 40 s an unknown number texts about Samuel');
+  check(m.info('samuel').main && m.list().find((q) => q.id === 'samuel').main, 'it is a main quest (offer card and list)');
+  m.accept('samuel');
+  run(g, 0.1);
+  const q = m.targets.find((t) => t.letter === '?');
+  check(q && q.gps && Math.hypot(q.x - TOWER_DOOR.x, q.z - TOWER_DOOR.z) < 0.1, 'the ? marker and the GPS lead to the tower door');
+  check(/höghuset/.test(m.objective), `objective: ${m.objective}`);
+  // in a car: you have to walk in
+  const car = g.addVehicle('sedan', 'blue', TOWER_DOOR.x - 6, TOWER_DOOR.z + 1, Math.PI / 2);
+  enterCar(g, car);
+  parkAt(g, TOWER_DOOR.x, TOWER_DOOR.z + 0.4, Math.PI / 2);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /Kliv ur bilen/.test(d.text)), 'driving into the door does not start it');
+  parkAt(g, TOWER_DOOR.x + 8, TOWER_DOOR.z + 6, Math.PI / 2); // drive off, park, get out
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  check(g.player.state === 'foot' && !m.active, 'parked away from the door, on foot');
+  g.player.x = TOWER_DOOR.x; g.player.z = TOWER_DOOR.z;
+  run(g, 1.4);
+  check(m.active && m.active.id === 'samuel' && g.indoor, 'walking in through the door: the lift up to floor 7');
+  check(ev.some(([n, d]) => n === 'fade' && d.on) && ev.some(([n, d]) => n === 'indoor' && d.on), 'fade to black on the way in');
+  const sam = g.indoors.samuel;
+  check(sam && sam.ped.state === 'lounge' && g.peds.list.includes(sam.ped), 'Samuel lounges on his sofa');
+  check(Math.hypot(g.player.x - INT.spawn.x, g.player.z - INT.spawn.z) < 0.3 && g.world.groundHeight(g.player.x, g.player.z) === INT.y, 'you step out of the lift on floor 7');
+  // the walls hold
+  walkTo(g, X0 + 20, Z0 + 1.2, 0.5, 6);
+  check(g.player.x < X0 + 15, 'the corridor ends at its window');
+  // into the flat and behind the sofa to the kitchen corner
+  walkTo(g, X0 + 2.1, Z0 + 1.6); walkTo(g, X0 + 2.1, Z0 + 3.3);
+  check(inFlat(g.player.x, g.player.z), "through Samuel's door");
+  walkTo(g, X0 + 7.0, Z0 + 3.2); walkTo(g, X0 + 9.0, Z0 + 3.4); walkTo(g, X0 + 9.0, Z0 + 4.4);
+  check(!sam.caught && sam.meter < 0.2, 'sneaking behind him, nobody notices');
+  check(!sam.los(g.player.x, g.player.z), 'the stub wall hides the kitchen corner from the sofa');
+  check(waitUntil(g, () => sam.mode === 'look'), 'now and then he looks up');
+  check(sam.cone.on > 0.5 && !sam.seen, 'his gaze shows on the floor, but the corner stays hidden');
+  check(waitUntil(g, () => sam.mode === 'phone' && sam.t > 2.5), '… and goes back to his phone');
+  walkTo(g, X0 + 9.2, Z0 + 6.5);
+  check(m.prompt === 'TA', 'at the table: TA');
+  const money0 = g.money;
+  g.step(DT, { ...idle, action: true });
+  check(m.active.keys && ev.some(([n]) => n === 'keys'), 'the keys are yours');
+  walkTo(g, X0 + 9.0, Z0 + 4.4);
+  run(g, 1.2);
+  check(sam.mode === 'warn' || sam.mode === 'look', 'the jingle makes him look up');
+  check(waitUntil(g, () => sam.mode === 'phone' && sam.t > 2.5), 'he settles again');
+  walkTo(g, X0 + 9.0, Z0 + 3.3); walkTo(g, X0 + 2.1, Z0 + 3.3); walkTo(g, X0 + 2.1, Z0 + 1.6);
+  check(m.done.has('samuel') && !m.active, 'out in the corridor with the keys → main quest done');
+  check(g.money === money0 + SAMUEL_REWARD && ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART'), `HUVUDUPPDRAG KLART, ${SAMUEL_REWARD} kr`);
+  check(g.indoors.doorShut, 'the door shuts behind you');
+  walkTo(g, X0 + 2.1, Z0 + 3.3, 0.5, 3);
+  check(!inFlat(g.player.x, g.player.z), 'and you cannot get back in');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Okänt nummer' && /cykeln/.test(d.text)), 'the unknown number texts about the bike');
+  // down in the lift
+  walkTo(g, X0 + 0.6, Z0 + 1.2);
+  check(m.prompt === 'HISS', 'at the lift: HISS');
+  g.step(DT, { ...idle, action: true });
+  run(g, 1.2);
+  check(!g.indoor && Math.hypot(g.player.x - TOWER_DOOR.x, g.player.z - TOWER_DOOR.z) < 3, 'back out on the square');
+  check(!g.indoors.samuel && !g.peds.list.some((p) => p.npc === 'samuel'), 'Samuel stays upstairs');
+  check(!m.targets.some((t) => t.letter === '?'), 'the ? is gone from the map');
+}
+{
+  console.log('Samuel ser dig');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  const ev = record(g, ['banner', 'sms', 'caught']);
+  run(g, 1);
+  intoTower(g);
+  const sam = g.indoors.samuel;
+  walkTo(g, X0 + 2.1, Z0 + 1.6); walkTo(g, X0 + 2.1, Z0 + 3.3);
+  walkTo(g, X0 + 1.6, Z0 + 8.6); walkTo(g, X0 + 4.5, Z0 + 8.6); // right in front of him
+  waitUntil(g, () => sam.caught || !m.active, 15);
+  check(sam.caught && ev.some(([n]) => n === 'caught'), 'standing in front of the sofa: he sees you');
+  check(g.player.frozen, 'you freeze');
+  run(g, 3);
+  check(!g.indoor && !g.player.frozen, 'thrown out onto the square');
+  check(ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Samuel såg dig/.test(d.sub)), 'UPPDRAG MISSLYCKAT: Samuel såg dig');
+  check(m.isOpen('samuel') && m.tracked === 'samuel', 'the quest is still open (try again)');
+  // running is loud
+  const g2 = new Game({ seed: 11, traffic: 0, peds: 0 });
+  run(g2, 1);
+  intoTower(g2);
+  const s2 = g2.indoors.samuel;
+  walkTo(g2, X0 + 2.1, Z0 + 1.6); walkTo(g2, X0 + 2.1, Z0 + 3.3);
+  const heard = () => s2.mode !== 'phone';
+  walkTo(g2, X0 + 6.5, Z0 + 3.2, 1.0, 4);
+  check(heard() || s2.heardT > 0, 'running behind him: he hears you');
+  // leaving by the lift without the keys is not a failure
+  const g3 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const ev3 = record(g3, ['banner', 'sms']);
+  run(g3, 1);
+  intoTower(g3);
+  run(g3, 0.5);
+  walkTo(g3, X0 + 0.6, Z0 + 1.2);
+  g3.step(DT, { ...idle, action: true });
+  run(g3, 1.5);
+  check(!g3.indoor && !g3.mission.active && !ev3.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'taking the lift down without the keys: no failure');
+  check(g3.mission.isOpen('samuel'), '… and the quest waits');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

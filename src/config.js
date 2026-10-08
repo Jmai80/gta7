@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', game: 'GTA 7' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', anon: 'Okänt nummer', game: 'GTA 7' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -67,5 +67,10 @@ export const RACE_PRIZE = 2500;
 export const RACE_LAPS = 2;
 // side quest: tant Gun's villa on Storgatan – where she waits and her flagpole in the front garden
 export const GUN = { x: -100.2, z: -50.7, poleX: -104.5, poleZ: -51.2, poleH: 9, reward: 300 };
+
+// ---- version 0.4: the main quest begins in the dark tower by the square ----
+export const TOWER_DOOR = { x: 19, z: -6.2, r: 1.4 };   // the marker outside the tower's entrance (south side)
+export const INDOOR = { x: 200, z: 200, y: 0.15 };       // the inside of the tower is built out at sea, hidden
+export const SAMUEL_REWARD = 1500;
 
 export const SIM_HZ = 60;

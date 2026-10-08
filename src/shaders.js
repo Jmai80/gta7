@@ -17,6 +17,7 @@ export function makeUniforms() {
     uSigns: { value: null },
     uNoise: { value: null },
     uTime: { value: 0 },
+    uCut: { value: new THREE.Vector4(0, 0, 0, 0) }, // inside the tower: walls between camera and player open up
   };
 }
 
@@ -90,19 +91,40 @@ void main() {
 #endif
 #ifdef HUMAN
   int bone = int(aBS.x + 0.5);
-  float sw = sin(iAnim.x);
   float pose = iAnim.w;
-  float a = 0.0;
-  if (bone == 3) {
-    a = -sw * iAnim.z;
-    if (pose > 0.5 && pose < 1.5) a = -2.7 + sin(uTime * 15.0) * 0.35;
-    if (pose > 2.5) a = -1.4;
-  } else if (bone == 4) {
-    a = sw * iAnim.z;
-    if (pose > 2.5) a = -1.4;
-  } else if (bone == 5) a = sw * iAnim.y;
-  else if (bone == 6) a = -sw * iAnim.y;
-  if (bone >= 3) { mat3 R = rotX(a); p = aPivot + R * (p - aPivot); n = R * n; }
+  if (pose > 3.5 && pose < 4.5) {
+    // lounging on a sofa: leaning far back, legs out in front, phone in both hands.
+    // iAnim here: x head yaw, y how high the phone is (0 on the lap … 1 in front of the face), z head pitch
+    if (bone >= 5) {
+      mat3 R = rotX(-1.05) * rotZ(bone == 5 ? 0.09 : -0.09);
+      p = aPivot + R * (p - aPivot); n = R * n;
+    } else {
+      if (bone == 1) {
+        mat3 R = rotY(iAnim.x) * rotX(iAnim.z);
+        p = aPivot + R * (p - aPivot); n = R * n;
+      } else if (bone >= 3) {
+        float s = bone == 3 ? 1.0 : -1.0;
+        mat3 R = rotX(mix(-0.55, -1.5, iAnim.y)) * rotZ(-s * (0.12 + 0.36 * iAnim.y));
+        p = aPivot + R * (p - aPivot); n = R * n;
+      }
+      mat3 Bk = rotX(-0.75);
+      vec3 hip = vec3(0.0, 0.92, 0.0);
+      p = hip + Bk * (p - hip); n = Bk * n;
+    }
+  } else {
+    float sw = sin(iAnim.x);
+    float a = 0.0;
+    if (bone == 3) {
+      a = -sw * iAnim.z;
+      if (pose > 0.5 && pose < 1.5) a = -2.7 + sin(uTime * 15.0) * 0.35;
+      if (pose > 2.5) a = -1.4;
+    } else if (bone == 4) {
+      a = sw * iAnim.z;
+      if (pose > 2.5) a = -1.4;
+    } else if (bone == 5) a = sw * iAnim.y;
+    else if (bone == 6) a = -sw * iAnim.y;
+    if (bone >= 3) { mat3 R = rotX(a); p = aPivot + R * (p - aPivot); n = R * n; }
+  }
   int sel = int(aBS.y + 0.5);
   #ifdef USE_INSTANCING_COLOR
     if (sel == 1) vColor = instanceColor;
@@ -145,6 +167,7 @@ uniform vec4 uShadowRect;
 uniform sampler2D uSigns;
 uniform sampler2D uNoise;
 uniform float uTime;
+uniform vec4 uCut;
 varying vec3 vColor;
 varying vec3 vN;
 varying vec3 vW;
@@ -191,6 +214,18 @@ void main() {
   vec3 albedo = vColor;
   float glass = 0.0, interior = 0.0, spec = 0.0, emit = 0.0, chrome = 0.0, wrap = 0.0;
   int m = int(vMat + 0.5);
+#ifdef INTERIOR
+  // walls (and what hangs on them) between the camera and the player are cut away, with a
+  // dissolving edge so the hole does not look like a porthole
+  if ((m == 29 || m == 34 || m == 35 || m == 5 || m == 7 || m == 3) && uCut.w > 0.0) {
+    vec3 d = uCut.xyz - cameraPosition;
+    float t = dot(vW - cameraPosition, d) / dot(d, d);
+    if (t > 0.0 && t < 1.0) {
+      float r = length(vW - (cameraPosition + d * t)) / (uCut.w * (0.45 + 0.55 * t));
+      if (r < 1.0 - 0.3 * hash12(floor(gl_FragCoord.xy * 0.5))) discard;
+    }
+  }
+#endif
   vec2 aa = fwidth(vUv) * 0.75 + 1e-4;
   float far = smoothstep(0.22, 0.55, max(aa.x, aa.y));
   float hw = abs(N.x) > 0.5 ? vW.z : vW.x;   // horizontal coordinate along a wall
@@ -307,6 +342,38 @@ void main() {
       float mark = step(0.72, hash12(floor(bp))) * step(0.4, fract(bp.y));
       albedo = mix(albedo, vec3(0.07, 0.07, 0.065), mark * 0.9);
     }
+#ifdef INTERIOR
+    else if (m == 29) {
+      // plaster walls, a baseboard along the floor
+      albedo *= 0.95 + 0.07 * tn(vW.xz * 0.6 + vW.y * 0.45);
+      if (abs(N.y) < 0.5 && vW.y < 0.24) albedo = vec3(0.55, 0.53, 0.5);
+    } else if (m == 30) {
+      // parquet: planks along x
+      vec2 q = vec2(vW.x * 1.1, vW.z / 0.16);
+      float row = floor(q.y);
+      q.x += row * 0.37;
+      vec2 f = fract(q), fw = fwidth(q) + 1e-4;
+      float seam = max(1.0 - smoothstep(0.0, fw.y * 1.5, min(f.y, 1.0 - f.y)), 1.0 - smoothstep(0.0, fw.x * 1.5, min(f.x, 1.0 - f.x)));
+      albedo *= (0.82 + 0.3 * hash12(vec2(floor(q.x), row))) * (1.0 - seam * 0.35);
+    } else if (m == 31) {
+      // tiles / linoleum squares with grout
+      vec2 q = vW.xz / 0.3;
+      float g = 1.0 - box2(fract(q), vec2(0.04), vec2(0.96), fwidth(q) + 1e-4);
+      albedo *= (0.94 + 0.08 * hash12(floor(q))) * (1.0 - g * 0.3);
+    } else if (m == 32) {
+      // the TV: some flickering programme
+      vec2 c = floor(vUv * vec2(10.0, 6.0));
+      float tt = floor(uTime * 1.6);
+      vec3 a = vec3(hash12(c + tt), hash12(c + tt + 3.1), hash12(c + tt + 7.7));
+      albedo = mix(vec3(0.22, 0.42, 0.85), a, 0.35) * (0.75 + 0.25 * sin(uTime * 7.0 + c.y));
+      emit = 1.4;
+    } else if (m == 33) {
+      // fabric
+      albedo *= 0.88 + 0.16 * tn(vW.xz * 2.7 + vW.y * 1.9);
+    } else if (m == 35) {
+      glass = 1.0;
+    }
+#endif
   }
 #endif
 
@@ -318,6 +385,8 @@ void main() {
     vec2 s = texture2D(uShadow, (sp - uShadowRect.xy) * uShadowRect.zw).rg;
     sh = s.r; ao = mix(1.0, s.g, 0.7);
   }
+#elif defined(INTERIOR)
+  if (N.y < 0.5) ao = mix(0.62, 1.0, smoothstep(0.15, 2.2, vW.y));
 #else
   if (N.y > 0.5 && vW.y < 1.2) {
     vec2 s = texture2D(uShadow, (vW.xz - uShadowRect.xy) * uShadowRect.zw).rg;
@@ -383,6 +452,7 @@ export function worldMaterial(U, kind = 'static') {
   if (kind === 'vehicle') defines.VEHICLE = 1;
   if (kind === 'human') defines.HUMAN = 1;
   if (kind === 'ground') defines.GROUND = 1;
+  if (kind === 'interior') defines.INTERIOR = 1;
   const uniforms = {
     ...U,
     fogColor: { value: new THREE.Color() },

@@ -45,7 +45,8 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS_DONE = (d) => ['lasse', 'pizza', 'race'].filter((id) => d.done.includes(id)).length;
+const JOBS = ['lasse', 'pizza', 'race', 'samuel'];
+const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
 const perf = {
@@ -129,7 +130,7 @@ async function boot(hot) {
     const saved = loadProgress();
     const info = $('saveInfo');
     if (saved && info) {
-      info.textContent = `Sparat spel: ${JOBS_DONE(saved)} av 3 uppdrag klara · ${fmt(saved.money)} kr`;
+      info.textContent = `Sparat spel: ${JOBS_DONE(saved)} av ${JOBS.length} uppdrag klara · ${fmt(saved.money)} kr`;
       info.hidden = false;
     }
     view.setFog(170, 520);
@@ -159,6 +160,9 @@ function wire(g) {
   g.on('progress', () => saveProgress());
   g.on('fade', (e) => hud.fade(e.on));
   g.on('teleport', (e) => { view.rig.yaw = e.car.h; view.rig.manual = 0; view.rig.k = 1; });
+  g.on('warp', (e) => { view.rig.yaw = e.h; view.rig.manual = 0; view.rig.k = 1; view.rig.blend = 1; }); // in or out of the tower
+  g.on('keys', () => audio.jingle());
+  g.on('caught', () => { audio.caught(); buzz([60, 40, 120]); });
   g.on('countdown', (e) => { hud.countdown(e.text, e.go); if (e.text) { audio.beep(e.go); buzz(e.go ? 60 : 25); } });
   g.on('checkpoint', () => audio.checkpoint());
   g.on('hint', (e) => hud.hint(e));
@@ -291,7 +295,7 @@ function openOffer(id) {
   const av = $('ofAv');
   av.textContent = q.letter; av.style.background = q.color;
   $('ofWho').textContent = q.who;
-  $('ofKind').textContent = q.side ? 'Sidouppdrag' : 'Uppdrag';
+  $('ofKind').textContent = q.main ? 'Huvuduppdrag' : q.side ? 'Sidouppdrag' : 'Uppdrag';
   $('ofTitle').textContent = q.title.toUpperCase();
   $('ofText').textContent = q.text;
   $('ofReward').textContent = q.reward;
@@ -340,7 +344,7 @@ function renderLog() {
     const badge = document.createElement('b'); badge.textContent = q.letter; badge.style.background = q.color;
     const t = document.createElement('span'); t.className = 't';
     const title = document.createElement('strong'); title.textContent = q.title;
-    const line = document.createElement('small'); line.textContent = `${q.who}${q.side ? ' · sidouppdrag' : ''} · ${q.line}`;
+    const line = document.createElement('small'); line.textContent = `${q.who}${q.main ? ' · huvuduppdrag' : q.side ? ' · sidouppdrag' : ''} · ${q.line}`;
     t.append(title, line);
     const st = document.createElement('em'); st.textContent = q.state === 'done' ? 'Klart ✓' : QUEST_STATE[q.state];
     btn.append(badge, t, st);

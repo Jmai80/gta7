@@ -3,7 +3,10 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys } from './models.js';
+import { INT, doorInto, inFlat } from './interior.js';
+import { SEE, phoneOf } from './samuel.js';
+import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
 import { PAINTS } from './vehicle.js';
 import { SUN, CARWASH } from './config.js';
@@ -40,6 +43,7 @@ export class View {
     this.matGround = worldMaterial(this.U, 'ground');
     this.matCar = worldMaterial(this.U, 'vehicle');
     this.matHuman = worldMaterial(this.U, 'human');
+    this.matInterior = worldMaterial(this.U, 'interior');
     const fenceMat = new THREE.MeshBasicMaterial({ map: fenceTexture(), transparent: true, side: THREE.DoubleSide, depthWrite: false, color: 0xb8bec4, fog: true });
 
     // sky
@@ -49,9 +53,10 @@ export class View {
     this.scene.add(this.sky);
 
     // town
-    const world = buildWorld(layout, this.matStatic, this.matGround, fenceMat, this.atlas);
+    const world = buildWorld(layout, this.matStatic, this.matGround, fenceMat, this.atlas, this.matInterior);
     this.world = world;
     this.scene.add(world.group);
+    if (world.interior) this.scene.add(world.interior);
 
     // cars
     this.cars = {};
@@ -105,6 +110,7 @@ export class View {
     }
     this.particles = new Particles(this.scene, 160);
     this.makeCarWash();
+    this.makeIndoor();
 
     this.rig = new CameraRig(this.camera);
     this.quality = quality;
@@ -196,6 +202,129 @@ export class View {
     this.washing = false;
   }
 
+  // ------------------------------------------------------------------ inside the tower
+  makeIndoor() {
+    const g = (this.indoorGroup = new THREE.Group());
+    g.visible = false;
+    this.scene.add(g);
+    // Samuel's front door: swings on its hinge (open while you sneak about, shut when you leave)
+    const DB = new GeomBuilder();
+    doorInto(DB);
+    this.door = new THREE.Mesh(DB.toGeometry(THREE), this.matInterior);
+    this.door.position.set(INT.door.hinge[0], INT.y, INT.door.hinge[1]);
+    this.door.rotation.y = -Math.PI / 2 + 0.25;
+    g.add(this.door);
+    // the bike keys on the kitchen table, with a little glint so you can spot them
+    this.keys = new THREE.Mesh(buildKeys(), this.matStatic);
+    this.keys.position.set(INT.keys.x, INT.keys.y, INT.keys.z);
+    this.keys.rotation.y = 0.6;
+    g.add(this.keys);
+    this.glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTexture(), color: 0xfff1b0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    this.glint.position.set(INT.keys.x, INT.keys.y + 0.05, INT.keys.z);
+    g.add(this.glint);
+    // Samuel's phone (its screen lights up his face… well, it glows)
+    this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
+    this.phone.scale.setScalar(1.35);
+    g.add(this.phone);
+    // where Samuel is looking: a fan of light on the floor, stopped by the walls
+    const N = 22;
+    this.coneN = N;
+    const cg = new THREE.BufferGeometry();
+    cg.setAttribute('position', new THREE.BufferAttribute(new Float32Array((N + 2) * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    cg.setAttribute('color', new THREE.BufferAttribute(new Float32Array((N + 2) * 4), 4).setUsage(THREE.DynamicDrawUsage));
+    const idx = [];
+    for (let i = 0; i < N; i++) idx.push(0, i + 2, i + 1);
+    cg.setIndex(idx);
+    this.cone = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, fog: false, side: THREE.DoubleSide }));
+    this.cone.frustumCulled = false;
+    this.cone.renderOrder = 4;
+    g.add(this.cone);
+    this.indoor = false;
+    this.outLight = { sun: this.U.uSunCol.value.clone(), sky: this.U.uSkyCol.value.clone(), gnd: this.U.uGndCol.value.clone() };
+    this.outFog = [this.fog.near, this.fog.far];
+  }
+
+  // inside the tower the town is hidden, the light is softer and everything far away is dark
+  setIndoor(on) {
+    if (on === this.indoor) return;
+    this.indoor = on;
+    this.world.group.visible = !on;
+    if (this.world.interior) this.world.interior.visible = on;
+    this.indoorGroup.visible = on;
+    for (const t in this.cars) this.cars[t].visible = !on;
+    this.sky.visible = !on;
+    for (const b of this.brushes) b.visible = !on;
+    if (this.gunFlag) this.gunFlag.visible = !on;
+    const U = this.U, L = this.outLight;
+    if (on) {
+      U.uSunCol.value.setRGB(1.0, 0.86, 0.68).multiplyScalar(0.55);
+      U.uSkyCol.value.setRGB(0.62, 0.68, 0.8).multiplyScalar(0.6);
+      U.uGndCol.value.setRGB(0.52, 0.44, 0.38).multiplyScalar(0.5);
+      this.fog.color.setHex(0x0d1015); this.fog.near = 14; this.fog.far = 46;
+      this.renderer.setClearColor(0x0d1015);
+    } else {
+      U.uSunCol.value.copy(L.sun); U.uSkyCol.value.copy(L.sky); U.uGndCol.value.copy(L.gnd);
+      this.fog.color.setHex(0xeedac3); this.fog.near = this.outFog[0]; this.fog.far = this.outFog[1];
+      this.renderer.setClearColor(0xeedac3);
+      U.uCut.value.w = 0;
+    }
+  }
+
+  syncIndoor(game, dt) {
+    this.setIndoor(game.indoor);
+    if (!this.indoor) return;
+    const p = game.player, ind = game.indoors;
+    this.U.uCut.value.set(p.x, p.y + 1.0, p.z, 1.7);
+    // the door: shut once you have left with the keys
+    const shut = ind.doorShut;
+    const goal = shut ? 0 : -Math.PI / 2 + 0.25;
+    this.door.rotation.y += (goal - this.door.rotation.y) * Math.min(1, dt * 6);
+    // the keys until you take them
+    const job = game.mission.active;
+    const taken = !(job && job.id === 'samuel' && !job.keys);
+    this.keys.visible = !taken;
+    this.glint.visible = !taken;
+    if (!taken) {
+      const k = 0.13 + 0.07 * Math.max(0, Math.sin(this.time * 3.1)) ** 6;
+      this.glint.scale.set(k, k, 1);
+      this.glint.material.opacity = 0.55 + 0.45 * Math.sin(this.time * 3.1);
+    }
+    // Samuel's phone and the fan of his gaze
+    const sam = ind.samuel;
+    const lounging = sam && sam.ped.state === 'lounge';
+    this.phone.visible = !!lounging;
+    if (lounging) {
+      const ph = phoneOf(sam.ped.body);
+      this.phone.position.set(ph.at[0], ph.at[1], ph.at[2]);
+      this.phone.lookAt(ph.look[0], ph.look[1], ph.look[2]);
+    }
+    this.syncCone(game, sam);
+  }
+
+  syncCone(game, sam) {
+    const c = sam ? sam.cone : null;
+    const on = c ? c.on : 0;
+    this.cone.visible = on > 0.02;
+    if (!this.cone.visible) return;
+    const N = this.coneN, geo = this.cone.geometry;
+    const pos = geo.attributes.position.array, col = geo.attributes.color.array;
+    const y = INT.y + 0.03, world = game.world;
+    // warm yellow while he just looks around, red when he has noticed something
+    const r = 1, gg = 0.8 - c.alert * 0.55, b = 0.28 - c.alert * 0.12;
+    pos[0] = c.x; pos[1] = y; pos[2] = c.z;
+    col[0] = r; col[1] = gg; col[2] = b; col[3] = 0.55 * on;
+    for (let i = 0; i <= N; i++) {
+      const a = c.dir - SEE.half + (2 * SEE.half * i) / N;
+      const ex = c.x + Math.sin(a) * SEE.range, ez = c.z + Math.cos(a) * SEE.range;
+      const f = world.raycast(c.x, c.z, ex, ez, INT.y + 1.5);
+      const j = (i + 1) * 3, k = (i + 1) * 4;
+      pos[j] = c.x + (ex - c.x) * f; pos[j + 1] = y; pos[j + 2] = c.z + (ez - c.z) * f;
+      col[k] = r; col[k + 1] = gg; col[k + 2] = b; col[k + 3] = 0.16 * on;
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
+  }
+
   resize() {
     const w = Math.max(1, this.canvas.clientWidth || window.innerWidth);
     const h = Math.max(1, this.canvas.clientHeight || window.innerHeight);
@@ -213,7 +342,10 @@ export class View {
     this.resize();
   }
 
-  setFog(near, far) { this.fog.near = near; this.fog.far = far; }
+  setFog(near, far) {
+    this.outFog = [near, far];
+    if (!this.indoor) { this.fog.near = near; this.fog.far = far; }
+  }
 
   // ------------------------------------------------------------------ per frame
   sync(game, dt) {
@@ -223,6 +355,7 @@ export class View {
     this.syncHumans(game, dt);
     this.syncMarkers(game);
     this.syncFx(game, dt);
+    this.syncIndoor(game, dt);
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.gunFlag) {
       // folded at the foot of the pole; unfurls on the way up and flutters at the top
@@ -308,7 +441,8 @@ export class View {
       tmpC.setHex(L.pants); pants.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       tmpC.setHex(L.skin); skin.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       tmpC.setHex(L.hair); hair.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
-      anim.setXYZW(i, body.phase, body.legAmp, body.armAmp, body.pose);
+      if (body.pose === 4) anim.setXYZW(i, body.headYaw || 0, body.phone || 0, body.headPitch || 0, 4); // lounging
+      else anim.setXYZW(i, body.phase, body.legAmp, body.armAmp, body.pose);
       i++;
       if (b < 96) {
         tmpM.makeScale(0.8 + body.lie, 1, 0.8 + body.lie * 0.4);
@@ -331,6 +465,18 @@ export class View {
     let n = 0, m = 0, r = 0;
     const T = game.missionActive ? game.mission.targets : [];
     for (const tg of T) {
+      if (tg.kind === 'item' && n < 24) {
+        // something small to pick up: a little arrow bobbing over it
+        tmpM.makeRotationY(t * 2.2);
+        tmpS.makeScale(0.42, 0.42, 0.42);
+        tmpM.multiply(tmpS);
+        tmpM.setPosition(tg.x, tg.y + 0.55 + Math.sin(t * 3.2) * 0.08, tg.z);
+        this.arrows.setMatrixAt(n, tmpM);
+        tmpC.setHex(0xffcf33);
+        this.arrows.setColorAt(n, tmpC);
+        n++;
+        continue;
+      }
       if (tg.kind === 'car') {
         const v = tg.car;
         if (n >= 24 || Math.hypot(v.x - p.x, v.z - p.z) < 7.5) continue; // the action button is enough up close
@@ -489,6 +635,13 @@ export class CameraRig {
       let hd = car.h;
       if (sp > 3 && car.fwdSpeed > 0) hd = car.h + wrapAngle(Math.atan2(car.vx, car.vz) - car.h) * 0.45;
       target = hd; rate = car.air ? 1.5 : 3.0;
+    } else if (game.indoor) {
+      // inside the tower: look down into the rooms from above (the walls in the way open up).
+      // The camera keeps its direction (east, along the corridor) unless you turn it yourself,
+      // so "up" on the stick stays the same while you sneak.
+      dist = portrait ? 6.0 : 5.6;
+      height = portrait ? 10.5 : 7.4;
+      lookH = 0.6; ahead = portrait ? 1.2 : 0.4; fov = portrait ? 64 : 54;
     } else {
       dist = portrait ? 8.2 : 5.4;
       height = portrait ? 6.4 : 2.5;
@@ -511,10 +664,18 @@ export class CameraRig {
     if (rate > 0 && (!car || this.manualT > 0.3)) this.yaw = smoothAngle(this.yaw, target, rate, dt);
     const yaw = this.yaw + this.manual;
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
-    const tx = (car ? car.x : p.x), tz = (car ? car.z : p.z), ty = (car ? (car.visY ?? car.y) : p.y);
+    let tx = (car ? car.x : p.x), tz = (car ? car.z : p.z);
+    const ty = (car ? (car.visY ?? car.y) : p.y);
+    // in Samuel's flat the view leans toward the middle of the room, so he stays in the picture
+    const fl = game.indoor && inFlat(p.x, p.z) ? 1 : 0;
+    this.flatK = smooth(this.flatK || 0, fl, 2.5, dt);
+    if (this.flatK > 0.001) {
+      const F = INT.flat, k = this.flatK * (portrait ? 0.4 : 0.32);
+      tx += ((F.x0 + F.x1) / 2 - tx) * k; tz += ((F.z0 + F.z1) / 2 + 0.6 - tz) * k;
+    }
     // keep the camera out of buildings
     const want = dist;
-    const hit = world.raycast(tx, tz, tx - fx * (want + 0.8), tz - fz * (want + 0.8), Math.max(2.5, height * 0.9));
+    const hit = game.indoor ? 1 : world.raycast(tx, tz, tx - fx * (want + 0.8), tz - fz * (want + 0.8), Math.max(2.5, height * 0.9));
     const kT = hit < 1 ? Math.max(0.18, (hit * (want + 0.8) - 0.8) / want) : 1;
     this.k = smooth(this.k, kT, kT < this.k ? 14 : 2.5, dt);
     const d = want * this.k;

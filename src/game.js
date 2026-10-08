@@ -7,6 +7,7 @@ import { Traffic } from './traffic.js';
 import { Peds, makeLook } from './peds.js';
 import { Player } from './player.js';
 import { Missions } from './mission.js';
+import { Indoors } from './indoors.js';
 import { PIZZA_CAR } from './config.js';
 import { makeRng } from './rng.js';
 
@@ -38,6 +39,7 @@ export class Game {
     this.peds = new Peds(this);
     this.player = new Player(this);
     this.mission = new Missions(this);
+    this.indoors = new Indoors(this); // the dark tower: inside it you are somewhere else entirely
     this.obs = [];
     this.obsPool = [];
     this.spawnT = 0;
@@ -45,6 +47,8 @@ export class Game {
     this.on('honk', () => {});
     this.spawnInitial(opts.traffic ?? TRAFFIC_TARGET, opts.peds ?? PED_TARGET);
   }
+
+  get indoor() { return this.indoors.inside; }
 
   on(evt, fn) { (this.listeners[evt] || (this.listeners[evt] = [])).push(fn); }
   emit(evt, data) { const l = this.listeners[evt]; if (l) for (const fn of l) fn(data || {}); }
@@ -178,6 +182,7 @@ export class Game {
     });
     this.peds.update(dt);
     p.postPhysics(dt);
+    this.indoors.update(dt);
     if (this.missionActive) this.mission.update(dt);
 
     if (playerCar) {

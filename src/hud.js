@@ -1,8 +1,13 @@
 // Heads-up display: minimap with GPS, money, objective, phone messages, banners,
 // speech bubbles, speedometer and context buttons. Plain DOM + one 2D canvas.
 import { fmt } from './rng.js';
-import { STREET_NAMES, ROADS, RING } from './config.js';
+import { STREET_NAMES, ROADS, RING, WHO } from './config.js';
 import { PAINTS } from './vehicle.js';
+import { INT, WALLS, FURN } from './interior.js';
+import { SEE } from './samuel.js';
+
+const IN_PX = 24; // indoor floor plan: pixels per metre
+const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
 const MAP_RANGE = 170, MAP_PX = 2;
 
@@ -16,7 +21,9 @@ export class HUD {
       banner: $('banner'), toast: $('toast'), hint: $('hint'), bubbles: $('bubbles'), fps: $('fps'),
       bAction: $('bAction'), bExit: $('bExit'), touch: $('touch'), keyhint: $('keyhint'),
       objSub: $('objSub'), count: $('count'), fade: $('fade'), quests: $('quests'), qBadge: $('qBadge'),
+      eye: $('eye'),
     };
+    this.eyeState = '';
     this.onOffer = null; // (id) → open the offer card
     this.onLog = null;   // () → open the quest log
     // tapping an offer SMS answers it; tapping the objective or the list button opens the quest log
@@ -30,6 +37,7 @@ export class HUD {
     this.layout = layout;
     this.ctx = this.el.map.getContext('2d');
     this.mapImg = this.buildMap(layout);
+    this.inImg = this.buildIndoorMap();
     this.money = 0; this.moneyShown = 0;
     this.sms = []; this.smsT = 0; this.smsShown = null;
     this.hintsSeen = new Set();
@@ -103,6 +111,83 @@ export class HUD {
     return c;
   }
 
+  // the floor plan of the tower's 7th floor (corridor + Samuel's flat)
+  buildIndoorMap() {
+    const B = INT.bounds, ox = B.x0, oz = B.z0;
+    const c = document.createElement('canvas');
+    c.width = Math.ceil((B.x1 - B.x0) * IN_PX); c.height = Math.ceil((B.z1 - B.z0) * IN_PX);
+    const g = c.getContext('2d');
+    const X = (x) => (x - ox) * IN_PX, Zs = (z) => (z - oz) * IN_PX;
+    const rect = (x0, z0, x1, z1, col) => { g.fillStyle = col; g.fillRect(X(x0), Zs(z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX); };
+    rect(B.x0, B.z0, B.x1, B.z1, '#14181d');
+    rect(INT.corridor.x0, INT.corridor.z0, INT.corridor.x1, INT.corridor.z1, '#4d5660');
+    rect(INT.flat.x0, INT.flat.z0, INT.flat.x0 + 6.5, INT.flat.z1, '#6b5641');
+    rect(INT.flat.x0 + 6.5, INT.flat.z0, INT.flat.x1, INT.flat.z1, '#77746f');
+    rect(INT.door.x0, INT.door.z - 0.1, INT.door.x1, INT.door.z + 0.1, '#6b5641');
+    const ix = INT.corridor.x0, iz = INT.corridor.z0;
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of FURN) g.fillRect(X(ix + x0), Zs(iz + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of WALLS) g.fillRect(X(ix + x0), Zs(iz + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    // the lift
+    g.fillStyle = '#b9bec4'; g.fillRect(X(ix + 0.05), Zs(iz + 0.6), 0.5 * IN_PX, 1.2 * IN_PX);
+    g.fillStyle = '#14181d'; g.font = `900 ${IN_PX * 0.7}px "Big Shoulders Display", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('H', X(ix + 0.3), Zs(iz + 1.2));
+    return c;
+  }
+
+  drawIndoorMap(game, camYaw) {
+    const g = this.ctx, W = this.el.map.width, R = W / 2;
+    const p = game.player, u = W / 150;
+    const range = 9.5, k = R / range;
+    const B = INT.bounds;
+    g.save();
+    g.clearRect(0, 0, W, W);
+    g.beginPath(); g.arc(R, R, R - 1, 0, Math.PI * 2); g.clip();
+    g.fillStyle = '#14181d'; g.fillRect(0, 0, W, W);
+    g.translate(R, R);
+    const rot = camYaw - Math.PI;
+    g.rotate(rot);
+    const s = k / IN_PX;
+    g.drawImage(this.inImg, (B.x0 - p.x) * k, (B.z0 - p.z) * k, this.inImg.width * s, this.inImg.height * s);
+    const P = (x, z) => [(x - p.x) * k, (z - p.z) * k];
+    // where Samuel is looking
+    const sam = game.indoors.samuel;
+    if (sam && sam.cone.on > 0.05) {
+      const c = sam.cone;
+      const a = sam.cone.alert;
+      g.fillStyle = `rgba(255, ${Math.round(255 - a * 170)}, ${Math.round(255 - a * 200)}, ${0.3 * c.on})`;
+      g.beginPath();
+      g.moveTo(...P(c.x, c.z));
+      for (let i = 0; i <= 14; i++) {
+        const an = c.dir - SEE.half + (2 * SEE.half * i) / 14;
+        const ex = c.x + Math.sin(an) * SEE.range, ez = c.z + Math.cos(an) * SEE.range;
+        const f = game.world.raycast(c.x, c.z, ex, ez, INT.y + 1.5);
+        g.lineTo(...P(c.x + (ex - c.x) * f, c.z + (ez - c.z) * f));
+      }
+      g.closePath(); g.fill();
+    }
+    // the keys (until you have them), Samuel
+    const job = game.mission.active;
+    if (job && job.id === 'samuel' && !job.keys) {
+      const [x, z] = P(INT.keys.x, INT.keys.z);
+      const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
+      g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
+      g.beginPath(); g.arc(x, z, 4.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    if (sam) {
+      const [x, z] = P(sam.ped.x, sam.ped.z);
+      g.fillStyle = '#ff7a59'; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u;
+      g.beginPath(); g.arc(x, z, 4.6 * u, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    g.restore();
+    // player arrow
+    g.save(); g.translate(R, R); g.rotate(rot - p.h + Math.PI);
+    g.fillStyle = '#ffffff'; g.strokeStyle = '#111'; g.lineWidth = 1.5 * u;
+    g.beginPath(); g.moveTo(0, -8 * u); g.lineTo(6 * u, 7 * u); g.lineTo(0, 3.5 * u); g.lineTo(-6 * u, 7 * u); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+
   routeTo(game, tx, tz) {
     // BFS over the intersection graph from the node nearest the player to the node nearest the target
     const nodes = game.layout.nodes;
@@ -126,6 +211,7 @@ export class HUD {
   }
 
   drawMap(game, camYaw, dt) {
+    if (game.indoor) { this.drawIndoorMap(game, camYaw); return; }
     const g = this.ctx, W = this.el.map.width, R = W / 2;
     const p = game.player;
     const car = p.inCar ? p.car : null;
@@ -333,7 +419,7 @@ export class HUD {
         const el = this.el.phone;
         el.querySelector('.who').textContent = m.from;
         const av = el.querySelector('.av');
-        av.textContent = m.from.trim()[0];
+        av.textContent = m.from === WHO.anon ? '?' : m.from.trim()[0];
         av.classList.toggle('sys', m.from === 'GTA 7');
         av.style.background = m.color || '';
         el.querySelector('.msg').textContent = m.text;
@@ -373,7 +459,7 @@ export class HUD {
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan' };
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest
@@ -395,6 +481,8 @@ export class HUD {
     // street names
     const sn = streetAt(car ? car.x : p.x, car ? car.z : p.z);
     if (sn && sn !== this.lastStreet) { this.lastStreet = sn; this.street(sn); }
+    // what Samuel is up to: a badge over his head (phone · ? · eye · !) with a ring that fills as he notices you
+    this.updateEye(game, view);
     // bubbles
     const tmp = {};
     for (let i = 0; i < this.bubbleEls.length; i++) {
@@ -420,6 +508,31 @@ export class HUD {
     if (fpsInfo) this.el.fps.textContent = fpsInfo;
   }
 }
+
+HUD.prototype.updateEye = function updateEye(game, view) {
+  const el = this.el.eye;
+  if (!el) return;
+  const sam = game.indoor ? game.indoors.samuel : null;
+  const p = game.player;
+  let vis = false;
+  if (sam && Math.hypot(p.x - sam.ped.x, p.z - sam.ped.z) < 16) {
+    const h = sam.head, tmp = this.eyeTmp || (this.eyeTmp = {});
+    const standing = sam.ped.state !== 'lounge';
+    view.project(sam.ped.x, standing ? sam.ped.y + 2.45 : h[1] + 0.62, standing ? sam.ped.z : h[2], tmp);
+    if (tmp.visible) {
+      vis = true;
+      el.style.transform = `translate(${tmp.x}px, ${tmp.y}px)`;
+      const st = sam.icon;
+      if (st !== this.eyeState) {
+        this.eyeState = st;
+        el.className = st;
+        el.querySelector('span').innerHTML = st === 'phone' ? '…' : st === 'warn' ? '?' : st === 'caught' ? '!' : EYE;
+      }
+      el.style.setProperty('--m', sam.meter.toFixed(3));
+    }
+  }
+  if (el.hidden === vis) el.hidden = !vis;
+};
 
 function streetAt(x, z) {
   let name = null;

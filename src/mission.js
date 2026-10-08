@@ -5,12 +5,15 @@
 //   S  Sanna (Pizzerian):  "Pizzabudet" – starts at the marker outside Pizzeria Sjuan
 //   K  Kim (Macken):       "Gatloppet" – drive into the marker at Macken
 //   G  Tant Gun:           "Flaggan i topp" – side quest: hoist the flag in her front garden
-// The pizza job and the race take over while they run (one at a time). Lasse's job and Gun's
-// flag count whenever you do them, followed or not. Stunt jumps and the car wash always work.
-import { DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN } from './config.js';
+//   ?  Okänt nummer:       "Samuels cykelnycklar" – main quest, part 1: sneak into Samuel's flat
+//                          on floor 7 of the dark tower and take his bike keys (v0.4)
+// The pizza job, the race and Samuel's flat take over while they run (one at a time). Lasse's job
+// and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car wash always work.
+import { DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
 import { FlagQuest } from './flag.js';
+import { SamuelJob } from './samuel.js';
 import { fmt } from './rng.js';
 
 export { fmt };
@@ -36,10 +39,15 @@ export const QUESTS = [
     text: 'Hej, unga människa! Kan du hissa flaggan åt mig? Min axel vill inte riktigt. Jag bjuder på kanelbulle!',
     reward: '300 kr och en kanelbulle', where: 'Tant Guns trädgård, Storgatan',
   },
+  {
+    id: 'samuel', letter: '?', who: WHO.anon, title: 'Samuels cykelnycklar', color: '#ff7a59', x: TOWER_DOOR.x, z: TOWER_DOOR.z, r: TOWER_DOOR.r, Job: SamuelJob, at: 40, needFoot: true, main: true,
+    text: 'Du känner inte mig, men jag vet vem du är. Samuel bor på plan 7 i det mörka höghuset vid torget. Hans cykelnycklar ligger på köksbordet, och jag vill ha dem. Han är hemma, men han glor bara i telefonen. Smyg.',
+    reward: `${fmt(SAMUEL_REWARD)} kr`, where: 'Höghuset vid torget, plan 7 (ingången på södra sidan)',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = Object.fromEntries(QUESTS.map((q) => [q.who, q.color]));
-const MAIN = ['lasse', 'pizza', 'race'];   // all three → the end card; Gun's flag is a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel']; // all four → the end card; Gun's flag is a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -70,7 +78,8 @@ export class Missions {
 
   quest(id) { return BY_ID[id]; }
   get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
-  get prompt() { return this.flag.prompt; }
+  // the action button's label: the lift, something the running job wants (take the keys), or tant Gun
+  get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt; }
 
   // ---------------------------------------------------------------- helpers
   later(delay, fn, owner = null) { this.queue.push({ at: this.game.time + delay, fn, owner }); }
@@ -160,7 +169,7 @@ export class Missions {
       else if (this.active && this.active.id === q.id) state = 'active';
       else if (this.tracked === q.id) state = 'tracked';
       else if (!this.seen.has(q.id)) state = 'new';
-      return { id: q.id, letter: q.letter, title: q.title, who: q.who, color: q.color, side: !!q.side, state, line: this.questLine(q.id) };
+      return { id: q.id, letter: q.letter, title: q.title, who: q.who, color: q.color, side: !!q.side, main: !!q.main, state, line: this.questLine(q.id) };
     }).sort((a, b) => order[a.state] - order[b.state]);
   }
 
@@ -173,6 +182,7 @@ export class Missions {
       case 'pizza': return 'Gå till pizzerian på Kungsgatan';
       case 'race': return 'Kör till Macken med en bil';
       case 'flag': return 'Hissa flaggan hos tant Gun på Storgatan';
+      case 'samuel': return 'Ta Samuels cykelnycklar i höghuset vid torget';
     }
     return '';
   }
@@ -180,7 +190,7 @@ export class Missions {
   // details for the offer card
   info(id) {
     const q = BY_ID[id];
-    return q && { id, letter: q.letter, title: q.title, who: q.who, color: q.color, text: q.text, reward: q.reward, where: q.where, side: !!q.side, busy: this.active && this.active.id !== id ? BY_ID[this.active.id].title : null };
+    return q && { id, letter: q.letter, title: q.title, who: q.who, color: q.color, text: q.text, reward: q.reward, where: q.where, side: !!q.side, main: !!q.main, busy: this.active && this.active.id !== id ? BY_ID[this.active.id].title : null };
   }
 
   // ---------------------------------------------------------------- save / load
@@ -210,6 +220,7 @@ export class Missions {
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
     if (this.allDone()) this.flags.allDone = true;
+    if (QUESTS.some((q) => !q.main && this.done.has(q.id))) this.flags.firstDone = 0;
     this.restored = true;
     return true;
   }
@@ -238,8 +249,10 @@ export class Missions {
   // the opening: Lasse texts first, then Sanna and Kim; Gun starts waving a little later
   timeline() {
     const g = this.game;
+    // the main quest calls a little later – or a few seconds after you have finished something
+    const early = (q) => q.main && this.flags.firstDone != null && this.t >= this.flags.firstDone + 8;
     for (const q of QUESTS) {
-      if (q.side || this.known.has(q.id) || this.done.has(q.id) || this.t < q.at) continue;
+      if (q.side || this.known.has(q.id) || this.done.has(q.id) || (this.t < q.at && !early(q))) continue;
       this.offer(q.id);
       if (q.id === 'lasse' && this.lasse === 'intro') this.lasse = 'steal';
     }
@@ -263,6 +276,10 @@ export class Missions {
       if (d > c.r || !c.armed) continue;
       if (c.needCar && (!car || car.dead)) {
         if (!c.warned) { c.warned = true; g.emit('toast', { text: 'Kim kör bara mot folk med bil. Kom tillbaka med en!', long: true }); }
+        continue;
+      }
+      if (c.needFoot && car) {
+        if (!c.warned) { c.warned = true; g.emit('toast', { text: 'Kliv ur bilen – du måste gå in genom porten.', long: true }); }
         continue;
       }
       if (car && car.speed > 12) continue;
@@ -292,6 +309,7 @@ export class Missions {
   completeQuest(id, r) {
     const g = this.game;
     this.done.add(id);
+    if (this.flags.firstDone == null) this.flags.firstDone = this.t;
     if (this.tracked === id) { this.tracked = null; this.setObjective('', ''); this.holdObj = 3.4; }
     if (this.prevTracked === id) this.prevTracked = null;
     if (r.amount) this.pay(r.amount, r.title, r.sub);
@@ -334,7 +352,7 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    this.later(7.2, () => this.sms(WHO.game, 'Det var allt i version 0.3! Kör runt fritt. Tips: hoppet på byggtomten, biltvätten på Macken – och har du hälsat på tant Gun?'));
+    this.later(7.2, () => this.sms(WHO.game, 'Det var allt i version 0.4! Huvuduppdraget fortsätter i nästa version. Kör runt fritt – och har du hälsat på tant Gun?'));
     this.later(9.8, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -366,6 +384,7 @@ export class Missions {
       case 'pizza': return { text: 'Gå till pizzerian (S)', sub: 'Pizzeria Sjuan, Kungsgatan' };
       case 'race': return { text: 'Kör till Macken (K)', sub: this.game.player.inCar ? 'Kör in i den blå ringen' : 'Ta med en bil' };
       case 'flag': return this.flag.objective();
+      case 'samuel': return { text: 'Gå till höghuset vid torget (?)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Porten på södra sidan' };
     }
     return null;
   }
@@ -575,7 +594,11 @@ export class Missions {
   }
 
   // the action button, on foot: talk to Gun or pull the flag rope (before stealing cars)
-  interact() { return this.flag.interact(); }
+  interact() {
+    if (this.game.indoors.interact()) return true;
+    if (this.active && this.active.interact && this.active.interact()) return true;
+    return this.flag.interact();
+  }
 }
 
 function colorName(car) {

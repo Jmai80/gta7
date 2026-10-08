@@ -20,6 +20,7 @@ export class Player {
     this.hornOn = false;
     this.moved = 0;
     this.locked = false;       // race countdown: the car stays put and you can't get out
+    this.frozen = false;       // caught by Samuel: you stand still until you are thrown out
     this.body.x = this.x; this.body.z = this.z; this.body.h = this.h;
   }
 
@@ -42,7 +43,7 @@ export class Player {
 
   onAction() {
     const g = this.game;
-    if (this.locked) return;
+    if (this.locked || this.frozen) return;
     if (this.state === 'foot') {
       if (g.missionActive && g.mission.interact()) return; // talking to someone, pulling a flag rope…
       const car = this.findCar();
@@ -182,7 +183,7 @@ export class Player {
 
   walk(dt, input) {
     const g = this.game;
-    const mx = input.moveX, my = input.moveY;
+    const mx = this.frozen ? 0 : input.moveX, my = this.frozen ? 0 : input.moveY;
     const mag = Math.min(1, Math.hypot(mx, my));
     const yaw = input.camYaw ?? this.h;
     let dx = Math.sin(yaw) * my - Math.cos(yaw) * mx;
@@ -192,7 +193,7 @@ export class Player {
     let speed = 0;
     if (mag > 0.12) {
       if (input.analog) speed = mag > 0.86 ? 6.0 : 1.5 + ((mag - 0.12) / 0.74) * 2.2;
-      else speed = input.sprint ? 6.4 : 3.9;
+      else speed = input.sprint ? 6.4 : g.indoor ? 2.9 : 3.9; // indoors you walk a little slower (and quietly)
     }
     const k = 1 - Math.exp(-12 * dt);
     this.vx += (dx * speed - this.vx) * k;
