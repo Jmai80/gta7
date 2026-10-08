@@ -1,6 +1,7 @@
-// Version 0.2 missions: the pizza job, the street race, failing, saving and the end card.
+// Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
+// failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN } from '../src/config.js';
 import { raceRoute } from '../src/race.js';
 import { clamp } from '../src/rng.js';
 
@@ -31,7 +32,7 @@ function parkAt(g, x, z, h = 0) {
   const g = new Game({ seed: 7 });
   const ev = record(g, ['banner', 'sms', 'toast', 'say', 'progress']);
   run(g, 10);
-  check(g.mission.contacts.find((c) => c.id === 'pizza').open, 'Sanna has texted and the S marker is open');
+  check(g.mission.known.has('pizza'), 'Sanna has texted and the S marker is open');
   const pz = g.pizzaCar;
   check(pz && pz.pizza && pz.paint === 'pizza' && Math.hypot(pz.x - PIZZA_CAR.x, pz.z - PIZZA_CAR.z) < 0.5, 'pizza car parked in its stall');
   // walk into the marker
@@ -61,7 +62,7 @@ function parkAt(g, x, z, h = 0) {
   check(ev.some(([n]) => n === 'progress'), 'progress saved');
   run(g, 4);
   check(!g.mission.targets.some((t) => t.letter === 'S'), 'S marker gone after the job');
-  check(g.peds.list.every((q) => !q.keep), 'customers are ordinary pedestrians again');
+  check(g.peds.list.every((q) => !q.keep || q.npc), 'customers are ordinary pedestrians again');
 }
 
 // ---------- 2. failing the pizza job and trying again ----------
@@ -233,17 +234,138 @@ function startRace(g) {
   const sms2 = record(g2, ['sms', 'endcard']);
   run(g2, 3);
   check(g2.money === save.money && g2.mission.lasse === 'done', 'money and Lasse restored');
-  check(g2.mission.contacts.filter((c) => c.Job).every((c) => c.open), 'S and K open right away');
-  check(!sms2.some(([n]) => n === 'sms'), 'no intro texts after a restore');
-  check(/Välj uppdrag/.test(g2.mission.objective), `objective points to the map (${g2.mission.objective})`);
+  check(!sms2.some(([n]) => n === 'sms'), 'no texts repeated after a restore');
+  run(g2, 7);
+  check(sms2.some(([n, d]) => n === 'sms' && d.offer === 'pizza'), 'quests not offered yet arrive on schedule');
+  check(/Nytt uppdrag/.test(g2.mission.objective), `objective asks you to pick a quest (${g2.mission.objective})`);
   // finish the other two through the manager and get the end card
   g2.mission.done.add('pizza');
   g2.mission.done.add('race');
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all three are done');
-  check(g2.mission.objective === 'Fri lek: utforska Sjuby', 'free roam afterwards');
+  check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
+  // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
+  const g3 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  check(g3.mission.restore({ v: 2, money: 5200, done: ['red', 'lasse'], stats: {} }), 'a v0.2 save loads');
+  run(g3, 1);
+  check(g3.mission.isOpen('pizza') && g3.mission.isOpen('race') && !g3.mission.newCount(), 'v0.2 save: pizza and race are waiting in the list');
+  check(g3.mission.objective === 'Välj ett uppdrag i listan', `v0.2 save: pick a quest (${g3.mission.objective})`);
+}
+
+// ---------- 7. the quest log: accept, wait, follow ----------
+{
+  console.log('Quest log');
+  const g = new Game({ seed: 7 });
+  const ev = record(g, ['sms', 'tracked', 'hint']);
+  run(g, 2);
+  const m = g.mission;
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'lasse'), "Lasse's SMS is an offer you can answer");
+  check(m.newCount() === 1 && m.choose && m.objective === 'Nytt uppdrag – välj i listan', 'objective box asks you to pick');
+  check(!m.targets.some((t) => t.kind === 'car') && !m.targets.some((t) => t.gps), 'no arrows or GPS before you accept');
+  check(m.accept('lasse') && m.tracked === 'lasse', 'accept → following Lasse');
+  run(g, 0.1);
+  check(m.objective === 'Sno en röd bil', 'objective follows the accepted quest');
+  const gps = m.targets.filter((t) => t.gps);
+  check(gps.length === 1 && gps[0].kind === 'car' && gps[0].car.isRed, 'the yellow line leads to the nearest red car');
+  check(ev.some(([n]) => n === 'tracked'), "'tracked' event (the map flashes)");
+  run(g, 8);
+  check(m.newCount() === 1 && m.list().find((q) => q.id === 'pizza').state === 'new', "Sanna's offer is new in the list");
+  m.wait('pizza');
+  check(m.list().find((q) => q.id === 'pizza').state === 'waiting' && m.tracked === 'lasse', 'wait → in the list, Lasse still followed');
+  const sMarker = m.targets.find((t) => t.letter === 'S');
+  check(sMarker && !sMarker.gps, 'S is on the map without GPS while you wait');
+  m.accept('pizza');
+  run(g, 0.1);
+  check(m.tracked === 'pizza' && m.targets.find((t) => t.letter === 'S').gps && m.objective === 'Gå till pizzerian (S)', 'pick it later → GPS to the pizzeria');
+  check(!m.targets.some((t) => t.kind === 'car'), "red-car arrows only for the quest you follow");
+  check(m.list()[0].id === 'pizza' && m.list()[0].state === 'tracked', 'the followed quest is first in the list');
+}
+
+// ---------- 8. red car during the pizza job counts; following returns afterwards ----------
+{
+  console.log('Red car in the middle of another job');
+  const g = new Game({ seed: 7 });
+  const m = g.mission;
+  run(g, 10);
+  m.accept('lasse');
+  g.player.x = PIZZERIA.x; g.player.z = PIZZERIA.z;
+  run(g, 0.5);
+  check(m.active && m.active.id === 'pizza' && m.tracked === 'pizza', 'walking into S starts the pizza job and follows it');
+  const job = m.active;
+  enterCar(g, g.pizzaCar);
+  g.step(DT, { ...idle, action: true }); run(g, 1); // out again
+  const red = g.vehicles.find((v) => v.parkedSpot && v.isRed);
+  const money0 = g.money;
+  check(enterCar(g, red), 'player takes the red car during the pizza job');
+  check(m.lasse === 'deliver_wait' && m.done.has('red') && g.money === money0 + 1000, 'stealing it counts for Lasse right away (+1 000 kr)');
+  check(m.active === job, 'the pizza job keeps running');
+  m.accept('race'); // Kim's quest is not offered yet → ignored
+  run(g, 9);
+  check(m.known.has('race'), "Kim's offer arrived");
+  check(m.accept('race') && m.prevTracked === 'race', 'accepting during a job queues it');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  enterCar(g, g.pizzaCar);
+  for (const s of [...job.stops]) { parkAt(g, s.x, s.z, 0); run(g, 0.3); }
+  check(!m.active && m.done.has('pizza'), 'pizza job done');
+  check(m.tracked === 'race', 'afterwards you follow the queued quest');
+  run(g, 4);
+  check(m.objective === 'Kör till Macken (K)', `objective: ${m.objective}`);
+  // a red car you are already sitting in counts too
+  const g2 = new Game({ seed: 8, traffic: 0, peds: 0 });
+  run(g2, 0.1);
+  const r2 = g2.vehicles.find((v) => v.parkedSpot && v.isRed);
+  enterCar(g2, r2);
+  check(g2.mission.lasse === 'intro', 'before Lasse texts, a red car is just a car');
+  run(g2, 1.5);
+  check(g2.mission.lasse === 'deliver_wait' || g2.mission.lasse === 'deliver', 'sitting in a red car when Lasse texts counts');
+}
+
+// ---------- 9. side quest: tant Gun's flag ----------
+{
+  console.log('Flaggan i topp');
+  const g = new Game({ seed: 7, traffic: 0 });
+  const m = g.mission;
+  const ev = record(g, ['offer', 'banner', 'say', 'toast']);
+  run(g, 3);
+  check(!m.targets.some((t) => t.letter === 'G'), 'G is not on the map at first');
+  run(g, 22);
+  const gTarget = m.targets.find((t) => t.letter === 'G');
+  check(gTarget && gTarget.badgeOnly && Math.hypot(gTarget.x - GUN.x, gTarget.z - GUN.z) < 1, 'G above tant Gun after a while');
+  const gun = m.flag.gun;
+  check(gun.state === 'stand' && g.peds.list.includes(gun), 'tant Gun stands in her front garden');
+  g.player.x = GUN.x + 1.6; g.player.z = GUN.z + 0.4;
+  run(g, 0.2);
+  check(m.prompt === 'PRATA' && gun.wave, 'next to her: PRATA, and she waves');
+  g.step(DT, { ...idle, action: true });
+  check(ev.some(([n, d]) => n === 'offer' && d.id === 'flag'), 'talking opens her offer');
+  check(m.known.has('flag') && g.player.state === 'foot', 'it is in the list (and you did not steal anything)');
+  m.accept('flag');
+  run(g, 0.2);
+  check(m.objective === 'Hissa flaggan hos tant Gun', 'objective: hoist the flag');
+  check(m.targets.some((t) => t.kind === 'zone' && t.gps && Math.hypot(t.x - GUN.poleX, t.z - GUN.poleZ) < 0.1), 'GPS + zone at the flagpole');
+  g.player.x = GUN.poleX + 1.2; g.player.z = GUN.poleZ + 0.3;
+  run(g, 0.2);
+  check(m.prompt === 'HISSA', 'at the pole: HISSA');
+  run(g, 1, { ...idle, actionHeld: true });
+  const h1 = m.flag.h;
+  check(h1 > 0.25 && h1 < 0.4 && g.player.body.pose === 1, `holding the button pulls the flag up (${Math.round(h1 * 100)} %)`);
+  run(g, 1);
+  check(m.flag.h === h1, 'letting go: the flag stays where it is');
+  const money0 = g.money;
+  run(g, 2.5, { ...idle, actionHeld: true });
+  check(m.flag.h === 1 && m.done.has('flag'), 'flag at the top → side quest done');
+  check(g.money === money0 + GUN.reward, `pays ${GUN.reward} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART'), 'SIDOUPPDRAG KLART banner');
+  run(g, 4.5);
+  check(ev.some(([n, d]) => n === 'toast' && /kanelbulle/.test(d.text)), 'and a kanelbulle');
+  check(!m.targets.some((t) => t.letter === 'G'), 'G gone from the map');
+  check(!m.flags.allDone, 'the side quest does not end the game');
+  const save = JSON.parse(JSON.stringify(m.progress()));
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(save);
+  check(g2.mission.flag.h === 1 && g2.mission.done.has('flag'), 'the flag stays up after a restore');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

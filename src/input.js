@@ -3,8 +3,8 @@ export class Input {
   constructor(root, opts = {}) {
     this.root = root;
     this.keys = new Set();
-    this.edge = { action: false, pause: false, mute: false };
-    this.held = { handbrake: false, horn: false, gas: false, brake: false, sprint: false };
+    this.edge = { action: false, pause: false, mute: false, log: false, answer: false };
+    this.held = { handbrake: false, horn: false, gas: false, brake: false, sprint: false, action: false };
     this.stick = { id: null, x0: 0, y0: 0, x: 0, y: 0, active: false };
     this.look = { id: null, x: 0, y: 0 };
     this.camDX = 0;
@@ -36,6 +36,8 @@ export class Input {
       if (['KeyE', 'KeyF', 'Enter'].includes(e.code)) this.edge.action = true;
       if (['Escape', 'KeyP'].includes(e.code)) this.edge.pause = true;
       if (e.code === 'KeyM') this.edge.mute = true;
+      if (e.code === 'KeyU') this.edge.log = true;                       // the quest log (Uppdrag)
+      if (e.code === 'KeyJ') this.edge.answer = true;                    // answer the SMS on screen
       if (e.code.startsWith('Key') || e.code.startsWith('Arrow') || e.code === 'Space') this.setKind('keys');
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -47,7 +49,7 @@ export class Input {
         e.preventDefault(); e.stopPropagation();
         try { btn.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
         btn.classList.add('on');
-        if (name === 'action') this.edge.action = true;
+        if (name === 'action') { this.edge.action = true; this.held.action = true; }
         else if (name === 'pause') this.edge.pause = true;
         else this.held[name] = true;
         if (e.pointerType !== 'mouse') this.setKind('touch');
@@ -72,7 +74,7 @@ export class Input {
 
   down(e) {
     if (!this.enabled) return;
-    if (e.target.closest && e.target.closest('[data-btn], button, .overlay')) return;
+    if (e.target.closest && e.target.closest('[data-btn], button, .overlay, .tap')) return;
     const w = window.innerWidth;
     if (e.pointerType !== 'mouse') this.setKind('touch');
     if (e.pointerType !== 'mouse' && e.clientX < w * 0.5 && this.stick.id === null) {
@@ -134,10 +136,12 @@ export class Input {
     const k = this.keys;
     const out = {
       moveX: 0, moveY: 0, analog: false, sprint: false, action: this.edge.action, pause: this.edge.pause, mute: this.edge.mute,
+      log: this.edge.log, answer: this.edge.answer,
       handbrake: this.held.handbrake, horn: this.held.horn, gas: this.held.gas, brake: this.held.brake,
+      actionHeld: this.held.action || this.keys.has('KeyE') || this.keys.has('KeyF') || this.keys.has('Enter'),
       throttleAxis: null, steerAxis: null, camDX: this.camDX,
     };
-    this.edge.action = this.edge.pause = this.edge.mute = false;
+    this.edge.action = this.edge.pause = this.edge.mute = this.edge.log = this.edge.answer = false;
     this.camDX = 0;
     const kx = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
     const ky = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
@@ -165,6 +169,7 @@ export class Input {
       if (rt > 0.05 || lt > 0.05) { out.throttleAxis = rt - lt; out.steerAxis = lx; }
       if (rx) out.camDX += rx * 9;
       if (b(0) && !this.padA) out.action = true;
+      if (b(0)) out.actionHeld = true;
       this.padA = b(0);
       if (b(9) && !this.padStart) out.pause = true;
       this.padStart = b(9);

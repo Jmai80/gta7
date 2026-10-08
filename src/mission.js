@@ -1,30 +1,46 @@
-// Missions for version 0.2. Three contacts give jobs that can be done in any order:
-//   L  Lasse (Verkstan):  "Sno en röd bil", then deliver it to the garage (starts with an SMS)
-//   S  Sanna (Pizzerian): "Pizzabudet" – walk into the marker outside Pizzeria Sjuan
-//   K  Kim (Macken):      "Gatloppet" – drive into the marker at Macken
-// Only one marker job runs at a time; Lasse's job waits meanwhile. Stunt jumps and the
-// car wash work all the time. Progress (money, finished jobs, stats) can be saved and restored.
-import { DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN } from './config.js';
+// Missions, version 0.3: a quest log like in open-world role-playing games.
+// Contacts offer jobs by SMS (or face to face). Accept one to follow it – the objective box and
+// the yellow GPS line show the way – or let it wait in the list and pick it later.
+//   L  Lasse (Verkstan):   "Röd bil" – steal a red car and drive it to the garage
+//   S  Sanna (Pizzerian):  "Pizzabudet" – starts at the marker outside Pizzeria Sjuan
+//   K  Kim (Macken):       "Gatloppet" – drive into the marker at Macken
+//   G  Tant Gun:           "Flaggan i topp" – side quest: hoist the flag in her front garden
+// The pizza job and the race take over while they run (one at a time). Lasse's job and Gun's
+// flag count whenever you do them, followed or not. Stunt jumps and the car wash always work.
+import { DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
+import { FlagQuest } from './flag.js';
 import { fmt } from './rng.js';
 
 export { fmt };
 
-export const CONTACTS = [
-  { id: 'lasse', letter: 'L', who: WHO.lasse, title: 'Röd bil', color: '#ffcf33', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r },
+export const QUESTS = [
+  {
+    id: 'lasse', letter: 'L', who: WHO.lasse, title: 'Röd bil', color: '#ffcf33', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r, at: 1.4,
+    text: 'Tjena! Du är ny i stan, va? Visa vad du går för: sno en röd bil och kör den till min verkstad på Drottninggatan. Röda går fortast, det vet alla.',
+    reward: '1 000 kr + upp till 5 000 kr', where: 'Vilken röd bil som helst, sedan Lasses Verkstad',
+  },
   {
     id: 'pizza', letter: 'S', who: WHO.sanna, title: 'Pizzabudet', color: '#46c96f', x: PIZZERIA.x, z: PIZZERIA.z, r: PIZZERIA.r, Job: PizzaJob, at: 9,
-    intro: 'Hej, Sanna på Pizzeria Sjuan här! Mitt pizzabud har slutat (han körde in i fontänen). Kom förbi pizzerian på Kungsgatan om du vill tjäna en hacka.',
+    text: 'Hej, Sanna på Pizzeria Sjuan här! Mitt pizzabud har slutat (han körde in i fontänen). Kom förbi pizzerian på Kungsgatan om du vill tjäna en hacka.',
+    reward: 'upp till 1 850 kr', where: 'Pizzeria Sjuan, Kungsgatan',
   },
   {
     id: 'race', letter: 'K', who: WHO.kim, title: 'Gatloppet', color: '#4aa8ff', x: MACKEN.x, z: MACKEN.z, r: MACKEN.r, Job: RaceJob, at: 18, needCar: true,
-    intro: 'Kim här, på Macken. Folk säger att du kan köra. Gatlopp, två varv runt stan. Kom till Macken när du vågar – med egen bil.',
+    text: 'Kim här, på Macken. Folk säger att du kan köra. Gatlopp, två varv runt stan. Kom till Macken när du vågar – med egen bil.',
+    reward: '2 500 kr till vinnaren', where: 'Macken, Drottninggatan (ta med en bil)',
+  },
+  {
+    id: 'flag', letter: 'G', who: WHO.gun, title: 'Flaggan i topp', color: '#c58be0', x: GUN.x, z: GUN.z, side: true, at: 24,
+    text: 'Hej, unga människa! Kan du hissa flaggan åt mig? Min axel vill inte riktigt. Jag bjuder på kanelbulle!',
+    reward: '300 kr och en kanelbulle', where: 'Tant Guns trädgård, Storgatan',
   },
 ];
-const COLOR_OF = Object.fromEntries(CONTACTS.map((c) => [c.who, c.color]));
-const JOB_IDS = CONTACTS.map((c) => c.id);
-const SAVE_VERSION = 2;
+const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
+const COLOR_OF = Object.fromEntries(QUESTS.map((q) => [q.who, q.color]));
+const MAIN = ['lasse', 'pizza', 'race'];   // all three → the end card; Gun's flag is a bonus
+const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
   constructor(game) {
@@ -32,20 +48,29 @@ export class Missions {
     this.t = 0;
     this.queue = [];
     this.flags = {};
-    this.done = new Set();          // 'red' (car stolen), 'lasse', 'pizza', 'race'
+    this.done = new Set();          // 'red' (car stolen), 'lasse', 'pizza', 'race', 'flag'
+    this.known = new Set();         // offered quests (in the list)
+    this.seen = new Set();          // answered or looked at in the list (no "new" badge)
+    this.tracked = null;            // the quest the objective box and the GPS follow
+    this.prevTracked = null;        // followed again when a pizza/race job ends
     this.lasse = 'intro';           // intro → steal → deliver_wait → deliver → done
-    this.contacts = CONTACTS.map((c) => ({ ...c, open: false, cool: 0, armed: true, warned: false }));
-    this.active = null;             // the running marker job (PizzaJob / RaceJob)
+    this.jobs = QUESTS.filter((q) => q.Job).map((q) => ({ ...q, cool: 0, armed: true, warned: false }));
+    this.active = null;             // the running job (PizzaJob / RaceJob)
     this.targets = [];              // what the view and the minimap should point at
-    this.objective = ''; this.sub = '';
+    this.objective = ''; this.sub = ''; this.choose = false;
     this.holdObj = 0;
     this.restored = false;
     this.washT = 0; this.inWash = false;
     this.keepT = 0;
+    this.flag = new FlagQuest(this);
     game.on('enterCar', (e) => this.onEnterCar(e));
     game.on('exitCar', (e) => this.active && this.active.onExitCar && this.active.onExitCar(e));
     game.on('crash', (e) => this.active && this.active.onCrash && this.active.onCrash(e));
   }
+
+  quest(id) { return BY_ID[id]; }
+  get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
+  get prompt() { return this.flag.prompt; }
 
   // ---------------------------------------------------------------- helpers
   later(delay, fn, owner = null) { this.queue.push({ at: this.game.time + delay, fn, owner }); }
@@ -71,34 +96,122 @@ export class Missions {
     g.emit('progress', {});
   }
 
-  allDone() { return JOB_IDS.every((id) => this.done.has(id)); }
+  allDone() { return MAIN.every((id) => this.done.has(id)); }
+
+  // ---------------------------------------------------------------- the quest log
+  // a contact offers a quest: by SMS (tap it to answer) or face to face (the card opens at once)
+  offer(id, how = 'sms') {
+    const g = this.game, q = BY_ID[id];
+    if (!q || this.known.has(id) || this.done.has(id)) return;
+    this.known.add(id);
+    if (how === 'sms') {
+      g.emit('sms', { from: q.who, text: q.text, color: q.color, offer: id });
+      if (!this.flags.answerHint) {
+        this.flags.answerHint = true;
+        this.later(1.5, () => g.emit('hint', { id: 'answer', touch: 'Tryck på SMS:et för att svara på uppdraget', keys: 'Klicka på SMS:et eller tryck J för att svara på uppdraget' }));
+      }
+    } else g.emit('offer', { id });
+    g.emit('progress', {});
+  }
+
+  // follow a quest: objective + GPS. During a pizza/race job it is queued until the job ends.
+  accept(id) {
+    const g = this.game;
+    if (!this.known.has(id) || this.done.has(id)) return false;
+    this.seen.add(id);
+    if (this.active && this.active.id !== id) {
+      this.prevTracked = id;
+      g.emit('toast', { text: `Du följer ${BY_ID[id].title} när ${BY_ID[this.active.id].title} är klart.`, long: true });
+      g.emit('progress', {});
+      return true;
+    }
+    this.tracked = id;
+    this.holdObj = 0;
+    g.emit('tracked', { id });
+    g.emit('progress', {});
+    if (!this.flags.followHint) {
+      this.flags.followHint = true;
+      this.later(0.4, () => g.emit('hint', { id: 'follow', touch: 'Följ den gula linjen på kartan', keys: 'Följ den gula linjen på kartan' }));
+    }
+    if (id === 'lasse' && this.lasse === 'steal') {
+      this.later(4, () => g.emit('hint', { id: 'steal', touch: 'Gå fram till en röd bil och tryck på den gula knappen', keys: 'Gå fram till en röd bil och tryck E' }));
+    }
+    return true;
+  }
+
+  // save it for later: stays in the list
+  wait(id) {
+    this.seen.add(id);
+    if (this.tracked === id && !(this.active && this.active.id === id)) this.tracked = null;
+    if (this.prevTracked === id) this.prevTracked = null;
+    this.game.emit('progress', {});
+  }
+
+  markSeen() { for (const id of this.known) this.seen.add(id); }
+  newCount() { let n = 0; for (const id of this.known) if (!this.seen.has(id) && !this.done.has(id)) n++; return n; }
+  isOpen(id) { return this.known.has(id) && !this.done.has(id); }
+
+  // the list in the pause menu and the quest log
+  list() {
+    const order = { active: 0, tracked: 1, new: 2, waiting: 3, done: 4 };
+    return QUESTS.filter((q) => this.known.has(q.id) || this.done.has(q.id)).map((q) => {
+      let state = 'waiting';
+      if (this.done.has(q.id)) state = 'done';
+      else if (this.active && this.active.id === q.id) state = 'active';
+      else if (this.tracked === q.id) state = 'tracked';
+      else if (!this.seen.has(q.id)) state = 'new';
+      return { id: q.id, letter: q.letter, title: q.title, who: q.who, color: q.color, side: !!q.side, state, line: this.questLine(q.id) };
+    }).sort((a, b) => order[a.state] - order[b.state]);
+  }
+
+  // what to do next, in one line (for the list)
+  questLine(id) {
+    if (this.done.has(id)) return 'Klart';
+    if (this.active && this.active.id === id) return this.objective || 'Pågår';
+    switch (id) {
+      case 'lasse': return this.lasse === 'steal' || this.lasse === 'intro' ? 'Sno en röd bil' : 'Kör den röda bilen till Lasses Verkstad';
+      case 'pizza': return 'Gå till pizzerian på Kungsgatan';
+      case 'race': return 'Kör till Macken med en bil';
+      case 'flag': return 'Hissa flaggan hos tant Gun på Storgatan';
+    }
+    return '';
+  }
+
+  // details for the offer card
+  info(id) {
+    const q = BY_ID[id];
+    return q && { id, letter: q.letter, title: q.title, who: q.who, color: q.color, text: q.text, reward: q.reward, where: q.where, side: !!q.side, busy: this.active && this.active.id !== id ? BY_ID[this.active.id].title : null };
+  }
 
   // ---------------------------------------------------------------- save / load
   progress() {
-    return { v: SAVE_VERSION, money: this.game.money, done: [...this.done], stats: { ...this.game.stats } };
+    return {
+      v: SAVE_VERSION, money: this.game.money, done: [...this.done], stats: { ...this.game.stats },
+      known: [...this.known], seen: [...this.seen], tracked: this.active ? this.active.id : this.tracked,
+    };
   }
 
   restore(d) {
     if (!d || d.v !== SAVE_VERSION) return false;
     const g = this.game;
+    const valid = (id) => !!BY_ID[id];
     g.money = Math.max(0, d.money || 0);
     Object.assign(g.stats, d.stats || {});
-    this.done = new Set((d.done || []).filter((id) => id === 'red' || JOB_IDS.includes(id)));
-    this.restored = true;
-    this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : 'intro';
+    this.done = new Set((d.done || []).filter((id) => id === 'red' || valid(id)));
+    if (Array.isArray(d.known)) {
+      this.known = new Set(d.known.filter(valid));
+      this.seen = new Set((d.seen || []).filter(valid));
+    } else {
+      // a save from version 0.2, where Lasse, Sanna and Kim had all been in touch
+      for (const id of MAIN) { this.known.add(id); this.seen.add(id); }
+    }
+    for (const id of this.done) if (valid(id)) { this.known.add(id); this.seen.add(id); }
+    this.tracked = valid(d.tracked) && this.isOpen(d.tracked) ? d.tracked : null;
+    this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
+    if (this.done.has('flag')) this.flag.h = 1;
     if (this.allDone()) this.flags.allDone = true;
+    this.restored = true;
     return true;
-  }
-
-  // for the pause menu
-  list() {
-    return this.contacts.map((c) => {
-      let state = 'locked';
-      if (this.done.has(c.id)) state = 'done';
-      else if (this.active ? this.active.id === c.id : c.id === 'lasse' && this.lasse !== 'intro') state = 'active';
-      else if (c.id === 'lasse' ? this.lasse !== 'intro' : c.open) state = 'open';
-      return { letter: c.letter, title: c.title, color: c.color, state };
-    });
   }
 
   // ---------------------------------------------------------------- per step
@@ -111,42 +224,39 @@ export class Missions {
     }
     this.timeline();
     if (this.active) this.active.update(dt);
-    else this.checkContacts(dt);
-    if (!this.active) this.lasseStep();
+    else this.checkJobs(dt);
+    this.lasseStep();
+    this.flag.update(dt);
     if (this.holdObj > 0) this.holdObj -= dt;
-    if (!this.active && this.holdObj <= 0) this.setObjective(this.idleObjective(), '');
+    if (this.active) this.choose = false;
+    else if (this.holdObj <= 0) this.followObjective();
     this.buildTargets();
     this.activities(dt);
     if ((this.keepT -= dt) <= 0) { this.keepT = 2; this.keepPizzaCar(); }
   }
 
-  // the opening: Lasse texts first, then Sanna and Kim show up on the map
+  // the opening: Lasse texts first, then Sanna and Kim; Gun starts waving a little later
   timeline() {
     const g = this.game;
-    if (this.lasse === 'intro' && this.t > 1.4) {
-      this.lasse = 'steal';
-      this.sms(WHO.lasse, 'Tjena! Du är ny i stan, va? Visa vad du går för: sno en röd bil. Röda går fortast, det vet alla.');
-      this.later(2.6, () => g.emit('hint', { id: 'steal', touch: 'Gå fram till en röd bil och tryck på den gula knappen', keys: 'Gå fram till en röd bil och tryck E' }));
+    for (const q of QUESTS) {
+      if (q.side || this.known.has(q.id) || this.done.has(q.id) || this.t < q.at) continue;
+      this.offer(q.id);
+      if (q.id === 'lasse' && this.lasse === 'intro') this.lasse = 'steal';
     }
-    for (const c of this.contacts) {
-      if (!c.Job || c.open || this.done.has(c.id) || this.t < (this.restored ? 2 : c.at)) continue;
-      c.open = true;
-      if (!this.restored) this.sms(c.who, c.intro);
-      if (this.contacts.every((q) => !q.Job || q.open || this.done.has(q.id))) {
-        const text = 'Bokstäverna på kartan är uppdrag. Gör dem i vilken ordning du vill.';
-        this.later(this.restored ? 1 : 5, () => g.emit('hint', { id: 'letters', touch: text, keys: text }));
-      }
+    if (!this.flags.gunHint && this.gunVisible && !this.known.has('flag') && !this.done.has('flag')) {
+      this.flags.gunHint = true;
+      if (!this.restored) this.later(2, () => g.emit('hint', { id: 'gun', touch: 'G på kartan: tant Gun vinkar efter hjälp.', keys: 'G på kartan: tant Gun vinkar efter hjälp.' }));
     }
   }
 
-  // walking or driving into a contact's marker starts the job
-  checkContacts(dt) {
+  // walking or driving into the S or K marker starts that job
+  checkJobs(dt) {
     const g = this.game, p = g.player;
     if (p.state !== 'foot' && p.state !== 'car') return;
     const car = p.inCar ? p.car : null;
     const x = car ? car.x : p.x, z = car ? car.z : p.z;
-    for (const c of this.contacts) {
-      if (!c.Job || !c.open || this.done.has(c.id)) continue;
+    for (const c of this.jobs) {
+      if (!this.isOpen(c.id)) continue;
       if (c.cool > 0) { c.cool -= dt; continue; }
       const d = Math.hypot(x - c.x, z - c.z);
       if (d > c.r + 1.5) { c.armed = true; c.warned = false; continue; }
@@ -164,6 +274,9 @@ export class Missions {
 
   startJob(c) {
     const g = this.game;
+    this.seen.add(c.id);
+    if (this.tracked !== c.id) this.prevTracked = this.tracked;
+    this.tracked = c.id;
     this.active = new c.Job(this, c);
     if (this.active.titleCard !== false) g.emit('banner', { title: c.title.toUpperCase(), sub: c.who, kind: 'start' });
     g.emit('missionStart', { id: c.id });
@@ -171,9 +284,16 @@ export class Missions {
   }
 
   complete(job, r) {
+    this.endJob(job, 'done');
+    this.completeQuest(job.id, r);
+  }
+
+  // a finished quest (a job, Lasse's car or Gun's flag)
+  completeQuest(id, r) {
     const g = this.game;
-    this.done.add(job.id);
-    this.endJob(job);
+    this.done.add(id);
+    if (this.tracked === id) { this.tracked = null; this.setObjective('', ''); this.holdObj = 3.4; }
+    if (this.prevTracked === id) this.prevTracked = null;
     if (r.amount) this.pay(r.amount, r.title, r.sub);
     else { g.emit('banner', { title: r.title, sub: r.sub }); g.emit('progress', {}); }
     this.checkAllDone();
@@ -181,8 +301,8 @@ export class Missions {
 
   fail(job, reason, sms) {
     const g = this.game;
-    this.endJob(job);
-    const c = this.contacts.find((q) => q.id === job.id);
+    this.endJob(job, 'fail');
+    const c = this.jobs.find((q) => q.id === job.id);
     if (c) { c.cool = 6; c.armed = false; }
     g.stats.fails = (g.stats.fails || 0) + 1;
     g.emit('banner', { title: 'UPPDRAG MISSLYCKAT', sub: reason, kind: 'fail' });
@@ -191,17 +311,21 @@ export class Missions {
 
   // walking away before the job really started: no failure, the marker just comes back
   quit(job, sms) {
-    this.endJob(job);
+    this.endJob(job, 'quit');
     this.holdObj = 0;
-    const c = this.contacts.find((q) => q.id === job.id);
+    const c = this.jobs.find((q) => q.id === job.id);
     if (c) { c.cool = 3; c.armed = false; }
     if (sms) this.sms(sms[0], sms[1], 0.5);
   }
 
-  endJob(job) {
+  // after a job: follow what you followed before (or keep following a failed job to retry it)
+  endJob(job, how) {
     if (job.cleanup) job.cleanup();
     this.cancel(job);
     if (this.active === job) this.active = null;
+    const prev = this.prevTracked && this.isOpen(this.prevTracked) ? this.prevTracked : null;
+    this.prevTracked = null;
+    this.tracked = how === 'fail' ? job.id : prev;
     this.setObjective('', '');
     this.holdObj = 3.4;
   }
@@ -210,25 +334,40 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    this.later(7.2, () => this.sms(WHO.game, 'Det var allt i version 0.2! Kör runt fritt. Tips: hoppet på byggtomten och biltvätten på Macken.'));
+    this.later(7.2, () => this.sms(WHO.game, 'Det var allt i version 0.3! Kör runt fritt. Tips: hoppet på byggtomten, biltvätten på Macken – och har du hälsat på tant Gun?'));
     this.later(9.8, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
-  idleObjective() {
-    switch (this.lasse) {
-      case 'steal': return 'Sno en röd bil';
-      case 'deliver': {
-        if (this.lasseCar()) return 'Kör bilen till Lasses Verkstad';
-        const p = this.game.player;
-        return p.inCar && p.car.isRed && p.car.dead ? 'Bilen är skrot – hitta en ny röd bil' : 'Hoppa in i en röd bil';
-      }
-      case 'intro': case 'deliver_wait': return '';
+  // the objective box when no job is running: the followed quest, or a nudge to pick one
+  followObjective() {
+    let o = null;
+    if (this.tracked) o = this.objectiveFor(this.tracked);
+    this.choose = false;
+    if (!o) {
+      const open = QUESTS.some((q) => this.isOpen(q.id));
+      if (this.newCount()) { o = { text: 'Nytt uppdrag – välj i listan', sub: '' }; this.choose = true; }
+      else if (open) { o = { text: 'Välj ett uppdrag i listan', sub: '' }; this.choose = true; }
+      else if (this.flags.allDone) o = { text: 'Fri lek: utforska Sjuby', sub: '' };
+      else o = { text: '', sub: '' };
     }
-    const open = this.contacts.filter((c) => c.Job && c.open && !this.done.has(c.id));
-    if (open.length === 1) return `Nästa uppdrag: ${open[0].letter} på kartan`;
-    if (open.length > 1) return `Välj uppdrag: ${open.map((c) => c.letter).join(' eller ')} på kartan`;
-    if (this.flags.allDone) return 'Fri lek: utforska Sjuby';
-    return '';
+    this.setObjective(o.text, o.sub);
+  }
+
+  objectiveFor(id) {
+    switch (id) {
+      case 'lasse':
+        if (this.lasse === 'steal') return { text: 'Sno en röd bil', sub: '' };
+        if (this.lasse === 'deliver') {
+          if (this.lasseCar()) return { text: 'Kör bilen till Lasses Verkstad', sub: 'Drottninggatan' };
+          const p = this.game.player;
+          return { text: p.inCar && p.car.isRed && p.car.dead ? 'Bilen är skrot – hitta en ny röd bil' : 'Hoppa in i en röd bil', sub: '' };
+        }
+        return { text: '', sub: '' };
+      case 'pizza': return { text: 'Gå till pizzerian (S)', sub: 'Pizzeria Sjuan, Kungsgatan' };
+      case 'race': return { text: 'Kör till Macken (K)', sub: this.game.player.inCar ? 'Kör in i den blå ringen' : 'Ta med en bil' };
+      case 'flag': return this.flag.objective();
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------- Lasse's job
@@ -237,13 +376,29 @@ export class Missions {
     return p.inCar && p.car.isRed && !p.car.dead ? p.car : null;
   }
 
+  // counts whenever you do it – followed or not, and even in the middle of another job
   lasseStep() {
+    if (this.lasse === 'steal' && this.lasseCar()) { this.stoleRed(); return; }
     if (this.lasse !== 'deliver') return;
     const car = this.lasseCar();
     if (!car) return;
     const d = Math.hypot(car.x - DELIVERY.x, car.z - DELIVERY.z);
     if (d < DELIVERY.r && car.speed < 2.5 && !car.air) this.deliver(car);
     else if (d < DELIVERY.r + 2 && car.speed >= 2.5) this.game.emit('hint', { id: 'stopin', touch: 'Stanna i den gula cirkeln', keys: 'Stanna i den gula cirkeln' });
+  }
+
+  stoleRed() {
+    const g = this.game;
+    this.lasse = 'deliver_wait';
+    this.done.add('red');
+    g.stats.missionTime = g.time;
+    if (this.tracked === 'lasse') { this.setObjective(''); this.holdObj = 3.4; }
+    this.pay(RED_REWARD, 'UPPDRAG KLART', 'Sno en röd bil');
+    this.later(3.6, () => {
+      if (this.lasse !== 'deliver_wait') return;
+      this.lasse = 'deliver';
+      this.sms(WHO.lasse, 'Snyggt! Kör kärran till min verkstad på Drottninggatan. Repor drar jag av på betalningen, så kör snällt.');
+    });
   }
 
   onEnterCar(e) {
@@ -256,21 +411,9 @@ export class Missions {
       this.later(1.2, () => g.emit('wanted', { stars: 1 }));
       this.later(4.2, () => { g.emit('wanted', { stars: 0 }); g.emit('toast', { text: 'Polisen har fika till tre. Du kom undan!', long: true }); });
     }
-    if (!this.active && this.lasse === 'steal') {
-      if (car.isRed) {
-        this.lasse = 'deliver_wait';
-        this.done.add('red');
-        g.stats.missionTime = g.time;
-        this.setObjective('');
-        this.holdObj = 3.4;
-        this.pay(RED_REWARD, 'UPPDRAG KLART', 'Sno en röd bil');
-        this.later(3.6, () => {
-          if (this.lasse !== 'deliver_wait') return;
-          this.lasse = 'deliver';
-          this.sms(WHO.lasse, 'Snyggt! Kör kärran till min verkstad på Drottninggatan. Repor drar jag av på betalningen, så kör snällt.');
-        });
-        this.later(6.5, () => g.emit('hint', { id: 'drive', touch: 'Följ den gula linjen på kartan', keys: 'Följ den gula linjen på kartan' }));
-      } else if (!this.flags.colorblind) {
+    if (this.lasse === 'steal') {
+      if (car.isRed && !car.dead) this.stoleRed();
+      else if (!car.isRed && this.tracked === 'lasse' && !this.active && !this.flags.colorblind) {
         this.flags.colorblind = true;
         this.sms(WHO.lasse, `Den där är ju ${colorName(car)}… Är du färgblind? RÖD bil, sa jag.`);
       }
@@ -286,45 +429,55 @@ export class Missions {
     const g = this.game;
     if (this.lasse !== 'deliver') return;
     this.lasse = 'done';
-    this.done.add('lasse');
     const cond = Math.round(car.health);
     const reward = Math.max(500, Math.round((DELIVERY_REWARD * cond) / 100 / 50) * 50);
     const ded = DELIVERY_REWARD - reward;
     g.stats.deliveredCondition = cond;
     g.stats.totalTime = g.time;
-    this.setObjective('');
-    this.holdObj = 3.4;
-    this.pay(reward, 'UPPDRAG KLART', 'Leverera bilen till Lasse');
     car.input.throttle = 0;
     car.vx *= 0.2; car.vz *= 0.2;
+    this.completeQuest('lasse', { title: 'UPPDRAG KLART', sub: 'Leverera bilen till Lasse', amount: reward });
     let text;
     if (cond >= 95) text = `Inte en repa! Du är ett proffs. Hela ${fmt(reward)} kr är dina.`;
     else if (cond >= 60) text = `Lite bucklor här och där… Jag drar av ${fmt(ded)} kr. Biltvätten på Macken fixar sånt, bara så du vet.`;
     else text = `Vad har du GJORT med den?! Den ser ut som kaffesump. ${fmt(reward)} kr får räcka.`;
     this.sms(WHO.lasse, text, 3.4);
-    this.checkAllDone();
   }
 
   // ---------------------------------------------------------------- map + view targets
+  // Letters mark every quest you can take on. Arrows, zones and the GPS belong to the quest you follow.
   buildTargets() {
-    const T = this.targets, g = this.game;
+    const T = this.targets, g = this.game, p = g.player;
     T.length = 0;
-    if (this.active) { this.active.targets(T); return; }
-    const L = this.lasse;
-    if (L === 'steal' || L === 'deliver' || L === 'deliver_wait') {
+    const tr = this.active ? null : this.tracked;
+    if (this.active) this.active.targets(T);
+    // Lasse: the L marks the garage; when followed, red cars to steal and then the delivery zone
+    if (this.isOpen('lasse') && this.lasse !== 'intro') {
+      const L = this.lasse, color = BY_ID.lasse.color;
       const car = L === 'deliver' ? this.lasseCar() : null;
-      if (!car && L !== 'deliver_wait') {
-        for (const v of g.vehicles) if (v.isRed && !v.dead && v.driver !== 'player') T.push({ kind: 'car', car: v });
+      if (tr === 'lasse' && car) T.push({ kind: 'zone', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r, gps: true, letter: 'L', color });
+      else T.push({ kind: 'contact', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r, letter: 'L', color, mapOnly: true });
+      if (tr === 'lasse' && !car && L !== 'deliver_wait') {
+        let best = null, bd = 1e9;
+        for (const v of g.vehicles) {
+          if (!v.isRed || v.dead || v.driver === 'player') continue;
+          const t = { kind: 'car', car: v };
+          T.push(t);
+          const d = Math.hypot(v.x - p.x, v.z - p.z);
+          if (d < bd) { bd = d; best = t; }
+        }
+        if (best) best.gps = true; // the yellow line leads to the nearest red car
       }
-      // Lasse's letter marks the garage; it becomes the delivery zone once you have a red car
-      if (car) T.push({ kind: 'zone', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r, gps: true, letter: 'L', color: CONTACTS[0].color });
-      else T.push({ kind: 'contact', x: DELIVERY.x, z: DELIVERY.z, r: DELIVERY.r, letter: 'L', color: CONTACTS[0].color, mapOnly: true });
     }
-    const lasseBusy = L !== 'done';
-    for (const c of this.contacts) {
-      if (!c.Job || !c.open || this.done.has(c.id) || c.cool > 0) continue;
-      T.push({ kind: 'contact', x: c.x, z: c.z, r: c.r, letter: c.letter, color: c.color, gps: !lasseBusy });
+    // the S and K markers (hidden while a job runs)
+    if (!this.active) {
+      for (const c of this.jobs) {
+        if (!this.isOpen(c.id) || c.cool > 0) continue;
+        T.push({ kind: 'contact', x: c.x, z: c.z, r: c.r, letter: c.letter, color: c.color, gps: tr === c.id });
+      }
     }
+    // tant Gun
+    this.flag.targets(T, tr === 'flag');
   }
 
   // ---------------------------------------------------------------- the pizza car
@@ -420,6 +573,9 @@ export class Missions {
       if (this.washStarted) { this.washStarted = false; g.emit('wash', { on: false, car: null }); }
     }
   }
+
+  // the action button, on foot: talk to Gun or pull the flag rope (before stealing cars)
+  interact() { return this.flag.interact(); }
 }
 
 function colorName(car) {

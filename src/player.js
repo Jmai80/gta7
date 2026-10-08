@@ -44,6 +44,7 @@ export class Player {
     const g = this.game;
     if (this.locked) return;
     if (this.state === 'foot') {
+      if (g.missionActive && g.mission.interact()) return; // talking to someone, pulling a flag rope…
       const car = this.findCar();
       if (!car) return;
       if (car.dead) { g.emit('toast', { text: 'Den bilen är helt död.' }); return; }

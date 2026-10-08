@@ -6,7 +6,7 @@ let fails = 0;
 const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if (!ok) fails++; };
 
 function playerCar(g, x, z, h) {
-  const c = g.addVehicle('sedan', 'red', x, z, h);
+  const c = g.addVehicle('sedan', 'blue', x, z, h); // not red: Lasse would pay for a red one
   const d = c.local(-1.6, 0.3);
   g.player.x = d.x; g.player.z = d.z;
   g.step(DT, { ...idle, action: true });

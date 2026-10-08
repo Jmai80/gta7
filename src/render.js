@@ -3,7 +3,7 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag } from './models.js';
 import { CAPACITY } from './game.js';
 import { PAINTS } from './vehicle.js';
 import { SUN, CARWASH } from './config.js';
@@ -94,6 +94,15 @@ export class View {
     this.roofSign.matrixAutoUpdate = false;
     this.roofSign.visible = false;
     this.scene.add(this.roofSign);
+    // tant Gun's flag: goes up her flagpole as you pull the rope (side quest)
+    this.flagZone = layout.zones.gunFlag || null;
+    if (this.flagZone) {
+      this.gunFlag = new THREE.Group();
+      this.gunFlagCloth = new THREE.Mesh(buildFlag(this.atlas.uv.flag0, this.atlas.uv.flagb0), this.matStatic);
+      this.gunFlag.add(this.gunFlagCloth);
+      this.gunFlag.position.set(this.flagZone.x + 0.07, this.flagZone.bottom, this.flagZone.z);
+      this.scene.add(this.gunFlag);
+    }
     this.particles = new Particles(this.scene, 160);
     this.makeCarWash();
 
@@ -215,6 +224,14 @@ export class View {
     this.syncMarkers(game);
     this.syncFx(game, dt);
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
+    if (this.gunFlag) {
+      // folded at the foot of the pole; unfurls on the way up and flutters at the top
+      const z = this.flagZone, h = game.mission.flag.h;
+      const unf = Math.min(1, h / 0.35);
+      this.gunFlag.position.y = z.bottom + (z.top - z.bottom) * h;
+      this.gunFlagCloth.scale.set(0.22 + 0.78 * unf, 0.5 + 0.5 * unf, 1);
+      this.gunFlag.rotation.y = Math.sin(this.time * 1.7) * 0.09 * unf + Math.sin(this.time * 4.3) * 0.02 * unf;
+    }
   }
 
   syncCars(game, dt) {
@@ -324,6 +341,7 @@ export class View {
         this.arrows.setColorAt(n, tmpC);
         n++;
       } else if ((tg.kind === 'zone' || (tg.kind === 'contact' && !tg.mapOnly)) && m < this.markers.length) {
+        if (tg.badgeOnly && Math.hypot(tg.x - p.x, tg.z - p.z) < 6) continue; // up close the PRATA button is enough
         const mk = this.markers[m++];
         const col = tg.kind === 'zone' ? 0xffcf33 : parseInt(tg.color.slice(1), 16);
         const k = 1 + Math.sin(t * 4 + m) * 0.04;
@@ -334,10 +352,14 @@ export class View {
         mk.cyl.material.opacity = 0.42 + Math.sin(t * 4 + m) * 0.12;
         mk.ring.scale.set(tg.r, 1, tg.r);
         mk.ring.material.color.setHex(col);
+        // people who give quests just get the letter above their head
+        mk.cyl.visible = mk.ring.visible = !tg.badgeOnly;
         mk.badge.visible = tg.kind === 'contact';
         if (mk.badge.visible) {
           mk.badge.material = this.badge(tg.letter, tg.color);
-          mk.badge.position.y = 4.1 + Math.sin(t * 2.4 + m) * 0.18;
+          mk.badge.position.y = (tg.badgeY ?? 4.1) + Math.sin(t * 2.4 + m) * 0.18;
+          const s = tg.badgeOnly ? 1.1 : 1.5;
+          mk.badge.scale.set(s, s, 1);
         }
       } else if (tg.kind === 'ring' && r < this.rings.length) {
         const ring = this.rings[r++];
@@ -474,6 +496,13 @@ export class CameraRig {
       const sp = Math.hypot(p.vx, p.vz);
       if (sp > 0.6 && p.state === 'foot') { target = p.h; rate = 1.4 * Math.min(1, sp / 4); }
     }
+    // a mission can point the camera at something (tant Gun's flag on its way up)
+    const F = game.camFocus;
+    this.fk = smooth(this.fk || 0, F && !car ? 1 : 0, 2.5, dt);
+    if (this.fk > 0.01) {
+      dist += 3.4 * this.fk; height += 0.6 * this.fk;
+      if (F) { target = Math.atan2(F.x - p.x, F.z - p.z); rate = 2.2; }
+    }
     // manual orbit from dragging
     if (input.camDX) { this.manual -= input.camDX * 0.0065; this.manualT = 0; }
     else this.manualT += dt;
@@ -492,6 +521,12 @@ export class CameraRig {
     const hh = height * (0.55 + 0.45 * this.k);
     this.pos.set(tx - fx * d, ty + hh, tz - fz * d);
     this.look.set(tx + fx * ahead, ty + lookH, tz + fz * ahead);
+    if (this.fk > 0.01 && F) {
+      const k = this.fk;
+      this.look.x += (F.x - this.look.x) * 0.4 * k;
+      this.look.y += (F.y - this.look.y) * 0.55 * k;
+      this.look.z += (F.z - this.look.z) * 0.4 * k;
+    }
     // shake
     if (this.shake > 0.001) {
       this.pos.x += (Math.random() - 0.5) * this.shake;

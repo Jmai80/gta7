@@ -32,6 +32,8 @@ export class Game {
     this.racers = [];      // computer drivers in Kim's street race
     this.pizzaCar = null;  // Sanna's car, parked across from the pizzeria
     this.view = { x: 0, z: 0, fx: 0, fz: -1, valid: false };
+    this.input = null;
+    this.camFocus = null;  // { x, y, z }: something a mission wants the camera to look at
     this.traffic = new Traffic(this);
     this.peds = new Peds(this);
     this.player = new Player(this);
@@ -157,6 +159,7 @@ export class Game {
 
   step(dt, input) {
     this.time += dt;
+    this.input = input; // missions read held buttons (hoisting a flag)
     const p = this.player;
     p.update(dt, input);
     const obs = this.buildObstacles();

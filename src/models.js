@@ -159,6 +159,15 @@ export function buildRoofSign(signUV) {
   return B.toGeometry(THREE);
 }
 
+// tant Gun's flag: a 1.6 × 1 m cloth starting at the pole (x = 0), printed on both sides
+export function buildFlag(uvFront, uvBack) {
+  const B = new GeomBuilder();
+  const uv = (r) => [[r[0], r[1]], [r[0], r[3]], [r[2], r[3]], [r[2], r[1]]];
+  if (uvFront) decal(B, [0.8, 0, 0.004], [0, 0, 1], 1.6, 1.0, WHITE, M.SIGN, uv(uvFront));
+  if (uvBack) decal(B, [0.8, 0, -0.004], [0, 0, -1], 1.6, 1.0, WHITE, M.SIGN, uv(uvBack));
+  return B.toGeometry(THREE);
+}
+
 export function buildHumanGeometry() {
   const B = new GeomBuilder([['aBS', 2], ['aPivot', 3]]);
   const part = (bone, sel, pivot) => { B.cur.aBS = [bone, sel]; B.cur.aPivot = pivot; };

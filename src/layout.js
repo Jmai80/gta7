@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH,
+  blockRange, DELIVERY, CARWASH, GUN,
 } from './config.js';
 import { makeRng } from './rng.js';
 
@@ -381,8 +381,15 @@ export function createLayout(seed = 7) {
         casters.push({ t: 'pole', x: fx, z: fz, h: 9, w: 0.1 });
       }
       if (i === 2) {
-        // trampoline
-        const tx = p.x + 20, tz = p.z + 18;
+        // tant Gun's flagpole in the front garden (the flag itself is hoisted in the game) with a gold knob
+        P({ t: 'cyl', x: GUN.poleX, z: GUN.poleZ, y0: CURB_H, y1: CURB_H + GUN.poleH, r: 0.07, r1: 0.05, n: 6, c: COL.white });
+        P({ t: 'cyl', x: GUN.poleX, z: GUN.poleZ, y0: CURB_H, y1: CURB_H + 0.35, r: 0.16, n: 6, c: 0x9aa0a6 });
+        P({ t: 'ico', x: GUN.poleX, y: CURB_H + GUN.poleH + 0.12, z: GUN.poleZ, r: 0.15, sy: 1, c: 0xe5b923 });
+        colCircle(GUN.poleX, GUN.poleZ, 0.14, GUN.poleH);
+        casters.push({ t: 'pole', x: GUN.poleX, z: GUN.poleZ, h: GUN.poleH, w: 0.1 });
+        zones.gunFlag = { x: GUN.poleX, z: GUN.poleZ, top: CURB_H + GUN.poleH - 0.8, bottom: CURB_H + 1.25 };
+        // trampoline in the back garden
+        const tx = p.x + 21, tz = p.z + 8;
         P({ t: 'cyl', x: tx, z: tz, y0: CURB_H + 0.7, y1: CURB_H + 0.78, r: 2.0, n: 12, c: 0x1f6fb5, cap: true });
         P({ t: 'cyl', x: tx, z: tz, y0: CURB_H + 0.78, y1: CURB_H + 0.8, r: 1.7, n: 12, c: 0x111111, cap: true });
         for (let k = 0; k < 4; k++) {

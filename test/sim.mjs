@@ -96,8 +96,10 @@ const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if
   const events = [];
   for (const e of ['sms', 'objective', 'banner', 'money', 'enterCar', 'endcard', 'wanted']) g.on(e, (d) => events.push([e, d]));
   for (let i = 0; i < 120; i++) g.step(DT, idle);
+  check(events.some(([e, d]) => e === 'sms' && d.from.startsWith('Lasse') && d.offer === 'lasse'), 'Lasse offers the first job by SMS');
+  check(g.mission.accept('lasse'), 'accept it');
+  g.step(DT, idle);
   check(g.mission.lasse === 'steal' && g.mission.objective === 'Sno en röd bil', 'intro → steal after ~2 s');
-  check(events.some(([e, d]) => e === 'sms' && d.from.startsWith('Lasse')), 'Lasse sends the first SMS');
   // walk to the parked red car
   const red = g.vehicles.find((v) => v.parkedSpot && v.isRed);
   check(!!red, 'a red car is parked in the lot');
@@ -124,7 +126,7 @@ const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if
   check(g.money === 1000 + 4000, `delivery pays by condition (got ${g.money - 1000} kr for 80 %)`);
   for (let i = 0; i < 60 * 11; i++) g.step(DT, idle);
   check(!events.some(([e]) => e === 'endcard'), 'no end card while Sanna and Kim still have jobs');
-  check(/S eller K/.test(g.mission.objective), `objective points to the other contacts (${g.mission.objective})`);
+  check(g.mission.choose && g.mission.isOpen('pizza') && g.mission.isOpen('race'), `then: pick the next quest in the list (${g.mission.objective})`);
 }
 
 // ---------- 4. carjacking an AI car ----------

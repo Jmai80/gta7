@@ -15,8 +15,18 @@ export class HUD {
       phone: $('phone'), street: $('street'), carinfo: $('carinfo'), speed: $('speed'), cond: $('condBar'), condWrap: $('cond'),
       banner: $('banner'), toast: $('toast'), hint: $('hint'), bubbles: $('bubbles'), fps: $('fps'),
       bAction: $('bAction'), bExit: $('bExit'), touch: $('touch'), keyhint: $('keyhint'),
-      objSub: $('objSub'), count: $('count'), fade: $('fade'),
+      objSub: $('objSub'), count: $('count'), fade: $('fade'), quests: $('quests'), qBadge: $('qBadge'),
     };
+    this.onOffer = null; // (id) → open the offer card
+    this.onLog = null;   // () → open the quest log
+    // tapping an offer SMS answers it; tapping the objective or the list button opens the quest log
+    this.el.phone.addEventListener('click', (e) => {
+      e.preventDefault();
+      const m = this.smsShown;
+      if (m && m.offer && this.onOffer) { this.smsT = Math.min(this.smsT, 0.01); this.onOffer(m.offer); }
+    });
+    this.el.objective.addEventListener('click', (e) => { e.preventDefault(); if (this.onLog) this.onLog(); });
+    this.el.quests.addEventListener('click', (e) => { e.preventDefault(); if (this.onLog) this.onLog(); });
     this.layout = layout;
     this.ctx = this.el.map.getContext('2d');
     this.mapImg = this.buildMap(layout);
@@ -39,6 +49,8 @@ export class HUD {
     this.actionLabel = '';
     this.subShown = '';
     this.countT = 0;
+    this.badgeN = -1;
+    this.chooseShown = null;
     this.resize();
   }
 
@@ -149,17 +161,20 @@ export class HUD {
       line(this.racePts, 'rgba(255, 207, 51, 0.55)', Math.max(2.5, 3.4 * (W / 150)));
     }
     // GPS to the nearest place to go
-    let goal = null, gd = 1e9;
+    let goal = null, gd = 1e9, gx = 0, gz = 0;
     for (const t of T) {
       if (!t.gps) continue;
-      const d = Math.hypot(t.x - p.x, t.z - p.z);
-      if (d < gd) { gd = d; goal = t; }
+      const tx = t.car ? t.car.x : t.x, tz = t.car ? t.car.z : t.z;
+      const d = Math.hypot(tx - p.x, tz - p.z);
+      if (d < gd) { gd = d; goal = t; gx = tx; gz = tz; }
     }
     if (goal) {
       this.routeT -= dt;
-      if (this.routeT <= 0 || !this.route || this.routeGoal !== goal.x + ',' + goal.z) {
-        this.route = this.routeTo(game, goal.x, goal.z); this.routeT = 0.5; this.routeGoal = goal.x + ',' + goal.z;
+      const key = goal.car ? 'car' + goal.car.id : goal.x + ',' + goal.z;
+      if (this.routeT <= 0 || !this.route || this.routeGoal !== key) {
+        this.route = this.routeTo(game, gx, gz); this.routeT = 0.5; this.routeGoal = key;
       }
+      this.route[this.route.length - 1] = [gx, gz];
       this.route[0] = [p.x, p.z];
       line(this.route, '#ffcf33', Math.max(3, 4.5 * (W / 150)));
     } else this.route = null;
@@ -220,7 +235,13 @@ export class HUD {
     if (text) { this.el.objective.classList.remove('pop'); void this.el.objective.offsetWidth; this.el.objective.classList.add('pop'); }
   }
 
-  pushSms(from, text, color) { this.sms.push({ from, text, color }); }
+  pushSms(from, text, color, offer) { this.sms.push({ from, text, color, offer }); }
+
+  // a ring of light around the minimap when you start following a quest
+  flashMap() {
+    const m = this.el.map;
+    m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash');
+  }
 
   // big countdown in the middle of the screen ('' hides it)
   countdown(text, go = false) {
@@ -303,7 +324,7 @@ export class HUD {
     // phone
     if (this.smsShown) {
       this.smsT -= dt;
-      if (this.smsT <= 0) { this.el.phone.classList.remove('show'); this.smsShown = null; this.smsGap = 0.45; }
+      if (this.smsT <= 0) { this.el.phone.classList.remove('show', 'offer', 'tap'); this.smsShown = null; this.smsGap = 0.45; }
     } else if (this.sms.length) {
       this.smsGap = (this.smsGap || 0) - dt;
       if (this.smsGap <= 0) {
@@ -316,9 +337,15 @@ export class HUD {
         av.classList.toggle('sys', m.from === 'GTA 7');
         av.style.background = m.color || '';
         el.querySelector('.msg').textContent = m.text;
+        // a job offer can be answered: tap it (or press J)
+        const act = el.querySelector('.act');
+        el.classList.toggle('offer', !!m.offer);
+        el.classList.toggle('tap', !!m.offer);
+        act.hidden = !m.offer;
+        act.textContent = this.kind === 'touch' ? 'Tryck för att svara ›' : 'Klicka eller tryck J för att svara';
         el.hidden = false;
         el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
-        this.smsT = Math.min(9, 3.2 + m.text.length * 0.05);
+        this.smsT = Math.min(9, 3.2 + m.text.length * 0.05) + (m.offer ? 3 : 0);
         if (this.onSms) this.onSms();
       }
     }
@@ -338,14 +365,22 @@ export class HUD {
     const mode = car ? 'car' : 'foot';
     if (mode !== this.mode) { this.mode = mode; this.root.classList.toggle('in-car', mode === 'car'); }
     let label = '';
-    if (!car && p.near) label = p.near.driver ? 'STJÄL' : 'KLIV IN';
+    const prompt = game.missionActive ? game.mission.prompt : null;
+    if (!car && prompt) label = prompt;
+    else if (!car && p.near) label = p.near.driver ? 'STJÄL' : 'KLIV IN';
     if (label !== this.actionLabel) {
       this.actionLabel = label;
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
       this.el.keyhint.hidden = !label;
-      this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${label === 'STJÄL' ? 'Stjäl bilen' : 'Kliv in'}` : '';
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan' };
+      this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
+    // quest log: badge with new offers, and the objective box asks you to pick a quest
+    const nNew = game.missionActive ? game.mission.newCount() : 0;
+    if (nNew !== this.badgeN) { this.badgeN = nNew; this.el.qBadge.textContent = nNew; this.el.qBadge.hidden = !nNew; }
+    const choose = game.missionActive && game.mission.choose;
+    if (choose !== this.chooseShown) { this.chooseShown = choose; this.el.objective.classList.toggle('choose', choose); }
     // speed + condition
     if (car) {
       const kmh = Math.round(car.speed * 3.6);

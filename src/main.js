@@ -15,7 +15,8 @@ const IDLE = { moveX: 0, moveY: 0, action: false, handbrake: false, horn: false,
 const QUALITY_LABEL = { auto: 'Auto', saver: 'Batterisnål', pretty: 'Snygg' };
 
 let layout, game, view, hud, input, audio;
-let state = 'loading';
+let state = 'loading';          // loading | title | play | pause | offer | log | end
+let offerId = null, pendingOffer = null;
 let camYaw = Math.PI;
 let acc = 0, lastRender = 0;
 let wakeLock = null;
@@ -103,6 +104,8 @@ async function boot(hot) {
   audio = new AudioFX();
   audio.muted = !settings.sound;
   hud.onSms = () => audio.ping();
+  hud.onOffer = (id) => openOffer(id);
+  hud.onLog = () => openLog();
   wire(game);
   perf.apply(settings.quality);
   refreshMenu();
@@ -143,7 +146,9 @@ function restoreInto(g, data) {
 }
 
 function wire(g) {
-  g.on('sms', (e) => hud.pushSms(e.from, e.text, e.color));
+  g.on('sms', (e) => hud.pushSms(e.from, e.text, e.color, e.offer));
+  g.on('offer', (e) => { pendingOffer = e.id; }); // face to face: the card opens after this frame's steps
+  g.on('tracked', () => hud.flashMap());
   g.on('objective', (e) => hud.objective(e.text));
   g.on('banner', (e) => {
     hud.banner(e.title, e.sub, e.amount, e.kind);
@@ -238,21 +243,122 @@ function pause() {
   audio.suspend();
 }
 
-// the three contacts and how far you have come with them
+const QUEST_STATE = { active: 'Pågår', tracked: 'Följer', new: 'Nytt', waiting: 'Väntar', done: 'Klart' };
+
+// the quests you know about and how far you have come with them
 function renderMissionList() {
   const el = $('mList');
   if (!el) return;
   el.innerHTML = '';
-  const label = { done: 'Klart', active: 'Pågår', open: 'Ledigt', locked: 'Snart' };
   for (const m of game.mission.list()) {
     const li = document.createElement('li');
     li.className = 'm-' + m.state;
     const b = document.createElement('b'); b.textContent = m.letter; b.style.background = m.color;
     const t = document.createElement('span'); t.textContent = m.title;
-    const st = document.createElement('em'); st.textContent = m.state === 'done' ? '✓' : label[m.state];
+    const st = document.createElement('em'); st.textContent = m.state === 'done' ? '✓' : QUEST_STATE[m.state];
     li.append(b, t, st);
     el.append(li);
   }
+  const li = document.createElement('li');
+  li.className = 'm-more';
+  const more = document.createElement('button');
+  more.type = 'button'; more.textContent = 'Välj uppdrag ›';
+  more.addEventListener('click', (e) => { e.preventDefault(); openLog(); });
+  li.append(more);
+  el.append(li);
+}
+
+// ---------------------------------------------------------------- quest offers and the quest log
+// both pause the game while they are open
+function enterMenu(s) {
+  state = s;
+  input.releaseAll();
+  audio.horn(false);
+  audio.suspend();
+}
+function leaveMenu() {
+  state = 'play';
+  input.read(); // forget keys pressed while the menu was open (Esc, Enter…)
+  lastRender = performance.now();
+  audio.resume();
+}
+
+function openOffer(id) {
+  if (state !== 'play') return;
+  const q = game.mission.info(id);
+  if (!q || game.mission.done.has(id)) return;
+  offerId = id;
+  const av = $('ofAv');
+  av.textContent = q.letter; av.style.background = q.color;
+  $('ofWho').textContent = q.who;
+  $('ofKind').textContent = q.side ? 'Sidouppdrag' : 'Uppdrag';
+  $('ofTitle').textContent = q.title.toUpperCase();
+  $('ofText').textContent = q.text;
+  $('ofReward').textContent = q.reward;
+  $('ofWhere').textContent = q.where;
+  const busy = $('ofBusy');
+  busy.hidden = !q.busy;
+  busy.textContent = q.busy ? `Du kör ${q.busy} just nu. Accepterar du följer du det här uppdraget när det är klart.` : '';
+  enterMenu('offer');
+  $('offer').hidden = false;
+  try { $('ofAccept').focus({ preventScroll: true }); } catch (_) { /* old browsers */ }
+}
+
+function answerOffer(accept) {
+  if (state !== 'offer') return;
+  const id = offerId;
+  offerId = null;
+  $('offer').hidden = true;
+  if (id) { if (accept) game.mission.accept(id); else game.mission.wait(id); }
+  leaveMenu();
+}
+
+function openLog() {
+  if (state !== 'play' && state !== 'pause') return;
+  $('pausemenu').hidden = true;
+  game.mission.markSeen();
+  renderLog();
+  enterMenu('log');
+  $('log').hidden = false;
+}
+
+function closeLog() {
+  if (state !== 'log') return;
+  $('log').hidden = true;
+  leaveMenu();
+}
+
+function renderLog() {
+  const ul = $('qList');
+  ul.innerHTML = '';
+  const list = game.mission.list();
+  for (const q of list) {
+    const li = document.createElement('li');
+    li.className = 's-' + q.state;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'q';
+    const badge = document.createElement('b'); badge.textContent = q.letter; badge.style.background = q.color;
+    const t = document.createElement('span'); t.className = 't';
+    const title = document.createElement('strong'); title.textContent = q.title;
+    const line = document.createElement('small'); line.textContent = `${q.who}${q.side ? ' · sidouppdrag' : ''} · ${q.line}`;
+    t.append(title, line);
+    const st = document.createElement('em'); st.textContent = q.state === 'done' ? 'Klart ✓' : QUEST_STATE[q.state];
+    btn.append(badge, t, st);
+    btn.disabled = q.state === 'done';
+    btn.addEventListener('click', (e) => { e.preventDefault(); pickQuest(q); });
+    li.append(btn);
+    ul.append(li);
+  }
+  const msg = $('logMsg');
+  msg.hidden = list.length > 0;
+  msg.textContent = list.length ? '' : 'Inga uppdrag än. Håll utkik efter sms!';
+}
+
+// follow the quest you tapped (the GPS line shows up at once)
+function pickQuest(q) {
+  if (q.state === 'done') return;
+  if (q.state !== 'active') game.mission.accept(q.id);
+  closeLog();
 }
 
 // "Börja om" wipes the saved game, so it asks for a second tap
@@ -277,8 +383,11 @@ function resume() {
 function restart() {
   armRestart(false);
   clearProgress();
+  offerId = pendingOffer = null;
   $('pausemenu').hidden = true;
   $('endcard').hidden = true;
+  $('offer').hidden = true;
+  $('log').hidden = true;
   audio.horn(false); audio.washing(false);
   view.washing = false;
   game = new Game({ layout, settings, missionActive: true });
@@ -324,7 +433,7 @@ function setTitleControls(kind) {
   if (!el) return;
   el.innerHTML = kind === 'touch'
     ? '<span><b>Vänster tumme</b> gå och kör</span><span><b>Höger sida</b> knappar, dra för att titta</span>'
-    : '<span><kbd>WASD</kbd> gå och kör</span><span><kbd>E</kbd> stjäl / kliv ur</span><span><kbd>Mellanslag</kbd> handbroms</span><span><kbd>H</kbd> tuta</span><span><kbd>Esc</kbd> paus</span>';
+    : '<span><kbd>WASD</kbd> gå och kör</span><span><kbd>E</kbd> stjäl / kliv ur</span><span><kbd>Mellanslag</kbd> handbroms</span><span><kbd>U</kbd> uppdrag</span><span><kbd>Esc</kbd> paus</span>';
 }
 
 function refreshMenu() {
@@ -359,6 +468,13 @@ function bindUi() {
   });
   on('eContinue', resume);
   on('eRestart', restart);
+  on('ofAccept', () => answerOffer(true));
+  on('ofWait', () => answerOffer(false));
+  on('logClose', closeLog);
+  window.addEventListener('keydown', (e) => {
+    if (state === 'offer' && e.code === 'Escape') { e.preventDefault(); answerOffer(false); }
+    else if (state === 'log' && (e.code === 'Escape' || e.code === 'KeyU')) { e.preventDefault(); closeLog(); }
+  });
 }
 
 // ---------------------------------------------------------------- loop
@@ -374,12 +490,15 @@ function frame(now) {
   if (state === 'play') {
     const inp = input.read();
     if (inp.pause) { pause(); return; }
+    if (inp.log) { openLog(); return; }
+    if (inp.answer && hud.smsShown && hud.smsShown.offer) { openOffer(hud.smsShown.offer); return; }
     if (inp.mute) { settings.sound = !settings.sound; audio.setMuted(!settings.sound); saveSettings(); refreshMenu(); }
     inp.camYaw = camYaw;
     acc += dt;
     let n = 0;
-    while (acc >= FIXED && n < 5) { game.step(FIXED, inp); inp.action = false; acc -= FIXED; n++; }
+    while (acc >= FIXED && n < 5 && state === 'play') { game.step(FIXED, inp); inp.action = false; acc -= FIXED; n++; }
     if (n >= 5) acc = 0;
+    if (pendingOffer) { const id = pendingOffer; pendingOffer = null; openOffer(id); }
     camYaw = view.rig.update(dt, game, inp, view.camera.aspect, game.world);
     audio.update(dt, game);
   } else if (state === 'title') {
@@ -408,7 +527,7 @@ const tmpDir = new Vector3();
 // debug handle for automated tests
 window.__gta = {
   get game() { return game; }, get view() { return view; }, get state() { return state; }, get perf() { return perf; },
-  start: () => startPlay(), pause, resume, restart,
+  start: () => startPlay(), pause, resume, restart, openLog, openOffer, get hud() { return hud; },
 };
 
 const start = (data) => boot(data || {}).catch((e) => console.error(e));
