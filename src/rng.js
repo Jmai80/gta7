@@ -25,6 +25,15 @@ export function wrapAngle(a) {
   return a;
 }
 export const smooth = (current, target, rate, dt) => current + (target - current) * (1 - Math.exp(-rate * dt));
+// 12 345 → "12 345" (Swedish thousands separator: no-break space)
+export function fmt(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+}
+// seconds → "1:05" (whole seconds rounded down; countdowns pass Math.ceil(t))
+export function mmss(t) {
+  t = Math.max(0, Math.floor(t));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+}
 export function smoothAngle(current, target, rate, dt) {
   return current + wrapAngle(target - current) * (1 - Math.exp(-rate * dt));
 }

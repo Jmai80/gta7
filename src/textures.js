@@ -235,6 +235,19 @@ const PAINTERS = {
     fitText(g, 'LASSES VERKSTAD', w - h * 2.4, h * 0.72);
     g.fillText('LASSES VERKSTAD', x + w / 2, y + h * 0.54);
   },
+  pizzatak(g, d, x, y, w, h) {
+    g.fillStyle = '#2e7a46'; g.fillRect(x, y, w, h);
+    g.fillStyle = 'rgba(255,255,255,0.16)'; g.fillRect(x, y + h * 0.82, w, h * 0.18);
+    // a slice of pizza
+    const sx = x + h * 0.18, sy = y + h * 0.16, s = h * 0.7;
+    g.fillStyle = '#e9b44c';
+    g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + s, sy + s * 0.32); g.lineTo(sx + s * 0.3, sy + s); g.closePath(); g.fill();
+    g.fillStyle = '#c0392b';
+    for (const [a, b] of [[0.35, 0.3], [0.62, 0.42], [0.36, 0.62]]) { g.beginPath(); g.arc(sx + s * a, sy + s * b, s * 0.08, 0, 7); g.fill(); }
+    g.fillStyle = '#fff6e0'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'PIZZA', w - h * 1.3, h * 0.78, 900);
+    g.fillText('PIZZA', x + h * 0.9 + (w - h * 0.9) / 2, y + h * 0.53);
+  },
   bullbil(g, d, x, y, w, h) {
     g.fillStyle = '#f6ead2'; roundRect(g, x, y, w, h, h * 0.12); g.fill();
     g.strokeStyle = '#8a4b22'; g.lineWidth = h * 0.04; roundRect(g, x + h * 0.05, y + h * 0.05, w - h * 0.1, h - h * 0.1, h * 0.1); g.stroke();
@@ -261,7 +274,7 @@ export function makeSignAtlas(signs) {
   canvas.width = W; canvas.height = H;
   const g = canvas.getContext('2d');
   g.fillStyle = '#808080'; g.fillRect(0, 0, W, H);
-  const all = { ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 } };
+  const all = { ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 }, pizzatak: { kind: 'pizzatak', w: 2.6, h: 0.8 } };
   // identical signs (both faces of a flag, the two MACKEN boards…) share one slot
   const byKey = new Map();
   for (const [id, d] of Object.entries(all)) {

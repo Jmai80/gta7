@@ -1,12 +1,12 @@
 // The view: renderer, scene, instanced cars/people, markers, particles and the chase camera.
 import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
-import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture } from './textures.js';
+import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign } from './models.js';
 import { CAPACITY } from './game.js';
 import { PAINTS } from './vehicle.js';
-import { SUN, DELIVERY, CARWASH } from './config.js';
+import { SUN, CARWASH } from './config.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 
 const MAX_HUMANS = 48;
@@ -89,6 +89,11 @@ export class View {
     this.scene.add(this.blobs);
 
     this.makeMarkers();
+    // Sanna's pizza car wears a roof sign: one small mesh that follows that car
+    this.roofSign = new THREE.Mesh(buildRoofSign(this.atlas.uv.pizzatak), this.matStatic);
+    this.roofSign.matrixAutoUpdate = false;
+    this.roofSign.visible = false;
+    this.scene.add(this.roofSign);
     this.particles = new Particles(this.scene, 160);
     this.makeCarWash();
 
@@ -99,31 +104,64 @@ export class View {
   }
 
   makeMarkers() {
-    // floating arrows above target cars
+    // floating arrows above target cars (red: cars to steal, green: the pizza car)
     const ag = new THREE.ConeGeometry(0.42, 0.85, 4).rotateX(Math.PI);
     ag.translate(0, 0.42, 0);
     const shaft = new THREE.BoxGeometry(0.24, 0.6, 0.24).translate(0, 1.1, 0);
     const merged = mergeGeos([ag, shaft]);
-    this.arrows = new THREE.InstancedMesh(merged, new THREE.MeshBasicMaterial({ color: 0xff3b2f, fog: true }), 24);
+    this.arrows = new THREE.InstancedMesh(merged, new THREE.MeshBasicMaterial({ color: 0xffffff, fog: true }), 24);
+    this.arrows.setColorAt(0, new THREE.Color(1, 1, 1));
     this.arrows.count = 0;
     this.arrows.frustumCulled = false;
     this.scene.add(this.arrows);
-    // delivery checkpoint: glowing cylinder + ground ring
+    // glowing cylinders with a ground ring: gold for places to go, the contact's colour (plus a
+    // floating letter badge) for mission markers
     const c = document.createElement('canvas'); c.width = 4; c.height = 64;
     const g = c.getContext('2d');
     const grd = g.createLinearGradient(0, 0, 0, 64);
     grd.addColorStop(0, 'rgba(255,255,255,0)'); grd.addColorStop(1, 'rgba(255,255,255,1)');
     g.fillStyle = grd; g.fillRect(0, 0, 4, 64);
     const gt = new THREE.CanvasTexture(c);
-    this.checkpoint = new THREE.Group();
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(DELIVERY.r, DELIVERY.r, 3.2, 32, 1, true), new THREE.MeshBasicMaterial({ map: gt, color: 0xffcf33, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
-    cyl.position.y = 1.6;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(DELIVERY.r - 0.35, DELIVERY.r, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
-    ring.position.y = 0.21;
-    this.checkpoint.add(cyl, ring);
-    this.checkpoint.visible = false;
-    this.cpCyl = cyl; this.cpRing = ring;
-    this.scene.add(this.checkpoint);
+    const cylGeo = new THREE.CylinderGeometry(1, 1, 3.2, 32, 1, true).translate(0, 1.6, 0);
+    const ringGeo = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2).translate(0, 0.06, 0);
+    this.markers = [];
+    for (let i = 0; i < 6; i++) {
+      const grp = new THREE.Group();
+      const cyl = new THREE.Mesh(cylGeo, new THREE.MeshBasicMaterial({ map: gt, color: 0xffcf33, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
+      const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
+      const badge = new THREE.Sprite();
+      badge.scale.set(1.5, 1.5, 1);
+      badge.visible = false;
+      grp.add(cyl, ring, badge);
+      grp.visible = false;
+      this.scene.add(grp);
+      this.markers.push({ grp, cyl, ring, badge });
+    }
+    this.badgeMats = {};
+    // street race checkpoints: standing rings across the road
+    const tor = new THREE.TorusGeometry(4.5, 0.3, 8, 44);
+    this.rings = [0, 1].map(() => {
+      const m = new THREE.Mesh(tor, new THREE.MeshBasicMaterial({ color: 0xffcf33, transparent: true, opacity: 0.9, depthWrite: false, fog: true }));
+      m.visible = false;
+      m.renderOrder = 2;
+      this.scene.add(m);
+      return m;
+    });
+  }
+
+  badge(letter, color) {
+    const key = letter + color;
+    if (this.badgeMats[key]) return this.badgeMats[key];
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#111317'; g.beginPath(); g.arc(64, 64, 60, 0, Math.PI * 2); g.fill();
+    g.fillStyle = color; g.beginPath(); g.arc(64, 64, 51, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#111317'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `900 80px ${DISPLAY_FONT}`;
+    g.fillText(letter, 64, 69);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return (this.badgeMats[key] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: true }));
   }
 
   makeCarWash() {
@@ -210,6 +248,20 @@ export class View {
         blobs.setMatrixAt(b++, tmpM);
       }
     }
+    // roof sign on the pizza car, with the same body roll and pitch as the shader gives the car
+    const pz = game.pizzaCar, rs = this.roofSign;
+    rs.visible = !!(pz && pz.pizza && !pz.removed);
+    if (rs.visible) {
+      const m = rs.matrix;
+      m.makeRotationY(pz.h);
+      if (pz.rampPitch) { tmpR.makeRotationX(-pz.rampPitch); m.multiply(tmpR); }
+      m.setPosition(pz.x, pz.visY, pz.z);
+      m.multiply(tmpR.makeTranslation(0, 0.6, 0));
+      m.multiply(tmpR.makeRotationZ(pz.visRoll));
+      m.multiply(tmpR.makeRotationX(pz.visPitch));
+      m.multiply(tmpR.makeTranslation(0, -0.6, 0));
+      rs.matrixWorldNeedsUpdate = true;
+    }
     for (const type in this.cars) {
       const mesh = this.cars[type];
       mesh.count = counts[type];
@@ -258,28 +310,51 @@ export class View {
   }
 
   syncMarkers(game) {
-    const t = this.time;
-    let n = 0;
-    let zone = null;
-    const p = game.player;
-    for (const tg of game.mission.targets) {
-      if (tg.kind === 'car' && n < 24) {
+    const t = this.time, p = game.player;
+    let n = 0, m = 0, r = 0;
+    const T = game.missionActive ? game.mission.targets : [];
+    for (const tg of T) {
+      if (tg.kind === 'car') {
         const v = tg.car;
-        if (Math.hypot(v.x - p.x, v.z - p.z) < 7.5) continue; // the STJÄL button is enough up close
+        if (n >= 24 || Math.hypot(v.x - p.x, v.z - p.z) < 7.5) continue; // the action button is enough up close
         tmpM.makeRotationY(t * 2.2);
         tmpM.setPosition(v.x, (v.visY ?? v.y) + v.spec.height + 1.1 + Math.sin(t * 3.2 + v.id) * 0.22, v.z);
-        this.arrows.setMatrixAt(n++, tmpM);
-      } else if (tg.kind === 'zone') zone = tg;
+        this.arrows.setMatrixAt(n, tmpM);
+        tmpC.setHex(tg.color ?? 0xff3b2f);
+        this.arrows.setColorAt(n, tmpC);
+        n++;
+      } else if ((tg.kind === 'zone' || (tg.kind === 'contact' && !tg.mapOnly)) && m < this.markers.length) {
+        const mk = this.markers[m++];
+        const col = tg.kind === 'zone' ? 0xffcf33 : parseInt(tg.color.slice(1), 16);
+        const k = 1 + Math.sin(t * 4 + m) * 0.04;
+        mk.grp.visible = true;
+        mk.grp.position.set(tg.x, game.world.groundHeight(tg.x, tg.z) + 0.02, tg.z);
+        mk.cyl.scale.set(tg.r * k, 1, tg.r * k);
+        mk.cyl.material.color.setHex(col);
+        mk.cyl.material.opacity = 0.42 + Math.sin(t * 4 + m) * 0.12;
+        mk.ring.scale.set(tg.r, 1, tg.r);
+        mk.ring.material.color.setHex(col);
+        mk.badge.visible = tg.kind === 'contact';
+        if (mk.badge.visible) {
+          mk.badge.material = this.badge(tg.letter, tg.color);
+          mk.badge.position.y = 4.1 + Math.sin(t * 2.4 + m) * 0.18;
+        }
+      } else if (tg.kind === 'ring' && r < this.rings.length) {
+        const ring = this.rings[r++];
+        ring.visible = true;
+        ring.position.set(tg.x, 4.75, tg.z);
+        ring.rotation.set(0, tg.h, 0);
+        const k = tg.dim ? 0.92 : 1 + Math.sin(t * 5) * 0.025;
+        ring.scale.set(k, k, k);
+        ring.material.opacity = tg.dim ? 0.3 : 0.9;
+        ring.material.color.setHex(tg.finish ? 0xffffff : 0xffcf33);
+      }
     }
     this.arrows.count = n;
     this.arrows.instanceMatrix.needsUpdate = true;
-    this.checkpoint.visible = !!zone;
-    if (zone) {
-      this.checkpoint.position.set(zone.x, 0.15, zone.z);
-      const k = 1 + Math.sin(t * 4) * 0.04;
-      this.cpCyl.scale.set(k, 1, k);
-      this.cpCyl.material.opacity = 0.42 + Math.sin(t * 4) * 0.12;
-    }
+    if (this.arrows.instanceColor) this.arrows.instanceColor.needsUpdate = true;
+    for (; m < this.markers.length; m++) this.markers[m].grp.visible = false;
+    for (; r < this.rings.length; r++) this.rings[r].visible = false;
   }
 
   syncFx(game, dt) {

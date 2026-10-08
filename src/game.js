@@ -6,10 +6,11 @@ import { Vehicle, collideVehicles, CAR_TYPES } from './vehicle.js';
 import { Traffic } from './traffic.js';
 import { Peds, makeLook } from './peds.js';
 import { Player } from './player.js';
-import { Mission } from './mission.js';
+import { Missions } from './mission.js';
+import { PIZZA_CAR } from './config.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 22, van: 14 };
+export const CAPACITY = { sedan: 24, van: 14 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -23,13 +24,18 @@ export class Game {
     this.listeners = {};
     this.time = 0;
     this.money = 0;
-    this.stats = { carsStolen: 0, carsJacked: 0, crashes: 0, pedsKnocked: 0, maxSpeed: 0, driven: 0, honks: 0, stuntJumps: 0, bestJump: 0, missionTime: 0, totalTime: 0, deliveredCondition: null };
+    this.stats = {
+      carsStolen: 0, carsJacked: 0, crashes: 0, pedsKnocked: 0, maxSpeed: 0, driven: 0, honks: 0, stuntJumps: 0, bestJump: 0,
+      missionTime: 0, totalTime: 0, deliveredCondition: null, playTime: 0, pizzas: 0, raceTime: null, fails: 0, washes: 0,
+    };
     this.vehicles = [];
+    this.racers = [];      // computer drivers in Kim's street race
+    this.pizzaCar = null;  // Sanna's car, parked across from the pizzeria
     this.view = { x: 0, z: 0, fx: 0, fz: -1, valid: false };
     this.traffic = new Traffic(this);
     this.peds = new Peds(this);
     this.player = new Player(this);
-    this.mission = new Mission(this);
+    this.mission = new Missions(this);
     this.obs = [];
     this.obsPool = [];
     this.spawnT = 0;
@@ -64,6 +70,7 @@ export class Game {
       const v = this.addVehicle(p.type, p.color, p.x, p.z, p.h);
       if (v) v.parkedSpot = true;
     }
+    this.spawnPizzaCar();
     const plan = [
       ['sedan', 'red'], ['van', 'white'], ['sedan', 'blue'], ['sedan', 'red'], ['van', 'red'], ['sedan', 'white'],
       ['sedan', 'yellow'], ['van', 'lightblue'], ['sedan', 'black'], ['sedan', 'silver'], ['van', 'green'], ['sedan', 'red'],
@@ -91,13 +98,41 @@ export class Game {
     this.peds.spawnInitial(nPeds);
   }
 
+  // full of cars of this type? send the farthest AI one home (out of sight if possible)
+  makeRoom(type) {
+    if (this.count(type) < CAPACITY[type]) return true;
+    const p = this.player;
+    let far = null, fd = -1;
+    for (const v of this.vehicles) {
+      if (v.type !== type || v.driver !== 'ai' || v.parkedSpot) continue;
+      const d = Math.hypot(v.x - p.x, v.z - p.z) + (this.visible(v.x, v.z) ? 0 : 1000);
+      if (d > fd) { fd = d; far = v; }
+    }
+    if (far) this.removeVehicle(far);
+    return !!far;
+  }
+
+  // Sanna's green pizza car with the roof sign, parked in its stall
+  spawnPizzaCar() {
+    const S = PIZZA_CAR;
+    this.makeRoom('sedan');
+    const v = this.addVehicle('sedan', 'pizza', S.x, S.z, S.h);
+    if (!v) return null;
+    if (this.pizzaCar) this.pizzaCar.pizza = false;
+    v.pizza = true;
+    v.parkedSpot = true;
+    this.pizzaCar = v;
+    return v;
+  }
+
   buildObstacles() {
     const obs = this.obs, pool = this.obsPool;
     obs.length = 0;
     let k = 0;
     const take = () => pool[k] || (pool[k] = {});
     for (const v of this.vehicles) {
-      const kind = v.driver === 'player' ? 'playercar' : v.driver === 'ai' && v.ai && !v.ai.lost && !v.dead ? 'car' : 'parked';
+      const moving = (v.driver === 'ai' && v.ai && !v.ai.lost) || v.driver === 'racer';
+      const kind = v.driver === 'player' ? 'playercar' : moving && !v.dead ? 'car' : 'parked';
       const sn = Math.sin(v.h), cs = Math.cos(v.h), sp = v.speed;
       const stuck = !!(v.ai && v.ai.blockedT > 7);
       for (const off of v.spec.circles) {
@@ -124,7 +159,9 @@ export class Game {
     this.time += dt;
     const p = this.player;
     p.update(dt, input);
-    this.traffic.update(dt, this.vehicles, this.buildObstacles());
+    const obs = this.buildObstacles();
+    this.traffic.update(dt, this.vehicles, obs);
+    for (const r of this.racers) r.update(dt, obs);
 
     const playerCar = p.inCar ? p.car : null;
     for (const v of this.vehicles) {
@@ -150,7 +187,7 @@ export class Game {
 
   onCrash(v, imp, other, x, z, secondary = false) {
     const isPlayer = this.player.car === v;
-    const dmg = Math.max(0, imp - 3.2) * (v.type === 'van' ? 1.7 : 2.2);
+    const dmg = Math.max(0, imp - 3.2) * (v.type === 'van' ? 1.7 : 2.2) * (v.driver === 'racer' ? 0.5 : 1);
     v.damage(dmg);
     if (isPlayer && imp > 3.5) this.stats.crashes++;
     if (!secondary || isPlayer) {
@@ -172,7 +209,7 @@ export class Game {
     const p = this.player;
     // remove lost AI cars / far abandoned cars out of view
     for (const v of [...this.vehicles]) {
-      if (v === p.car || v.parkedSpot) continue;
+      if (v === p.car || v.parkedSpot || v.driver === 'racer' || v.pizza) continue; // the pizza car is looked after by the missions
       const far = Math.hypot(v.x - p.x, v.z - p.z) > 85 && !this.visible(v.x, v.z);
       if (!far) continue;
       if (v.driver === 'ai' && v.ai && (v.ai.lost || (v.ai.recovering && v.ai.recoverT > 6))) this.removeVehicle(v);
@@ -184,7 +221,7 @@ export class Game {
     if (ai < TRAFFIC_TARGET) this.spawnTraffic();
     // keep the crowd size sane (carjacked drivers join the crowd)
     if (this.peds.list.length > PED_TARGET + 6) {
-      const far = this.peds.list.filter((q) => Math.hypot(q.x - p.x, q.z - p.z) > 70 && !this.visible(q.x, q.z));
+      const far = this.peds.list.filter((q) => !q.keep && Math.hypot(q.x - p.x, q.z - p.z) > 70 && !this.visible(q.x, q.z));
       if (far.length) this.peds.list.splice(this.peds.list.indexOf(far[0]), 1);
     }
   }
@@ -218,9 +255,9 @@ export class Game {
     return null;
   }
 
-  // compact state for hot reload
+  // saved progress (money, finished jobs, stats)
   snapshot() {
-    return { money: this.money, stage: this.mission.stage === 'free' || this.mission.stage === 'delivered' ? 'free' : this.mission.flags.redDone ? 'deliver' : 'steal', stats: this.stats };
+    return this.mission.progress();
   }
 }
 

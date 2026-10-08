@@ -28,6 +28,7 @@ export const PAINTS = {
   yellow: { hex: 0xe2b52a, name: 'gul' },
   green: { hex: 0x2f6b45, name: 'grön' },
   lightblue: { hex: 0x86acd1, name: 'ljusblå' },
+  pizza: { hex: 0x2e7a46, name: 'grön' },        // Pizzeria Sjuan's delivery car
 };
 
 const GRAVITY = 16;
@@ -43,7 +44,7 @@ export class Vehicle {
     this.vx = 0; this.vz = 0; this.vy = 0; this.w = 0;
     this.steer = 0; this.spin = 0;
     this.input = { throttle: 0, steer: 0, handbrake: false, park: true };
-    this.driver = null;        // 'ai' | 'player' | null
+    this.driver = null;        // 'ai' | 'racer' | 'player' | null
     this.ai = null;
     this.health = 100;
     this.dead = false;

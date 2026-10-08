@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.1 är en bit av småstaden Sjuby: sno en röd bil och kör den till Lasses verkstad.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.2 är en bit av småstaden Sjuby med tre uppdragsgivare vars uppdrag kan göras i valfri ordning.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -21,12 +21,21 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Innehåll i version 0.1
+## Uppdrag i version 0.2
 
-- **Uppdrag:** sno en röd bil (1 000 kr) och leverera den till Lasses Verkstad (upp till 5 000 kr, minus bucklor).
+Uppdragsgivarna syns som bokstäver på minikartan och som markörer i stan. Ett uppdrag körs i taget, och misslyckas du kan du försöka igen.
+
+- **L – Lasse (Verkstan):** sno en röd bil (1 000 kr) och kör den till Lasses Verkstad (upp till 5 000 kr, minus bucklor). Uppdraget kommer som ett SMS när spelet börjar.
+- **S – Sanna (Pizzeria Sjuan):** Pizzabudet. Gå in i den gröna markören vid pizzerian på Kungsgatan och ta pizzabilen på parkeringen mittemot. Tre pizzor ska till tre adresser innan de kallnar. Du får 250 kr plus dricks per pizza (krockar sänker dricksen), och 500 kr i bonus om alla är varma.
+- **K – Kim (Macken):** Gatloppet. Kör in i den blå markören på Macken med en bil. Det blir två varv runt stan mot Kim och Bosse, och ringarna visar vägen. Vinnaren får 2 500 kr.
+
+Framstegen (pengar, klara uppdrag och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
+
+## Övrigt i stan
+
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Det går även folk på trottoarerna.
-- **Övrigt:** bilkapning, hopp ut i farten, stunthopp på byggtomten och en biltvätt som lagar bucklor.
-- **HUD:** minikarta med GPS, SMS från Lasse, fartmätare och bilens skick.
+- **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten och en biltvätt som lagar bucklor.
+- **HUD:** minikarta med GPS och uppdragsbokstäver, SMS från uppdragsgivarna, fartmätare och bilens skick.
 
 ## Teknik
 
@@ -34,7 +43,7 @@ I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batteri
 - Allt genereras av kod: inga bilder, 3D-modeller eller ljudfiler. Ljudet syntetiseras med Web Audio.
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
-- Simuleringen (trafik, fysik och uppdrag) är ren JavaScript utan grafik och testas i Node.
+- Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 
 ## Köra lokalt
 
@@ -54,7 +63,8 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/main.js` | Uppstart, spel-loop och kopplingen mellan delarna |
 | `src/game.js` | Simuleringens kärna |
 | `src/layout.js` | Staden Sjuby som data: kvarter, hus, vägar och kolliderare |
-| `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `mission.js` | Bilfysik, trafik-AI, fotgängare, spelaren och uppdragen |
+| `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js` | Bilfysik, trafik-AI, fotgängare och spelaren |
+| `src/mission.js`, `pizza.js`, `race.js`, `racer.js` | Uppdragen, pizzabudet, gatloppet och datorförarna |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |
 | `src/hud.js`, `input.js`, `audio.js` | Gränssnitt, kontroller och ljud |
 | `test/` | Simuleringstester för Node |

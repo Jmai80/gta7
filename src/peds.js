@@ -133,6 +133,11 @@ export class Ped {
       case 'idle':
         if (this.stateT > (this.idleFor || 3)) { this.state = 'walk'; this.idleT = g.rng.range(10, 35); if (g.rng.chance(0.3)) this.dir = -this.dir; }
         break;
+      case 'stand':
+        // a customer waiting for a pizza: faces the street and waves when the pizza car comes
+        if (this.standH != null) this.h = smoothAngle(this.h, this.standH, 5, dt);
+        b.pose = this.wave ? 1 : 0;
+        break;
       case 'flee': {
         run = true;
         const f = this.fleeFrom;
@@ -153,7 +158,7 @@ export class Ped {
         break;
       case 'angry':
         b.pose = 1;
-        if (this.stateT > 1.6) { this.state = 'walk'; b.pose = 0; }
+        if (this.stateT > 1.6) { this.state = this.standH != null ? 'stand' : 'walk'; b.pose = 0; }
         break;
       case 'down': {
         anim = false;
@@ -205,7 +210,7 @@ export class Ped {
       b.legAmp = clamp(sp * 0.22, 0, run ? 0.9 : 0.55);
       b.armAmp = b.legAmp * 0.85;
       b.lean = run ? 0.18 : 0;
-      if (this.state !== 'angry' && this.state !== 'dodge') b.pose = 0;
+      if (this.state !== 'angry' && this.state !== 'dodge' && this.state !== 'stand') b.pose = 0;
     } else { b.legAmp *= 0.8; b.armAmp *= 0.8; }
     b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
   }

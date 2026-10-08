@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>GTA 7</title>
-<meta name="description" content="GTA 7 – Grovt Tillgrepp av Automobil. Ett litet mobilspel i webbläsaren: sno en röd bil i småstaden Sjuby.">
+<meta name="description" content="GTA 7 – Grovt Tillgrepp av Automobil. Ett litet mobilspel i webbläsaren: sno bilar, kör pizza och vinn gatlopp i småstaden Sjuby.">
 <meta name="theme-color" content="#0e1117">
 <meta name="color-scheme" content="dark">
 <link rel="manifest" href="manifest.webmanifest">
@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-title" content="GTA 7">
 <meta property="og:type" content="website">
 <meta property="og:title" content="GTA 7">
-<meta property="og:description" content="Grovt Tillgrepp av Automobil. Sno en röd bil i småstaden Sjuby – spelas direkt i mobilen.">
+<meta property="og:description" content="Grovt Tillgrepp av Automobil. Sno bilar, kör pizza och vinn gatlopp i småstaden Sjuby – spelas direkt i mobilen.">
 <meta property="og:url" content="https://jmai80.github.io/gta7/">
 <meta property="og:image" content="https://jmai80.github.io/gta7/icons/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -160,7 +160,9 @@ kbd {
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
 #objective::before { content: ''; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--gold); box-shadow: 0 0 12px rgba(255,207,51,0.8); }
+#objective .ob { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 #objText { font: 800 clamp(17px, 3.8vmin, 21px)/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; min-width: 0; }
+#objSub { font: 700 clamp(14px, 3.2vmin, 16px)/1 var(--display); letter-spacing: 0.06em; color: var(--gold); font-variant-numeric: tabular-nums; white-space: nowrap; }
 #objective.pop { animation: pop 0.45s cubic-bezier(.2,1.5,.4,1) both; }
 #phone {
   position: absolute; top: calc(var(--sat) + 66px); left: 50%; width: min(360px, calc(100vw - 32px));
@@ -179,6 +181,8 @@ kbd {
   opacity: 0; pointer-events: none;
 }
 #banner.show { animation: banner 3.6s ease both; }
+#banner.fail .b-title { color: var(--alert); }
+#banner.start .b-title { color: var(--paper); font-size: clamp(36px, 9vmin, 64px); }
 #banner .b-title {
   font: 900 clamp(44px, 12vmin, 92px)/0.9 var(--display); color: var(--gold); letter-spacing: 0.02em;
   text-shadow: -3px -3px 0 #0b0d10, 3px -3px 0 #0b0d10, -3px 3px 0 #0b0d10, 3px 3px 0 #0b0d10, 0 8px 30px rgba(0,0,0,0.6);
@@ -206,6 +210,15 @@ kbd {
 #condBar { display: block; height: 100%; width: 100%; background: var(--cash); transition: width 0.3s; }
 #condBar.warn { background: var(--gold); } #condBar.bad { background: var(--alert); }
 #bubbles { position: absolute; inset: 0; pointer-events: none; }
+#count {
+  position: absolute; top: 56%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  font: 900 clamp(84px, 26vmin, 190px)/1 var(--display); color: var(--gold); letter-spacing: 0.02em;
+  text-shadow: -4px -4px 0 #0b0d10, 4px -4px 0 #0b0d10, -4px 4px 0 #0b0d10, 4px 4px 0 #0b0d10, 0 10px 34px rgba(0,0,0,0.6);
+}
+#count.go { color: var(--cash); }
+#count.show { animation: count 0.9s cubic-bezier(.2,1.4,.4,1) both; }
+#fade { position: absolute; inset: 0; z-index: 20; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+#fade.on { opacity: 1; }
 .bubble {
   position: absolute; left: 0; top: 0; background: #fff; color: #15171b; font: 800 15px/1.15 var(--display); letter-spacing: 0.02em;
   padding: 5px 9px 4px; border-radius: 10px; white-space: nowrap; box-shadow: 0 6px 14px rgba(0,0,0,0.35); will-change: transform;
@@ -264,6 +277,13 @@ kbd {
 .panel dd { margin: 0; font-weight: 700; text-align: right; }
 .panel .note { margin: 0; color: var(--muted); font-size: 14px; }
 .panel .rows { display: flex; flex-direction: column; gap: 10px; }
+.panel .row.danger { background: rgba(255, 75, 62, 0.22); border-color: var(--alert); }
+.mlist { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.mlist li { display: flex; align-items: center; gap: 7px; padding: 5px 10px 5px 5px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--line); font-size: 13px; font-weight: 650; }
+.mlist b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #111317; font: 900 15px/1 var(--display); }
+.mlist em { font-style: normal; font-weight: 600; color: var(--muted); }
+.mlist .m-done em { color: var(--cash); }
+.mlist .m-locked { opacity: 0.55; }
 /* short landscape screens: two columns so the menu fits without scrolling */
 @media (max-height: 520px) and (orientation: landscape) {
   .panel { width: min(640px, 100%); padding: 16px; gap: 8px; }
@@ -290,6 +310,7 @@ kbd {
 @keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes blink { 50% { opacity: 0.25; } }
 @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes count { from { transform: translate(-50%, -50%) scale(1.9); opacity: 0; } 30% { opacity: 1; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 @keyframes fadeinout { 0% { opacity: 0; } 10% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes banner {
   0% { opacity: 0; transform: translateX(-50%) scale(1.6); }
@@ -299,7 +320,7 @@ kbd {
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
-  #street.show, #toast.show, #hint.show, #banner.show { opacity: 1; }
+  #street.show, #toast.show, #hint.show, #banner.show, #count.show { opacity: 1; }
 }
 </style>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.min.js">
@@ -316,6 +337,9 @@ kbd {
 <link rel="modulepreload" href="src/peds.js">
 <link rel="modulepreload" href="src/player.js">
 <link rel="modulepreload" href="src/mission.js">
+<link rel="modulepreload" href="src/pizza.js">
+<link rel="modulepreload" href="src/race.js">
+<link rel="modulepreload" href="src/racer.js">
 <link rel="modulepreload" href="src/render.js">
 <link rel="modulepreload" href="src/shaders.js">
 <link rel="modulepreload" href="src/textures.js">
@@ -334,7 +358,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 0.1 · en bit av Sjuby</div>
+    <div class="ver">Version 0.2 · en bit av Sjuby</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -348,6 +372,7 @@ kbd {
       <button id="play" type="button">SPELA</button>
       <small>Funkar bäst i liggande läge med ljudet på</small>
     </div>
+    <div id="saveInfo" class="tip" hidden></div>
     <div id="iosTip" class="tip" hidden>På iPhone: tryck <b>Dela</b> → <b>Lägg till på hemskärmen</b> så körs spelet i helskärm.</div>
     <div id="titleControls"></div>
     <div class="legal">Ett skämtprojekt. Inte kopplat till något riktigt spelbolag.</div>
@@ -364,7 +389,7 @@ kbd {
       <button id="pause" data-btn="pause" type="button" aria-label="Paus"></button>
     </div>
     <div id="street" hidden></div>
-    <div id="objective" hidden><span id="objText"></span></div>
+    <div id="objective" hidden><div class="ob"><span id="objText"></span><span id="objSub" hidden></span></div></div>
     <div id="phone" hidden><div class="av">L</div><div class="who"></div><div class="msg"></div></div>
     <div id="banner" hidden></div>
     <div id="toast" hidden></div>
@@ -372,6 +397,7 @@ kbd {
     <div id="keyhint" hidden></div>
     <div id="carinfo"><div id="speed">0</div><div id="cond"><i id="condBar"></i></div></div>
     <div id="bubbles"></div>
+    <div id="count" hidden></div>
     <div id="touch">
       <div id="stick"><div id="knob"></div></div>
       <div id="btns">
@@ -385,9 +411,12 @@ kbd {
     </div>
   </div>
 
+  <div id="fade"></div>
+
   <div id="pausemenu" class="overlay" hidden>
     <div class="panel" role="dialog" aria-label="Paus">
       <h2>PAUS</h2>
+      <ul id="mList" class="mlist" aria-label="Uppdrag"></ul>
       <div class="rows">
         <button class="row primary" id="mResume" type="button">FORTSÄTT</button>
         <button class="row" id="mSound" type="button">Ljud: På</button>
@@ -405,9 +434,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 0.1 klar">
-      <h2>VERSION 0.1 KLAR!</h2>
-      <p class="note">Lasse är nöjd. Här är din första dag i Sjuby:</p>
+    <div class="panel" role="dialog" aria-label="Version 0.2 klar">
+      <h2>VERSION 0.2 KLAR!</h2>
+      <p class="note">Lasse, Sanna och Kim är nöjda. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

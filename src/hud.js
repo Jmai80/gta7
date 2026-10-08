@@ -1,8 +1,8 @@
 // Heads-up display: minimap with GPS, money, objective, phone messages, banners,
 // speech bubbles, speedometer and context buttons. Plain DOM + one 2D canvas.
-import { fmt } from './mission.js';
+import { fmt } from './rng.js';
 import { STREET_NAMES, ROADS, RING } from './config.js';
-import { DIRS } from './layout.js';
+import { PAINTS } from './vehicle.js';
 
 const MAP_RANGE = 170, MAP_PX = 2;
 
@@ -15,6 +15,7 @@ export class HUD {
       phone: $('phone'), street: $('street'), carinfo: $('carinfo'), speed: $('speed'), cond: $('condBar'), condWrap: $('cond'),
       banner: $('banner'), toast: $('toast'), hint: $('hint'), bubbles: $('bubbles'), fps: $('fps'),
       bAction: $('bAction'), bExit: $('bExit'), touch: $('touch'), keyhint: $('keyhint'),
+      objSub: $('objSub'), count: $('count'), fade: $('fade'),
     };
     this.layout = layout;
     this.ctx = this.el.map.getContext('2d');
@@ -36,6 +37,8 @@ export class HUD {
     }
     this.mode = '';
     this.actionLabel = '';
+    this.subShown = '';
+    this.countT = 0;
     this.resize();
   }
 
@@ -107,9 +110,7 @@ export class HUD {
     }
     const path = [];
     for (let v = t; v !== -1; v = prev[v]) path.unshift(nodes[v]);
-    const pts = [[p.x, p.z], ...path.map((n) => [n.x, n.z]), [tx, tz]];
-    void DIRS;
-    return pts;
+    return [[p.x, p.z], ...path.map((n) => [n.x, n.z]), [tx, tz]];
   }
 
   drawMap(game, camYaw, dt) {
@@ -128,16 +129,39 @@ export class HUD {
     g.rotate(rot);
     const s = k / MAP_PX;
     g.drawImage(this.mapImg, -(p.x + MAP_RANGE) * MAP_PX * s, -(p.z + MAP_RANGE) * MAP_PX * s, this.mapImg.width * s, this.mapImg.height * s);
-    // GPS route
-    const zone = game.mission.targets.find((t) => t.kind === 'zone');
-    if (zone) {
-      this.routeT -= dt;
-      if (this.routeT <= 0 || !this.route) { this.route = this.routeTo(game, zone.x, zone.z); this.routeT = 0.5; }
-      this.route[0] = [p.x, p.z];
-      g.strokeStyle = '#ffcf33'; g.lineWidth = Math.max(3, 4.5 * (W / 150)); g.lineJoin = 'round'; g.lineCap = 'round';
+    const T = game.missionActive ? game.mission.targets : [];
+    const line = (pts, color, width) => {
+      g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.lineCap = 'round';
       g.beginPath();
-      this.route.forEach(([x, z], i) => { const X = (x - p.x) * k, Z = (z - p.z) * k; i ? g.lineTo(X, Z) : g.moveTo(X, Z); });
+      pts.forEach(([x, z], i) => { const X = (x - p.x) * k, Z = (z - p.z) * k; i ? g.lineTo(X, Z) : g.moveTo(X, Z); });
       g.stroke();
+    };
+    // the street race: the whole loop, faint
+    const job = game.mission.active;
+    if (game.missionActive && job && job.showRoute) {
+      if (!this.racePts || this.racePtsFor !== job.route) {
+        const rt = job.route;
+        this.racePts = [];
+        for (let i = 0; i <= rt.n; i += 3) this.racePts.push([rt.xs[i % rt.n], rt.zs[i % rt.n]]);
+        this.racePts.push([rt.xs[0], rt.zs[0]]);
+        this.racePtsFor = rt;
+      }
+      line(this.racePts, 'rgba(255, 207, 51, 0.55)', Math.max(2.5, 3.4 * (W / 150)));
+    }
+    // GPS to the nearest place to go
+    let goal = null, gd = 1e9;
+    for (const t of T) {
+      if (!t.gps) continue;
+      const d = Math.hypot(t.x - p.x, t.z - p.z);
+      if (d < gd) { gd = d; goal = t; }
+    }
+    if (goal) {
+      this.routeT -= dt;
+      if (this.routeT <= 0 || !this.route || this.routeGoal !== goal.x + ',' + goal.z) {
+        this.route = this.routeTo(game, goal.x, goal.z); this.routeT = 0.5; this.routeGoal = goal.x + ',' + goal.z;
+      }
+      this.route[0] = [p.x, p.z];
+      line(this.route, '#ffcf33', Math.max(3, 4.5 * (W / 150)));
     } else this.route = null;
     g.restore();
     // blips (upright), clamped to the rim
@@ -146,17 +170,32 @@ export class HUD {
       const dx = (x - p.x) * k, dz = (z - p.z) * k;
       return [R + dx * cr - dz * sr, R + dx * sr + dz * cr];
     };
-    const blip = (x, z, color, size, ring = '#ffffff') => {
+    const place = (x, z, size) => {
       let [X, Y] = toScreen(x, z);
       const dx = X - R, dy = Y - R, d = Math.hypot(dx, dy), lim = R - size - 3;
       const edge = d > lim;
       if (edge) { X = R + (dx / d) * lim; Y = R + (dy / d) * lim; }
+      return [X, Y, edge];
+    };
+    const blip = (x, z, color, size, ring = '#ffffff') => {
+      const [X, Y, edge] = place(x, z, size);
       g.fillStyle = color; g.strokeStyle = ring; g.lineWidth = Math.max(1.5, W / 90);
       g.beginPath(); g.arc(X, Y, edge ? size * 0.8 : size, 0, Math.PI * 2); g.fill(); g.stroke();
     };
+    const letter = (x, z, ch, color, size) => {
+      const [X, Y] = place(x, z, size);
+      g.fillStyle = '#111317'; g.beginPath(); g.arc(X, Y, size + 1.6 * u, 0, Math.PI * 2); g.fill();
+      g.fillStyle = color; g.beginPath(); g.arc(X, Y, size, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#111317'; g.font = `900 ${size * 1.5}px "Big Shoulders Display", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(ch, X, Y + size * 0.1);
+    };
     const u = W / 150;
-    for (const t of game.mission.targets) {
-      if (t.kind === 'car') blip(t.car.x, t.car.z, '#ff3b2f', 5 * u);
+    const hex = (h) => '#' + h.toString(16).padStart(6, '0');
+    for (const t of T) {
+      if (t.kind === 'car') blip(t.car.x, t.car.z, t.color ? hex(t.color) : '#ff3b2f', 5 * u);
+      else if (t.kind === 'racer') blip(t.car.x, t.car.z, hex(PAINTS[t.car.paint].hex), 4.2 * u, t.car.paint === 'black' ? '#ffffff' : '#111317');
+      else if (t.kind === 'ring') { if (!t.dim) blip(t.x, t.z, '#ffcf33', 5.5 * u, '#1d1f22'); }
+      else if (t.letter) letter(t.x, t.z, t.letter, t.color, 7.5 * u);
       else blip(t.x, t.z, '#ffcf33', 6.5 * u, '#1d1f22');
     }
     // north marker
@@ -181,10 +220,23 @@ export class HUD {
     if (text) { this.el.objective.classList.remove('pop'); void this.el.objective.offsetWidth; this.el.objective.classList.add('pop'); }
   }
 
-  pushSms(from, text) { this.sms.push({ from, text }); }
+  pushSms(from, text, color) { this.sms.push({ from, text, color }); }
 
-  banner(title, sub, amount) {
+  // big countdown in the middle of the screen ('' hides it)
+  countdown(text, go = false) {
+    const el = this.el.count;
+    el.textContent = text;
+    el.hidden = !text;
+    el.classList.toggle('go', go);
+    if (text) { el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+    this.countT = text ? (go ? 1.2 : 0.95) : 0;
+  }
+
+  fade(on) { this.el.fade.classList.toggle('on', on); }
+
+  banner(title, sub, amount, kind = '') {
     const b = this.el.banner;
+    b.className = kind;
     b.innerHTML = '';
     const t = document.createElement('div'); t.className = 'b-title'; t.textContent = title;
     const s = document.createElement('div'); s.className = 'b-sub'; s.textContent = sub || '';
@@ -259,8 +311,10 @@ export class HUD {
         this.smsShown = m;
         const el = this.el.phone;
         el.querySelector('.who').textContent = m.from;
-        el.querySelector('.av').textContent = m.from.trim()[0];
-        el.querySelector('.av').classList.toggle('sys', m.from === 'GTA 7');
+        const av = el.querySelector('.av');
+        av.textContent = m.from.trim()[0];
+        av.classList.toggle('sys', m.from === 'GTA 7');
+        av.style.background = m.color || '';
         el.querySelector('.msg').textContent = m.text;
         el.hidden = false;
         el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
@@ -272,11 +326,19 @@ export class HUD {
       const key = k + 'T';
       if (this[key] > 0) { this[key] -= dt; if (this[key] <= 0) this.el[k].classList.remove('show'); }
     }
+    if (this.countT > 0 && (this.countT -= dt) <= 0) this.el.count.hidden = true;
+    // second objective line: timers, race position
+    const sub = game.missionActive ? game.mission.sub : '';
+    if (sub !== this.subShown) {
+      this.subShown = sub;
+      this.el.objSub.textContent = sub;
+      this.el.objSub.hidden = !sub;
+    }
     // context controls
     const mode = car ? 'car' : 'foot';
     if (mode !== this.mode) { this.mode = mode; this.root.classList.toggle('in-car', mode === 'car'); }
     let label = '';
-    if (!car && p.near) label = p.near.driver === 'ai' ? 'STJÄL' : 'KLIV IN';
+    if (!car && p.near) label = p.near.driver ? 'STJÄL' : 'KLIV IN';
     if (label !== this.actionLabel) {
       this.actionLabel = label;
       this.el.bAction.textContent = label;

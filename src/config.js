@@ -44,4 +44,26 @@ export const CARWASH = { x0: 96, x1: 106, z0: -12, z1: -4, cost: 200 }; // drive
 export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
+// ---- version 0.2: three contacts with missions that can be done in any order ----
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', game: 'GTA 7' };
+export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
+export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
+// Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
+export const PIZZA_STOPS = [
+  { x: -97.5, z: -117.5, cx: -97.5, cz: -113.2 },  // villa, Hamngatan
+  { x: -62.5, z: -117.5, cx: -62.5, cz: -113.2 },  // villa, Hamngatan
+  { x: -62.5, z: -42.5, cx: -62.5, cz: -46.8 },    // villa, Storgatan
+  { x: -1, z: -117.5, cx: -1, cz: -113.3 },        // apartment block, Hamngatan
+  { x: 16, z: -42.5, cx: 16, cz: -46.7 },          // apartment block, Storgatan
+  { x: -8.1, z: 42.5, cx: -8.1, cz: 46.7 },        // row house, Skolgatan
+  { x: 80, z: 37.5, cx: 80, cz: 33.3 },            // flats behind Macken, Skolgatan
+  { x: -70, z: 42.5, cx: -70, cz: 47.5 },          // construction site gate
+  { x: 80, z: -42.5, cx: 80, cz: -46.7 },          // park entrance, Storgatan
+  { x: 42.5, z: 67, cx: 46.5, cz: 67, lasse: true }, // Lasse orders too
+];
+export const PIZZA_TIME_OUT = 40;                   // seconds away from the pizza car before the job fails
+export const MACKEN = { x: 58, z: 2, r: 3.5 };      // Kim's marker on the gas station forecourt
+export const RACE_PRIZE = 2500;
+export const RACE_LAPS = 2;
+
 export const SIM_HZ = 60;

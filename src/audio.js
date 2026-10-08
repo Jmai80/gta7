@@ -212,6 +212,25 @@ export class AudioFX {
     this.tone(2093, 0.6, 'triangle', 0.07, 0.48);
   }
 
+  // race countdown: three low beeps, then a high one
+  beep(go = false) {
+    if (!this.ctx) return;
+    if (go) { this.tone(1320, 0.5, 'square', 0.08); this.tone(660, 0.5, 'triangle', 0.06); }
+    else this.tone(660, 0.2, 'square', 0.08);
+  }
+
+  checkpoint() {
+    if (!this.ctx) return;
+    this.tone(988, 0.08, 'square', 0.05);
+    this.tone(1480, 0.16, 'triangle', 0.08, 0.06);
+  }
+
+  fail() {
+    if (!this.ctx) return;
+    [392, 349.2, 311.1, 261.6].forEach((f, i) => this.tone(f, i === 3 ? 0.7 : 0.2, 'square', 0.06, i * 0.17));
+    this.tone(130.8, 0.9, 'triangle', 0.1, 0.5);
+  }
+
   wanted() {
     if (!this.ctx) return;
     for (let i = 0; i < 3; i++) { this.tone(880, 0.14, 'square', 0.05, i * 0.3); this.tone(660, 0.14, 'square', 0.05, i * 0.3 + 0.15); }

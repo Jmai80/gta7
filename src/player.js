@@ -19,6 +19,7 @@ export class Player {
     this.near = null;
     this.hornOn = false;
     this.moved = 0;
+    this.locked = false;       // race countdown: the car stays put and you can't get out
     this.body.x = this.x; this.body.z = this.z; this.body.h = this.h;
   }
 
@@ -41,6 +42,7 @@ export class Player {
 
   onAction() {
     const g = this.game;
+    if (this.locked) return;
     if (this.state === 'foot') {
       const car = this.findCar();
       if (!car) return;
@@ -48,6 +50,7 @@ export class Player {
       if (car.speed > 3.5) { g.emit('toast', { text: 'Den rullar för fort! Ställ dig framför den.' }); return; }
       this.state = 'enter'; this.stateT = 0; this.target = car;
       if (car.driver === 'ai' && car.ai) car.ai.hold = true;
+      if (car.racer) car.racer.hold = true;
     } else if (this.state === 'car') {
       this.exitCar();
     }
@@ -87,9 +90,10 @@ export class Player {
 
   finishEnter(car) {
     const g = this.game;
-    const jacked = car.driver === 'ai';
+    const jacked = car.driver === 'ai' || car.driver === 'racer';
     if (jacked) {
       g.traffic.release(car);
+      car.racer = null; // a rival in the street race loses the car (and the race)
       const door = car.local(-1.5, 0.25);
       const ped = new Ped(g, car.driverLook || makeLook(g.rng));
       ped.x = door.x; ped.z = door.z; ped.y = car.y;
@@ -163,10 +167,10 @@ export class Player {
       thr = mag < 0.14 ? 0 : my > -0.35 * mag ? mag : -mag;
     }
     steer = Math.sign(steer) * Math.pow(Math.min(1, Math.abs(steer)), 1.25);
-    car.input.throttle = thr;
+    car.input.throttle = this.locked ? 0 : thr;
     car.input.steer = steer;
     car.input.handbrake = !!input.handbrake;
-    car.input.park = false;
+    car.input.park = this.locked;
     if (input.horn !== this.hornOn) {
       this.hornOn = !!input.horn;
       g.emit('horn', { on: this.hornOn, car });

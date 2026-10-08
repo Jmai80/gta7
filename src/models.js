@@ -144,6 +144,21 @@ export function buildCarGeometry(type, signUV) {
   return B.toGeometry(THREE);
 }
 
+// the "PIZZA" box on the roof of Sanna's delivery car (car-local coordinates, drawn as its own mesh)
+export function buildRoofSign(signUV) {
+  const B = new GeomBuilder();
+  for (const x of [-0.38, 0.38]) B.box(x - 0.04, 1.42, -0.44, x + 0.04, 1.51, -0.36, DARK);
+  B.box(-0.56, 1.5, -0.52, 0.56, 1.88, -0.28, 0xf4efe2, M.PLAIN, { skipBottom: false });
+  B.box(-0.57, 1.86, -0.53, 0.57, 1.9, -0.27, 0x2e7a46);
+  if (signUV) {
+    const [u0, v0, u1, v1] = signUV;
+    const uv = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]];
+    decal(B, [0, 1.68, -0.274], [0, 0, 1], 1.06, 0.33, WHITE, M.SIGN, uv);
+    decal(B, [0, 1.68, -0.526], [0, 0, -1], 1.06, 0.33, WHITE, M.SIGN, uv);
+  }
+  return B.toGeometry(THREE);
+}
+
 export function buildHumanGeometry() {
   const B = new GeomBuilder([['aBS', 2], ['aPivot', 3]]);
   const part = (bone, sel, pivot) => { B.cur.aBS = [bone, sel]; B.cur.aPivot = pivot; };

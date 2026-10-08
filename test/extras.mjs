@@ -17,7 +17,6 @@ function playerCar(g, x, z, h) {
 {
   console.log('Stunt jump through the construction gate');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
-  g.mission.stage = 'free';
   const car = playerCar(g, -70, 18, 0);
   let stunt = null, maxY = 0, airMax = 0;
   g.on('stunt', (e) => (stunt = e));
@@ -34,7 +33,6 @@ function playerCar(g, x, z, h) {
 {
   console.log('Car wash');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
-  g.mission.stage = 'free';
   g.money = 1000;
   const car = playerCar(g, 88, -8, Math.PI / 2);
   car.health = 55;

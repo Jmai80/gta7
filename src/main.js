@@ -7,7 +7,7 @@ import { Input } from './input.js';
 import { AudioFX } from './audio.js';
 import { createLayout } from './layout.js';
 import { CAR_TYPES } from './vehicle.js';
-import { fmt } from './mission.js';
+import { fmt, mmss } from './rng.js';
 
 const $ = (id) => document.getElementById(id);
 const FIXED = 1 / 60;
@@ -28,6 +28,23 @@ function loadSettings() {
 function saveSettings() {
   try { localStorage.setItem('gta7-settings', JSON.stringify(settings)); } catch (_) { /* storage blocked */ }
 }
+
+// progress (money, finished missions, stats) stays on the phone between visits
+const SAVE_KEY = 'gta7-progress';
+function loadProgress() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+    return d && d.v === 2 ? d : null;
+  } catch (_) { return null; }
+}
+function saveProgress() {
+  if (!game || !game.missionActive) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(game.mission.progress())); } catch (_) { /* storage blocked */ }
+}
+function clearProgress() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
+}
+const JOBS_DONE = (d) => ['lasse', 'pizza', 'race'].filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
 const perf = {
@@ -92,21 +109,26 @@ async function boot(hot) {
   new ResizeObserver(() => { view.resize(); hud.resize(); }).observe($('c'));
   window.addEventListener('orientationchange', () => setTimeout(() => { view.resize(); hud.resize(); }, 250));
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { if (state === 'play') pause(); audio.suspend(); }
+    if (document.hidden) { if (state === 'play') pause(); saveProgress(); audio.suspend(); }
     else { audio.resume(); if (state === 'play') requestWake(); }
   });
   bindUi();
   document.addEventListener('fullscreenchange', () => { refreshMenu(); setTimeout(() => { view.resize(); hud.resize(); }, 120); });
   $('loading').hidden = true;
-  if (hot && hot.stage && hot.stage !== 'steal') {
-    game.mission.restore(hot);
-    hud.setMoney(game.money);
+  if (hot && hot.v === 2) {
+    restoreInto(game, hot);
     startPlay(true);
   } else {
     state = 'title';
     $('title').hidden = false;
     const tip = $('iosTip');
     if (tip && isIOS() && !isStandalone()) tip.hidden = false;
+    const saved = loadProgress();
+    const info = $('saveInfo');
+    if (saved && info) {
+      info.textContent = `Sparat spel: ${JOBS_DONE(saved)} av 3 uppdrag klara · ${fmt(saved.money)} kr`;
+      info.hidden = false;
+    }
     view.setFog(170, 520);
   }
   lastRender = performance.now();
@@ -114,11 +136,26 @@ async function boot(hot) {
   window.claude?.hot?.snapshot?.(() => (game ? game.snapshot() : {}));
 }
 
+function restoreInto(g, data) {
+  if (!g.mission.restore(data)) return false;
+  hud.setMoney(g.money); hud.moneyShown = g.money; $('money').textContent = `${fmt(g.money)} kr`;
+  return true;
+}
+
 function wire(g) {
-  g.on('sms', (e) => hud.pushSms(e.from, e.text));
+  g.on('sms', (e) => hud.pushSms(e.from, e.text, e.color));
   g.on('objective', (e) => hud.objective(e.text));
-  g.on('banner', (e) => { hud.banner(e.title, e.sub, e.amount); audio.missionPassed(); buzz([30, 60, 30]); });
+  g.on('banner', (e) => {
+    hud.banner(e.title, e.sub, e.amount, e.kind);
+    if (e.kind === 'fail') { audio.fail(); buzz([80, 60, 80]); }
+    else if (e.kind !== 'start') { audio.missionPassed(); buzz([30, 60, 30]); }
+  });
   g.on('money', (e) => { hud.setMoney(e.total); if (e.delta > 0) setTimeout(() => audio.cash(), 650); });
+  g.on('progress', () => saveProgress());
+  g.on('fade', (e) => hud.fade(e.on));
+  g.on('teleport', (e) => { view.rig.yaw = e.car.h; view.rig.manual = 0; view.rig.k = 1; });
+  g.on('countdown', (e) => { hud.countdown(e.text, e.go); if (e.text) { audio.beep(e.go); buzz(e.go ? 60 : 25); } });
+  g.on('checkpoint', () => audio.checkpoint());
   g.on('hint', (e) => hud.hint(e));
   g.on('toast', (e) => hud.toast(e.text, e.long));
   g.on('wanted', (e) => { hud.stars(e.stars); if (e.stars) audio.wanted(); });
@@ -169,7 +206,11 @@ function isIOS() {
 }
 
 function startPlay(skipIntro = false) {
-  if (!skipIntro) tryFullscreen();
+  if (!skipIntro) {
+    tryFullscreen();
+    const saved = loadProgress();
+    if (saved) restoreInto(game, saved);
+  }
   audio.init();
   audio.setMuted(!settings.sound);
   requestWake();
@@ -190,8 +231,39 @@ function pause() {
   state = 'pause';
   input.releaseAll();
   audio.horn(false);
+  saveProgress();
+  renderMissionList();
+  armRestart(false);
   $('pausemenu').hidden = false;
   audio.suspend();
+}
+
+// the three contacts and how far you have come with them
+function renderMissionList() {
+  const el = $('mList');
+  if (!el) return;
+  el.innerHTML = '';
+  const label = { done: 'Klart', active: 'Pågår', open: 'Ledigt', locked: 'Snart' };
+  for (const m of game.mission.list()) {
+    const li = document.createElement('li');
+    li.className = 'm-' + m.state;
+    const b = document.createElement('b'); b.textContent = m.letter; b.style.background = m.color;
+    const t = document.createElement('span'); t.textContent = m.title;
+    const st = document.createElement('em'); st.textContent = m.state === 'done' ? '✓' : label[m.state];
+    li.append(b, t, st);
+    el.append(li);
+  }
+}
+
+// "Börja om" wipes the saved game, so it asks for a second tap
+let restartArmed = false, restartTimer = 0;
+function armRestart(on) {
+  restartArmed = on;
+  clearTimeout(restartTimer);
+  const b = $('mRestart');
+  b.textContent = on ? 'Tryck igen: radera allt och börja om' : 'Börja om';
+  b.classList.toggle('danger', on);
+  if (on) restartTimer = setTimeout(() => armRestart(false), 3500);
 }
 
 function resume() {
@@ -203,6 +275,8 @@ function resume() {
 }
 
 function restart() {
+  armRestart(false);
+  clearProgress();
   $('pausemenu').hidden = true;
   $('endcard').hidden = true;
   audio.horn(false); audio.washing(false);
@@ -210,7 +284,7 @@ function restart() {
   game = new Game({ layout, settings, missionActive: true });
   wire(game);
   hud.setMoney(0); hud.moneyShown = 0; $('money').textContent = '0 kr';
-  hud.objective(''); hud.stars(0);
+  hud.objective(''); hud.stars(0); hud.countdown(''); hud.fade(false);
   hud.sms.length = 0; hud.hintsSeen.clear();
   view.rig.yaw = game.player.h;
   view.rig.startBlend();
@@ -220,16 +294,16 @@ function restart() {
 }
 
 function showEnd(s) {
-  const mm = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+  saveProgress();
   const rows = [
-    ['Tid till leverans', mm(s.totalTime || 0)],
+    ['Speltid', mmss(s.playTime || 0)],
     ['Pengar', `${fmt(s.money)} kr`],
     ['Bilar stulna', s.carsStolen],
-    ['Varav kapade', s.carsJacked],
     ['Krockar', s.crashes],
     ['Toppfart', `${Math.round(s.maxSpeed)} km/h`],
     ['Körsträcka', `${(s.driven / 1000).toFixed(1).replace('.', ',')} km`],
-    ['Bilens skick vid leverans', s.deliveredCondition != null ? `${s.deliveredCondition} %` : '–'],
+    ['Pizzor levererade', s.pizzas || 0],
+    ['Gatloppet', s.raceTime != null ? mmss(s.raceTime) : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';
@@ -270,7 +344,7 @@ function bindUi() {
   on('play', () => startPlay());
   $('title').addEventListener('pointerup', (e) => { if (!e.target.closest('button, a') && state === 'title') startPlay(); });
   on('mResume', resume);
-  on('mRestart', restart);
+  on('mRestart', () => { if (restartArmed) restart(); else armRestart(true); });
   on('mSound', () => { settings.sound = !settings.sound; audio.setMuted(!settings.sound); saveSettings(); refreshMenu(); });
   on('mDrive', () => { settings.drive = settings.drive === 'pedals' ? 'stick' : 'pedals'; game.settings.drive = settings.drive; saveSettings(); refreshMenu(); });
   on('mQuality', () => {

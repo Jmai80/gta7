@@ -89,15 +89,15 @@ const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if
   check(maxImp > 15 && c3.x < -33 && c3.speed < 6, 'car stops at the building wall (no tunnelling)');
 }
 
-// ---------- 3. mission flow ----------
+// ---------- 3. Lasse's job (the first mission) ----------
 {
-  console.log('Mission flow');
+  console.log('Mission flow: Lasse');
   const g = new Game({ seed: 7 });
   const events = [];
   for (const e of ['sms', 'objective', 'banner', 'money', 'enterCar', 'endcard', 'wanted']) g.on(e, (d) => events.push([e, d]));
   for (let i = 0; i < 120; i++) g.step(DT, idle);
-  check(g.mission.stage === 'steal', 'intro → steal after ~2 s');
-  check(events.some(([e]) => e === 'sms'), 'Lasse sends the first SMS');
+  check(g.mission.lasse === 'steal' && g.mission.objective === 'Sno en röd bil', 'intro → steal after ~2 s');
+  check(events.some(([e, d]) => e === 'sms' && d.from.startsWith('Lasse')), 'Lasse sends the first SMS');
   // walk to the parked red car
   const red = g.vehicles.find((v) => v.parkedSpot && v.isRed);
   check(!!red, 'a red car is parked in the lot');
@@ -109,21 +109,22 @@ const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if
   g.step(DT, { ...idle, action: true });
   for (let i = 0; i < 60; i++) g.step(DT, idle);
   check(p.state === 'car' && p.car === red, 'player sits in the red car');
-  check(g.money === 1000, 'mission 1 pays 1 000 kr');
+  check(g.money === 1000, 'stealing it pays 1 000 kr');
   for (let i = 0; i < 60 * 5; i++) g.step(DT, idle);
-  check(g.mission.stage === 'deliver', 'second objective: deliver to the garage');
+  check(g.mission.lasse === 'deliver' && g.mission.objective === 'Kör bilen till Lasses Verkstad', 'second objective: deliver to the garage');
+  check(g.mission.targets.some((t) => t.kind === 'zone' && t.gps && t.letter === 'L'), 'GPS to the garage (the L on the map)');
   // teleport near the garage and roll into the zone
   red.x = DELIVERY.x - 12; red.z = DELIVERY.z; red.h = Math.PI / 2; red.vx = red.vz = 0; red.w = 0;
   red.health = 80;
-  for (let i = 0; i < 60 * 6 && g.mission.stage === 'deliver'; i++) {
+  for (let i = 0; i < 60 * 6 && g.mission.lasse === 'deliver'; i++) {
     const d = DELIVERY.x - red.x;
     g.step(DT, { ...idle, moveY: d > 2 ? 0.5 : -0.6, analog: true });
   }
-  check(g.mission.stage === 'delivered', 'delivery detected in the yard');
+  check(g.mission.lasse === 'done' && g.mission.done.has('lasse'), 'delivery detected in the yard');
   check(g.money === 1000 + 4000, `delivery pays by condition (got ${g.money - 1000} kr for 80 %)`);
   for (let i = 0; i < 60 * 11; i++) g.step(DT, idle);
-  check(g.mission.stage === 'free', 'free roam after the last SMS');
-  check(events.some(([e]) => e === 'endcard'), 'end card shown');
+  check(!events.some(([e]) => e === 'endcard'), 'no end card while Sanna and Kim still have jobs');
+  check(/S eller K/.test(g.mission.objective), `objective points to the other contacts (${g.mission.objective})`);
 }
 
 // ---------- 4. carjacking an AI car ----------
