@@ -121,6 +121,8 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/livs.js`, `shop.js`, `leif.js` | Sidouppdragen Fyrvaktarens kasse (och Hörnlivs insida) och Samuels nya nycklar |
 | `src/safe.js`, `office.js` | Huvuduppdragets del 4, Kassaskåpet, och bagerikontoret |
 | `src/opening.js`, `upgrades.js` | Huvuduppdragets del 5, Nyöppningen, och Lasses trimning |
+| `docs/HANDOFF.md` | Utvecklaröverlämning: arkitektur, alla uppdrag, platser, tester och fallgropar |
+| `test/browser/` | Webbläsargenomgångar (Playwright) för varje version |
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Samuels cykel och Hemleverans |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Samuel och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
