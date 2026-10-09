@@ -1,7 +1,7 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD } from '../src/config.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
@@ -297,8 +297,12 @@ function startRace(g) {
   g2.mission.done.add('kassaskap');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all seven are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.7/.test(d.text) && /Konditori/.test(d.text)), 'the last text: version 0.7, continued at Sjuby Konditori');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the konditori is left');
+  g2.mission.done.add('konditori');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eight are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.8/.test(d.text) && /Konditori/.test(d.text)), 'the last text: version 0.8, the konditori is open');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1089,9 +1093,7 @@ function crackSafe(g) {
   check(m.done.has('kassaskap') && g.money - money0 === SAFE_REWARD, `part 4 done, ${SAFE_REWARD} kr`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Kassaskåpet'), 'HUVUDUPPDRAG KLART');
   run(g, 16);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 0\.7/.test(d.text)), 'all seven done: the end card');
-  const soon = m.list().find((q) => q.id === 'konditori');
-  check(soon && soon.state === 'soon' && /Konditori/.test(soon.line), 'next in the list: "Nyöppningen", coming soon');
+  check(!ev.some(([n]) => n === 'endcard'), 'no end card yet: part 5 is next');
   check(!g.player.frozen && !g.camFocus, 'you can move again');
 
   // Bengt: too slow in the office, or still there when the alarm rings
@@ -1112,6 +1114,155 @@ function crackSafe(g) {
   check(j3.stage === 'caught', `standing still: Bengt gets you after ${t.toFixed(1)} s`);
   run(g3, 3);
   check(!g3.peds.list.some((q) => q.npc === 'bengt') && !g3.indoor, 'and Bengt is gone again');
+}
+
+// ---------- 16. side quest: "Lasses trimning" – what the money is for ----------
+const UP_TO_SAFE = [...UP_TO_BIKE, 'livs', 'nycklar', 'kassaskap'];
+{
+  console.log('Lasses trimning (sidouppdrag, pengar)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore({ ...livsSave(UP_TO_SAFE), money: 10000 });
+  const ev = record(g, ['sms', 'banner', 'shop', 'money', 'toast']);
+  run(g, 24);
+  check(!m.known.has('verkstad'), 'not right away');
+  run(g, 2.5);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'verkstad');
+  check(offer && offer[1].from === 'Lasse (Verkstan)' && /pengar/.test(offer[1].text), 'Lasse texts: come and see what money can buy');
+  m.accept('verkstad'); run(g, 0.1);
+  const L = m.targets.find((t) => t.letter === '$' && t.gps);
+  check(L && Math.hypot(L.x - LASSE_SHOP.x, L.z - LASSE_SHOP.z) < 0.1, 'the GPS leads to the shop at the workshop');
+  walkHere(g, LASSE_SHOP.x, LASSE_SHOP.z); run(g, 0.2);
+  check(ev.filter(([n]) => n === 'shop').length === 1, 'walking up to the garage door opens the shop');
+  run(g, 1);
+  check(ev.filter(([n]) => n === 'shop').length === 1, 'once (not again while you stand there)');
+  const items = m.shopItems();
+  check(items.length === 3 && items.every((it) => !it.owned && it.price > 0), `three things for sale: ${items.map((it) => `${it.name} ${it.price} kr`).join(', ')}`);
+  let r = m.buy('turbo');
+  check(r.ok && g.money === 7000 && m.upgrades.has('turbo'), `turbo bought: ${r.msg}`);
+  check(m.done.has('verkstad') && ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && /trimning/.test(d.sub)), 'the first purchase: side quest done');
+  check(!m.buy('turbo').ok, 'you cannot buy it twice');
+  check(m.buy('pansar').ok && m.buy('tuta').ok && g.money === 7000 - 2500 - 800, 'krockskydd and the melody horn too');
+  g.money = 100;
+  // the upgrades on a car you drive
+  const car = g.addVehicle('sedan', 'blue', 20, 4, Math.PI / 2);
+  const plain = g.addVehicle('sedan', 'blue', 20, -4, Math.PI / 2);
+  check(plain.boost === 1 && plain.armor === 1, 'cars nobody drives are ordinary');
+  enterCar(g, car);
+  check(car.boost > 1 && car.top > 1 && car.armor === 0.5, 'in your car: turbo and armour');
+  const h0 = car.health; car.damage(20);
+  check(Math.abs(h0 - car.health - 10) < 0.01, 'half the dents');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  check(!g.player.inCar && car.boost === 1 && car.armor === 1, 'out of the car: ordinary again');
+  // turbo is faster: the same run with and without
+  const sp = (turbo) => {
+    const gg = new Game({ seed: 7, traffic: 0, peds: 0 });
+    if (turbo) gg.mission.upgrades.add('turbo');
+    const c = gg.addVehicle('sedan', 'blue', -40, 100, Math.PI);
+    enterCar(gg, c);
+    for (let i = 0; i < 60 * 4; i++) gg.step(DT, { ...idle, moveY: 1 });
+    return c.speed;
+  };
+  const s0 = sp(false), s1 = sp(true);
+  check(s1 > s0 * 1.08, `turbo: ${(s1 * 3.6).toFixed(0)} km/h after 4 s instead of ${(s0 * 3.6).toFixed(0)}`);
+  // saved
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(JSON.parse(JSON.stringify(m.progress())));
+  check(['turbo', 'pansar', 'tuta'].every((id) => g2.mission.upgrades.has(id)), 'the upgrades are saved');
+  // Kim's challenge comes after the shopping
+  run(g, 16);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'hopp' && d.from === 'Kim (Macken)'), "then Kim texts: the long jump");
+}
+
+// ---------- 17. side quest: "Långhoppet" ----------
+function jumpFrom(g, z0) {
+  const c = g.addVehicle('sedan', 'blue', -70, z0, 0);
+  enterCar(g, c);
+  for (let i = 0; i < 60 * 10; i++) g.step(DT, { ...idle, throttleAxis: c.z < 95 ? 1 : -1, steerAxis: 0 });
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  g.removeVehicle(c);
+}
+{
+  console.log('Långhoppet (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_SAFE, 'verkstad']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'stunt']);
+  m.offer('hopp'); m.accept('hopp'); run(g, 0.1);
+  check(m.targets.some((t) => t.letter === 'K' && t.gps), 'the K marker at the run-up');
+  jumpFrom(g, 18);
+  const j1 = ev.filter(([n]) => n === 'stunt').pop();
+  run(g, 3);
+  check(j1 && j1[1].dist < JUMP_GOAL && !m.done.has('hopp') && ev.some(([n, d]) => n === 'toast' && /Kim vill se/.test(d.text) && /turbo/.test(d.text)), `a short run-up: ${j1 && j1[1].dist} m is not enough (and a tip about the turbo)`);
+  check(new RegExp(`${j1[1].dist} m`).test(m.questLine('hopp')), `the list remembers the best jump (${m.questLine('hopp')})`);
+  const money0 = g.money;
+  jumpFrom(g, -20);
+  const j2 = ev.filter(([n]) => n === 'stunt').pop();
+  run(g, 3);
+  check(j2[1].dist >= JUMP_GOAL && m.done.has('hopp'), `a long run-up: ${j2[1].dist} m – done`);
+  check(g.money - money0 >= JUMP_REWARD && ev.some(([n, d]) => n === 'banner' && /Långhoppet/.test(d.sub || '')), `${JUMP_REWARD} kr (plus the stunt bonus)`);
+  run(g, 5);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Kim (Macken)' && /hoppkung/.test(d.text)), 'Kim admits it');
+}
+
+// ---------- 18. main quest, part 5: "Nyöppningen" ----------
+{
+  console.log('Nyöppningen (huvuduppdrag del 5)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_SAFE, 'flag', 'verkstad', 'hopp']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'caught', 'endcard', 'fade']);
+  run(g, 50);
+  check(!m.known.has('konditori'), 'not right away');
+  run(g, 6);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'konditori');
+  check(offer && offer[1].from === 'Tant Gun (Storgatan)' && /Konditori/.test(offer[1].text), 'Gun texts: Sjuby Konditori is opening again');
+  m.accept('konditori'); run(g, 0.2);
+  const job = m.active;
+  check(job && job.id === 'konditori', 'following it starts it');
+  check(m.targets.filter((t) => t.kind === 'zone').length === 3 && m.targets.filter((t) => t.gps).length === 1, 'three places on the map, the GPS to the nearest');
+  check(/Hämta kardemumma/.test(m.objective), `the nearest first: ${m.objective} · ${m.sub}`);
+  walkHere(g, PICKUPS.kardemumma.x, PICKUPS.kardemumma.z); run(g, 0.3);
+  check(job.have.has('kardemumma') && ev.some(([n, d]) => n === 'toast' && /kardemumma/.test(d.text)), 'cardamom from Yasmin at Hörnlivs');
+  const car = g.addVehicle('sedan', 'blue', PICKUPS.smor.x - 6, PICKUPS.smor.z, Math.PI / 2);
+  enterCar(g, car);
+  parkAt(g, PICKUPS.smor.x, PICKUPS.smor.z, Math.PI / 2); run(g, 0.3);
+  check(job.have.has('smor'), 'butter from Macken – from the car');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, PICKUPS.mjol.x, PICKUPS.mjol.z); run(g, 0.3);
+  check(job.have.has('mjol') && job.helpers.mjol, 'flour from Majken at the windmill');
+  run(g, 2.5);
+  check(job.chaser && job.chaser.mode === 'chase', 'a Bullbilen van comes for the flour');
+  walkHere(g, 40, -330);
+  let t = 0; while (t < 40 && job.have.has('mjol')) { g.step(DT, idle); t += DT; }
+  check(!job.have.has('mjol') && job.lostFlour && m.active === job, `on the road on foot they take it (${t.toFixed(0)} s) – but the quest goes on`);
+  run(g, 1);
+  walkHere(g, PICKUPS.mjol.x, PICKUPS.mjol.z); run(g, 0.3);
+  check(job.have.has('mjol'), 'another sack from Majken');
+  walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 1.2);
+  const t1 = ev.filter(([n, d]) => n === 'talk' && d.id === 'konditori').pop();
+  check(job.stage === 'talk1' && t1 && /I morgon/.test(t1[1].pages.map((q) => q.text).join(' ')), 'at the konditori: Gun will bake all night');
+  m.talkDone('konditori');
+  run(g, 3.5);
+  const t2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'konditori').pop();
+  check(job.stage === 'talk2' && t2 !== t1 && /diska/.test(t2[1].pages.map((q) => q.text).join(' ')), 'the next morning: the opening – and Bengt wants to learn to bake');
+  check(job.crowd.length === 9 && job.crowd.every((q) => g.peds.list.includes(q)) && g.peds.list.includes(job.bengt), 'a crowd on the square, Bengt at the back');
+  const money0 = g.money;
+  m.talkDone('konditori'); run(g, 0.5);
+  check(m.done.has('konditori') && g.money - money0 === OPENING_REWARD, `part 5 done, ${OPENING_REWARD} kr`);
+  check(!g.player.frozen && !g.camFocus, 'you can move again');
+  run(g, 16);
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 0\.8/.test(d.text)), 'all eight: the end card');
+  const soon = m.list().find((q) => q.id === 'fabriken');
+  check(soon && soon.state === 'soon' && /fabriksbullarna/.test(soon.line), 'next in the list: "Bullfabriken", coming soon');
+  // Gun by the konditori door
+  const gun = m.flag.gun;
+  walkHere(g, gun.x + 1.2, gun.z); run(g, 0.2);
+  const said = ev.length;
+  if (m.prompt === 'PRATA') press(g);
+  check(ev.slice(said).some(([n, d]) => n === 'say' && /Välkommen in/.test(d.text)), 'Gun at the konditori: "Välkommen in!"');
+  run(g, 20);
+  check(!g.peds.list.some((q) => q.npc === 'crowd' || q.npc === 'bengt-out'), 'the crowd goes home after a while');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

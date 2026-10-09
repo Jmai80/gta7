@@ -13,7 +13,11 @@
 //                          bike from Norrholmen to Gun with a Bullbilen van on your heels (v0.6)
 //   G  Tant Gun:           "Kassaskåpet" – main quest, part 4: the safe in Bullbilen's bakery office,
 //                          the second half of the recipe, the vans after you (v0.7)
-//   G  Tant Gun:           "Nyöppningen" – what comes next, in the list as "Kommer snart"
+//   G  Tant Gun:           "Nyöppningen" – main quest, part 5: three ingredients, then Sjuby Konditori
+//                          opens again by the square (v0.8)
+//   G  Tant Gun:           "Bullfabriken" – what comes next, in the list as "Kommer snart"
+//   L  Lasse (Verkstan):   "Lasses trimning" – side quest: spend your money in Lasse's tuning shop (v0.8)
+//   K  Kim (Macken):       "Långhoppet" – side quest: a stunt jump of 34 m at the construction site (v0.8)
 //   N  Lås-Leif:           "Samuels nya nycklar" – side quest after the eggs: new keys out to Samuel (v0.7)
 //   Y  Yasmin (Hörnlivs):  "Fyrvaktarens kasse" – side quest once the north bridge is open: take a
 //                          bag of groceries (and twelve eggs) from the shop to the lighthouse (v0.6.1)
@@ -24,6 +28,7 @@ import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
+  KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -34,6 +39,8 @@ import { BikeJob, ESCAPE_BONUS } from './bikejob.js';
 import { LivsJob, spawnIngvar } from './livs.js';
 import { SafeJob } from './safe.js';
 import { KeysJob, spawnLeif } from './leif.js';
+import { OpeningJob } from './opening.js';
+import { ITEMS, applyUpgrades, clearUpgrades } from './upgrades.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -101,14 +108,35 @@ export const QUESTS = [
     reward: `${fmt(SAFE_REWARD)} kr (+500 kr om du skakar av dig Bullbilarna)`, where: 'Bullbilens bageri, sidodörren på västra väggen',
   },
   {
+    // side quest: what the money is for – Lasse's tuning shop (stays open afterwards)
+    id: 'verkstad', letter: 'L', who: WHO.lasse, title: 'Lasses trimning', color: '#ffcf33', x: LASSE_SHOP.x, z: LASSE_SHOP.z,
+    side: true, sms: true, after: 'kassaskap', at: 25,
+    text: 'Tjena, Lasse här! Snacket går att du har gott om stålar nu. Kom till verkstaden så visar jag vad pengar kan köpa: turbo, krockskydd och en tuta som får hela Sjuby att dansa.',
+    reward: 'Grejerna är dina för alltid', where: 'Lasses Verkstad, Drottninggatan (första garageporten)',
+  },
+  {
+    // side quest: Kim's long jump, after you have been shopping at Lasse's
+    id: 'hopp', letter: 'K', who: WHO.kim, title: 'Långhoppet', color: '#4aa8ff', x: -70, z: 10,
+    side: true, sms: true, after: 'verkstad', at: 15,
+    text: `Kim här. Lasse säger att du har varit och shoppat. Bevisa att det hjälper: hoppa minst ${JUMP_GOAL} meter på byggtomtens hopp. Ta sats från parkeringen på andra sidan Skolgatan.`,
+    reward: `${fmt(JUMP_REWARD)} kr`, where: 'Hoppet på byggtomten, Skolgatan',
+  },
+  {
+    // main quest, part 5: Sjuby Konditori opens again
+    id: 'konditori', letter: 'G', who: WHO.gun, title: 'Nyöppningen', color: '#c58be0', x: KONDITORI.x, z: KONDITORI.z, r: KONDITORI.r, Job: OpeningJob, main: true,
+    after: 'kassaskap', at: 55, startOnAccept: true,
+    text: 'Jag har bestämt mig: Sjuby Konditori ska öppna igen, i Arnes gamla lokal vid torget! Men till bullarna behöver jag kardemumma från Hörnlivs, smör från Macken och mjöl från kvarnen på Norrholmen. Hjälper du mig?',
+    reward: `${fmt(OPENING_REWARD)} kr och den första Sjubybullen`, where: 'Hörnlivs, Macken och kvarnen – sedan konditoriet vid torget',
+  },
+  {
     // the next part of the main quest: shown in the list, not playable yet
-    id: 'konditori', letter: 'G', who: WHO.gun, title: 'Nyöppningen', color: '#c58be0', main: true, soon: true, after: 'kassaskap',
+    id: 'fabriken', letter: 'G', who: WHO.gun, title: 'Bullfabriken', color: '#c58be0', main: true, soon: true, after: 'konditori',
   },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap']; // all seven → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori']; // all eight → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -132,8 +160,12 @@ export class Missions {
     this.washT = 0; this.inWash = false;
     this.keepT = 0;
     this.flag = new FlagQuest(this);
+    this.upgrades = new Set();      // what you have bought at Lasse's (v0.8): 'turbo', 'pansar', 'tuta'
+    this.bestJump = 0;              // for Kim's long jump
+    this.shopArmed = true;
     game.on('enterCar', (e) => this.onEnterCar(e));
-    game.on('exitCar', (e) => this.active && this.active.onExitCar && this.active.onExitCar(e));
+    game.on('exitCar', (e) => { clearUpgrades(e.car); if (this.active && this.active.onExitCar) this.active.onExitCar(e); });
+    game.on('stunt', (e) => this.onStunt(e));
     game.on('crash', (e) => this.active && this.active.onCrash && this.active.onCrash(e));
     game.on('bikeFall', (e) => this.active && this.active.onBikeFall && this.active.onBikeFall(e));
   }
@@ -246,7 +278,7 @@ export class Missions {
 
   // what to do next, in one line (for the list)
   questLine(id) {
-    if (id === 'konditori') return 'Fortsättning följer – Sjuby Konditori';
+    if (id === 'fabriken') return 'Fortsättning följer – var kommer fabriksbullarna ifrån?';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -260,6 +292,9 @@ export class Missions {
       case 'livs': return 'Gå in på Hörnlivs på Kungsgatan';
       case 'nycklar': return 'Hämta nycklarna hos Lås-Leif på Skolgatan';
       case 'kassaskap': return 'Smyg in på Bullbilens bagerikontor och öppna kassaskåpet';
+      case 'verkstad': return 'Köp något i Lasses trimningsbutik';
+      case 'hopp': return `Hoppa minst ${JUMP_GOAL} m på byggtomten${this.bestJump ? ` (bäst hittills ${this.bestJump} m)` : ''}`;
+      case 'konditori': return 'Hämta kardemumma, smör och mjöl till Sjuby Konditori';
     }
     return '';
   }
@@ -275,6 +310,7 @@ export class Missions {
     return {
       v: SAVE_VERSION, money: this.game.money, done: [...this.done], stats: { ...this.game.stats },
       known: [...this.known], seen: [...this.seen], tracked: this.active ? this.active.id : this.tracked,
+      upg: [...this.upgrades], best: this.bestJump,
     };
   }
 
@@ -296,6 +332,8 @@ export class Missions {
     }
     for (const id of this.done) if (valid(id)) { this.known.add(id); this.seen.add(id); }
     this.tracked = valid(d.tracked) && this.isOpen(d.tracked) ? d.tracked : null;
+    this.upgrades = new Set((d.upg || []).filter((id) => ITEMS.some((it) => it.id === id)));
+    this.bestJump = d.best || 0;
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
     if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
@@ -321,6 +359,7 @@ export class Missions {
     else this.checkJobs(dt);
     this.lasseStep();
     this.flag.update(dt);
+    this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
     if (this.active) this.choose = false;
     else if (this.holdObj <= 0) this.followObjective();
@@ -360,6 +399,7 @@ export class Missions {
     const x = car ? car.x : p.x, z = car ? car.z : p.z;
     for (const c of this.jobs) {
       if (!this.isOpen(c.id)) continue;
+      if (c.startOnAccept) { if (this.tracked === c.id) { this.startJob(c); return; } continue; } // starts as soon as you follow it
       if (c.cool > 0) { c.cool -= dt; continue; }
       const d = Math.hypot(x - c.x, z - c.z);
       if (d > c.r + 1.5) { c.armed = true; c.warned = false; continue; }
@@ -443,11 +483,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = last === 'overlamning' || last === 'cykel' || last === 'kassaskap' ? 4.3 : 0; // after tant Gun's kanelbulle and her text
-    const side = ['flag', 'livs', 'nycklar'].filter((id) => !this.done.has(id)).length;
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori'].includes(last) ? 4.3 : 0; // after tant Gun's kanelbulle and her text
+    const side = ['flag', 'livs', 'nycklar', 'verkstad', 'hopp'].filter((id) => !this.done.has(id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 0.7! Receptet är helt – fortsättning följer på Sjuby Konditori. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 0.7! Receptet är helt – fortsättning följer på Sjuby Konditori. Kör runt fritt så länge.'));
+      ? `Det var allt i version 0.8! Sjuby Konditori är öppet igen – fortsättning följer: var kommer Bullbilens fabriksbullar ifrån? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar.`
+      : 'Det var allt i version 0.8! Sjuby Konditori är öppet igen – fortsättning följer: var kommer Bullbilens fabriksbullar ifrån? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -488,6 +528,9 @@ export class Missions {
       case 'cykel': return { text: 'Hämta Arnes cykel (G)', sub: this.game.player.z < -229 ? 'Lott 7 bland kolonilotterna' : 'Över norra bron till Norrholmen' };
       case 'livs': return { text: 'Gå in på Hörnlivs (Y)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Kungsgatan, under den blå markisen' };
       case 'nycklar': return { text: 'Gå till Lås-Leif (N)', sub: 'Skolgatan, södra sidan av torgkvarteret' };
+      case 'verkstad': return { text: 'Köp något hos Lasse (L)', sub: 'Lasses Verkstad, första garageporten' };
+      case 'hopp': return { text: `Hoppa minst ${JUMP_GOAL} m`, sub: this.bestJump ? `Bäst hittills ${this.bestJump} m · ta längre sats` : 'Byggtomten · ta sats från parkeringen' };
+      case 'konditori': return { text: 'Nyöppningen', sub: 'Tre ingredienser till Sjuby Konditori' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }
     return null;
@@ -527,6 +570,7 @@ export class Missions {
   onEnterCar(e) {
     const { car, jacked } = e;
     const g = this.game;
+    applyUpgrades(car, this.upgrades);
     if (car.spec.bike) { // the bike is not a car to steal
       if (!this.flags.bikeHint) {
         this.flags.bikeHint = true;
@@ -603,10 +647,13 @@ export class Missions {
     // the S and K markers (hidden while a job runs)
     if (!this.active) {
       for (const c of this.jobs) {
-        if (!this.isOpen(c.id) || c.cool > 0) continue;
+        if (!this.isOpen(c.id) || c.cool > 0 || c.startOnAccept) continue;
         T.push({ kind: 'contact', x: c.x, z: c.z, r: c.r, letter: c.letter, color: c.color, gps: tr === c.id });
       }
     }
+    // Lasse's shop (once he has told you about it) and Kim's long jump
+    if (this.known.has('verkstad') || this.done.has('verkstad')) T.push({ kind: 'contact', x: LASSE_SHOP.x, z: LASSE_SHOP.z, r: LASSE_SHOP.r, letter: '$', color: '#ffcf33', gps: tr === 'verkstad', mapOnly: this.done.has('verkstad') });
+    if (this.isOpen('hopp')) T.push({ kind: 'contact', x: BY_ID.hopp.x, z: BY_ID.hopp.z, r: 2.5, letter: 'K', color: '#4aa8ff', gps: tr === 'hopp' });
     // tant Gun
     this.flag.targets(T, tr === 'flag');
   }
@@ -652,6 +699,60 @@ export class Missions {
       if (v.driver !== 'player' && Math.hypot(v.x - S.x, v.z - S.z) < 3.5) g.removeVehicle(v);
     }
     return g.spawnPizzaCar() || pz;
+  }
+
+  // ---------------------------------------------------------------- Lasse's tuning shop (v0.8)
+  // walk or drive up to the first garage door: the shop opens (main.js shows it, the game waits)
+  shopCheck() {
+    const g = this.game, p = g.player;
+    if (!(this.known.has('verkstad') || this.done.has('verkstad'))) return;
+    const car = p.inCar ? p.car : null, T = car || p;
+    const d = Math.hypot(T.x - LASSE_SHOP.x, T.z - LASSE_SHOP.z);
+    if (d > LASSE_SHOP.r + 2) { this.shopArmed = true; return; }
+    if (d > LASSE_SHOP.r || !this.shopArmed || (car && car.speed > 2.5) || p.frozen || this.active) return;
+    if (p.state !== 'foot' && p.state !== 'car') return;
+    this.shopArmed = false;
+    if (car) { car.vx *= 0.2; car.vz *= 0.2; car.input.throttle = 0; }
+    g.emit('shop', {});
+  }
+
+  shopItems() { return ITEMS.map((it) => ({ ...it, owned: this.upgrades.has(it.id), afford: this.game.money >= it.price })); }
+
+  buy(id) {
+    const g = this.game, it = ITEMS.find((q) => q.id === id);
+    if (!it || this.upgrades.has(id)) return { ok: false, msg: 'Den har du redan.' };
+    if (g.money < it.price) return { ok: false, msg: `Du har inte råd – ${it.name} kostar ${fmt(it.price)} kr.` };
+    g.money -= it.price;
+    this.upgrades.add(id);
+    g.stats.bought = (g.stats.bought || 0) + 1;
+    g.emit('money', { delta: -it.price, total: g.money });
+    if (g.player.inCar) applyUpgrades(g.player.car, this.upgrades);
+    const first = this.isOpen('verkstad');
+    if (first) {
+      this.completeQuest('verkstad', { title: 'SIDOUPPDRAG KLART', sub: 'Lasses trimning' });
+      this.sms(WHO.lasse, 'Snyggt köpt! Pengarna du tjänar på uppdragen kan du alltid handla för här. Biltvätten på Macken lagar bucklor för 200 kr också.', 4);
+    }
+    g.emit('progress', {});
+    const msgs = { turbo: 'Turbo monterad! Alla bilar du kör går nu fortare.', pansar: 'Krockskydd monterat! Bilarna du kör tål mer.', tuta: 'Melodituta installerad! Testa att tuta.' };
+    return { ok: true, msg: msgs[id] };
+  }
+
+  // ---------------------------------------------------------------- Kim's long jump (v0.8)
+  onStunt(e) {
+    const g = this.game;
+    if (e.dist > this.bestJump) this.bestJump = e.dist;
+    if (!this.isOpen('hopp')) return;
+    if (e.dist >= JUMP_GOAL) {
+      g.stats.longJump = e.dist;
+      this.later(2.2, () => {
+        this.completeQuest('hopp', { title: 'SIDOUPPDRAG KLART', sub: `Långhoppet · ${e.dist} m`, amount: JUMP_REWARD });
+        this.sms(WHO.kim, `${e.dist} meter?! Okej, jag erkänner. Du är Sjubys hoppkung.`, 4);
+      });
+    } else {
+      const turbo = this.upgrades.has('turbo');
+      this.later(2.4, () => g.emit('toast', { text: `${e.dist} m – Kim vill se ${JUMP_GOAL} m. ${turbo ? 'Ta längre sats!' : 'Ta längre sats – eller skaffa turbo hos Lasse!'}`, long: true }));
+    }
+    g.emit('progress', {});
   }
 
   // ---------------------------------------------------------------- side activities

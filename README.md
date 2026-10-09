@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.7 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, tre sidouppdrag, fyra delar av ett huvuduppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – och till sist in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.8 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, fem sidouppdrag, fem delar av ett huvuduppdrag, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, och till sist till invigningen av Sjuby Konditori.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.7
+## Uppdrag i version 0.8
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -49,11 +49,21 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Bagar-Bengt är ute vid ugnarna, och en klocka visar hur länge till han är borta (75 sekunder). Kassaskåpet har ett kodlås. Titta på sakerna på kontoret (**TITTA**) för att lista ut koden, och öppna sedan skåpet (**ÖPPNA**) och ta receptet (**TA**).
   - Då går larmet. Bengt kommer springande från bageriet efter ett par sekunder, så skynda dig ut genom sidodörren (**GÅ UT**). Hinner han fram, eller tar tiden slut innan du öppnat skåpet, blir du utslängd och får försöka igen.
   - Utanför kommer två Bullbilar efter dig. De kör bara på vägarna. Står du still på vägen eller blir fast med bilen tar de tillbaka receptet. Skakar du av dig dem får du 500 kr extra.
-  - Gå eller kör fram till tant Guns grind, så sätter hon ihop halvorna. Du får 3 000 kr, och nästa del, **Nyöppningen**, syns i uppdragslistan som *Kommer snart*.
+  - Gå eller kör fram till tant Guns grind, så sätter hon ihop halvorna. Du får 3 000 kr.
+- **G – Tant Gun (huvuduppdrag, del 5): Nyöppningen.** En knapp minut efter kassaskåpet sms:ar tant Gun: Sjuby Konditori, Arnes gamla kafé vid torget, ska öppna igen. Uppdraget startar så fort du följer det.
+  - Hämta tre ingredienser i vilken ordning du vill: kardemumma hos Yasmin utanför Hörnlivs, smör på Macken (det går att köra in) och mjöl hos Mjölnar-Majken vid kvarnen på Norrholmen. Den gula linjen visar vägen till den närmaste.
+  - När du fått mjölet kommer en Bullbil från bageriet. Tar de dig till fots på vägen, eller blir du fast med bilen, tar de mjölsäcken – då får du hämta en ny hos Majken. Uppdraget misslyckas inte.
+  - Lämna allt vid konditoriet. Nästa morgon är det invigning med publik på torget, och Bagar-Bengt dyker upp med en bekännelse. Du får 4 000 kr, och nästa del, **Bullfabriken**, syns i uppdragslistan som *Kommer snart*.
 - **Y – Yasmin på Hörnlivs (sidouppdrag): Fyrvaktarens kasse.** När norra bron är öppen sms:ar Yasmin, som står i kassan på Hörnlivs på Kungsgatan (butiken under den blå markisen, där spelet börjar). Gå in genom dörren och prata med henne vid kassan. Hon ger dig en kasse till sin gamle vän, fyrvaktaren Ingvar ute vid fyren på Norrholmen.
   - I kassen ligger tolv ägg. Varje hård smäll på vägen (krockar, att ramla av cykeln eller hårda landningar) knäcker några, och uppdragsrutan visar hur många som är hela.
   - Gå fram till Ingvar utanför hans stuga vid fyren. Du får 500 kr plus 50 kr för varje helt ägg, alltså upp till 1 100 kr, och Ingvar har något att berätta om Bullbilens bageri.
   - Går du ut ur butiken utan kassen står den kvar på disken till nästa gång.
+- **L – Lasse (sidouppdrag): Lasses trimning – så använder du pengarna.** En stund efter kassaskåpet sms:ar Lasse. Gå eller kör fram till den första garageporten på Lasses Verkstad (märkt **$** på kartan), så öppnas hans butik. Där köper du för pengarna du tjänat:
+  - **Turbo** (3 000 kr): bilarna du kör drar snabbare och får högre toppfart.
+  - **Krockskydd** (2 500 kr): bilarna du kör får hälften så stora bucklor.
+  - **Melodituta** (800 kr): tutan spelar en glad melodi.
+  - Det första köpet klarar sidouppdraget. Uppgraderingarna sparas, gäller alla bilar du kör (inte cykeln) och butiken finns kvar. Biltvätten på Macken (200 kr) lagar fortfarande bucklor.
+- **K – Kim (sidouppdrag): Långhoppet.** Efter ditt första köp hos Lasse utmanar Kim dig att hoppa minst 34 meter på byggtomtens hopp. Ta lång sats från parkeringen på andra sidan Skolgatan – eller skaffa turbo. Det ger 1 500 kr, och listan visar ditt bästa hopp.
 - **N – Lås-Leif (sidouppdrag): Samuels nya nycklar.** En stund efter äggleveransen (när Arnes cykel är hos tant Gun) sms:ar Lås-Leif, nyckelsmeden på Skolgatan. Samuel har "tappat" sina cykelnycklar och väntar på nya vid kolonilotterna på Norrholmen. Gå till Leif utanför hans butik, ta nycklarna och kör ut dem till Samuel på 65 sekunder. Han ger dig 800 kr, och undrar om du har sett hans cykel.
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
@@ -65,6 +75,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
 - **Lås & nyckel:** Leifs nyckelservice på Skolgatan, med en stor mässingsnyckel över dörren.
+- **Sjuby Konditori:** Arnes gamla kafé på torgets södra sida, med rosa markis och bullar i fönstren.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten, en biltvätt som lagar bucklor och en brygga i hamnen att promenera ut på.
 - **Norrholmen:** ön norr om stan, ungefär en tredjedel så stor som Sjuby. Där finns en kurvig kustväg runt ön, kolonilotter, Bullbilens bageri med mjölsilor, skåpbilar och en jättebulle på taket, en väderkvarn vars vingar snurrar, en fyr, en badplats och en liten båthamn.
 - **HUD:** minikarta med GPS och uppdragsbokstäver (inomhus visar den en planritning med Samuel och nycklarna), SMS från uppdragsgivarna, fartmätare och bilens skick.
@@ -101,6 +112,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/mission.js`, `pizza.js`, `race.js`, `racer.js`, `flag.js` | Uppdragslistan, pizzabudet, gatloppet, datorförarna och tant Guns flagga |
 | `src/livs.js`, `shop.js`, `leif.js` | Sidouppdragen Fyrvaktarens kasse (och Hörnlivs insida) och Samuels nya nycklar |
 | `src/safe.js`, `office.js` | Huvuduppdragets del 4, Kassaskåpet, och bagerikontoret |
+| `src/opening.js`, `upgrades.js` | Huvuduppdragets del 5, Nyöppningen, och Lasses trimning |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Samuel och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |

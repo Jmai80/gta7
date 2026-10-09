@@ -338,6 +338,15 @@ kbd {
 .rows.two { flex-direction: row; }
 .rows.two .row { flex: 1; text-align: center; touch-action: manipulation; }
 .rows.two .row:not(.primary) { font: 900 18px/1 var(--display); letter-spacing: 0.08em; }
+.sh-money { margin: 0; font-size: 15px; color: var(--muted); }
+.sh-money b { color: #7ee08a; font: 900 20px/1 var(--display); letter-spacing: 0.04em; }
+.shlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.shlist li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--line); }
+.shlist .nm { font-weight: 800; }
+.shlist .tx { grid-column: 1; font-size: 13px; color: var(--muted); line-height: 1.35; }
+.shlist button { grid-row: 1 / span 2; grid-column: 2; min-width: 96px; padding: 10px 12px; border-radius: 10px; border: 0; background: var(--gold); color: #17130a; font: 900 16px/1 var(--display); letter-spacing: 0.05em; touch-action: manipulation; }
+.shlist button[disabled] { background: rgba(255,255,255,0.12); color: var(--muted); }
+.shlist li.owned button { background: rgba(126, 224, 138, 0.25); color: #c9f5cf; }
 .qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .qlist .q {
   width: 100%; display: flex; align-items: center; gap: 11px; text-align: left; padding: 10px 12px; border-radius: 12px;
@@ -451,6 +460,8 @@ kbd {
 <link rel="modulepreload" href="src/office.js">
 <link rel="modulepreload" href="src/safe.js">
 <link rel="modulepreload" href="src/leif.js">
+<link rel="modulepreload" href="src/opening.js">
+<link rel="modulepreload" href="src/upgrades.js">
 <link rel="modulepreload" href="src/indoors.js">
 <link rel="modulepreload" href="src/interior.js">
 <link rel="modulepreload" href="src/trees.js">
@@ -472,7 +483,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 0.7 · Sjuby och Norrholmen</div>
+    <div class="ver">Version 0.8 · Sjuby och Norrholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -563,6 +574,17 @@ kbd {
     </div>
   </div>
 
+  <div id="shop" class="overlay" hidden>
+    <div class="panel card" role="dialog" aria-labelledby="shTitle">
+      <div class="from"><div class="av" style="background:#ffcf33">L</div><div><div class="who">Lasse (Verkstan)</div><div class="kind">Trimning · betala kontant</div></div></div>
+      <h2 id="shTitle">LASSES TRIMNING</h2>
+      <p class="msg" id="shMsg">Pengarna du tjänar på uppdragen kan du handla för här. Det du köper är ditt för alltid och funkar på alla bilar du kör.</p>
+      <p class="sh-money">Du har <b id="shMoney">0 kr</b></p>
+      <ul id="shList" class="shlist"></ul>
+      <button class="row primary" id="shClose" type="button">TILLBAKA TILL SPELET</button>
+    </div>
+  </div>
+
   <div id="log" class="overlay" hidden>
     <div class="panel" role="dialog" aria-label="Uppdrag">
       <h2>UPPDRAG</h2>
@@ -582,9 +604,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 0.7 klar">
-      <h2>VERSION 0.7 KLAR!</h2>
-      <p class="note">Båda halvorna av Arnes recept ligger i tant Guns syltburk, och Sjubybullen kan bakas som den ska igen. Kanske öppnar Sjuby Konditori snart? Så här gick din tid i Sjuby:</p>
+    <div class="panel" role="dialog" aria-label="Version 0.8 klar">
+      <h2>VERSION 0.8 KLAR!</h2>
+      <p class="note">Sjuby Konditori är öppet igen, med Arnes riktiga Sjubybullar – och Bagar-Bengt diskar. Men var kommer Bullbilens fabriksbullar ifrån? Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

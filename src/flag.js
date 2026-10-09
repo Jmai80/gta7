@@ -81,7 +81,7 @@ export class FlagQuest {
 
   toHome() {
     const g = this.game, gun = this.gun, b = gun.body;
-    gun.away = false;
+    gun.away = false; gun.konditori = false;
     gun.disguised = false;
     gun.state = 'stand';
     gun.x = GUN.x; gun.z = GUN.z; gun.y = g.world.groundHeight(GUN.x, GUN.z);
@@ -138,7 +138,8 @@ export class FlagQuest {
     if (this.prompt !== 'PRATA') return false;
     const m = this.mgr, p = this.game.player, gun = this.gun;
     gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z);
-    if (gun.away) { // on the pier, after the handover
+    if (gun.konditori) this.say('Välkommen in, lilla vän! Bullarna är nygräddade.'); // outside the konditori, after the opening
+    else if (gun.away) { // on the pier, after the handover
       this.pierTalk = ((this.pierTalk ?? -1) + 1) % PIER_LINES.length;
       this.say(PIER_LINES[this.pierTalk]);
     } else if (this.done) this.say('Tack igen! Titta så fin den är.');

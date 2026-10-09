@@ -95,4 +95,16 @@ export const LEIF_MARK = { x: 4, z: 33.9, r: 1.3 };          // the marker in fr
 export const SAMUEL_WAIT = { x: 34.6, z: -305.2, h: -Math.PI / 2 }; // Samuel waits by the allotments' east gate (Norrholmen)
 export const KEY_TIME = 65, KEY_REWARD = 800;
 
+// ---- version 0.8: main quest part 5 "Nyöppningen", Lasse's tuning shop and Kim's long jump ----
+export const KONDITORI = { x: -6, z: 17.4, r: 1.6 };         // the marker outside Sjuby Konditori (the square, north face of the brick building)
+export const KONDITORI_DOOR = { x: -6, z: 19 };              // the door itself
+export const PICKUPS = {                                      // the three ingredients for the first Sjubybullar
+  kardemumma: { x: -33.4, z: -3.2, r: 2.4, label: 'Kardemumma', where: 'Hörnlivs, Kungsgatan' },
+  smor: { x: 58, z: 2, r: 3.5, label: 'Smör', where: 'Macken, Drottninggatan' },
+  mjol: { x: -2.6, z: -354.8, r: 2.6, label: 'Mjöl', where: 'Kvarnen på Norrholmen' },
+};
+export const OPENING_REWARD = 4000;
+export const LASSE_SHOP = { x: 76.6, z: 58.1, r: 2.2 };       // in front of the workshop's first garage door
+export const JUMP_GOAL = 34, JUMP_REWARD = 1500;             // Kim's long jump at the construction site
+
 export const SIM_HZ = 60;

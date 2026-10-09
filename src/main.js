@@ -17,6 +17,7 @@ const QUALITY_LABEL = { auto: 'Auto', saver: 'Batterisnål', pretty: 'Snygg' };
 let layout, game, view, hud, input, audio;
 let state = 'loading';          // loading | title | play | pause | offer | log | talk | end
 let offerId = null, pendingOffer = null;
+let pendingShop = false;          // Lasse's tuning shop (v0.8)
 let talk = null, pendingTalk = null; // a conversation on screen: { id, pages, i, at }
 const TALK_CAM = { camDX: 0 };       // the camera keeps easing in while people talk
 let camYaw = Math.PI;
@@ -47,7 +48,7 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap'];
+const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori'];
 const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
@@ -151,7 +152,8 @@ function restoreInto(g, data) {
 function wire(g) {
   g.on('sms', (e) => hud.pushSms(e.from, e.text, e.color, e.offer));
   g.on('offer', (e) => { pendingOffer = e.id; }); // face to face: the card opens after this frame's steps
-  g.on('talk', (e) => { pendingTalk = e; });      // a conversation (the bench on the pier), same way
+  g.on('talk', (e) => { pendingTalk = e; });
+  g.on('shop', () => { pendingShop = true; });      // a conversation (the bench on the pier), same way
   g.on('tracked', () => hud.flashMap());
   g.on('objective', (e) => hud.objective(e.text));
   g.on('banner', (e) => {
@@ -185,7 +187,11 @@ function wire(g) {
   });
   g.on('enterCar', (e) => { audio.door(); hud.street(CAR_TYPES[e.car.type].name); });
   g.on('exitCar', () => audio.door());
-  g.on('horn', (e) => { if (e.car && e.car.spec.bike) { if (e.on) audio.bell(); } else audio.horn(e.on); });
+  g.on('horn', (e) => {
+    if (e.car && e.car.spec.bike) { if (e.on) audio.bell(); }
+    else if (g.mission.upgrades.has('tuta')) { if (e.on) audio.melody(); } // Lasse's melody horn
+    else audio.horn(e.on);
+  });
   g.on('pedHit', (e) => { audio.thud(0.8); if (e.car === g.player.car) g.stats.pedsKnocked++; });
   g.on('playerHit', () => { audio.thud(1); view.rig.shake = 0.6; buzz(40); });
   g.on('stunt', (e) => { audio.stunt(); hud.banner('STUNTHOPP!', `${e.dist} meter i luften`, e.amount); });
@@ -320,6 +326,44 @@ function answerOffer(accept) {
   leaveMenu();
 }
 
+// ---------------------------------------------------------------- Lasse's tuning shop (v0.8)
+function openShop() {
+  if (state !== 'play') return;
+  $('shMsg').textContent = 'Pengarna du tjänar på uppdragen kan du handla för här. Det du köper är ditt för alltid och funkar på alla bilar du kör.';
+  renderShop();
+  enterMenu('shop');
+  $('shop').hidden = false;
+}
+function renderShop() {
+  $('shMoney').textContent = `${fmt(game.money)} kr`;
+  const ul = $('shList');
+  ul.innerHTML = '';
+  for (const it of game.mission.shopItems()) {
+    const li = document.createElement('li');
+    if (it.owned) li.className = 'owned';
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = `${it.name} · ${fmt(it.price)} kr`;
+    const tx = document.createElement('div'); tx.className = 'tx'; tx.textContent = it.text;
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.id = it.id;
+    b.textContent = it.owned ? 'KÖPT ✓' : 'KÖP';
+    b.disabled = it.owned;
+    li.append(nm, tx, b);
+    ul.append(li);
+  }
+}
+function buyItem(id) {
+  if (state !== 'shop') return;
+  const r = game.mission.buy(id);
+  $('shMsg').textContent = r.msg;
+  if (r.ok) { audio.cash(); buzz(30); hud.setMoney(game.money); }
+  else audio.fail();
+  renderShop();
+}
+function closeShop() {
+  if (state !== 'shop') return;
+  $('shop').hidden = true;
+  leaveMenu();
+}
+
 function openLog() {
   if (state !== 'play' && state !== 'pause') return;
   $('pausemenu').hidden = true;
@@ -443,6 +487,7 @@ function restart() {
   $('pausemenu').hidden = true;
   $('endcard').hidden = true;
   $('offer').hidden = true;
+  $('shop').hidden = true; pendingShop = false;
   $('log').hidden = true;
   $('talk').hidden = true;
   $('game').classList.remove('talking');
@@ -474,6 +519,7 @@ function showEnd(s) {
     ['Bullbilen', s.bikeEscaped ? 'Skakad av' : s.bikeEscaped === false ? 'Hack i häl' : '–'],
     ['Ägg till fyren', s.eggsDelivered != null ? `${s.eggsDelivered} av 12 hela` : '–'],
     ['Kassaskåpet', s.safeEscaped ? 'Rent ut' : s.safeEscaped === false ? 'Jagad hela vägen' : '–'],
+    ['Längsta hopp', s.bestJump ? `${s.bestJump} m` : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';
@@ -530,11 +576,14 @@ function bindUi() {
   on('eContinue', resume);
   on('eRestart', restart);
   on('ofAccept', () => answerOffer(true));
+  on('shClose', () => closeShop());
+  $('shList').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) buyItem(b.dataset.id); });
   on('ofWait', () => answerOffer(false));
   on('logClose', closeLog);
   $('talk').addEventListener('click', (e) => { e.preventDefault(); nextTalk(); }); // anywhere on the screen (the button too)
   window.addEventListener('keydown', (e) => {
     if (state === 'offer' && e.code === 'Escape') { e.preventDefault(); answerOffer(false); }
+    if (state === 'shop' && e.code === 'Escape') { e.preventDefault(); closeShop(); }
     else if (state === 'log' && (e.code === 'Escape' || e.code === 'KeyU')) { e.preventDefault(); closeLog(); }
     else if (state === 'talk' && !e.repeat && ['Enter', 'NumpadEnter', 'Space', 'KeyE', 'KeyF', 'KeyJ', 'ArrowRight'].includes(e.code)) { e.preventDefault(); nextTalk(); }
   });
@@ -564,6 +613,7 @@ function frame(now) {
     if (n >= 5) acc = 0;
     if (pendingTalk) { const t = pendingTalk; pendingTalk = null; openTalk(t); }
     else if (pendingOffer) { const id = pendingOffer; pendingOffer = null; openOffer(id); }
+    else if (pendingShop) { pendingShop = false; openShop(); }
     camYaw = view.rig.update(dt, game, inp, view.camera.aspect, game.world);
     audio.update(dt, game);
   } else if (state === 'talk') {
@@ -594,7 +644,7 @@ const tmpDir = new Vector3();
 // debug handle for automated tests
 window.__gta = {
   get game() { return game; }, get view() { return view; }, get state() { return state; }, get perf() { return perf; },
-  start: () => startPlay(), pause, resume, restart, openLog, openOffer, nextTalk, get hud() { return hud; }, get talk() { return talk; },
+  start: () => startPlay(), pause, resume, restart, openLog, openOffer, nextTalk, openShop, buyItem, closeShop, get hud() { return hud; }, get talk() { return talk; },
 };
 
 const start = (data) => boot(data || {}).catch((e) => console.error(e));

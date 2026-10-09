@@ -171,6 +171,16 @@ export class AudioFX {
     this.tone(f * 1.26, 0.38, 'square', v * 0.8);
   }
 
+  // Lasse's melody horn (v0.8): a cheerful little tune on two square waves
+  melody() {
+    if (!this.ctx || this.melodyT > this.ctx.currentTime) return;
+    const N = [392, 392, 392, 523, 659, 392, 392, 392, 523, 659];
+    const D = [0.11, 0.11, 0.11, 0.3, 0.38, 0.11, 0.11, 0.11, 0.3, 0.38];
+    let t = 0;
+    N.forEach((f, i) => { this.tone(f, D[i] * 0.9, 'square', 0.07, t); this.tone(f * 1.5, D[i] * 0.9, 'square', 0.03, t); t += D[i] + 0.03; });
+    this.melodyT = this.ctx.currentTime + t;
+  }
+
   ping() {
     if (!this.ctx) return;
     this.tone(1318.5, 0.12, 'sine', 0.12);

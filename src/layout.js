@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -623,6 +623,22 @@ export function createLayout(seed = 7) {
     // south building: brick with shops
     building({ x0: b.x0 + 18, z0: b.z1 - 13, x1: b.x1 - 1, z1: b.z1 - 1, h: 13.6, c: COL.brick, m: M.BRICKWIN, cell: [3.2, 3.4], mapC: 0x8a5a48 });
     sign('bibblan', { lines: ['BIBLIOTEK'], bg: '#f1ede2', fg: '#7c3c2b', font: 0.62 }, b.cx + 10, CURB_H + 3.6, b.z1 - 13.08, 5, 0.9, Math.PI);
+    // Sjuby Konditori (v0.8): Arne's old café on the square, opened again by tant Gun
+    {
+      const fz = b.z1 - 13, dx = KONDITORI_DOOR.x;
+      box(dx - 0.75, CURB_H, fz - 0.06, dx + 0.75, CURB_H + 2.5, fz, 0x6b3a2a);
+      box(dx - 0.62, CURB_H, fz - 0.085, dx + 0.62, CURB_H + 2.36, fz - 0.06, 0x9fb7c4, M.GLASS);
+      box(dx - 0.45, CURB_H + 0.95, fz - 0.13, dx - 0.39, CURB_H + 1.35, fz - 0.085, 0xd8b45a, M.CHROME);
+      for (const wx of [dx - 3.4, dx + 3.4]) {                       // shop windows with buns on a shelf
+        box(wx - 1.6, CURB_H + 0.7, fz - 0.07, wx + 1.6, CURB_H + 2.3, fz - 0.02, 0xffe6b0, M.LIGHT);
+        box(wx - 1.7, CURB_H + 0.62, fz - 0.12, wx + 1.7, CURB_H + 0.7, fz - 0.02, 0xf1eee7);
+        for (let k = 0; k < 5; k++) P({ t: 'cyl', x: wx - 1.2 + k * 0.6, z: fz - 0.2, y0: CURB_H + 0.7, y1: CURB_H + 0.86, r: 0.18, r1: 0.12, n: 8, c: 0xc8843c, cap: true });
+      }
+      box(dx - 5.4, CURB_H + 2.75, fz - 1.3, dx + 5.4, CURB_H + 2.9, fz, 0xe58fa8);            // a pink awning
+      box(dx - 5.4, CURB_H + 2.55, fz - 1.32, dx + 5.4, CURB_H + 2.75, fz - 1.26, 0xf4efe4);
+      sign('konditori', { lines: ['SJUBY KONDITORI', 'sedan 1958'], bg: '#f6ead2', fg: '#8a3a4a', border: '#e58fa8', font: 0.5 }, dx, CURB_H + 3.5, fz - 0.07, 4.4, 0.95, Math.PI);
+      poly([[dx - 1, fz - 1.2], [dx + 1, fz - 1.2], [dx + 1, fz], [dx - 1, fz]], 0x8a5a48, M.PAVING, OVERLAY_H + 0.006);
+    }
     // Lås-Leif's key shop on Skolgatan (v0.7): a door, a sign and a big key over the door
     {
       const fz = b.z1 - 1, dx = LEIF.x;
@@ -864,6 +880,7 @@ export function createLayout(seed = 7) {
     }
     sign('lasse', { kind: 'lasse' }, wx0 - 0.1, CURB_H + 6.1, (wz0 + wz1) / 2, 11, 1.8, -Math.PI / 2);
     sign('lasse2', { lines: ['BILAR · BÅTAR · INGA FRÅGOR'], bg: '#1d1f22', fg: '#e5b923', font: 0.5 }, wx0 - 0.1, CURB_H + 2.0, wz0 + 12.0, 3.6, 0.6, -Math.PI / 2);
+    sign('trimning', { lines: ['TRIMNING · TURBO', 'Betala kontant'], bg: '#d2342c', fg: '#ffffff', font: 0.46 }, wx0 - 0.3, CURB_H + 4.1, wz0 + 7.1, 3.4, 0.7, -Math.PI / 2); // (v0.8)
     // yard fence (mesh) with gate toward Drottninggatan (west)
     const gz0 = DELIVERY.z - 6, gz1 = DELIVERY.z + 6;
     meshFence(b.x0 + 1, b.z0 + 1, b.x0 + 1, gz0, 2.0, { feet: false });

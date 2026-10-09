@@ -69,6 +69,7 @@ export class Vehicle {
     this.inertia = this.spec.mass * (this.spec.len ** 2 + this.spec.wid ** 2) / 12;
     this.steerFade = 14;       // player gets more speed-sensitive steering than AI
     this.power = 1;
+    this.boost = 1; this.top = 1; this.armor = 1; // Lasse's upgrades while the player drives (upgrades.js)
     this.parkedSpot = false;   // part of the parking lot scenery (never despawned)
     this.lastHitBy = null;
     this.instance = -1;
@@ -93,7 +94,7 @@ export class Vehicle {
       let thr = this.dead || this.driver === null ? 0 : clamp(inp.throttle, -1, 1);
       if (thr > 0.02) {
         if (vf < -0.3) accLong = s.brake * thr;
-        else accLong = s.accel * thr * Math.max(0, 1 - (Math.max(vf, 0) / s.maxSpeed) ** 2) * this.power;
+        else accLong = s.accel * thr * Math.max(0, 1 - (Math.max(vf, 0) / (s.maxSpeed * this.top)) ** 2) * this.power * this.boost;
       } else if (thr < -0.02) {
         if (vf > 0.3) accLong = -s.brake * -thr;
         else accLong = vf > -s.revMax ? -s.revAccel * -thr * this.power : 0;
@@ -224,7 +225,7 @@ export class Vehicle {
 
   damage(amount) {
     if (amount <= 0 || this.spec.noDamage) return;
-    this.health = Math.max(0, this.health - amount);
+    this.health = Math.max(0, this.health - amount * this.armor);
     this.power = this.health < 25 ? 0.6 : 1;
     if (this.health <= 0) this.dead = true;
   }
