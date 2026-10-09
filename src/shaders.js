@@ -17,7 +17,6 @@ export function makeUniforms() {
     uSigns: { value: null },
     uNoise: { value: null },
     uTime: { value: 0 },
-    uCut: { value: new THREE.Vector4(0, 0, 0, 0) }, // inside the tower: walls between camera and player open up
   };
 }
 
@@ -92,11 +91,13 @@ void main() {
 #ifdef HUMAN
   int bone = int(aBS.x + 0.5);
   float pose = iAnim.w;
-  if (pose > 3.5 && pose < 4.5) {
-    // lounging on a sofa: leaning far back, legs out in front, phone in both hands.
-    // iAnim here: x head yaw, y how high the phone is (0 on the lap … 1 in front of the face), z head pitch
+  if (pose > 3.5 && pose < 5.5) {
+    // 4: lounging on a sofa – leaning far back, legs out in front, phone in both hands
+    // 5: sitting upright on a bench, hands in the lap
+    // iAnim here: x head yaw, y how high the hands are (0 in the lap … 1 in front of the face), z head pitch
+    bool sit = pose > 4.5;
     if (bone >= 5) {
-      mat3 R = rotX(-1.05) * rotZ(bone == 5 ? 0.09 : -0.09);
+      mat3 R = rotX(sit ? -1.2 : -1.05) * rotZ(bone == 5 ? 0.09 : -0.09);
       p = aPivot + R * (p - aPivot); n = R * n;
     } else {
       if (bone == 1) {
@@ -104,10 +105,10 @@ void main() {
         p = aPivot + R * (p - aPivot); n = R * n;
       } else if (bone >= 3) {
         float s = bone == 3 ? 1.0 : -1.0;
-        mat3 R = rotX(mix(-0.55, -1.5, iAnim.y)) * rotZ(-s * (0.12 + 0.36 * iAnim.y));
+        mat3 R = rotX(mix(sit ? -0.75 : -0.55, -1.5, iAnim.y)) * rotZ(-s * (0.12 + 0.36 * iAnim.y));
         p = aPivot + R * (p - aPivot); n = R * n;
       }
-      mat3 Bk = rotX(-0.75);
+      mat3 Bk = rotX(sit ? -0.1 : -0.75);
       vec3 hip = vec3(0.0, 0.92, 0.0);
       p = hip + Bk * (p - hip); n = Bk * n;
     }
@@ -167,7 +168,7 @@ uniform vec4 uShadowRect;
 uniform sampler2D uSigns;
 uniform sampler2D uNoise;
 uniform float uTime;
-uniform vec4 uCut;
+uniform float uGhost;
 varying vec3 vColor;
 varying vec3 vN;
 varying vec3 vW;
@@ -209,23 +210,16 @@ vec3 skyRefl(vec3 r) {
 }
 
 void main() {
+#ifdef GHOST
+  // the player seen through a wall: a flat, see-through silhouette
+  gl_FragColor = vec4(0.55, 0.82, 1.0, uGhost);
+  return;
+#endif
   vec3 N = normalize(vN);
   vec3 V = normalize(cameraPosition - vW);
   vec3 albedo = vColor;
   float glass = 0.0, interior = 0.0, spec = 0.0, emit = 0.0, chrome = 0.0, wrap = 0.0;
   int m = int(vMat + 0.5);
-#ifdef INTERIOR
-  // walls (and what hangs on them) between the camera and the player are cut away, with a
-  // dissolving edge so the hole does not look like a porthole
-  if ((m == 29 || m == 34 || m == 35 || m == 5 || m == 7 || m == 3) && uCut.w > 0.0) {
-    vec3 d = uCut.xyz - cameraPosition;
-    float t = dot(vW - cameraPosition, d) / dot(d, d);
-    if (t > 0.0 && t < 1.0) {
-      float r = length(vW - (cameraPosition + d * t)) / (uCut.w * (0.45 + 0.55 * t));
-      if (r < 1.0 - 0.3 * hash12(floor(gl_FragCoord.xy * 0.5))) discard;
-    }
-  }
-#endif
   vec2 aa = fwidth(vUv) * 0.75 + 1e-4;
   float far = smoothstep(0.22, 0.55, max(aa.x, aa.y));
   float hw = abs(N.x) > 0.5 ? vW.z : vW.x;   // horizontal coordinate along a wall
@@ -453,14 +447,17 @@ export function worldMaterial(U, kind = 'static') {
   if (kind === 'human') defines.HUMAN = 1;
   if (kind === 'ground') defines.GROUND = 1;
   if (kind === 'interior') defines.INTERIOR = 1;
+  if (kind === 'ghost') { defines.HUMAN = 1; defines.GHOST = 1; }
   const uniforms = {
     ...U,
     fogColor: { value: new THREE.Color() },
     fogNear: { value: 1 },
     fogFar: { value: 2000 },
     fogDensity: { value: 0.00025 },
+    uGhost: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, defines, fog: true });
+  if (kind === 'ghost') { mat.transparent = true; mat.depthTest = false; mat.depthWrite = false; }
   mat.extensions = mat.extensions || {};
   return mat;
 }

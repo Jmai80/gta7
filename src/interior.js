@@ -15,7 +15,7 @@ import { INDOOR } from './config.js';
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
 
-export const IH = 2.6; // wall height
+export const IH = 2.45; // wall height
 const X = INDOOR.x, Y = INDOOR.y, Z = INDOOR.z;
 
 // key places, in world coordinates
@@ -69,7 +69,7 @@ const SIGNS = {
   nLindqvist: { def: { lines: ['LINDQVIST', 'LGH 1701'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 4.05, y: 1.5, z: 0, n: 'pz', w: 0.34, h: 0.17 },
   nNguyen: { def: { lines: ['NGUYEN', 'LGH 1705'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 8.85, y: 1.5, z: 0, n: 'pz', w: 0.34, h: 0.17 },
   nPersson: { def: { lines: ['PERSSON', 'LGH 1706'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 13.25, y: 1.5, z: 0, n: 'pz', w: 0.34, h: 0.17 },
-  plan7: { def: { lines: ['HISS · PLAN 7'], bg: '#1d2128', fg: '#f4efe4', font: 0.62 }, x: 0, y: 2.38, z: 1.2, n: 'px', w: 0.9, h: 0.2 },
+  plan7: { def: { lines: ['HISS · PLAN 7'], bg: '#1d2128', fg: '#f4efe4', font: 0.62 }, x: 0, y: 2.33, z: 1.2, n: 'px', w: 0.9, h: 0.2 },
 };
 const NORMALS = { px: [1, 0], nx: [-1, 0], pz: [0, 1], nz: [0, -1] };
 
@@ -143,11 +143,11 @@ export function interiorInto(B) {
   wallDoor(1.0, 6.6, 'px', 0xf3f1ec); // bathroom
 
   // the lift: steel frame, two doors, call button
-  bx(0, 0, 0.45, 0.06, 2.3, 0.55, 0x8b9096, ITRIM);
-  bx(0, 0, 1.85, 0.06, 2.3, 1.95, 0x8b9096, ITRIM);
-  bx(0, 2.2, 0.45, 0.06, 2.3, 1.95, 0x8b9096, ITRIM);
-  bx(0, 0, 0.55, 0.03, 2.2, 1.19, 0xb9bec4, CHROME);
-  bx(0, 0, 1.21, 0.03, 2.2, 1.85, 0xb9bec4, CHROME);
+  bx(0, 0, 0.45, 0.06, 2.2, 0.55, 0x8b9096, ITRIM);
+  bx(0, 0, 1.85, 0.06, 2.2, 1.95, 0x8b9096, ITRIM);
+  bx(0, 2.12, 0.45, 0.06, 2.2, 1.95, 0x8b9096, ITRIM);
+  bx(0, 0, 0.55, 0.03, 2.12, 1.19, 0xb9bec4, CHROME);
+  bx(0, 0, 1.21, 0.03, 2.12, 1.85, 0xb9bec4, CHROME);
   bx(0, 1.05, 2.15, 0.04, 1.3, 2.27, 0x8b9096, ITRIM);
   bx(0.04, 1.14, 2.19, 0.055, 1.2, 2.23, 0xffd27a, LIGHT);
 

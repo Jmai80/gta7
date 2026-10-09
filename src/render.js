@@ -84,6 +84,14 @@ export class View {
     this.humans.count = 0;
     this.humans.frustumCulled = false;
     this.scene.add(this.humans);
+    // the player again, as a see-through silhouette on top of everything (only when hidden by a wall)
+    this.matGhost = worldMaterial(this.U, 'ghost');
+    this.ghost = new THREE.InstancedMesh(hg, this.matGhost, 1);
+    this.ghost.count = 0;
+    this.ghost.frustumCulled = false;
+    this.ghost.renderOrder = 20;
+    this.scene.add(this.ghost);
+    this.ghostA = 0;
 
     // blob shadows for everything that moves
     const blobGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -266,7 +274,6 @@ export class View {
       U.uSunCol.value.copy(L.sun); U.uSkyCol.value.copy(L.sky); U.uGndCol.value.copy(L.gnd);
       this.fog.color.setHex(0xeedac3); this.fog.near = this.outFog[0]; this.fog.far = this.outFog[1];
       this.renderer.setClearColor(0xeedac3);
-      U.uCut.value.w = 0;
     }
   }
 
@@ -274,7 +281,8 @@ export class View {
     this.setIndoor(game.indoor);
     if (!this.indoor) return;
     const p = game.player, ind = game.indoors;
-    this.U.uCut.value.set(p.x, p.y + 1.0, p.z, 1.7);
+    // a wall between the camera and you: your silhouette shows through it
+    this.ghostA = smooth(this.ghostA || 0, p.body.visible && this.occluded(game) ? 0.55 : 0, 10, dt);
     // the door: shut once you have left with the keys
     const shut = ind.doorShut;
     const goal = shut ? 0 : -Math.PI / 2 + 0.25;
@@ -299,6 +307,26 @@ export class View {
       this.phone.lookAt(ph.look[0], ph.look[1], ph.look[2]);
     }
     this.syncCone(game, sam);
+  }
+
+  // is the line from the camera to the player's chest blocked by a wall or a tall cupboard?
+  occluded(game) {
+    const c = this.camera.position, p = game.player;
+    const tx = p.x, ty = p.y + 1.05, tz = p.z;
+    const dx = tx - c.x, dz = tz - c.z, len = Math.hypot(dx, dz);
+    for (const b of game.world.query((c.x + tx) / 2, (c.z + tz) / 2, len / 2 + 0.5)) {
+      if (b.t !== 'box' || b.h < INT.y + 1.2) continue;
+      let t0 = 0, t1 = 0.97, hit = true;
+      for (const [o, d, lo, hi] of [[c.x, dx, b.x0, b.x1], [c.z, dz, b.z0, b.z1]]) {
+        if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) { hit = false; break; } continue; }
+        let a0 = (lo - o) / d, a1 = (hi - o) / d;
+        if (a0 > a1) { const q = a0; a0 = a1; a1 = q; }
+        t0 = Math.max(t0, a0); t1 = Math.min(t1, a1);
+        if (t0 > t1) { hit = false; break; }
+      }
+      if (hit && c.y + (ty - c.y) * t1 < b.h) return true;
+    }
+    return false;
   }
 
   syncCone(game, sam) {
@@ -441,7 +469,7 @@ export class View {
       tmpC.setHex(L.pants); pants.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       tmpC.setHex(L.skin); skin.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       tmpC.setHex(L.hair); hair.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
-      if (body.pose === 4) anim.setXYZW(i, body.headYaw || 0, body.phone || 0, body.headPitch || 0, 4); // lounging
+      if (body.pose === 4 || body.pose === 5) anim.setXYZW(i, body.headYaw || 0, body.phone || 0, body.headPitch || 0, body.pose); // lounging / sitting
       else anim.setXYZW(i, body.phase, body.legAmp, body.armAmp, body.pose);
       i++;
       if (b < 96) {
@@ -451,6 +479,15 @@ export class View {
       }
     };
     add(game.player.body);
+    // the silhouette uses the player's slot (instance 0) of the shared animation attributes
+    const ga = this.indoor ? this.ghostA : 0;
+    this.ghost.count = ga > 0.02 && i > 0 ? 1 : 0;
+    if (this.ghost.count) {
+      H.getMatrixAt(0, tmpM);
+      this.ghost.setMatrixAt(0, tmpM);
+      this.ghost.instanceMatrix.needsUpdate = true;
+      this.matGhost.uniforms.uGhost.value = ga;
+    }
     for (const p of game.peds.list) add(p.body);
     H.count = i;
     H.instanceMatrix.needsUpdate = true;
@@ -602,6 +639,8 @@ export class CameraRig {
     this.fromLook = new THREE.Vector3();
     this.fov = 58;
     this.titleT = 0;
+    this.fPos = new THREE.Vector3(); // the last point a mission wanted the camera on (eases out from there)
+    this.fNear = false;
   }
 
   startBlend() {
@@ -639,9 +678,9 @@ export class CameraRig {
       // inside the tower: look down into the rooms from above (the walls in the way open up).
       // The camera keeps its direction (east, along the corridor) unless you turn it yourself,
       // so "up" on the stick stays the same while you sneak.
-      dist = portrait ? 6.0 : 5.6;
-      height = portrait ? 10.5 : 7.4;
-      lookH = 0.6; ahead = portrait ? 1.2 : 0.4; fov = portrait ? 64 : 54;
+      dist = portrait ? 4.4 : 3.8;
+      height = portrait ? 12.6 : 9.4;
+      lookH = 0.5; ahead = portrait ? 1.2 : 0.4; fov = portrait ? 62 : 52;
     } else {
       dist = portrait ? 8.2 : 5.4;
       height = portrait ? 6.4 : 2.5;
@@ -649,12 +688,24 @@ export class CameraRig {
       const sp = Math.hypot(p.vx, p.vz);
       if (sp > 0.6 && p.state === 'foot') { target = p.h; rate = 1.4 * Math.min(1, sp / 4); }
     }
-    // a mission can point the camera at something (tant Gun's flag on its way up)
+    // a mission can point the camera at something (tant Gun's flag on its way up), or come in close
+    // on a conversation (near: the bench on the pier) – then it frames the point between the two of
+    // you from the side (yaw), low enough that the dialogue box does not cover anyone
     const F = game.camFocus;
+    if (F) {
+      this.fNear = !!F.near;
+      if ((this.fk || 0) < 0.02) this.fPos.set(F.x, F.y, F.z);
+      else { this.fPos.x = smooth(this.fPos.x, F.x, 3, dt); this.fPos.y = smooth(this.fPos.y, F.y, 3, dt); this.fPos.z = smooth(this.fPos.z, F.z, 3, dt); }
+    }
     this.fk = smooth(this.fk || 0, F && !car ? 1 : 0, 2.5, dt);
+    const near = this.fNear && this.fk > 0.01;
     if (this.fk > 0.01) {
-      dist += 3.4 * this.fk; height += 0.6 * this.fk;
-      if (F) { target = Math.atan2(F.x - p.x, F.z - p.z); rate = 2.2; }
+      const k = this.fk;
+      if (near) {
+        dist += ((portrait ? 6.2 : 4.6) - dist) * k; height += ((portrait ? 3.6 : 2.1) - height) * k;
+        lookH += (this.fPos.y - lookH) * k; ahead *= 1 - k; fov += ((portrait ? 58 : 48) - fov) * k;
+      } else { dist += 3.4 * k; height += 0.6 * k; }
+      if (F) { target = F.yaw ?? Math.atan2(F.x - p.x, F.z - p.z); rate = near ? 3 : 2.2; }
     }
     // manual orbit from dragging
     if (input.camDX) { this.manual -= input.camDX * 0.0065; this.manualT = 0; }
@@ -673,6 +724,7 @@ export class CameraRig {
       const F = INT.flat, k = this.flatK * (portrait ? 0.4 : 0.32);
       tx += ((F.x0 + F.x1) / 2 - tx) * k; tz += ((F.z0 + F.z1) / 2 + 0.6 - tz) * k;
     }
+    if (near) { tx += (this.fPos.x - tx) * this.fk; tz += (this.fPos.z - tz) * this.fk; }
     // keep the camera out of buildings
     const want = dist;
     const hit = game.indoor ? 1 : world.raycast(tx, tz, tx - fx * (want + 0.8), tz - fz * (want + 0.8), Math.max(2.5, height * 0.9));
@@ -682,11 +734,11 @@ export class CameraRig {
     const hh = height * (0.55 + 0.45 * this.k);
     this.pos.set(tx - fx * d, ty + hh, tz - fz * d);
     this.look.set(tx + fx * ahead, ty + lookH, tz + fz * ahead);
-    if (this.fk > 0.01 && F) {
-      const k = this.fk;
-      this.look.x += (F.x - this.look.x) * 0.4 * k;
-      this.look.y += (F.y - this.look.y) * 0.55 * k;
-      this.look.z += (F.z - this.look.z) * 0.4 * k;
+    if (this.fk > 0.01 && !near) {
+      const k = this.fk, P = this.fPos;
+      this.look.x += (P.x - this.look.x) * 0.4 * k;
+      this.look.y += (P.y - this.look.y) * 0.55 * k;
+      this.look.z += (P.z - this.look.z) * 0.4 * k;
     }
     // shake
     if (this.shake > 0.001) {

@@ -72,5 +72,10 @@ export const GUN = { x: -100.2, z: -50.7, poleX: -104.5, poleZ: -51.2, poleH: 9,
 export const TOWER_DOOR = { x: 19, z: -6.2, r: 1.4 };   // the marker outside the tower's entrance (south side)
 export const INDOOR = { x: 200, z: 200, y: 0.15 };       // the inside of the tower is built out at sea, hidden
 export const SAMUEL_REWARD = 1500;
+// ---- version 0.5: the handover on the harbour pier (main quest, part 2) ----
+export const PIER = { x: -75, x0: -77.5, x1: -72.5, z0: -172, z1: -146 }; // the wooden pier in Sjuby hamn (north)
+export const PIER_BENCH = { x: -75, z: -169.4 };          // the bench at the far end, facing the sea
+export const PIER_MEET = { x: -75, z: -166.9, r: 1.3 };   // walk up behind the bench
+export const HANDOVER_REWARD = 1000;
 
 export const SIM_HZ = 60;

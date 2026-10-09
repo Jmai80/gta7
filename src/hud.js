@@ -108,6 +108,7 @@ export class HUD {
     const z = L.zones;
     if (z.pond) { g.fillStyle = '#2f6a76'; g.beginPath(); g.arc(P(z.pond.x), P(z.pond.z), z.pond.r * MAP_PX, 0, 7); g.fill(); }
     if (z.pitch) { g.fillStyle = '#5c9a45'; g.fillRect(P(z.pitch.x0), P(z.pitch.z0), (z.pitch.x1 - z.pitch.x0) * MAP_PX, (z.pitch.z1 - z.pitch.z0) * MAP_PX); }
+    if (z.pier) { g.fillStyle = '#8a6a48'; g.fillRect(P(z.pier.x0), P(z.pier.z0), (z.pier.x1 - z.pier.x0) * MAP_PX, (z.pier.z1 - z.pier.z0) * MAP_PX); }
     return c;
   }
 
@@ -419,7 +420,7 @@ export class HUD {
         const el = this.el.phone;
         el.querySelector('.who').textContent = m.from;
         const av = el.querySelector('.av');
-        av.textContent = m.from === WHO.anon ? '?' : m.from.trim()[0];
+        av.textContent = m.from === WHO.anon ? '?' : m.from === WHO.gun ? 'G' : m.from.trim()[0]; // the letters on the map
         av.classList.toggle('sys', m.from === 'GTA 7');
         av.style.background = m.color || '';
         el.querySelector('.msg').textContent = m.text;

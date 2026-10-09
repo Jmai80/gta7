@@ -1,7 +1,7 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND } from '../src/config.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp } from '../src/rng.js';
@@ -280,7 +280,12 @@ function startRace(g) {
   g2.mission.done.add('samuel');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all four are done');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the handover on the pier is left');
+  g2.mission.done.add('overlamning');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all five are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.5/.test(d.text) && /norra bron/.test(d.text)), 'the last text: version 0.5, continued when the north bridge opens');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -531,6 +536,114 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   run(g3, 1.5);
   check(!g3.indoor && !g3.mission.active && !ev3.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'taking the lift down without the keys: no failure');
   check(g3.mission.isOpen('samuel'), '… and the quest waits');
+}
+
+// ---------- 11. main quest, part 2: the handover on the pier ----------
+{
+  console.log('Överlämningen (huvuduppdrag del 2)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, gun = m.flag.gun;
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk', 'keys', 'say']);
+  run(g, 1);
+  m.offer('overlamning');
+  check(!m.known.has('overlamning'), "no handover before Samuel's keys");
+  check(!m.list().some((q) => q.id === 'cykel'), 'and no teaser in the list yet');
+  // part 1, the short way: in through the door, the keys in your pocket, out in the corridor
+  intoTower(g);
+  m.active.keys = true;
+  run(g, 0.2);
+  check(m.done.has('samuel') && g.indoor, 'part 1 done, still up on floor 7');
+  run(g, 10);
+  check(!m.known.has('overlamning'), 'not offered while you are in the tower');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Okänt nummer' && /ut ur huset/.test(d.text)), '"get out of the building" first');
+  walkTo(g, X0 + 0.6, Z0 + 1.2);
+  g.step(DT, { ...idle, action: true });
+  run(g, 1.2);
+  check(!g.indoor, 'down on the square');
+  run(g, 1.5);
+  check(!m.known.has('overlamning'), 'not at once when you come out');
+  run(g, 1.5);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'overlamning');
+  check(offer && offer[1].from === 'Okänt nummer' && /bryggan/.test(offer[1].text), 'a few seconds outside: the unknown number wants to meet on the pier');
+  check(m.info('overlamning').main, 'it is a main quest');
+  run(g, 0.1);
+  check(gun.away && gun.disguised && gun.state === 'lounge' && Math.hypot(gun.x - PIER_BENCH.x, gun.z - PIER_BENCH.z) < 0.2, 'someone in a dark coat sits on the bench at the end of the pier');
+  check(gun.body.pose === 5 && gun.body.look.shirt !== 0xb48fd0, '… sitting, not in tant Gun\'s purple');
+  check(!m.targets.some((t) => t.letter === 'G'), "no G on the map: tant Gun is not at home");
+  m.accept('overlamning');
+  run(g, 0.1);
+  const q = m.targets.find((t) => t.letter === '?');
+  check(q && q.gps && Math.hypot(q.x - PIER_MEET.x, q.z - PIER_MEET.z) < 0.1, 'the ? marker and the GPS lead out on the pier');
+  check(/bryggan/.test(m.objective), `objective: ${m.objective}`);
+  // cars stay off the pier
+  const car = g.addVehicle('sedan', 'blue', -75, -128, Math.PI);
+  enterCar(g, car);
+  run(g, 4, { ...idle, moveY: 1 });
+  check(g.player.car === car && car.z < -138 && car.z > -ISLAND, `a car cannot drive onto the pier (stopped at z ${car.z.toFixed(1)})`);
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  g.removeVehicle(car);
+  // walk out on the pier, between the bollards
+  g.player.x = -74.2; g.player.z = -138; g.player.y = g.world.groundHeight(-74.2, -138);
+  run(g, 0.1);
+  walkTo(g, -74.2, -152, 1.0, 12);
+  check(g.player.z < -150 && Math.abs(g.player.y - CURB_H) < 0.05, `you can walk on the pier (z ${g.player.z.toFixed(1)})`);
+  walkTo(g, -75.6, -160, 1.0, 12);
+  check(!m.active && Math.hypot(g.player.x + 75.6, g.player.z + 160) < 0.4, 'walking along the pier');
+  walkTo(g, PIER_MEET.x, PIER_MEET.z, 0.6, 8);
+  check(m.active && m.active.id === 'overlamning', 'up behind the bench: the handover begins');
+  check(g.player.frozen && g.camFocus && g.camFocus.near, 'you stop taking orders, the camera comes in close');
+  waitUntil(g, () => ev.some(([n]) => n === 'talk'), 6);
+  check(Math.hypot(g.player.x - (PIER_BENCH.x - 0.3), g.player.z - (PIER_BENCH.z + 1.5)) < 0.15, 'the game walks you up behind the bench');
+  const talk = ev.find(([n]) => n === 'talk');
+  check(talk && talk[1].id === 'overlamning' && talk[1].pages.length >= 6, `a conversation opens (${talk ? talk[1].pages.length : 0} pages)`);
+  const pages = talk ? talk[1].pages : [];
+  check(pages[0] && pages[0].who === 'Någon på bänken' && pages[0].letter === '?', 'first the figure on the bench speaks');
+  const rev = pages.findIndex((p) => p.fx === 'reveal');
+  check(rev > 0 && pages[rev].who === 'Tant Gun', "then it is tant Gun");
+  check(pages.some((p) => p.fx === 'keys') && pages.some((p) => p.you), 'you hand over the keys (and get a few lines yourself)');
+  check(pages.some((p) => /norra bron/.test(p.text)) && pages.some((p) => /Bullbilen/.test(p.text)), 'a clue: the bike across the north bridge, and the Bullbilen');
+  check(/flaggstången/.test(pages[rev].text), 'she has not met you before: "the lady with the flagpole"');
+  check(!m.done.has('overlamning'), 'nothing is done while the talk is open');
+  m.talkFx('overlamning', 'keys');
+  check(ev.some(([n, d]) => n === 'keys' && d.given), 'the keys jingle as you hand them over');
+  m.talkFx('overlamning', 'reveal');
+  check(!gun.disguised && gun.state === 'stand' && gun.body.look.shirt === 0xb48fd0 && gun.body.pose === 0, 'the coat comes off: tant Gun stands up');
+  const dGun = Math.hypot(gun.x - g.player.x, gun.z - g.player.z);
+  check(dGun > 1.4 && dGun < 2.6, `she turns to you, close by (${dGun.toFixed(2)} m)`);
+  const money0 = g.money;
+  m.talkDone('overlamning');
+  check(m.done.has('overlamning') && !m.active, 'the last page: part 2 done');
+  check(g.money === money0 + HANDOVER_REWARD && ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Överlämningen'), `HUVUDUPPDRAG KLART, ${HANDOVER_REWARD} kr`);
+  check(!g.player.frozen && !g.camFocus, 'you can move again');
+  run(g, 9);
+  check(ev.some(([n, d]) => n === 'toast' && /kanelbulle/.test(d.text)), 'and a kanelbulle');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /Bullbilen/.test(d.text)), 'tant Gun texts: keep an eye on the Bullbilen');
+  check(gun.away && gun.state === 'stand', 'she stays on the pier while you are there');
+  const soon = m.list().find((x) => x.id === 'cykel');
+  check(soon && soon.state === 'soon' && /norra bron/.test(soon.line), 'next in the list: "Arnes budcykel", coming soon');
+  check(!m.accept('cykel') && !m.isOpen('cykel') && !m.list().some((x) => x.id === 'cykel' && x.state === 'new'), '… and it cannot be started yet');
+  g.player.x = gun.x - 1.2; g.player.z = gun.z + 1.2;
+  run(g, 0.2);
+  check(m.prompt === 'PRATA', 'you can still talk to her');
+  g.step(DT, { ...idle, action: true });
+  check(ev.some(([n, d]) => n === 'say' && d.who === gun && /bron|Bullbilen|bullen|Samuel/.test(d.text)), 'she reminds you of the bridge');
+  g.player.x = -40; g.player.z = -60; g.player.y = g.world.groundHeight(-40, -60);
+  run(g, 0.5);
+  check(!gun.away && Math.hypot(gun.x - GUN.x, gun.z - GUN.z) < 0.1, 'when you are gone she is back home on Storgatan');
+  // a save between part 1 and part 2
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore({ v: 2, money: 100, done: ['samuel'], known: ['samuel', 'overlamning'], seen: ['samuel'], stats: {} });
+  check(g2.mission.isOpen('overlamning'), 'restored: the handover is waiting');
+  run(g2, 0.2);
+  check(g2.mission.flag.gun.away, 'restored: she waits on the pier');
+  const g3 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const ev3 = record(g3, ['sms']);
+  g3.mission.restore({ v: 2, money: 100, done: ['samuel'], known: ['samuel'], seen: ['samuel'], stats: {} });
+  run(g3, 7);
+  check(ev3.some(([n, d]) => n === 'sms' && d.offer === 'overlamning'), 'a v0.4 save with the keys taken: the handover is offered soon after you start');
+  const g4 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g4.mission.restore({ v: 2, money: 100, done: [], known: ['samuel', 'overlamning', 'cykel'], seen: [], stats: {} });
+  check(!g4.mission.known.has('overlamning') && !g4.mission.known.has('cykel'), 'a save cannot skip ahead in the chain');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

@@ -15,8 +15,10 @@ const IDLE = { moveX: 0, moveY: 0, action: false, handbrake: false, horn: false,
 const QUALITY_LABEL = { auto: 'Auto', saver: 'Batterisnål', pretty: 'Snygg' };
 
 let layout, game, view, hud, input, audio;
-let state = 'loading';          // loading | title | play | pause | offer | log | end
+let state = 'loading';          // loading | title | play | pause | offer | log | talk | end
 let offerId = null, pendingOffer = null;
+let talk = null, pendingTalk = null; // a conversation on screen: { id, pages, i, at }
+const TALK_CAM = { camDX: 0 };       // the camera keeps easing in while people talk
 let camYaw = Math.PI;
 let acc = 0, lastRender = 0;
 let wakeLock = null;
@@ -45,7 +47,7 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS = ['lasse', 'pizza', 'race', 'samuel'];
+const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning'];
 const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
@@ -149,6 +151,7 @@ function restoreInto(g, data) {
 function wire(g) {
   g.on('sms', (e) => hud.pushSms(e.from, e.text, e.color, e.offer));
   g.on('offer', (e) => { pendingOffer = e.id; }); // face to face: the card opens after this frame's steps
+  g.on('talk', (e) => { pendingTalk = e; });      // a conversation (the bench on the pier), same way
   g.on('tracked', () => hud.flashMap());
   g.on('objective', (e) => hud.objective(e.text));
   g.on('banner', (e) => {
@@ -247,7 +250,7 @@ function pause() {
   audio.suspend();
 }
 
-const QUEST_STATE = { active: 'Pågår', tracked: 'Följer', new: 'Nytt', waiting: 'Väntar', done: 'Klart' };
+const QUEST_STATE = { active: 'Pågår', tracked: 'Följer', new: 'Nytt', waiting: 'Väntar', soon: 'Kommer snart', done: 'Klart' };
 
 // the quests you know about and how far you have come with them
 function renderMissionList() {
@@ -348,7 +351,7 @@ function renderLog() {
     t.append(title, line);
     const st = document.createElement('em'); st.textContent = q.state === 'done' ? 'Klart ✓' : QUEST_STATE[q.state];
     btn.append(badge, t, st);
-    btn.disabled = q.state === 'done';
+    btn.disabled = q.state === 'done' || q.state === 'soon';
     btn.addEventListener('click', (e) => { e.preventDefault(); pickQuest(q); });
     li.append(btn);
     ul.append(li);
@@ -360,9 +363,57 @@ function renderLog() {
 
 // follow the quest you tapped (the GPS line shows up at once)
 function pickQuest(q) {
-  if (q.state === 'done') return;
+  if (q.state === 'done' || q.state === 'soon') return;
   if (q.state !== 'active') game.mission.accept(q.id);
   closeLog();
+}
+
+// ---------------------------------------------------------------- conversations
+// A dialogue box at the bottom of the screen, a page at a time (tap, or Enter/Space/E). The game
+// waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
+// the last one is done.
+function openTalk(e) {
+  if (state !== 'play' || !e.pages || !e.pages.length) return;
+  talk = { id: e.id, pages: e.pages, i: -1, at: 0 };
+  enterMenu('talk');
+  audio.resume(); // the harbour stays audible (and the keys jingle)
+  try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (_) { /* nothing focused */ }
+  $('game').classList.add('talking');
+  $('talk').hidden = false;
+  showPage(0);
+}
+
+function showPage(i) {
+  const p = talk.pages[i];
+  talk.i = i;
+  talk.at = performance.now();
+  const card = $('tkCard');
+  card.classList.toggle('you', !!p.you);
+  const av = $('tkAv');
+  av.textContent = p.letter; av.style.background = p.color;
+  $('tkWho').textContent = p.who;
+  $('tkText').textContent = p.text;
+  const last = i === talk.pages.length - 1;
+  $('tkNext').textContent = last ? (p.last || 'OK') : 'FORTSÄTT ›';
+  $('tkStep').textContent = `${i + 1} / ${talk.pages.length}`;
+  card.classList.remove('turn'); void card.offsetWidth; card.classList.add('turn');
+  if (p.fx) game.mission.talkFx(talk.id, p.fx);
+}
+
+function nextTalk() {
+  if (state !== 'talk' || !talk) return;
+  if (performance.now() - talk.at < 260) return; // a double tap does not skip a page
+  if (talk.i < talk.pages.length - 1) { showPage(talk.i + 1); return; }
+  const id = talk.id;
+  closeTalk();
+  game.mission.talkDone(id);
+}
+
+function closeTalk() {
+  talk = null;
+  $('talk').hidden = true;
+  $('game').classList.remove('talking');
+  if (state === 'talk') leaveMenu();
 }
 
 // "Börja om" wipes the saved game, so it asks for a second tap
@@ -388,10 +439,13 @@ function restart() {
   armRestart(false);
   clearProgress();
   offerId = pendingOffer = null;
+  talk = pendingTalk = null;
   $('pausemenu').hidden = true;
   $('endcard').hidden = true;
   $('offer').hidden = true;
   $('log').hidden = true;
+  $('talk').hidden = true;
+  $('game').classList.remove('talking');
   audio.horn(false); audio.washing(false);
   view.washing = false;
   game = new Game({ layout, settings, missionActive: true });
@@ -475,9 +529,11 @@ function bindUi() {
   on('ofAccept', () => answerOffer(true));
   on('ofWait', () => answerOffer(false));
   on('logClose', closeLog);
+  $('talk').addEventListener('click', (e) => { e.preventDefault(); nextTalk(); }); // anywhere on the screen (the button too)
   window.addEventListener('keydown', (e) => {
     if (state === 'offer' && e.code === 'Escape') { e.preventDefault(); answerOffer(false); }
     else if (state === 'log' && (e.code === 'Escape' || e.code === 'KeyU')) { e.preventDefault(); closeLog(); }
+    else if (state === 'talk' && !e.repeat && ['Enter', 'NumpadEnter', 'Space', 'KeyE', 'KeyF', 'KeyJ', 'ArrowRight'].includes(e.code)) { e.preventDefault(); nextTalk(); }
   });
 }
 
@@ -503,9 +559,12 @@ function frame(now) {
     let n = 0;
     while (acc >= FIXED && n < 5 && state === 'play') { game.step(FIXED, inp); inp.action = false; acc -= FIXED; n++; }
     if (n >= 5) acc = 0;
-    if (pendingOffer) { const id = pendingOffer; pendingOffer = null; openOffer(id); }
+    if (pendingTalk) { const t = pendingTalk; pendingTalk = null; openTalk(t); }
+    else if (pendingOffer) { const id = pendingOffer; pendingOffer = null; openOffer(id); }
     camYaw = view.rig.update(dt, game, inp, view.camera.aspect, game.world);
     audio.update(dt, game);
+  } else if (state === 'talk') {
+    camYaw = view.rig.update(dt, game, TALK_CAM, view.camera.aspect, game.world);
   } else if (state === 'title') {
     acc += dt;
     let n = 0;
@@ -520,7 +579,7 @@ function frame(now) {
   game.view.fx = tmpDir.x / l; game.view.fz = tmpDir.z / l; game.view.valid = true;
 
   const simDt = state === 'play' || state === 'title' ? dt : 0;
-  view.sync(game, simDt);
+  view.sync(game, state === 'talk' ? dt : simDt); // the sea keeps moving while people talk
   if (state !== 'title' && state !== 'loading') {
     const st = settings.fps ? view.stats : null;
     hud.update(simDt, game, view, camYaw, st ? `${perf.fps} fps · ${view.dpr.toFixed(2)}x · ${st.calls} dc · ${(st.tris / 1000).toFixed(0)}k tri` : null);
@@ -532,7 +591,7 @@ const tmpDir = new Vector3();
 // debug handle for automated tests
 window.__gta = {
   get game() { return game; }, get view() { return view; }, get state() { return state; }, get perf() { return perf; },
-  start: () => startPlay(), pause, resume, restart, openLog, openOffer, get hud() { return hud; },
+  start: () => startPlay(), pause, resume, restart, openLog, openOffer, nextTalk, get hud() { return hud; }, get talk() { return talk; },
 };
 
 const start = (data) => boot(data || {}).catch((e) => console.error(e));

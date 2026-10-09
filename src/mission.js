@@ -7,13 +7,21 @@
 //   G  Tant Gun:           "Flaggan i topp" – side quest: hoist the flag in her front garden
 //   ?  Okänt nummer:       "Samuels cykelnycklar" – main quest, part 1: sneak into Samuel's flat
 //                          on floor 7 of the dark tower and take his bike keys (v0.4)
-// The pizza job, the race and Samuel's flat take over while they run (one at a time). Lasse's job
-// and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car wash always work.
-import { DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD } from './config.js';
+//   ?  Okänt nummer:       "Överlämningen" – main quest, part 2: hand the keys over on the bench at
+//                          the end of the harbour pier – to tant Gun, it turns out (v0.5)
+//   G  Tant Gun:           "Arnes budcykel" – what comes next, in the list as "Kommer snart"
+// The pizza job, the race, Samuel's flat and the pier take over while they run (one at a time).
+// Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
+// wash always work. A quest with `after` is offered only once that quest is done.
+import {
+  DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
+  PIER_MEET, HANDOVER_REWARD,
+} from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
 import { FlagQuest } from './flag.js';
 import { SamuelJob } from './samuel.js';
+import { HandoverJob } from './handover.js';
 import { fmt } from './rng.js';
 
 export { fmt };
@@ -40,14 +48,26 @@ export const QUESTS = [
     reward: '300 kr och en kanelbulle', where: 'Tant Guns trädgård, Storgatan',
   },
   {
-    id: 'samuel', letter: '?', who: WHO.anon, title: 'Samuels cykelnycklar', color: '#ff7a59', x: TOWER_DOOR.x, z: TOWER_DOOR.z, r: TOWER_DOOR.r, Job: SamuelJob, at: 40, needFoot: true, main: true,
+    id: 'samuel', letter: '?', who: WHO.anon, title: 'Samuels cykelnycklar', color: '#ff7a59', x: TOWER_DOOR.x, z: TOWER_DOOR.z, r: TOWER_DOOR.r, Job: SamuelJob, at: 40, main: true,
+    needFoot: 'Kliv ur bilen – du måste gå in genom porten.',
     text: 'Du känner inte mig, men jag vet vem du är. Samuel bor på plan 7 i det mörka höghuset vid torget. Hans cykelnycklar ligger på köksbordet, och jag vill ha dem. Han är hemma, men han glor bara i telefonen. Smyg.',
     reward: `${fmt(SAMUEL_REWARD)} kr`, where: 'Höghuset vid torget, plan 7 (ingången på södra sidan)',
   },
+  {
+    id: 'overlamning', letter: '?', who: WHO.anon, title: 'Överlämningen', color: '#ff7a59', x: PIER_MEET.x, z: PIER_MEET.z, r: PIER_MEET.r, Job: HandoverJob, main: true,
+    after: 'samuel', at: 6, needFoot: 'Bryggan är bara för gående. Kliv ur bilen.',
+    text: 'Du har nycklarna. Bra. Kom till bryggan i hamnen – jag sitter på bänken längst ut. Kom gående. Och kom ensam.',
+    reward: `${fmt(HANDOVER_REWARD)} kr och svar på dina frågor`, where: 'Bryggan i Sjuby hamn, längst ut',
+  },
+  {
+    // the next part of the main quest: shown in the list, not playable yet
+    id: 'cykel', letter: 'G', who: WHO.gun, title: 'Arnes budcykel', color: '#c58be0', main: true, soon: true, after: 'overlamning',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
-const COLOR_OF = Object.fromEntries(QUESTS.map((q) => [q.who, q.color]));
-const MAIN = ['lasse', 'pizza', 'race', 'samuel']; // all four → the end card; Gun's flag is a bonus
+const COLOR_OF = {};
+for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning']; // all five → the end card; Gun's flag is a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -111,7 +131,7 @@ export class Missions {
   // a contact offers a quest: by SMS (tap it to answer) or face to face (the card opens at once)
   offer(id, how = 'sms') {
     const g = this.game, q = BY_ID[id];
-    if (!q || this.known.has(id) || this.done.has(id)) return;
+    if (!q || q.soon || this.known.has(id) || this.done.has(id) || (q.after && !this.done.has(q.after))) return;
     this.known.add(id);
     if (how === 'sms') {
       g.emit('sms', { from: q.who, text: q.text, color: q.color, offer: id });
@@ -162,10 +182,12 @@ export class Missions {
 
   // the list in the pause menu and the quest log
   list() {
-    const order = { active: 0, tracked: 1, new: 2, waiting: 3, done: 4 };
-    return QUESTS.filter((q) => this.known.has(q.id) || this.done.has(q.id)).map((q) => {
+    const order = { active: 0, tracked: 1, new: 2, waiting: 3, soon: 4, done: 5 };
+    const soon = (q) => q.soon && this.done.has(q.after);
+    return QUESTS.filter((q) => this.known.has(q.id) || this.done.has(q.id) || soon(q)).map((q) => {
       let state = 'waiting';
-      if (this.done.has(q.id)) state = 'done';
+      if (q.soon) state = 'soon';
+      else if (this.done.has(q.id)) state = 'done';
       else if (this.active && this.active.id === q.id) state = 'active';
       else if (this.tracked === q.id) state = 'tracked';
       else if (!this.seen.has(q.id)) state = 'new';
@@ -175,6 +197,7 @@ export class Missions {
 
   // what to do next, in one line (for the list)
   questLine(id) {
+    if (id === 'cykel') return 'Fortsättning följer – när norra bron öppnar';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -183,6 +206,7 @@ export class Missions {
       case 'race': return 'Kör till Macken med en bil';
       case 'flag': return 'Hissa flaggan hos tant Gun på Storgatan';
       case 'samuel': return 'Ta Samuels cykelnycklar i höghuset vid torget';
+      case 'overlamning': return 'Lämna nycklarna på bänken längst ut på bryggan';
     }
     return '';
   }
@@ -207,13 +231,15 @@ export class Missions {
     const valid = (id) => !!BY_ID[id];
     g.money = Math.max(0, d.money || 0);
     Object.assign(g.stats, d.stats || {});
-    this.done = new Set((d.done || []).filter((id) => id === 'red' || valid(id)));
+    this.done = new Set((d.done || []).filter((id) => id === 'red' || (valid(id) && !BY_ID[id].soon)));
+    // a quest that comes after another one is only open once that one is done
+    const reachable = (id) => valid(id) && !BY_ID[id].soon && (!BY_ID[id].after || this.done.has(BY_ID[id].after));
     if (Array.isArray(d.known)) {
-      this.known = new Set(d.known.filter(valid));
-      this.seen = new Set((d.seen || []).filter(valid));
+      this.known = new Set(d.known.filter(reachable));
+      this.seen = new Set((d.seen || []).filter(reachable));
     } else {
       // a save from version 0.2, where Lasse, Sanna and Kim had all been in touch
-      for (const id of MAIN) { this.known.add(id); this.seen.add(id); }
+      for (const id of ['lasse', 'pizza', 'race']) { this.known.add(id); this.seen.add(id); }
     }
     for (const id of this.done) if (valid(id)) { this.known.add(id); this.seen.add(id); }
     this.tracked = valid(d.tracked) && this.isOpen(d.tracked) ? d.tracked : null;
@@ -229,6 +255,7 @@ export class Missions {
   update(dt) {
     const g = this.game;
     this.t += dt;
+    this.outT = g.indoor || g.indoors.busy ? 0 : (this.outT || 0) + dt; // time since you came out of the tower
     g.stats.playTime = (g.stats.playTime || 0) + dt;
     for (let i = 0; i < this.queue.length; i++) {
       if (g.time >= this.queue[i].at) { const q = this.queue.splice(i, 1)[0]; i--; q.fn(); }
@@ -251,12 +278,15 @@ export class Missions {
     const g = this.game;
     // the main quest calls a little later – or a few seconds after you have finished something
     const early = (q) => q.main && this.flags.firstDone != null && this.t >= this.flags.firstDone + 8;
+    // the next part of a quest chain: a few seconds after the part before, once you are outdoors
+    const next = (q) => this.done.has(q.after) && !g.indoor && this.outT >= 2.5 && this.t >= ((this.flags.doneAt || {})[q.after] ?? 0) + q.at;
     for (const q of QUESTS) {
-      if (q.side || this.known.has(q.id) || this.done.has(q.id) || (this.t < q.at && !early(q))) continue;
+      if (q.side || q.soon || this.known.has(q.id) || this.done.has(q.id)) continue;
+      if (q.after ? !next(q) : this.t < q.at && !early(q)) continue;
       this.offer(q.id);
       if (q.id === 'lasse' && this.lasse === 'intro') this.lasse = 'steal';
     }
-    if (!this.flags.gunHint && this.gunVisible && !this.known.has('flag') && !this.done.has('flag')) {
+    if (!this.flags.gunHint && this.gunVisible && !this.known.has('flag') && !this.done.has('flag') && !this.flag.gun.away) {
       this.flags.gunHint = true;
       if (!this.restored) this.later(2, () => g.emit('hint', { id: 'gun', touch: 'G på kartan: tant Gun vinkar efter hjälp.', keys: 'G på kartan: tant Gun vinkar efter hjälp.' }));
     }
@@ -279,7 +309,7 @@ export class Missions {
         continue;
       }
       if (c.needFoot && car) {
-        if (!c.warned) { c.warned = true; g.emit('toast', { text: 'Kliv ur bilen – du måste gå in genom porten.', long: true }); }
+        if (!c.warned) { c.warned = true; g.emit('toast', { text: c.needFoot, long: true }); }
         continue;
       }
       if (car && car.speed > 12) continue;
@@ -309,12 +339,13 @@ export class Missions {
   completeQuest(id, r) {
     const g = this.game;
     this.done.add(id);
+    (this.flags.doneAt || (this.flags.doneAt = {}))[id] = this.t;
     if (this.flags.firstDone == null) this.flags.firstDone = this.t;
     if (this.tracked === id) { this.tracked = null; this.setObjective('', ''); this.holdObj = 3.4; }
     if (this.prevTracked === id) this.prevTracked = null;
     if (r.amount) this.pay(r.amount, r.title, r.sub);
     else { g.emit('banner', { title: r.title, sub: r.sub }); g.emit('progress', {}); }
-    this.checkAllDone();
+    this.checkAllDone(id);
   }
 
   fail(job, reason, sms) {
@@ -348,13 +379,20 @@ export class Missions {
     this.holdObj = 3.4;
   }
 
-  checkAllDone() {
+  checkAllDone(last) {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    this.later(7.2, () => this.sms(WHO.game, 'Det var allt i version 0.4! Huvuduppdraget fortsätter i nästa version. Kör runt fritt – och har du hälsat på tant Gun?'));
-    this.later(9.8, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
+    const wait = last === 'overlamning' ? 4.3 : 0; // after tant Gun's kanelbulle and her text
+    this.later(7.2 + wait, () => this.sms(WHO.game, this.done.has('flag')
+      ? 'Det var allt i version 0.5! Huvuduppdraget fortsätter när norra bron öppnar. Kör runt fritt så länge.'
+      : 'Det var allt i version 0.5! Huvuduppdraget fortsätter när norra bron öppnar. Kör runt fritt – och har du hissat flaggan hos tant Gun?'));
+    this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
+
+  // the dialogue overlay (main.js) reports back to the running job
+  talkFx(id, fx) { if (this.active && this.active.id === id && this.active.talkFx) this.active.talkFx(fx); }
+  talkDone(id) { if (this.active && this.active.id === id && this.active.talkDone) this.active.talkDone(); }
 
   // the objective box when no job is running: the followed quest, or a nudge to pick one
   followObjective() {
@@ -385,6 +423,7 @@ export class Missions {
       case 'race': return { text: 'Kör till Macken (K)', sub: this.game.player.inCar ? 'Kör in i den blå ringen' : 'Ta med en bil' };
       case 'flag': return this.flag.objective();
       case 'samuel': return { text: 'Gå till höghuset vid torget (?)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Porten på södra sidan' };
+      case 'overlamning': return { text: 'Gå till bryggan i hamnen (?)', sub: this.game.player.inCar ? 'Parkera och gå ut på bryggan' : 'Bänken längst ut på bryggan' };
     }
     return null;
   }

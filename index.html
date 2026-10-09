@@ -355,6 +355,23 @@ kbd {
 .qlist .s-active em { background: var(--cash); color: #0d2a12; }
 .qlist .s-done .q { opacity: 0.55; cursor: default; }
 .qlist .s-done em { color: var(--cash); background: none; }
+.qlist .s-soon .q { opacity: 0.7; border-style: dashed; cursor: default; background: none; }
+.qlist .s-soon em { background: none; color: var(--muted); font-style: italic; }
+.mlist .m-soon { opacity: 0.6; border-style: dashed; }
+/* conversations: a dialogue box at the bottom, the scene stays visible above it */
+#talk { place-items: end center; cursor: pointer; background: linear-gradient(to top, rgba(8,10,14,0.72) 0%, rgba(8,10,14,0.3) 34%, rgba(8,10,14,0) 58%); -webkit-tap-highlight-color: transparent; }
+.panel.tk { width: min(620px, 100%); display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 8px 14px; padding: 16px 18px 14px; animation: rise 0.35s both; }
+.tk .av { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; font: 900 25px/1 var(--display); letter-spacing: 0.02em; color: #15171b; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
+.tk-who { margin: 3px 0 6px; font: 800 15px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.tk-text { margin: 0; min-height: 2.9em; font-size: 17px; line-height: 1.45; text-wrap: pretty; }
+.tk.turn .tk-text, .tk.turn .tk-who, .tk.turn .av { animation: rise 0.3s both; }
+.tk.you { grid-template-columns: 1fr auto; }
+.tk.you .av { grid-column: 2; grid-row: 1; }
+.tk.you .tk-body { grid-column: 1; grid-row: 1; text-align: right; }
+.tk-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tk-foot span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.panel .tk-foot .row.primary { width: auto; min-width: 150px; padding: 12px 18px; font-size: 19px; }
+#game.talking #hud { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 #logMsg { margin: 0; color: var(--gold); font-weight: 650; font-size: 14px; }
 /* short landscape screens: two columns so the menu fits without scrolling */
 @media (max-height: 520px) and (orientation: landscape) {
@@ -370,6 +387,10 @@ kbd {
   .qlist { display: grid; grid-template-columns: 1fr 1fr; }
   .card { gap: 8px; }
   .card .msg { font-size: 14px; }
+  .panel.tk { width: min(700px, 100%); padding: 12px 16px 10px; gap: 6px 12px; }
+  .tk .av { width: 42px; height: 42px; font-size: 21px; }
+  .tk-text { font-size: 15.5px; min-height: 2.6em; }
+  .panel .tk-foot .row.primary { padding: 9px 16px; font-size: 17px; }
 }
 
 /* ---------------- portrait phones ---------------- */
@@ -420,6 +441,11 @@ kbd {
 <link rel="modulepreload" href="src/race.js">
 <link rel="modulepreload" href="src/racer.js">
 <link rel="modulepreload" href="src/flag.js">
+<link rel="modulepreload" href="src/samuel.js">
+<link rel="modulepreload" href="src/handover.js">
+<link rel="modulepreload" href="src/indoors.js">
+<link rel="modulepreload" href="src/interior.js">
+<link rel="modulepreload" href="src/trees.js">
 <link rel="modulepreload" href="src/render.js">
 <link rel="modulepreload" href="src/shaders.js">
 <link rel="modulepreload" href="src/textures.js">
@@ -438,7 +464,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 0.4 · en bit av Sjuby</div>
+    <div class="ver">Version 0.5 · en bit av Sjuby</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -539,10 +565,18 @@ kbd {
     </div>
   </div>
 
+  <div id="talk" class="overlay" hidden>
+    <div class="panel tk" id="tkCard" role="dialog" aria-live="polite" aria-labelledby="tkWho">
+      <div class="av" id="tkAv">?</div>
+      <div class="tk-body"><div class="tk-who" id="tkWho"></div><p class="tk-text" id="tkText"></p></div>
+      <div class="tk-foot"><span id="tkStep"></span><button class="row primary" id="tkNext" type="button">FORTSÄTT ›</button></div>
+    </div>
+  </div>
+
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 0.4 klar">
-      <h2>VERSION 0.4 KLAR!</h2>
-      <p class="note">Lasse, Sanna och Kim är nöjda, och Samuels cykelnycklar ligger i din ficka. Så här gick din tid i Sjuby:</p>
+    <div class="panel" role="dialog" aria-label="Version 0.5 klar">
+      <h2>VERSION 0.5 KLAR!</h2>
+      <p class="note">Lasse, Sanna och Kim är nöjda, och tant Gun har fått Samuels cykelnycklar. Resten väntar på andra sidan norra bron. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

@@ -312,7 +312,7 @@ export class SamuelJob {
     g.indoors.shutDoor();
     g.stats.keysTaken = true;
     m.complete(this, { title: 'HUVUDUPPDRAG KLART', sub: 'Samuels cykelnycklar', amount: SAMUEL_REWARD });
-    m.sms(WHO.anon, 'Snyggt. Behåll nycklarna tills vidare – jag hör av mig om cykeln.', 3.6);
+    m.sms(WHO.anon, 'Snyggt. Ta dig ut ur huset, så hör jag av mig om cykeln.', 3.6);
     m.later(1.0, () => g.emit('toast', { text: 'Dörren gick i lås bakom dig. Hissen är i slutet av korridoren.', long: true }));
   }
 

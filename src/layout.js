@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -899,12 +899,13 @@ export function createLayout(seed = 7) {
     }
   };
   const E = ISLAND - 0.3;
-  rail(-E, -E, 34.6, -E); rail(45.4, -E, E, -E);       // north (gap for bridge at x=40)
+  rail(-E, -E, PIER.x0 - 0.2, -E); rail(PIER.x1 + 0.2, -E, 34.6, -E); rail(45.4, -E, E, -E); // north (gaps: the pier, the bridge at x=40)
   rail(-E, E, E, E);                                   // south
   rail(E, -E, E, E);                                   // east
   rail(-E, -E, -E, -45.4); rail(-E, -34.6, -E, E);     // west (gap for bridge at z=-40)
   // island boundary colliders
-  colBox(-ISLAND - 6, -ISLAND - 6, 35, -ISLAND + 0.2, 20, { edge: true });
+  colBox(-ISLAND - 6, -ISLAND - 6, PIER.x0, -ISLAND + 0.2, 20, { edge: true });
+  colBox(PIER.x1, -ISLAND - 6, 35, -ISLAND + 0.2, 20, { edge: true });
   colBox(45, -ISLAND - 6, ISLAND + 6, -ISLAND + 0.2, 20, { edge: true });
   colBox(-ISLAND - 6, ISLAND - 0.2, ISLAND + 6, ISLAND + 6, 20, { edge: true });
   colBox(ISLAND - 0.2, -ISLAND - 6, ISLAND + 6, ISLAND + 6, 20, { edge: true });
@@ -955,6 +956,19 @@ export function createLayout(seed = 7) {
   P({ t: 'boat', x: pierX + 5.5, z: -ISLAND - 12, rot: 0.04, c: 0xf2efe6, c2: 0x2c62a8 });
   P({ t: 'boat', x: pierX - 5.5, z: -ISLAND - 19, rot: -0.05, c: 0xd2342c, c2: 0xf2efe6 });
   sign('hamn', { lines: ['SJUBY HAMN'], bg: '#1d3557', fg: '#f1ede2', font: 0.6 }, pierX, CURB_H + 2.4, -ISLAND + 0.6, 4.2, 0.8, 0);
+  // you can walk out on the pier (v0.5): railings along it, bollards that stop cars, a bench at the end
+  rail(PIER.x0 - 0.1, -ISLAND, PIER.x0 - 0.1, PIER.z0 - 0.1);
+  rail(PIER.x1 + 0.1, -ISLAND, PIER.x1 + 0.1, PIER.z0 - 0.1);
+  rail(PIER.x0 - 0.1, PIER.z0 - 0.1, PIER.x1 + 0.1, PIER.z0 - 0.1);
+  colBox(PIER.x0 - 0.25, PIER.z0 - 0.3, PIER.x0, -ISLAND + 0.2, 1.2);
+  colBox(PIER.x1, PIER.z0 - 0.3, PIER.x1 + 0.25, -ISLAND + 0.2, 1.2);
+  colBox(PIER.x0 - 0.25, PIER.z0 - 0.3, PIER.x1 + 0.25, PIER.z0, 1.2);
+  for (const x of [pierX - 1.6, pierX, pierX + 1.6]) {
+    P({ t: 'cyl', x, z: -ISLAND + 0.55, y0: CURB_H, y1: CURB_H + 0.85, r: 0.16, r1: 0.13, n: 8, c: 0x2d3238, cap: true });
+    colCircle(x, -ISLAND + 0.55, 0.18, 1.0);
+  }
+  bench(PIER_BENCH.x, PIER_BENCH.z, Math.PI);
+  zones.pier = { x0: PIER.x0, z0: PIER.z0, x1: PIER.x1, z1: PIER.z1 };
   P({ t: 'cyl', x: pierX - 1.9, z: -ISLAND + 0.6, y0: CURB_H, y1: CURB_H + 2.0, r: 0.05, n: 4, c: COL.darkMetal });
   P({ t: 'cyl', x: pierX + 1.9, z: -ISLAND + 0.6, y0: CURB_H, y1: CURB_H + 2.0, r: 0.05, n: 4, c: COL.darkMetal });
 
@@ -972,6 +986,7 @@ export function createLayout(seed = 7) {
   const inside = interiorLayout();
   colliders.push(...inside.colliders);
   Object.assign(signs, inside.signs);
+  inside.floors.push({ x0: PIER.x0, z0: PIER.z0, x1: PIER.x1, z1: -ISLAND + 0.3, y: CURB_H }); // the pier deck
 
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,

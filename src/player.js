@@ -21,6 +21,7 @@ export class Player {
     this.moved = 0;
     this.locked = false;       // race countdown: the car stays put and you can't get out
     this.frozen = false;       // caught by Samuel: you stand still until you are thrown out
+    this.autoWalk = null;      // { x, z, speed }: a mission walks you there (works while frozen)
     this.body.x = this.x; this.body.z = this.z; this.body.h = this.h;
   }
 
@@ -194,6 +195,13 @@ export class Player {
     if (mag > 0.12) {
       if (input.analog) speed = mag > 0.86 ? 6.0 : 1.5 + ((mag - 0.12) / 0.74) * 2.2;
       else speed = input.sprint ? 6.4 : g.indoor ? 2.9 : 3.9; // indoors you walk a little slower (and quietly)
+    }
+    // a mission walks you somewhere (up to the bench on the pier): straight there, at a calm pace
+    const A = this.autoWalk;
+    if (A) {
+      const ax = A.x - this.x, az = A.z - this.z, ad = Math.hypot(ax, az);
+      if (ad < 0.08 || (A.t = (A.t || 0) + dt) > 6) { this.autoWalk = null; speed = 0; }
+      else { dx = ax / ad; dz = az / ad; speed = Math.min(A.speed || 1.5, ad * 5); }
     }
     const k = 1 - Math.exp(-12 * dt);
     this.vx += (dx * speed - this.vx) * k;

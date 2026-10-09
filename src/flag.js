@@ -1,10 +1,13 @@
 // "Flaggan i topp" – a small side quest. Tant Gun stands in her front garden on Storgatan and
 // waves at passers-by: her shoulder hurts and the Swedish flag should be up. Talk to her, then
 // hold the action button at the flagpole to hoist the flag.
-import { GUN } from './config.js';
+import { GUN, PIER_BENCH, CURB_H } from './config.js';
 import { Ped } from './peds.js';
 
 const LOOK = { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1 };
+// main quest, part 2: the figure on the pier bench, in a dark coat with a hat pulled down
+const COAT = { ...LOOK, shirt: 0x343846, pants: 0x23252b, hair: 0x1c1d22 };
+const PIER_LINES = ['Norra bron, kom ihåg.', 'Akta dig för Bullbilen.', 'Ät bullen nu, innan den kallnar.', 'Inte ett ord till Samuel!'];
 const HOIST_TIME = 3.2; // seconds of pulling from the bottom to the top
 const POLE_R = 1.9, TALK_R = 2.4;
 
@@ -36,19 +39,74 @@ export class FlagQuest {
 
   get done() { return this.mgr.done.has('flag'); }
 
+  // While the handover (main quest, part 2) is due, Gun is not at home: she sits on the bench at
+  // the end of the pier in a dark coat. She moves when nobody is looking, there and back.
+  placement() {
+    const m = this.mgr, g = this.game, gun = this.gun, p = g.player;
+    const hidden = (x, z) => { const d = Math.hypot(x - p.x, z - p.z); return d > 70 || (d > 35 && !g.visible(x, z)); };
+    const due = m.done.has('samuel') && m.known.has('overlamning') && !m.done.has('overlamning');
+    const busy = m.active && m.active.id === 'overlamning';
+    if (busy) return;
+    if (due && !gun.away && hidden(gun.x, gun.z) && hidden(PIER_BENCH.x, PIER_BENCH.z)) this.toPier();
+    else if (!due && gun.away && hidden(gun.x, gun.z) && hidden(GUN.x, GUN.z)) this.toHome();
+  }
+
+  toPier() {
+    const gun = this.gun, b = gun.body;
+    gun.away = true;
+    gun.disguised = true;
+    gun.state = 'lounge'; // posed by us: sitting on the bench, looking out over the water
+    gun.x = PIER_BENCH.x; gun.z = PIER_BENCH.z - 0.04; gun.h = Math.PI;
+    gun.y = CURB_H + 0.53 - 0.92 * LOOK.height;
+    gun.wave = false;
+    b.look = COAT; b.pose = 5; b.headYaw = 0; b.headPitch = 0.12; b.phone = 0;
+    b.x = gun.x; b.y = gun.y; b.z = gun.z; b.h = gun.h;
+  }
+
+  // the coat and hat come off: it is tant Gun! She gets up and turns to you.
+  // (This happens while the dialogue is open and the game waits, so the body is placed here too.)
+  reveal(px, pz) {
+    const gun = this.gun, b = gun.body;
+    gun.disguised = false;
+    b.look = LOOK;
+    gun.state = 'stand';
+    gun.x = PIER_BENCH.x + 1.4; gun.z = PIER_BENCH.z + 0.25; gun.y = CURB_H; // up, beside the bench
+    gun.standH = Math.atan2(px - gun.x, pz - gun.z); gun.h = gun.standH;
+    b.pose = 0; b.legAmp = 0; b.armAmp = 0;
+    b.x = gun.x; b.y = gun.y; b.z = gun.z; b.h = gun.h;
+  }
+
+  // after the talk on the pier: a wave goodbye and a reminder when you walk off
+  goodbye() { this.byeT = 5; this.said.bye = false; }
+
+  toHome() {
+    const g = this.game, gun = this.gun, b = gun.body;
+    gun.away = false;
+    gun.disguised = false;
+    gun.state = 'stand';
+    gun.x = GUN.x; gun.z = GUN.z; gun.y = g.world.groundHeight(GUN.x, GUN.z);
+    gun.h = 0; gun.standH = 0;
+    b.look = LOOK; b.pose = 0;
+    b.x = gun.x; b.y = gun.y; b.z = gun.z; b.h = gun.h;
+  }
+
   update(dt) {
+    this.placement();
     const g = this.game, m = this.mgr, p = g.player, gun = this.gun;
-    const known = m.known.has('flag'), done = this.done;
-    const onFoot = p.state === 'foot';
+    const known = m.known.has('flag'), done = this.done, away = !!gun.away;
+    const onFoot = p.state === 'foot' && !p.frozen;
     const dGun = Math.hypot(p.x - gun.x, p.z - gun.z);
     const dPole = Math.hypot(p.x - GUN.poleX, p.z - GUN.poleZ);
     this.prompt = null;
     if (onFoot && known && !done && dPole < POLE_R) this.prompt = 'HISSA';
-    else if (onFoot && dGun < TALK_R && gun.state === 'stand') this.prompt = 'PRATA';
-    // she waves at anyone passing by until somebody helps her
-    gun.wave = !known && !done && m.gunVisible && dGun < 16;
-    if (gun.wave && !this.said.hello && dGun < 15) { this.said.hello = true; this.say('Hallå där! Kan du hjälpa en gammal tant?'); }
-    if (dGun > 8 && !this.pulling) gun.standH = 0;
+    else if (!gun.disguised && onFoot && dGun < TALK_R && gun.state === 'stand') this.prompt = 'PRATA';
+    // she waves at anyone passing by until somebody helps her (and waves goodbye on the pier)
+    if (this.byeT > 0) this.byeT -= dt;
+    gun.wave = (!away && !known && !done && m.gunVisible && dGun < 16) || (away && !gun.disguised && this.byeT > 0 && dGun > 2.5);
+    if (!away && gun.wave && !this.said.hello && dGun < 15) { this.said.hello = true; this.say('Hallå där! Kan du hjälpa en gammal tant?'); }
+    if (away && !gun.disguised && !this.said.bye && dGun > 7 && m.done.has('overlamning')) { this.said.bye = true; this.say('Norra bron, lilla vän. Glöm inte!'); }
+    if (away && !gun.disguised && dGun < 12) gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z); // she keeps an eye on you
+    if (!away && dGun > 8 && !this.pulling) gun.standH = 0;
     // hoisting: hold the action button at the pole
     this.pulling = this.prompt === 'HISSA' && !!(g.input && g.input.actionHeld);
     if (this.pulling) {
@@ -57,7 +115,7 @@ export class FlagQuest {
       p.h = Math.atan2(GUN.poleX - p.x, GUN.poleZ - p.z);
       p.vx = p.vz = 0;
       p.body.pose = 1; // one arm up, tugging at the rope
-      gun.standH = Math.atan2(GUN.poleX - gun.x, GUN.poleZ - gun.z);
+      if (!away) gun.standH = Math.atan2(GUN.poleX - gun.x, GUN.poleZ - gun.z);
       if (before < 0.35 && this.h >= 0.35) this.say('Lite till!');
       if (before < 0.75 && this.h >= 0.75) this.say('Nästan uppe!');
       if (this.h >= 1) this.finish();
@@ -77,7 +135,10 @@ export class FlagQuest {
     if (this.prompt !== 'PRATA') return false;
     const m = this.mgr, p = this.game.player, gun = this.gun;
     gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z);
-    if (this.done) this.say('Tack igen! Titta så fin den är.');
+    if (gun.away) { // on the pier, after the handover
+      this.pierTalk = ((this.pierTalk ?? -1) + 1) % PIER_LINES.length;
+      this.say(PIER_LINES[this.pierTalk]);
+    } else if (this.done) this.say('Tack igen! Titta så fin den är.');
     else if (m.known.has('flag')) this.say('Flaggstången står där borta, vännen. Håll i linan och dra!');
     else m.offer('flag', 'talk');
     return true;
@@ -92,13 +153,13 @@ export class FlagQuest {
     g.stats.flags = (g.stats.flags || 0) + 1;
   }
 
-  say(text) { this.game.emit('say', { who: this.gun, text }); }
+  say(text) { if (!this.gun.disguised) this.game.emit('say', { who: this.gun, text }); }
 
   // map + view: Gun's letter over her head; the flagpole when you follow the quest
   targets(T, tracked) {
     const m = this.mgr, gun = this.gun;
     if (this.done || !m.gunVisible) return;
-    T.push({ kind: 'contact', x: gun.x, z: gun.z, r: 1, letter: 'G', color: m.quest('flag').color, badgeOnly: true, badgeY: 2.75, ref: gun });
+    if (!gun.disguised) T.push({ kind: 'contact', x: gun.x, z: gun.z, r: 1, letter: 'G', color: m.quest('flag').color, badgeOnly: true, badgeY: 2.75, ref: gun });
     if (tracked && m.known.has('flag')) T.push({ kind: 'zone', x: GUN.poleX, z: GUN.poleZ, r: 1.3, gps: true });
   }
 
