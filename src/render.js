@@ -6,6 +6,8 @@ import { buildWorld } from './worldmesh.js';
 import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, BIKE } from './models.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
+import { OFFICE, safeDoorInto, recipeInto } from './office.js';
+import { PLACES } from './indoors.js';
 import { SEE, phoneOf } from './samuel.js';
 import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
@@ -307,6 +309,18 @@ export class View {
     this.bag.position.set(SHOP.bag.x, SHOP.bag.y, SHOP.bag.z);
     this.bag.rotation.y = 0.35;
     g.add(this.bag);
+    // the bakery office: the safe's door (swings open) and the recipe inside
+    const SB = new GeomBuilder();
+    safeDoorInto(SB);
+    this.safeDoor = new THREE.Mesh(SB.toGeometry(THREE), this.matInterior);
+    this.safeDoor.position.set(OFFICE.safeDoor.hinge[0], OFFICE.safeDoor.y, OFFICE.safeDoor.hinge[1]);
+    g.add(this.safeDoor);
+    const RB = new GeomBuilder();
+    recipeInto(RB);
+    this.recipe = new THREE.Mesh(RB.toGeometry(THREE), this.matInterior);
+    this.recipe.position.set(OFFICE.recipe.x, OFFICE.recipe.y, OFFICE.recipe.z);
+    this.recipe.rotation.y = 0.2;
+    g.add(this.recipe);
     // Samuel's phone (its screen lights up his face… well, it glows)
     this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
     this.phone.scale.setScalar(1.35);
@@ -371,6 +385,10 @@ export class View {
     this.keys.visible = !taken;
     this.glint.visible = !taken;
     this.bag.visible = !game.mission.done.has('livs') && !(job && job.id === 'livs' && job.bag);
+    const kj = job && job.id === 'kassaskap' ? job : null;
+    const open = game.mission.done.has('kassaskap') || (kj && kj.safeOpen);
+    this.safeDoor.rotation.y += ((open ? 1.9 : 0) - this.safeDoor.rotation.y) * Math.min(1, dt * 4);
+    this.recipe.visible = !game.mission.done.has('kassaskap') && !(kj && kj.recipe);
     if (!taken) {
       const k = 0.13 + 0.07 * Math.max(0, Math.sin(this.time * 3.1)) ** 6;
       this.glint.scale.set(k, k, 1);
@@ -824,12 +842,13 @@ export class CameraRig {
       tx += ((F.x0 + F.x1) / 2 - tx) * k; tz += ((F.z0 + F.z1) / 2 + 0.6 - tz) * k;
     }
     // in Hörnlivs, the same: the whole little shop stays in view
-    this.shopK = game.indoor && game.indoors.where === 'shop' ? smooth(this.shopK || 0, 1, 2.5, dt) : 0; // (gone at once outside)
-    if (this.shopK > 0.001) {
-      const S = SHOP.room, k = this.shopK * (portrait ? 0.45 : 0.35);
+    const place = game.indoor && PLACES[game.indoors.where];
+    this.shopK = place ? smooth(this.shopK || 0, 1, 2.5, dt) : 0; // (gone at once outside)
+    if (this.shopK > 0.001 && place) {
+      const S = place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35);
       tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
       // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
-      const j = game.mission.active, talking = j && j.id === 'livs' && j.stage === 'talk' ? 1 : 0;
+      const j = game.mission.active, talking = j && j.stage === 'talk' && (j.id === 'livs' || j.id === 'kassaskap') ? 1 : 0;
       this.talkK = smooth(this.talkK || 0, talking, 3, dt);
       tz += this.talkK * this.shopK * (portrait ? 1.6 : 2.6);
     }

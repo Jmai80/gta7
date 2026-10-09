@@ -8,7 +8,7 @@ import { INT, inFlat } from './interior.js';
 import { WHO, SAMUEL_REWARD } from './config.js';
 import { clamp, wrapAngle } from './rng.js';
 
-const LOOK = { shirt: 0x6e7a46, pants: 0x2b2e35, skin: 0xe8b996, hair: 0x3a2618, height: 1.0, bulk: 1.02 };
+export const LOOK = { shirt: 0x6e7a46, pants: 0x2b2e35, skin: 0xe8b996, hair: 0x3a2618, height: 1.0, bulk: 1.02 };
 export const SEE = {
   range: 9,        // metres he can see across the room when he looks up
   half: 0.82,      // half the width of his view (radians, ~47°)

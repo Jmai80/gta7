@@ -284,6 +284,18 @@ export function islandInto(H) {
   H.area(44, Y.gateZ0, Y.x0, Y.gateZ1, 0x494c52, M.ASPHALT, PATCH_Y);  // the driveway from the middle road
   building({ x0: Bk.x0, z0: Bk.z0, x1: Bk.x1, z1: Bk.z1, h: 8, c: 0x9a4a33, m: M.BRICKWIN, cell: [3.4, 3.2], topC: 0x55575c, mapC: 0x8a5a48 });
   solid(Bk.x0 + 3, CURB_H, Bk.z1, Bk.x1 - 3, CURB_H + 1.1, Bk.z1 + 2.4, COL.concrete);  // loading dock
+  // the office (v0.7): a side door on the west wall and the window where the light is always on
+  {
+    const fx = Bk.x0, dz = -322;
+    box(fx - 0.06, CURB_H, dz - 0.65, fx, CURB_H + 2.2, dz + 0.65, 0x5b4636, M.BOARDS);
+    box(fx - 0.1, CURB_H + 0.95, dz + 0.38, fx - 0.06, CURB_H + 1.05, dz + 0.5, 0xc9ccd0, M.CHROME);
+    box(fx - 0.5, CURB_H, dz - 0.9, fx, CURB_H + 0.12, dz + 0.9, 0x8f8a83, M.STONE);
+    sign('kontorDoor', { lines: ['KONTOR'], bg: '#3a3c41', fg: '#f4efe4', font: 0.6 }, fx - 0.07, CURB_H + 2.5, dz, 0.9, 0.24, -Math.PI / 2);
+    box(fx - 0.04, CURB_H + 1.1, -319.6, fx + 0.01, CURB_H + 2.5, -316.4, 0xffd98a, M.LIGHT);   // the lit window
+    box(fx - 0.08, CURB_H + 1.04, -319.7, fx - 0.03, CURB_H + 1.1, -316.3, 0xf1eee7);
+    box(fx - 0.08, CURB_H + 2.5, -319.7, fx - 0.03, CURB_H + 2.56, -316.3, 0xf1eee7);
+    box(fx - 0.08, CURB_H + 1.1, -318.04, fx - 0.03, CURB_H + 2.5, -317.96, 0xf1eee7);
+  }
   for (let i = 0; i < 4; i++) box(Bk.x0 + 5.5 + i * 9, CURB_H + 1.1, Bk.z1 - 0.06, Bk.x0 + 11 + i * 9, CURB_H + 4.6, Bk.z1 + 0.02, 0x8f969c, M.GARAGE, { cell: [5.5, 3.5] });
   sign('bageri', { kind: 'bullbil' }, (Bk.x0 + Bk.x1) / 2, CURB_H + 6.5, Bk.z1 + 0.08, 7.6, 3.45, 0);
   roofThings(H, Bk);

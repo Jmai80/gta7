@@ -5,13 +5,15 @@ import { STREET_NAMES, ROADS, RING, WHO } from './config.js';
 import { PAINTS } from './vehicle.js';
 import { INT, WALLS, FURN } from './interior.js';
 import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
+import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
 import { SEE } from './samuel.js';
 import { ISLE } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_BOUNDS = { x0: Math.min(INT.bounds.x0, SHOP.bounds.x0), z0: Math.min(INT.bounds.z0, SHOP.bounds.z0), x1: Math.max(INT.bounds.x1, SHOP.bounds.x1), z1: Math.max(INT.bounds.z1, SHOP.bounds.z1) };
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds];
+const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
 const MAP_PX = 2;
@@ -169,6 +171,13 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of SHOP_WALLS) g.fillRect(X(S.x0 + x0), Zs(S.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#9fb7c4'; g.fillRect(X(S.x0 + 1.2), Zs(S.z0 + 7), 1.2 * IN_PX, 0.2 * IN_PX);
+    // the bakery office (v0.7)
+    const O = OFFICE.room;
+    rect(O.x0, O.z0, O.x1, O.z1, '#6b5641');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of OFFICE_FURN.slice(0, -1)) g.fillRect(X(O.x0 + x0), Zs(O.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of OFFICE_WALLS) g.fillRect(X(O.x0 + x0), Zs(O.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     return c;
   }
 
@@ -210,6 +219,19 @@ export class HUD {
       const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
       g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
       g.beginPath(); g.arc(x, z, 4.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    if (job && job.id === 'kassaskap' && game.indoors.where === 'office') { // the clues and the safe, Bengt when he comes
+      for (const s of job.spots()) {
+        const [x, z] = P(s.x, s.z);
+        const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
+        g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.arc(x, z, 3.6 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+      if (job.bengt) {
+        const [x, z] = P(job.bengt.x, job.bengt.z);
+        g.fillStyle = '#ff3b2f'; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.arc(x, z, 4.6 * u, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
     }
     if (job && job.id === 'livs' && job.yasmin) { // Yasmin at the till
       const [x, z] = P(job.yasmin.x, job.yasmin.z);
@@ -495,7 +517,7 @@ export class HUD {
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

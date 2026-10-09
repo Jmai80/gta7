@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.6.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, två sidouppdrag, de tre första delarna av ett huvuduppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, och sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.7 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, tre sidouppdrag, fyra delar av ett huvuduppdrag och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – och till sist in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.6.1
+## Uppdrag i version 0.7
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -45,11 +45,16 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - En Bullbilen-skåpbil kommer ut från bageriet några sekunder efter att du satt dig på cykeln och jagar dig. Den kör bara på vägarna, ungefär lika fort som du cyklar. Kör du in i något tappar du fart, och kommer den ända fram eller knuffar omkull dig tar de cykeln. Då står den vid lott 7 igen och du kan försöka på nytt.
   - Kommer du utom synhåll för bilen och tillräckligt långt före, till exempel genom en genväg eller runt ett hörn, ger den upp. Det ger 500 kr extra.
   - Cykla fram till grinden hos tant Gun på Storgatan, så tar hon emot cykeln. Du får 2 000 kr, en kanelbulle och en ledtråd om hur huvuduppdraget fortsätter. Cykeln får du sedan låna: den står vid hennes grind.
-  - Nästa del, **Kassaskåpet**, syns i uppdragslistan som *Kommer snart*.
+- **G – Tant Gun (huvuduppdrag, del 4): Kassaskåpet.** Ungefär 45 sekunder efter äggleveransen till fyren (eller ett par minuter efter cykeln, om du inte gjort den) sms:ar tant Gun: det lyser på Bullbilens bagerikontor varje natt. Gå in genom sidodörren på bageriets västra vägg, där fönstret lyser.
+  - Bagar-Bengt är ute vid ugnarna, och en klocka visar hur länge till han är borta (75 sekunder). Kassaskåpet har ett kodlås. Titta på sakerna på kontoret (**TITTA**) för att lista ut koden, och öppna sedan skåpet (**ÖPPNA**) och ta receptet (**TA**).
+  - Då går larmet. Bengt kommer springande från bageriet efter ett par sekunder, så skynda dig ut genom sidodörren (**GÅ UT**). Hinner han fram, eller tar tiden slut innan du öppnat skåpet, blir du utslängd och får försöka igen.
+  - Utanför kommer två Bullbilar efter dig. De kör bara på vägarna. Står du still på vägen eller blir fast med bilen tar de tillbaka receptet. Skakar du av dig dem får du 500 kr extra.
+  - Gå eller kör fram till tant Guns grind, så sätter hon ihop halvorna. Du får 3 000 kr, och nästa del, **Nyöppningen**, syns i uppdragslistan som *Kommer snart*.
 - **Y – Yasmin på Hörnlivs (sidouppdrag): Fyrvaktarens kasse.** När norra bron är öppen sms:ar Yasmin, som står i kassan på Hörnlivs på Kungsgatan (butiken under den blå markisen, där spelet börjar). Gå in genom dörren och prata med henne vid kassan. Hon ger dig en kasse till sin gamle vän, fyrvaktaren Ingvar ute vid fyren på Norrholmen.
   - I kassen ligger tolv ägg. Varje hård smäll på vägen (krockar, att ramla av cykeln eller hårda landningar) knäcker några, och uppdragsrutan visar hur många som är hela.
   - Gå fram till Ingvar utanför hans stuga vid fyren. Du får 500 kr plus 50 kr för varje helt ägg, alltså upp till 1 100 kr, och Ingvar har något att berätta om Bullbilens bageri.
   - Går du ut ur butiken utan kassen står den kvar på disken till nästa gång.
+- **N – Lås-Leif (sidouppdrag): Samuels nya nycklar.** En stund efter äggleveransen (när Arnes cykel är hos tant Gun) sms:ar Lås-Leif, nyckelsmeden på Skolgatan. Samuel har "tappat" sina cykelnycklar och väntar på nya vid kolonilotterna på Norrholmen. Gå till Leif utanför hans butik, ta nycklarna och kör ut dem till Samuel på 65 sekunder. Han ger dig 800 kr, och undrar om du har sett hans cykel.
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
 
@@ -58,7 +63,8 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Det går även folk på trottoarerna.
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
-- **Hörnlivs:** butiken på Kungsgatan har nu en dörr och en insida med kassa, kylar och fulla hyllor.
+- **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
+- **Lås & nyckel:** Leifs nyckelservice på Skolgatan, med en stor mässingsnyckel över dörren.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten, en biltvätt som lagar bucklor och en brygga i hamnen att promenera ut på.
 - **Norrholmen:** ön norr om stan, ungefär en tredjedel så stor som Sjuby. Där finns en kurvig kustväg runt ön, kolonilotter, Bullbilens bageri med mjölsilor, skåpbilar och en jättebulle på taket, en väderkvarn vars vingar snurrar, en fyr, en badplats och en liten båthamn.
 - **HUD:** minikarta med GPS och uppdragsbokstäver (inomhus visar den en planritning med Samuel och nycklarna), SMS från uppdragsgivarna, fartmätare och bilens skick.
@@ -69,7 +75,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - Allt genereras av kod: inga bilder, 3D-modeller eller ljudfiler. Ljudet syntetiseras med Web Audio.
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
 - Norrholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över bron och runt ön.
-- Höghusets och Hörnlivs insidor byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
+- Insidorna (höghuset, Hörnlivs och bagerikontoret) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 
@@ -93,7 +99,8 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/layout.js` | Staden Sjuby som data: kvarter, hus, vägar och kolliderare |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js` | Bilfysik, trafik-AI, fotgängare och spelaren |
 | `src/mission.js`, `pizza.js`, `race.js`, `racer.js`, `flag.js` | Uppdragslistan, pizzabudet, gatloppet, datorförarna och tant Guns flagga |
-| `src/livs.js`, `shop.js` | Sidouppdraget Fyrvaktarens kasse och Hörnlivs insida |
+| `src/livs.js`, `shop.js`, `leif.js` | Sidouppdragen Fyrvaktarens kasse (och Hörnlivs insida) och Samuels nya nycklar |
+| `src/safe.js`, `office.js` | Huvuduppdragets del 4, Kassaskåpet, och bagerikontoret |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Samuel och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |

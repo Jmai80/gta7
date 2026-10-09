@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', anon: 'Okänt nummer', game: 'GTA 7' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', anon: 'Okänt nummer', game: 'GTA 7' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -85,5 +85,14 @@ export const BIKE_REWARD = 2000;
 export const LIVS_DOOR = { x: -32.9, z: -4.5, r: 1.3 };       // the marker on the sidewalk outside Hörnlivs' door (Kungsgatan)
 export const INGVAR = { x: 102, z: -386.3, h: 0 };           // the lighthouse keeper, outside his cottage by the lighthouse
 export const LIVS_REWARD = 500, EGG_BONUS = 50, EGGS = 12;   // 500 kr + 50 kr for every egg that arrives whole
+
+// ---- version 0.7: main quest part 4 "Kassaskåpet" and side quest "Samuels nya nycklar" ----
+export const OFFICE_DOOR = { x: 56.7, z: -322, r: 1.3 };    // the marker outside the bakery office's side door (west wall, Norrholmen)
+export const SAFE_TIME = 75;                                 // seconds before Bagar-Bengt is back from the ovens
+export const SAFE_REWARD = 3000;
+export const LEIF = { x: 4, z: 32.5, h: 0 };                 // Lås-Leif outside his key shop on Skolgatan
+export const LEIF_MARK = { x: 4, z: 33.9, r: 1.3 };          // the marker in front of him
+export const SAMUEL_WAIT = { x: 34.6, z: -305.2, h: -Math.PI / 2 }; // Samuel waits by the allotments' east gate (Norrholmen)
+export const KEY_TIME = 65, KEY_REWARD = 800;
 
 export const SIM_HZ = 60;

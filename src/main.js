@@ -47,7 +47,7 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel'];
+const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap'];
 const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
@@ -473,6 +473,7 @@ function showEnd(s) {
     ['Gatloppet', s.raceTime != null ? mmss(s.raceTime) : '–'],
     ['Bullbilen', s.bikeEscaped ? 'Skakad av' : s.bikeEscaped === false ? 'Hack i häl' : '–'],
     ['Ägg till fyren', s.eggsDelivered != null ? `${s.eggsDelivered} av 12 hela` : '–'],
+    ['Kassaskåpet', s.safeEscaped ? 'Rent ut' : s.safeEscaped === false ? 'Jagad hela vägen' : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

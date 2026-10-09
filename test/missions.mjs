@@ -1,7 +1,8 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD } from '../src/config.js';
+import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
 import { routePoints } from '../src/route.js';
@@ -292,8 +293,12 @@ function startRace(g) {
   g2.mission.done.add('cykel');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all six are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.6/.test(d.text) && /bageriet/.test(d.text)), 'the last text: version 0.6, continued at the bakery');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the safe is left');
+  g2.mission.done.add('kassaskap');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all seven are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.7/.test(d.text) && /Konditori/.test(d.text)), 'the last text: version 0.7, continued at Sjuby Konditori');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -749,8 +754,7 @@ function unlockAndMount(g) {
   check(g.money === money0 + BIKE_REWARD + ESCAPE_BONUS && ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Arnes budcykel'), `HUVUDUPPDRAG KLART, ${BIKE_REWARD + ESCAPE_BONUS} kr with the bonus`);
   check(!g.player.frozen && !g.camFocus, 'you can move again');
   check(Math.hypot(g.bike.x - GUN_BIKE.x, g.bike.z - GUN_BIKE.z) < 0.1 && !g.bike.locked, "the bike stands by Gun's gate – yours to ride");
-  const soon = m.list().find((q) => q.id === 'kassaskap');
-  check(soon && soon.state === 'soon' && /bageriet/.test(soon.line), 'next in the list: "Kassaskåpet", coming soon');
+  check(!m.known.has('kassaskap') && !m.list().some((q) => q.id === 'kassaskap'), 'part 4 ("Kassaskåpet") is not offered right away');
   run(g, 10);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /cykeln/.test(d.text)), 'and a text from Gun');
   g.player.x = GUN_BIKE.x - 0.9; g.player.z = GUN_BIKE.z + 0.4; run(g, 0.2);
@@ -931,6 +935,183 @@ function intoShop(g) {
   g3.player.x = INGVAR.x; g3.player.z = INGVAR.z + 2.2; run(g3, 1.2);
   const m3 = g3.money; j3.talkDone(); run(g3, 0.3);
   check(g3.money - m3 === LIVS_REWARD + EGGS * EGG_BONUS, `twelve whole eggs: ${LIVS_REWARD + EGGS * EGG_BONUS} kr`);
+}
+
+// ---------- 14. side quest: "Samuels nya nycklar" – Lås-Leif's keys out to Samuel ----------
+const UP_TO_BIKE = ['red', 'lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel'];
+function press(g) { g.step(DT, { ...idle, action: true }); run(g, 0.2); }
+function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.world.groundHeight(x, z); g.player.vx = g.player.vz = 0; run(g, 0.2); }
+{
+  console.log('Samuels nya nycklar (sidouppdrag)');
+  const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g0.mission.restore(livsSave(['red', 'lasse', 'pizza', 'race', 'samuel', 'overlamning', 'livs']));
+  const ev0 = record(g0, ['sms']);
+  run(g0, 30);
+  check(!ev0.some(([n, d]) => n === 'sms' && d.offer === 'nycklar'), 'not while Arne\'s bike is still at lott 7');
+
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_BIKE, 'livs']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk']);
+  run(g, 15.5);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'nycklar');
+  check(offer && offer[1].from === 'Lås-Leif (Skolgatan)' && /Samuel/.test(offer[1].text), 'shortly after the eggs: Lås-Leif texts about Samuel\'s new keys');
+  check(m.leif && Math.hypot(m.leif.x - LEIF.x, m.leif.z - LEIF.z) < 0.1, 'Leif stands outside his shop on Skolgatan');
+  m.accept('nycklar');
+  run(g, 0.1);
+  const N = m.targets.find((t) => t.letter === 'N' && t.gps);
+  check(N && Math.hypot(N.x - LEIF_MARK.x, N.z - LEIF_MARK.z) < 0.1, 'the GPS leads to Leif');
+  walkHere(g, LEIF_MARK.x, LEIF_MARK.z);
+  run(g, 0.8);
+  const job = m.active;
+  const t1 = ev.find(([n, d]) => n === 'talk' && d.id === 'nycklar');
+  check(job && job.id === 'nycklar' && t1 && /köksbordet/.test(t1[1].pages.map((q) => q.text).join(' ')), 'Leif hands over the keys: the old ones vanished from the kitchen table');
+  m.talkDone('nycklar');
+  run(g, 0.2);
+  check(job.stage === 'carry' && !g.player.frozen && /Samuel/.test(m.objective), `then out to Samuel (${m.objective} · ${m.sub})`);
+  const sam = job.samuel;
+  check(sam && onIsle(sam.x, sam.z) && g.world.groundHeight(sam.x, sam.z) === CURB_H, 'Samuel waits by the allotments on Norrholmen');
+  check(!g.world.query(sam.x, sam.z, 1).some((c) => c.t === 'box' && c.h > 0.5 && sam.x > c.x0 - 0.5 && sam.x < c.x1 + 0.5 && sam.z > c.z0 - 0.5 && sam.z < c.z1 + 0.5), 'nothing in the way around him');
+  const r = routePoints(g.layout.gps, LEIF_MARK.x, LEIF_MARK.z, SAMUEL_WAIT.x, SAMUEL_WAIT.z);
+  let len = 0; for (let i = 1; i < r.length; i++) len += Math.hypot(r[i][0] - r[i - 1][0], r[i][1] - r[i - 1][1]);
+  check(r.some(([x, z]) => x === 40 && z === -178) && len < KEY_TIME * 9, `over the north bridge, ${len.toFixed(0)} m in ${KEY_TIME} s (an average of ${(len / KEY_TIME * 3.6).toFixed(0)} km/h)`);
+  // too slow: Samuel goes home
+  run(g, KEY_TIME + 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Samuel/.test(d.sub)), 'too slow: Samuel goes home (failed)');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Lås-Leif (Skolgatan)' && /nytt försök/.test(d.text)), 'Leif: come back and try again');
+  // again, and in time
+  walkHere(g, LEIF_MARK.x - 5, LEIF_MARK.z); run(g, 4);
+  walkHere(g, LEIF_MARK.x, LEIF_MARK.z); run(g, 0.8);
+  const job2 = m.active;
+  check(job2 && job2.id === 'nycklar', 'a second try');
+  m.talkDone('nycklar'); run(g, 0.2);
+  walkHere(g, SAMUEL_WAIT.x - 2.2, SAMUEL_WAIT.z + 0.5);
+  run(g, 1);
+  const t2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'nycklar').pop();
+  check(job2.stage === 'talk2' && /budcykel/.test(t2[1].pages.map((q) => q.text).join(' ')), 'Samuel takes the keys – and asks if you have seen an old delivery bike');
+  const money0 = g.money;
+  m.talkDone('nycklar'); run(g, 0.3);
+  check(m.done.has('nycklar') && g.money - money0 === KEY_REWARD, `side quest done, ${KEY_REWARD} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && /nycklar/.test(d.sub)), 'SIDOUPPDRAG KLART banner');
+  run(g, 9);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Lås-Leif (Skolgatan)' && /hederlig/.test(d.text)), 'Leif texts afterwards');
+  run(g, 25);
+  check(!g.peds.list.includes(sam) && !g.peds.list.includes(job2.samuel), 'Samuel has gone home');
+}
+
+// ---------- 15. main quest, part 4: the safe in the bakery office ----------
+function intoOffice(g) { walkHere(g, OFFICE_DOOR.x, OFFICE_DOOR.z); run(g, 1.4); }
+function crackSafe(g) {
+  const m = g.mission;
+  walkHere(g, OFFICE.note.x, OFFICE.note.z); press(g);
+  walkHere(g, OFFICE.diploma.x, OFFICE.diploma.z); press(g);
+  walkHere(g, OFFICE.safe.x, OFFICE.safe.z); press(g);  // ÖPPNA
+  run(g, 0.3); press(g);                                // TA
+  return m.active;
+}
+{
+  console.log('Kassaskåpet (huvuduppdrag del 4)');
+  // without the eggs it comes a while after the bike
+  const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g0.mission.restore(livsSave(UP_TO_BIKE));
+  run(g0, 100);
+  check(!g0.mission.known.has('kassaskap'), 'not right after the bike (without the eggs)');
+  run(g0, 52);
+  check(g0.mission.known.has('kassaskap'), 'but after a couple of minutes');
+
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_BIKE, 'livs', 'nycklar', 'flag']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'wanted', 'caught', 'endcard']);
+  run(g, 40);
+  check(!m.known.has('kassaskap'), 'not yet');
+  run(g, 6);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'kassaskap');
+  check(offer && offer[1].from === 'Tant Gun (Storgatan)' && /kassaskåpet/.test(offer[1].text) && /Ingvar/.test(offer[1].text), 'after the eggs: Gun texts – the light in the office, the safe');
+  check(m.info('kassaskap').main, 'a main quest');
+  m.accept('kassaskap');
+  run(g, 0.1);
+  const G = m.targets.find((t) => t.letter === 'G' && t.gps);
+  check(G && Math.hypot(G.x - OFFICE_DOOR.x, G.z - OFFICE_DOOR.z) < 0.1, 'the GPS leads to the side door of the bakery');
+  check(onIsle(OFFICE_DOOR.x, OFFICE_DOOR.z) && g.world.groundHeight(OFFICE_DOOR.x, OFFICE_DOOR.z) === CURB_H, 'the door is on Norrholmen, at ground level');
+  intoOffice(g);
+  const job = m.active;
+  check(job && job.id === 'kassaskap' && g.indoors.where === 'office' && Math.hypot(g.player.x - OFFICE.spawn.x, g.player.z - OFFICE.spawn.z) < 0.3, 'in through the side door: the office');
+  check(/Bengt är tillbaka om 7\d s/.test(m.sub), `a clock: ${m.sub}`);
+  check(m.targets.filter((t) => t.kind === 'item').length === 3, 'arrows: the note, the diploma, the safe');
+  // the safe first: no code
+  walkHere(g, OFFICE.safe.x, OFFICE.safe.z);
+  check(m.prompt === 'ÖPPNA', 'at the safe: ÖPPNA');
+  press(g);
+  check(!job.safeOpen && ev.some(([n, d]) => n === 'toast' && /kodlås/.test(d.text)), 'it has a code lock');
+  walkHere(g, OFFICE.note.x, OFFICE.note.z);
+  check(m.prompt === 'TITTA', 'at the desk: TITTA');
+  press(g);
+  check(job.knowNote && ev.some(([n, d]) => n === 'toast' && /året vi startade/.test(d.text)), 'the note: the code is the year they started');
+  walkHere(g, OFFICE.diploma.x, OFFICE.diploma.z); press(g);
+  check(job.knowYear && ev.some(([n, d]) => n === 'toast' && /1994/.test(d.text)), 'the diploma: founded 1994');
+  walkHere(g, OFFICE.safe.x, OFFICE.safe.z); press(g);
+  check(job.safeOpen && m.prompt === 'TA', '1994: the safe opens');
+  press(g);
+  check(job.recipe && job.stage === 'alarm' && ev.some(([n, d]) => n === 'wanted' && d.stars === 2), 'the recipe – and the alarm');
+  // walking into the furniture does not get you through the safe or the desk
+  check(!g.world.query(OFFICE.safe.x, OFFICE.safe.z, 0.4).some((c) => c.t === 'box' && OFFICE.safe.x > c.x0 && OFFICE.safe.x < c.x1 && OFFICE.safe.z > c.z0 && OFFICE.safe.z < c.z1), 'you can stand in front of the safe');
+  walkTo(g, OFFICE.door.x, OFFICE.door.z, 1, 4);
+  check(m.prompt === 'GÅ UT', 'at the side door: GÅ UT');
+  press(g); run(g, 1.3);
+  check(!g.indoor && job.stage === 'escape' && job.chasers.length === 2, 'outside: two Bullbilen vans come after you');
+  check(!g.peds.list.some((q) => q.npc === 'bengt'), 'Bengt stays inside');
+  // standing on the road: they get you
+  walkHere(g, 40, -330);
+  let t = 0; while (t < 60 && m.active === job && job.stage === 'escape') { g.step(DT, idle); t += DT; }
+  check(job.stage === 'caught', `caught on the road after ${t.toFixed(0)} s`);
+  run(g, 3);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /receptet/.test(d.sub)), 'failed: Bullbilen took the recipe back');
+  check(ev.some(([n, d]) => n === 'wanted' && d.stars === 0), 'the stars go');
+  run(g, 4);
+  // second try: in and out, and on to Gun
+  walkHere(g, OFFICE_DOOR.x - 6, OFFICE_DOOR.z); run(g, 5);
+  intoOffice(g);
+  const job2 = m.active;
+  check(job2 && job2 !== job && !job2.safeOpen && !job2.knowNote, 'a second try: the safe is locked again');
+  crackSafe(g);
+  walkTo(g, OFFICE.door.x, OFFICE.door.z, 1, 4); press(g); run(g, 1.3);
+  check(job2.stage === 'escape', 'out with the recipe');
+  // home to Gun (as if you got there)
+  walkHere(g, GUN_GATE.x, GUN_GATE.z);
+  run(g, 1.2);
+  const talk = ev.filter(([n, d]) => n === 'talk' && d.id === 'kassaskap').pop();
+  check(job2.stage === 'talk' && talk && /brynt smör/.test(talk[1].pages.map((q) => q.text).join(' ')), 'at Gun\'s gate: the second half – browned butter!');
+  const money0 = g.money;
+  m.talkDone('kassaskap');
+  run(g, 0.5);
+  check(m.done.has('kassaskap') && g.money - money0 === SAFE_REWARD, `part 4 done, ${SAFE_REWARD} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Kassaskåpet'), 'HUVUDUPPDRAG KLART');
+  run(g, 16);
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 0\.7/.test(d.text)), 'all seven done: the end card');
+  const soon = m.list().find((q) => q.id === 'konditori');
+  check(soon && soon.state === 'soon' && /Konditori/.test(soon.line), 'next in the list: "Nyöppningen", coming soon');
+  check(!g.player.frozen && !g.camFocus, 'you can move again');
+
+  // Bengt: too slow in the office, or still there when the alarm rings
+  const g3 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g3.mission.restore(livsSave(UP_TO_BIKE));
+  const ev3 = record(g3, ['banner', 'say']);
+  g3.mission.offer('kassaskap'); g3.mission.accept('kassaskap');
+  intoOffice(g3);
+  run(g3, SAFE_TIME + 0.5);
+  check(g3.mission.active && g3.mission.active.stage === 'caught' && ev3.some(([n, d]) => n === 'say' && /KONTOR/.test(d.text)), 'time is up: Bagar-Bengt walks in');
+  run(g3, 3);
+  check(!g3.indoor && !g3.mission.active && ev3.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Bengt/.test(d.sub)), 'thrown out: failed');
+  walkHere(g3, OFFICE_DOOR.x - 6, OFFICE_DOOR.z); run(g3, 7);
+  intoOffice(g3);
+  const j3 = crackSafe(g3);
+  check(j3.stage === 'alarm', 'third try: the alarm rings');
+  t = 0; while (t < 12 && j3.stage === 'alarm') { g3.step(DT, idle); t += DT; }
+  check(j3.stage === 'caught', `standing still: Bengt gets you after ${t.toFixed(1)} s`);
+  run(g3, 3);
+  check(!g3.peds.list.some((q) => q.npc === 'bengt') && !g3.indoor, 'and Bengt is gone again');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

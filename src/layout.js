@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -623,6 +623,19 @@ export function createLayout(seed = 7) {
     // south building: brick with shops
     building({ x0: b.x0 + 18, z0: b.z1 - 13, x1: b.x1 - 1, z1: b.z1 - 1, h: 13.6, c: COL.brick, m: M.BRICKWIN, cell: [3.2, 3.4], mapC: 0x8a5a48 });
     sign('bibblan', { lines: ['BIBLIOTEK'], bg: '#f1ede2', fg: '#7c3c2b', font: 0.62 }, b.cx + 10, CURB_H + 3.6, b.z1 - 13.08, 5, 0.9, Math.PI);
+    // Lås-Leif's key shop on Skolgatan (v0.7): a door, a sign and a big key over the door
+    {
+      const fz = b.z1 - 1, dx = LEIF.x;
+      box(dx - 0.7, CURB_H, fz, dx + 0.7, CURB_H + 2.4, fz + 0.06, 0x2b3a4a);
+      box(dx - 0.58, CURB_H, fz + 0.06, dx + 0.58, CURB_H + 2.26, fz + 0.085, 0x9fb7c4, M.GLASS);
+      box(dx + 0.36, CURB_H + 0.95, fz + 0.085, dx + 0.42, CURB_H + 1.35, fz + 0.13, 0xc9ccd0, M.CHROME);
+      box(dx - 2.6, CURB_H + 2.9, fz, dx + 2.6, CURB_H + 3.05, fz + 1.1, 0x36c2b4);   // a small awning
+      sign('leif', { lines: ['LÅS & NYCKEL', 'Leifs nyckelservice'], bg: '#1f2a33', fg: '#f4e2a0', font: 0.5 }, dx, CURB_H + 3.55, fz + 0.07, 3.6, 0.8, 0);
+      box(dx + 2.2, CURB_H + 2.2, fz + 0.06, dx + 2.3, CURB_H + 2.3, fz + 0.9, 0x2a2b2f);             // the bracket …
+      P({ t: 'cyl', x: dx + 2.25, z: fz + 0.95, y0: CURB_H + 1.55, y1: CURB_H + 2.2, r: 0.05, n: 6, c: 0xd8b45a, m: M.CHROME });  // … and a big brass key
+      P({ t: 'cyl', x: dx + 2.25, z: fz + 0.95, y0: CURB_H + 2.0, y1: CURB_H + 2.2, r: 0.16, n: 10, c: 0xd8b45a, m: M.CHROME, cap: true });
+      box(dx + 2.2, CURB_H + 1.55, fz + 0.95, dx + 2.4, CURB_H + 1.62, fz + 1.0, 0xd8b45a, M.CHROME);
+    }
     // square with fountain
     const fx = b.cx - 3, fz = b.cz - 4;
     poly(ngon(fx, fz, 4.6, 16), COL.stone, M.STONE, CURB_H + 0.55);
