@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', anon: 'Okänt nummer', game: 'GTA 7' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Samuel', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -106,5 +106,14 @@ export const PICKUPS = {                                      // the three ingre
 export const OPENING_REWARD = 4000;
 export const LASSE_SHOP = { x: 76.6, z: 58.1, r: 2.2 };       // in front of the workshop's first garage door
 export const JUMP_GOAL = 34, JUMP_REWARD = 1500;             // Kim's long jump at the construction site
+
+// ---- version 0.9: main quest parts 6–7 ("Syltburken", "Bullfabriken") and two more side quests ----
+export const JAR = { flee: 165, fleeT: 8, stopAt: 32, reward: 2500 };   // the black car: lost this far away for this long; stops at this health
+export const FACTORY_START = { x: 42.6, z: -279, r: 3.2 };   // wait by the bakery's driveway on the middle road (Norrholmen)
+export const TAIL = { dest: { x: -70, z: 42.5 }, far: 85, farT: 5, near: 9, nearT: 3, vMax: 11 };
+export const SITE_OFFICE = { x: -57, z: 100.8, r: 2.4 };     // the containers at the construction site: Dahlgren's site office
+export const FACTORY_REWARD = 5000;
+export const BIKE_RETURN = { x: 20.2, z: -3.6, r: 3.0, reward: 500 };   // Samuel waits outside the tower for his bike
+export const HOME_DELIVERY = { start: { x: -34.2, z: 1.2, r: 1.5 }, time: 120, per: 300, bonus: 5 };
 
 export const SIM_HZ = 60;

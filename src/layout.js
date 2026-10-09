@@ -757,6 +757,7 @@ export function createLayout(seed = 7) {
     solid(b.x1 - 14, CURB_H + 2.6, b.z1 - 9, b.x1 - 4, CURB_H + 5.2, b.z1 - 6, 0xd8b030, M.CORR, { cell: [1, 1] });
     box(b.x1 - 11, CURB_H + 0.9, b.z1 - 9.06, b.x1 - 8, CURB_H + 2.0, b.z1 - 9.0, 0x9fb7c4, M.GLASS);
     box(b.x1 - 11, CURB_H + 3.5, b.z1 - 9.06, b.x1 - 8, CURB_H + 4.6, b.z1 - 9.0, 0x9fb7c4, M.GLASS);
+    sign('dahlgren', { lines: ['DAHLGREN AB', 'BULLFABRIKEN · byggstart'], bg: '#2b2e35', fg: '#e5b923', font: 0.42, border: '#e5b923' }, b.x1 - 6, CURB_H + 1.5, b.z1 - 9.08, 2.8, 0.8, Math.PI); // (v0.9)
     // brick pallets (north-west corner) and a dumpster (north-east corner)
     for (let k = 0; k < 3; k++) solid(b.x0 + 4 + k * 3, CURB_H, b.z0 + 4, b.x0 + 6.2 + k * 3, CURB_H + 1.2, b.z0 + 6.2, 0xa04a32, M.BRICK);
     solid(b.x1 - 8, CURB_H, b.z0 + 6, b.x1 - 4, CURB_H + 1.6, b.z0 + 12, 0xe0782c, M.CORR, { cell: [1, 1] });

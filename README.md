@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.8.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, fem sidouppdrag, fem delar av ett huvuduppdrag, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, och till sist till invigningen av Sjuby Konditori.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.9 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, sju sidouppdrag, ett huvudäventyr i sju delar, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori och till sist på jakt efter en stulen syltburk och en hemlig bullfabrik.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,9 +25,11 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.8
+## Uppdrag i version 0.9
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
+
+När en del av huvuduppdraget är klar står det i uppdragsrutan att huvuduppdraget fortsätter snart och vem som hör av sig, och i listan syns nästa del som *Kommer snart*. Efter kassaskåpet frågar tant Gun dig direkt om nästa steg.
 
 Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant Guns flagga räknas däremot när du än gör dem, även mitt i ett annat uppdrag. Misslyckas du kan du försöka igen.
 
@@ -49,11 +51,13 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Bagar-Bengt är ute vid ugnarna, och en klocka visar hur länge till han är borta (75 sekunder). Kassaskåpet har ett kodlås. Titta på sakerna på kontoret (**TITTA**) för att lista ut koden, och öppna sedan skåpet (**ÖPPNA**) och ta receptet (**TA**).
   - Då går larmet. Bengt kommer springande från bageriet efter ett par sekunder, så skynda dig ut genom sidodörren (**GÅ UT**). Hinner han fram, eller tar tiden slut innan du öppnat skåpet, blir du utslängd och får försöka igen.
   - Utanför kommer två Bullbilar efter dig. De kör bara på vägarna. Står du still på vägen eller blir fast med bilen tar de tillbaka receptet. Skakar du av dig dem får du 500 kr extra.
-  - Gå eller kör fram till tant Guns grind, så sätter hon ihop halvorna. Du får 3 000 kr.
+  - Gå eller kör fram till tant Guns grind, så sätter hon ihop halvorna. Du får 3 000 kr, och hon frågar direkt om du vill hjälpa henne öppna Sjuby Konditori (nästa del).
 - **G – Tant Gun (huvuduppdrag, del 5): Nyöppningen.** En knapp minut efter kassaskåpet sms:ar tant Gun: Sjuby Konditori, Arnes gamla kafé vid torget, ska öppna igen. Uppdraget startar så fort du följer det.
   - Hämta tre ingredienser i vilken ordning du vill: kardemumma hos Yasmin utanför Hörnlivs, smör på Macken (det går att köra in) och mjöl hos Mjölnar-Majken vid kvarnen på Norrholmen. Den gula linjen visar vägen till den närmaste.
   - När du fått mjölet kommer en Bullbil från bageriet. Tar de dig till fots på vägen, eller blir du fast med bilen, tar de mjölsäcken – då får du hämta en ny hos Majken. Uppdraget misslyckas inte.
-  - Lämna allt vid konditoriet. Nästa morgon är det invigning med publik på torget, och Bagar-Bengt dyker upp med en bekännelse. Du får 4 000 kr, och nästa del, **Bullfabriken**, syns i uppdragslistan som *Kommer snart*.
+  - Lämna allt vid konditoriet. Nästa morgon är det invigning med publik på torget, och Bagar-Bengt dyker upp med en bekännelse. Du får 4 000 kr.
+- **G – Tant Gun (huvuduppdrag, del 6): Syltburken.** Tio sekunder efter invigningen: någon har brutit sig in på konditoriet och tagit syltburken med receptet. En svart bil kör runt i stan (röd pil och gul linje). Kör in i den tills motorn ger upp – uppdragsrutan visar hur mycket motor som är kvar. Föraren springer, du tar syltburken ur bilen (**TA**) och lämnar den på konditoriet. Kommer bilen för långt bort för länge slinker den undan och du får försöka igen. Bengt känner igen bilen: den tillhör direktör Dahlgren, Bullbilens ägare. 2 500 kr.
+- **B – Bagar-Bengt (huvuduppdrag, del 7): Bullfabriken.** Bengt sms:ar: Dahlgrens lastbil går från bageriet. Vänta vid bageriets infart på Norrholmen och följ efter lastbilen när den kör – inte närmare än cirka 10 meter (då ser föraren dig) och inte längre bort än cirka 85 meter (då tappar du den). Uppdragsrutan säger om du ligger lagom. Lastbilen leder till byggtomten på Skolgatan. Smyg in till byggbaracken i hörnet och lyssna – resten får du se själv. 5 000 kr, och huvudäventyret är klart (för den här gången). Nästa: **Bullfesten**, *Kommer snart*.
 - **Y – Yasmin på Hörnlivs (sidouppdrag): Fyrvaktarens kasse.** När norra bron är öppen sms:ar Yasmin, som står i kassan på Hörnlivs på Kungsgatan (butiken under den blå markisen, där spelet börjar). Gå in genom dörren och prata med henne vid kassan. Hon ger dig en kasse till sin gamle vän, fyrvaktaren Ingvar ute vid fyren på Norrholmen.
   - I kassen ligger tolv ägg. Varje hård smäll på vägen (krockar, att ramla av cykeln eller hårda landningar) knäcker några, och uppdragsrutan visar hur många som är hela.
   - Gå fram till Ingvar utanför hans stuga vid fyren. Du får 500 kr plus 50 kr för varje helt ägg, alltså upp till 1 100 kr, och Ingvar har något att berätta om Bullbilens bageri.
@@ -64,6 +68,8 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - **Melodituta** (800 kr): tutan spelar en glad melodi.
   - Det första köpet klarar sidouppdraget. Uppgraderingarna sparas, gäller alla bilar du kör (inte cykeln) och butiken finns kvar. Biltvätten på Macken (200 kr) lagar fortfarande bucklor.
 - **K – Kim (sidouppdrag): Långhoppet.** Efter ditt första köp hos Lasse utmanar Kim dig att hoppa minst 34 meter på byggtomtens hopp. Ta lång sats från parkeringen på andra sidan Skolgatan – eller skaffa turbo. Det ger 1 500 kr, och listan visar ditt bästa hopp.
+- **S – Samuel (sidouppdrag): Samuels cykel.** Några sekunder efter kassaskåpet sms:ar Samuel – han vet att det var du. Hämta Arnes cykel vid tant Guns grind och cykla den till Samuel vid höghusets port. 500 kr, och cykeln står kvar vid höghuset så att du kan låna den.
+- **Y – Yasmin (sidouppdrag): Hemleverans.** Strax efter Samuel sms:ar Yasmin. Hämta tre matkassar utanför Hörnlivs och kör ut dem till tre kunder (två på Storgatan och en på Skolgatan) på 120 sekunder – med bil, cykel eller till fots. 300 kr per kasse plus 5 kr för varje sekund som är kvar.
 - **N – Lås-Leif (sidouppdrag): Samuels nya nycklar.** En stund efter äggleveransen (när Arnes cykel är hos tant Gun) sms:ar Lås-Leif, nyckelsmeden på Skolgatan. Samuel har "tappat" sina cykelnycklar och väntar på nya vid kolonilotterna på Norrholmen. Gå till Leif utanför hans butik, ta nycklarna och kör ut dem till Samuel på 65 sekunder. Han ger dig 800 kr, och undrar om du har sett hans cykel.
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
@@ -115,6 +121,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/livs.js`, `shop.js`, `leif.js` | Sidouppdragen Fyrvaktarens kasse (och Hörnlivs insida) och Samuels nya nycklar |
 | `src/safe.js`, `office.js` | Huvuduppdragets del 4, Kassaskåpet, och bagerikontoret |
 | `src/opening.js`, `upgrades.js` | Huvuduppdragets del 5, Nyöppningen, och Lasses trimning |
+| `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Samuels cykel och Hemleverans |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Samuel och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |

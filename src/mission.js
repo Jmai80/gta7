@@ -15,7 +15,10 @@
 //                          the second half of the recipe, the vans after you (v0.7)
 //   G  Tant Gun:           "Nyöppningen" – main quest, part 5: three ingredients, then Sjuby Konditori
 //                          opens again by the square (v0.8)
-//   G  Tant Gun:           "Bullfabriken" – what comes next, in the list as "Kommer snart"
+//   G  Tant Gun:           "Syltburken" – main quest, part 6: ram the black car, get the jam jar back (v0.9)
+//   B  Bagar-Bengt:        "Bullfabriken" – main quest, part 7: tail Dahlgren's truck to his factory (v0.9)
+//   S  Samuel:             "Samuels cykel" – side quest after the safe: ride the bike back to Samuel (v0.9)
+//   Y  Yasmin (Hörnlivs):  "Hemleverans" – side quest after the safe: three bags against the clock (v0.9)
 //   L  Lasse (Verkstan):   "Lasses trimning" – side quest: spend your money in Lasse's tuning shop (v0.8)
 //   K  Kim (Macken):       "Långhoppet" – side quest: a stunt jump of 34 m at the construction site (v0.8)
 //   N  Lås-Leif:           "Samuels nya nycklar" – side quest after the eggs: new keys out to Samuel (v0.7)
@@ -29,6 +32,7 @@ import {
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
   KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD,
+  JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -41,6 +45,9 @@ import { SafeJob } from './safe.js';
 import { KeysJob, spawnLeif } from './leif.js';
 import { OpeningJob } from './opening.js';
 import { ITEMS, applyUpgrades, clearUpgrades } from './upgrades.js';
+import { JarJob } from './jar.js';
+import { FactoryJob } from './factory.js';
+import { BikeReturnJob, HomeDeliveryJob } from './errands.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -124,19 +131,46 @@ export const QUESTS = [
   {
     // main quest, part 5: Sjuby Konditori opens again
     id: 'konditori', letter: 'G', who: WHO.gun, title: 'Nyöppningen', color: '#c58be0', x: KONDITORI.x, z: KONDITORI.z, r: KONDITORI.r, Job: OpeningJob, main: true,
-    after: 'kassaskap', at: 55, startOnAccept: true,
+    after: 'kassaskap', at: 6, startOnAccept: true,
     text: 'Jag har bestämt mig: Sjuby Konditori ska öppna igen, i Arnes gamla lokal vid torget! Men till bullarna behöver jag kardemumma från Hörnlivs, smör från Macken och mjöl från kvarnen på Norrholmen. Hjälper du mig?',
     reward: `${fmt(OPENING_REWARD)} kr och den första Sjubybullen`, where: 'Hörnlivs, Macken och kvarnen – sedan konditoriet vid torget',
   },
   {
-    // the next part of the main quest: shown in the list, not playable yet
-    id: 'fabriken', letter: 'G', who: WHO.gun, title: 'Bullfabriken', color: '#c58be0', main: true, soon: true, after: 'konditori',
+    // two side quests a few seconds after the safe (they text you even in the middle of something)
+    id: 'cykelretur', letter: 'S', who: WHO.samuel, title: 'Samuels cykel', color: '#6e7a46', x: GUN_BIKE.x, z: GUN_BIKE.z, r: 2.2, Job: BikeReturnJob,
+    side: true, sms: true, anytime: true, after: 'kassaskap', at: 4, startOnAccept: true,
+    text: 'Det är Samuel. Jag vet att det var du som tog mina cykelnycklar – Leif pratar för mycket. Och nu står min cykel hos tanten på Storgatan. Kan jag få tillbaka den? Jag väntar vid höghuset.',
+    reward: `${fmt(BIKE_RETURN.reward)} kr och ett rent samvete`, where: 'Cykeln vid tant Guns grind, Samuel vid höghuset',
+  },
+  {
+    id: 'hemleverans', letter: 'Y', who: WHO.yasmin, title: 'Hemleverans', color: '#ff6fae', x: HOME_DELIVERY.start.x, z: HOME_DELIVERY.start.z, r: HOME_DELIVERY.start.r, Job: HomeDeliveryJob,
+    side: true, sms: true, anytime: true, after: 'kassaskap', at: 9,
+    text: `Yasmin här! Tre av mina äldre kunder kommer inte till butiken i dag. Kan du köra ut deras matkassar? Du har ${HOME_DELIVERY.time} sekunder innan glassen smälter. Hämta dem utanför Hörnlivs.`,
+    reward: `${fmt(3 * HOME_DELIVERY.per)} kr + ${HOME_DELIVERY.bonus} kr per sekund över`, where: 'Utanför Hörnlivs, Kungsgatan',
+  },
+  {
+    // main quest, part 6: the jam jar is stolen
+    id: 'syltburken', letter: 'G', who: WHO.gun, title: 'Syltburken', color: '#c58be0', x: KONDITORI.x, z: KONDITORI.z, Job: JarJob, main: true,
+    after: 'konditori', at: 10, startOnAccept: true,
+    text: 'Hjälp! Någon har brutit sig in på konditoriet i natt och tagit min syltburk – med receptet i! En svart bil körde iväg. Den är fortfarande i stan. Stoppa den!',
+    reward: `${fmt(JAR.reward)} kr`, where: 'Den svarta bilen, någonstans i Sjuby',
+  },
+  {
+    // main quest, part 7: the factory
+    id: 'fabriken', letter: 'B', who: WHO.bengt, title: 'Bullfabriken', color: '#d9534f', x: FACTORY_START.x, z: FACTORY_START.z, r: FACTORY_START.r, Job: FactoryJob, main: true,
+    after: 'syltburken', at: 12, startOnAccept: true,
+    text: 'Bengt här. Dahlgrens lastbil går från bageriet om en stund. Ställ dig vid infarten på Norrholmen och följ efter den – men håll avstånd, föraren är misstänksam.',
+    reward: `${fmt(FACTORY_REWARD)} kr`, where: 'Bageriets infart på Norrholmen – sedan efter lastbilen',
+  },
+  {
+    // what comes after the main adventure: shown in the list, not playable yet
+    id: 'bullfest', letter: 'G', who: WHO.gun, title: 'Bullfesten', color: '#c58be0', main: true, soon: true, after: 'fabriken',
   },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori']; // all eight → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken']; // all ten → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -205,6 +239,9 @@ export class Missions {
   // Lås-Leif outside his shop on Skolgatan (once he is part of the story)
   ensureLeif() { if (!this.leif) this.leif = spawnLeif(this.game); }
 
+  // the next part of the main quest when it is on its way (its part before is done, no text yet)
+  nextMain() { return QUESTS.find((q) => q.main && !q.soon && q.after && this.done.has(q.after) && !this.known.has(q.id) && !this.done.has(q.id)) || null; }
+
   allDone() { return MAIN.every((id) => this.done.has(id)); }
 
   // ---------------------------------------------------------------- the quest log
@@ -264,10 +301,10 @@ export class Missions {
   // the list in the pause menu and the quest log
   list() {
     const order = { active: 0, tracked: 1, new: 2, waiting: 3, soon: 4, done: 5 };
-    const soon = (q) => q.soon && this.done.has(q.after);
+    const soon = (q) => (q.soon || q.main) && q.after && this.done.has(q.after) && !this.known.has(q.id) && !this.done.has(q.id);
     return QUESTS.filter((q) => this.known.has(q.id) || this.done.has(q.id) || soon(q)).map((q) => {
       let state = 'waiting';
-      if (q.soon) state = 'soon';
+      if (soon(q)) state = 'soon';
       else if (this.done.has(q.id)) state = 'done';
       else if (this.active && this.active.id === q.id) state = 'active';
       else if (this.tracked === q.id) state = 'tracked';
@@ -278,7 +315,9 @@ export class Missions {
 
   // what to do next, in one line (for the list)
   questLine(id) {
-    if (id === 'fabriken') return 'Fortsättning följer – var kommer fabriksbullarna ifrån?';
+    const q0 = BY_ID[id];
+    if (q0 && q0.main && !q0.soon && !this.known.has(id) && !this.done.has(id)) return `${q0.who.replace(/ \(.*\)$/, '')} hör av sig om en stund`;
+    if (id === 'bullfest') return 'Fortsättning följer – hela Sjuby ska fira';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -295,6 +334,10 @@ export class Missions {
       case 'verkstad': return 'Köp något i Lasses trimningsbutik';
       case 'hopp': return `Hoppa minst ${JUMP_GOAL} m på byggtomten${this.bestJump ? ` (bäst hittills ${this.bestJump} m)` : ''}`;
       case 'konditori': return 'Hämta kardemumma, smör och mjöl till Sjuby Konditori';
+      case 'syltburken': return 'Stoppa den svarta bilen och ta tillbaka syltburken';
+      case 'fabriken': return 'Följ Dahlgrens lastbil från bageriet';
+      case 'cykelretur': return 'Cykla tillbaka cykeln till Samuel vid höghuset';
+      case 'hemleverans': return 'Kör ut tre matkassar från Hörnlivs';
     }
     return '';
   }
@@ -336,7 +379,8 @@ export class Missions {
     this.bestJump = d.best || 0;
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
-    if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
+    if (this.done.has('cykelretur')) g.spawnBike(BIKE_RETURN.x - 1.4, BIKE_RETURN.z + 0.4, Math.PI / 2, false); // back with Samuel, by the tower
+    else if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
     if (this.done.has('livs')) this.ingvar = spawnIngvar(g); // the lighthouse keeper, outside his cottage
     if (this.known.has('nycklar') || this.done.has('nycklar')) this.ensureLeif();
     if (this.allDone()) this.flags.allDone = true;
@@ -379,7 +423,7 @@ export class Missions {
       if ((q.side && !q.sms) || q.soon || this.known.has(q.id) || this.done.has(q.id)) continue;
       if (q.bridge && !this.bridgeOpen) continue;
       if (q.ready && !q.ready(this)) continue;
-      if (q.side && this.active) continue; // a side quest texts you when you are not busy
+      if (q.side && !q.anytime && this.active) continue; // a side quest texts you when you are not busy
       if (q.due) { if (!this.done.has(q.after) || g.indoor || this.outT < 2.5 || this.t < q.due(this)) continue; }
       else if (q.after ? !next(q) : this.t < q.at && !early(q)) continue;
       this.offer(q.id);
@@ -399,8 +443,8 @@ export class Missions {
     const x = car ? car.x : p.x, z = car ? car.z : p.z;
     for (const c of this.jobs) {
       if (!this.isOpen(c.id)) continue;
-      if (c.startOnAccept) { if (this.tracked === c.id) { this.startJob(c); return; } continue; } // starts as soon as you follow it
       if (c.cool > 0) { c.cool -= dt; continue; }
+      if (c.startOnAccept) { if (this.tracked === c.id) { this.startJob(c); return; } continue; } // starts as soon as you follow it
       const d = Math.hypot(x - c.x, z - c.z);
       if (d > c.r + 1.5) { c.armed = true; c.warned = false; continue; }
       if (d > c.r || !c.armed) continue;
@@ -483,11 +527,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori'].includes(last) ? 4.3 : 0; // after tant Gun's kanelbulle and her text
-    const side = ['flag', 'livs', 'nycklar', 'verkstad', 'hopp'].filter((id) => !this.done.has(id)).length;
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 0.8! Sjuby Konditori är öppet igen – fortsättning följer: var kommer Bullbilens fabriksbullar ifrån? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar.`
-      : 'Det var allt i version 0.8! Sjuby Konditori är öppet igen – fortsättning följer: var kommer Bullbilens fabriksbullar ifrån? Kör runt fritt så länge.'));
+      ? `Det var allt i version 0.9! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 0.9! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -502,7 +546,9 @@ export class Missions {
     this.choose = false;
     if (!o) {
       const open = QUESTS.some((q) => this.isOpen(q.id));
+      const next = this.nextMain();
       if (this.newCount()) { o = { text: 'Nytt uppdrag – välj i listan', sub: '' }; this.choose = true; }
+      else if (next) o = { text: 'Huvuduppdraget fortsätter snart', sub: `${next.who.replace(/ \(.*\)$/, '')} hör av sig om en stund` };
       else if (open) { o = { text: 'Välj ett uppdrag i listan', sub: '' }; this.choose = true; }
       else if (this.flags.allDone) o = { text: 'Fri lek: utforska Sjuby', sub: '' };
       else o = { text: '', sub: '' };
@@ -531,6 +577,10 @@ export class Missions {
       case 'verkstad': return { text: 'Köp något hos Lasse (L)', sub: 'Lasses Verkstad, första garageporten' };
       case 'hopp': return { text: `Hoppa minst ${JUMP_GOAL} m`, sub: this.bestJump ? `Bäst hittills ${this.bestJump} m · ta längre sats` : 'Byggtomten · ta sats från parkeringen' };
       case 'konditori': return { text: 'Nyöppningen', sub: 'Tre ingredienser till Sjuby Konditori' };
+      case 'syltburken': return { text: 'Syltburken', sub: 'Den svarta bilen' };
+      case 'fabriken': return { text: 'Bullfabriken', sub: 'Bageriets infart på Norrholmen' };
+      case 'cykelretur': return { text: 'Samuels cykel', sub: 'Vid tant Guns grind' };
+      case 'hemleverans': return { text: 'Hämta matkassarna (Y)', sub: 'Utanför Hörnlivs, Kungsgatan' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }
     return null;

@@ -24,7 +24,8 @@ export function finalePages(job) {
     { ...YOU, text: job.escaped ? 'Bullbilarna jagade mig, men de tappade bort mig på vägen.' : 'Hela Bullbilen-flottan var efter mig!' },
     { ...GUN, fx: 'recipe', text: 'Och nu passar halvorna ihop. Receptet på Sjubybullen är helt igen – för första gången på trettio år.' },
     { ...GUN, text: 'Bullbilen har bakat på ett halvt recept hela tiden. Det är därför deras bullar smakar papp.' },
-    { ...GUN, text: 'Arne drömde om att Sjuby Konditori skulle öppna igen. Nu kanske det kan bli av… Men först: här, för besväret.', last: 'TACK!' },
+    { ...GUN, text: 'Här, för besväret. Men det här är bara början, lilla vän.' },
+    { ...GUN, text: 'Arne drömde om att Sjuby Konditori vid torget skulle öppna igen. Nu när receptet är helt kan det bli av – och jag behöver din hjälp. Nästa steg står i rutan som kommer nu.', last: 'BERÄTTA!' },
   ];
 }
 
@@ -335,7 +336,8 @@ export class SafeJob {
     const amount = SAFE_REWARD + (this.escaped ? ESCAPE_BONUS : 0);
     m.complete(this, { title: 'HUVUDUPPDRAG KLART', sub: 'Kassaskåpet', amount });
     if (this.escaped) m.later(3.9, () => g.emit('toast', { text: `+${fmt(ESCAPE_BONUS)} kr för att du skakade av dig Bullbilarna!`, long: true }));
-    m.sms(WHO.gun, 'Båda halvorna ligger i syltburken nu. I morgon bakar jag Sjubybullar efter Arnes recept – du får den första!', 8.5);
+    // what happens next, straight away: tant Gun asks you about the konditori face to face
+    m.later(0.4, () => m.offer('konditori', 'talk'));
   }
 
   targets(T) {

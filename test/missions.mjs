@@ -1,7 +1,7 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY } from '../src/config.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
@@ -299,10 +299,15 @@ function startRace(g) {
   run(g2, 10.5);
   check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the konditori is left');
   g2.mission.done.add('konditori');
+  g2.mission.done.add('syltburken');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eight are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.8/.test(d.text) && /Konditori/.test(d.text)), 'the last text: version 0.8, the konditori is open');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the factory is left');
+  g2.mission.done.add('fabriken');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all ten are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.9/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 0.9, Dahlgren is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -637,7 +642,8 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(ev.some(([n, d]) => n === 'toast' && /kanelbulle/.test(d.text)), 'and a kanelbulle');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /Bullbilen/.test(d.text)), 'tant Gun texts: keep an eye on the Bullbilen');
   check(gun.away && gun.state === 'stand', 'she stays on the pier while you are there');
-  check(!m.list().some((x) => x.id === 'cykel') && m.quest('cykel').after === 'overlamning', 'Arnes budcykel comes next (tant Gun texts about it a little later)');
+  const nx = m.list().find((x) => x.id === 'cykel');
+  check(nx && nx.state === 'soon' && /hör av sig/.test(nx.line) && !m.known.has('cykel'), `Arnes budcykel comes next: in the list as "${nx && nx.line}"`);
   check(!m.accept('cykel') && !m.isOpen('cykel') && !m.list().some((x) => x.id === 'cykel' && x.state === 'new'), '… and it cannot be started yet');
   g.player.x = gun.x - 1.2; g.player.z = gun.z + 1.2;
   run(g, 0.2);
@@ -758,7 +764,8 @@ function unlockAndMount(g) {
   check(g.money === money0 + BIKE_REWARD + ESCAPE_BONUS && ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Arnes budcykel'), `HUVUDUPPDRAG KLART, ${BIKE_REWARD + ESCAPE_BONUS} kr with the bonus`);
   check(!g.player.frozen && !g.camFocus, 'you can move again');
   check(Math.hypot(g.bike.x - GUN_BIKE.x, g.bike.z - GUN_BIKE.z) < 0.1 && !g.bike.locked, "the bike stands by Gun's gate – yours to ride");
-  check(!m.known.has('kassaskap') && !m.list().some((q) => q.id === 'kassaskap'), 'part 4 ("Kassaskåpet") is not offered right away');
+  const nk = m.list().find((q) => q.id === 'kassaskap');
+  check(!m.known.has('kassaskap') && nk && nk.state === 'soon', 'part 4 ("Kassaskåpet") is not offered right away – but the list says it is coming');
   run(g, 10);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /cykeln/.test(d.text)), 'and a text from Gun');
   g.player.x = GUN_BIKE.x - 0.9; g.player.z = GUN_BIKE.z + 0.4; run(g, 0.2);
@@ -1212,9 +1219,9 @@ function jumpFrom(g, z0) {
   const m = g.mission;
   m.restore(livsSave([...UP_TO_SAFE, 'flag', 'verkstad', 'hopp']));
   const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'caught', 'endcard', 'fade']);
-  run(g, 50);
-  check(!m.known.has('konditori'), 'not right away');
-  run(g, 6);
+  run(g, 4);
+  check(!m.known.has('konditori') && /hör av sig/.test(m.sub) && /Huvuduppdraget fortsätter/.test(m.objective), `not right away – the objective says what is coming (${m.objective} · ${m.sub})`);
+  run(g, 3);
   const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'konditori');
   check(offer && offer[1].from === 'Tant Gun (Storgatan)' && /Konditori/.test(offer[1].text), 'Gun texts: Sjuby Konditori is opening again');
   m.accept('konditori'); run(g, 0.2);
@@ -1252,9 +1259,8 @@ function jumpFrom(g, z0) {
   check(m.done.has('konditori') && g.money - money0 === OPENING_REWARD, `part 5 done, ${OPENING_REWARD} kr`);
   check(!g.player.frozen && !g.camFocus, 'you can move again');
   run(g, 16);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 0\.8/.test(d.text)), 'all eight: the end card');
-  const soon = m.list().find((q) => q.id === 'fabriken');
-  check(soon && soon.state === 'soon' && /fabriksbullarna/.test(soon.line), 'next in the list: "Bullfabriken", coming soon');
+  check(!ev.some(([n]) => n === 'endcard'), 'no end card yet: two more parts');
+  check(m.known.has('syltburken') && ev.some(([n, d]) => n === 'sms' && d.offer === 'syltburken' && /syltburk/.test(d.text)), 'ten seconds later: Gun texts – the jam jar is stolen');
   // Gun by the konditori door
   const gun = m.flag.gun;
   walkHere(g, gun.x + 1.2, gun.z); run(g, 0.2);
@@ -1263,6 +1269,194 @@ function jumpFrom(g, z0) {
   check(ev.slice(said).some(([n, d]) => n === 'say' && /Välkommen in/.test(d.text)), 'Gun at the konditori: "Välkommen in!"');
   run(g, 20);
   check(!g.peds.list.some((q) => q.npc === 'crowd' || q.npc === 'bengt-out'), 'the crowd goes home after a while');
+}
+
+// ---------- 19. after the safe: what comes next is clear ----------
+{
+  console.log('Efter kassaskåpet: nästa steg');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_BIKE, 'livs', 'nycklar']));
+  const ev = record(g, ['sms', 'offer', 'talk', 'banner']);
+  m.offer('kassaskap'); m.accept('kassaskap');
+  intoOffice(g); crackSafe(g);
+  walkTo(g, OFFICE.door.x, OFFICE.door.z, 1, 4); press(g); run(g, 1.3);
+  walkHere(g, GUN_GATE.x, GUN_GATE.z); run(g, 1.2);
+  const t = ev.filter(([n, d]) => n === 'talk' && d.id === 'kassaskap').pop();
+  check(t && /Nästa steg/.test(t[1].pages[t[1].pages.length - 1].text), 'Gun\'s last line says the next step is coming');
+  m.talkDone('kassaskap');
+  run(g, 0.6);
+  check(ev.some(([n, d]) => n === 'offer' && d.id === 'konditori'), 'straight after the talk: the card for "Nyöppningen" opens (face to face)');
+  m.accept('konditori'); run(g, 0.2);
+  check(m.active && m.active.id === 'konditori', 'accept it and it starts');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur' && d.from === 'Samuel'), 'a few seconds later: Samuel texts (side quest)');
+  run(g, 5);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'hemleverans' && d.from === 'Yasmin (Hörnlivs)'), 'and Yasmin (side quest) – even in the middle of "Nyöppningen"');
+}
+
+// ---------- 20. side quest: "Samuels cykel" ----------
+{
+  console.log('Samuels cykel (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_SAFE));
+  const ev = record(g, ['sms', 'banner', 'talk']);
+  run(g, 4.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur'), 'Samuel texts');
+  m.accept('cykelretur'); run(g, 0.2);
+  const job = m.active;
+  check(job && job.id === 'cykelretur' && job.samuel, 'it starts: Samuel waits outside the tower');
+  check(m.targets.some((t) => t.kind === 'car' && t.car === g.bike && t.gps), 'the GPS leads to the bike at Gun\'s gate');
+  g.player.x = g.bike.x + 0.9; g.player.z = g.bike.z + 0.4; run(g, 0.2); press(g);
+  check(g.player.car === g.bike, 'on the bike');
+  const b = g.bike; b.x = BIKE_RETURN.x - 6; b.z = BIKE_RETURN.z; b.h = Math.PI / 2; b.vx = b.vz = 0; run(g, 0.3);
+  check(job.stage === 'ride', 'not there yet');
+  b.x = BIKE_RETURN.x - 1; run(g, 1.2);
+  const t = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelretur').pop();
+  check(job.stage === 'talk' && t && /loppis/.test(t[1].pages.map((q) => q.text).join(' ')), 'at the tower: Samuel forgives you');
+  const money0 = g.money;
+  m.talkDone('cykelretur'); run(g, 0.3);
+  check(m.done.has('cykelretur') && g.money - money0 === BIKE_RETURN.reward, `done, ${BIKE_RETURN.reward} kr`);
+  check(Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 2, 'the bike stays with Samuel by the tower');
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(JSON.parse(JSON.stringify(m.progress())));
+  check(g2.bike && Math.hypot(g2.bike.x - BIKE_RETURN.x, g2.bike.z - BIKE_RETURN.z) < 2, 'saved: the bike by the tower');
+}
+
+// ---------- 21. side quest: "Hemleverans" ----------
+{
+  console.log('Hemleverans (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_SAFE));
+  const ev = record(g, ['sms', 'banner', 'say']);
+  run(g, 9.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'hemleverans'), 'Yasmin texts');
+  m.accept('hemleverans');
+  walkHere(g, HOME_DELIVERY.start.x, HOME_DELIVERY.start.z); run(g, 0.5);
+  const job = m.active;
+  check(job && job.id === 'hemleverans' && job.stops.length === 3 && job.stops.every((s) => g.peds.list.includes(s.ped)), 'three customers wait at their doors');
+  check(m.targets.filter((t) => t.kind === 'zone' && t.gps).length === 3, 'three places on the map');
+  for (const s of job.stops.slice(0, 2)) { walkHere(g, s.cx, s.cz + 1); run(g, 0.3); }
+  check(job.done === 2 && ev.filter(([n, d]) => n === 'say' && job.stops.some((s) => s.ped === d.who)).length >= 2, 'two delivered, the customers say thank you');
+  const money0 = g.money, left = job.left;
+  walkHere(g, job.stops[2].cx, job.stops[2].cz + 1); run(g, 0.3);
+  check(m.done.has('hemleverans') && g.money - money0 >= 3 * HOME_DELIVERY.per, `all three: ${g.money - money0} kr with ${Math.round(left)} s to spare`);
+  // too slow
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(livsSave(UP_TO_SAFE));
+  const ev2 = record(g2, ['banner']);
+  g2.mission.offer('hemleverans'); g2.mission.accept('hemleverans');
+  walkHere(g2, HOME_DELIVERY.start.x, HOME_DELIVERY.start.z); run(g2, HOME_DELIVERY.time + 1);
+  check(!g2.mission.active && ev2.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'too slow: failed (and you can try again)');
+}
+
+// ---------- 22. main quest, part 6: "Syltburken" ----------
+const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
+{
+  console.log('Syltburken (huvuduppdrag del 6)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_OPENING, 'cykelretur', 'hemleverans']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk']);
+  run(g, 10.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'syltburken' && d.from === 'Tant Gun (Storgatan)'), 'Gun texts: the jam jar is stolen');
+  m.accept('syltburken'); run(g, 0.2);
+  const job = m.active;
+  check(job && job.car && job.car.paint === 'black' && job.chaser, 'a black car, driving');
+  check(m.targets.some((t) => t.kind === 'racer' && t.car === job.car && t.gps), 'a red arrow and the GPS on it');
+  const c0 = { x: job.car.x, z: job.car.z };
+  run(g, 10);
+  check(Math.hypot(job.car.x - c0.x, job.car.z - c0.z) > 30, `it drives off (${Math.hypot(job.car.x - c0.x, job.car.z - c0.z).toFixed(0)} m in 10 s)`);
+  // ram it (a few hard knocks)
+  const pc = g.addVehicle('sedan', 'blue', job.car.x - 8, job.car.z, 0);
+  enterCar(g, pc);
+  for (let k = 0; k < 6 && job.stage === 'chase'; k++) { g.onCrash(job.car, 9, pc, job.car.x, job.car.z); run(g, 0.4); }
+  check(job.stage === 'stopped' && job.thug && g.peds.list.includes(job.thug), 'rammed enough: the engine dies, the driver runs');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, job.car.x + 2.2, job.car.z);
+  check(m.prompt === 'TA', 'at the car: TA');
+  press(g);
+  check(job.jar && job.stage === 'return', 'the jar – back to the konditori');
+  walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 1.2);
+  const t = ev.filter(([n, d]) => n === 'talk' && d.id === 'syltburken').pop();
+  check(t && /Dahlgren/.test(t[1].pages.map((q) => q.text).join(' ')), 'Bengt knows the car: director Dahlgren');
+  const money0 = g.money;
+  m.talkDone('syltburken'); run(g, 0.5);
+  check(m.done.has('syltburken') && g.money - money0 === JAR.reward, `part 6 done, ${JAR.reward} kr`);
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'toast' && /Nästa steg/.test(d.text)) && /hör av sig/.test(m.questLine('fabriken')), 'and it says what comes next');
+  // it gets away
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(livsSave(UP_TO_OPENING));
+  const ev2 = record(g2, ['banner']);
+  g2.mission.offer('syltburken'); g2.mission.accept('syltburken'); run(g2, 0.2);
+  g2.player.x = 40; g2.player.z = -370; g2.player.y = g2.world.groundHeight(40, -370); run(g2, JAR.fleeT + 1);
+  check(!g2.mission.active && ev2.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'too far behind for too long: it gets away (failed)');
+}
+
+// ---------- 23. main quest, part 7: "Bullfabriken" ----------
+{
+  console.log('Bullfabriken (huvuduppdrag del 7)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_OPENING, 'syltburken', 'cykelretur', 'hemleverans', 'verkstad', 'hopp', 'flag']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk', 'endcard']);
+  run(g, 12.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'fabriken' && d.from === 'Bagar-Bengt'), 'Bengt texts: follow Dahlgren\'s truck');
+  m.accept('fabriken'); run(g, 0.2);
+  const job = m.active;
+  check(job && job.stage === 'wait' && m.targets.some((t) => t.kind === 'zone' && t.gps), 'wait at the bakery driveway (on the map)');
+  const car = g.addVehicle('sedan', 'blue', FACTORY_START.x, FACTORY_START.z + 6, Math.PI);
+  enterCar(g, car);
+  parkAt(g, FACTORY_START.x, FACTORY_START.z, Math.PI); run(g, 3);
+  check(job.stage === 'tail' && job.truck, 'the truck comes out of the yard');
+  // follow it, about 30 m behind
+  let t = 0, minD = 1e9, maxD = 0;
+  while (t < 160 && job.stage === 'tail') {
+    const tr = job.truck;
+    if (t > 3) {
+      const back = 30;
+      car.x = tr.x - Math.sin(tr.h) * back; car.z = tr.z - Math.cos(tr.h) * back; car.h = tr.h; car.vx = tr.vx; car.vz = tr.vz;
+    }
+    g.step(DT, idle); t += DT;
+    if (t > 3) { const d = Math.hypot(tr.x - car.x, tr.z - car.z); minD = Math.min(minD, d); maxD = Math.max(maxD, d); }
+  }
+  check(job.stage === 'sneak', `tailing it to the construction site (${t.toFixed(0)} s)`);
+  check(Math.hypot(job.truck.x - TAIL.dest.x, job.truck.z - TAIL.dest.z) < 9, 'it stops at the site gate on Skolgatan');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, SITE_OFFICE.x, SITE_OFFICE.z - 1); run(g, 1);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'fabriken').pop();
+  check(job.stage === 'talk' && tk && /Tusen Sjubybullar/.test(tk[1].pages[0].text), 'at the site office: you overhear Dahlgren');
+  m.talkFx('fabriken', 'arrive');
+  check(job.people.length === 4, 'Gun, Bengt and the police turn up');
+  const money0 = g.money;
+  m.talkDone('fabriken'); run(g, 0.5);
+  check(m.done.has('fabriken') && g.money - money0 === FACTORY_REWARD, `the main adventure done, ${FACTORY_REWARD} kr`);
+  run(g, 16);
+  check(ev.some(([n]) => n === 'endcard'), 'the end card');
+  const soon = m.list().find((q) => q.id === 'bullfest');
+  check(soon && soon.state === 'soon', 'next in the list: "Bullfesten", coming soon');
+  // too close, too far
+  const tryTail = (back) => {
+    const gg = new Game({ seed: 7, traffic: 0, peds: 0 });
+    gg.mission.restore(livsSave([...UP_TO_OPENING, 'syltburken']));
+    const e = record(gg, ['banner']);
+    gg.mission.offer('fabriken'); gg.mission.accept('fabriken'); run(gg, 0.2);
+    walkHere(gg, FACTORY_START.x, FACTORY_START.z); run(gg, 3);
+    const j = gg.mission.active;
+    let tt = 0;
+    while (tt < 30 && gg.mission.active === j) {
+      const tr = j.truck;
+      if (tr) { gg.player.x = tr.x - Math.sin(tr.h) * back; gg.player.z = tr.z - Math.cos(tr.h) * back; }
+      gg.step(DT, idle); tt += DT;
+    }
+    return e.find(([n, d]) => n === 'banner' && d.kind === 'fail');
+  };
+  const near = tryTail(5), far = tryTail(120);
+  check(near && /såg dig/.test(near[1].sub), 'right behind it: the driver sees you (failed)');
+  check(far && /tappade/.test(far[1].sub), 'far behind: you lose it (failed)');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

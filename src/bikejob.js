@@ -38,6 +38,7 @@ export class Chaser {
     this.goal = null;      // set by the job: what to drive at ({ x, z, vx, vz, ref })
     this.path = null; this.pi = 0; this.replanT = 0; this.offRoad = false;
     this.hold = o.hold ?? 0;
+    this.polite = !!o.polite;   // (v0.9) a van you are tailing keeps its distance from you too
     this.revT = 0; this.stuckT = 0;
     this.direct = false;
     car.driver = 'racer'; car.racer = this; car.ai = null; car.parkedSpot = false;
@@ -69,7 +70,7 @@ export class Chaser {
     }
     const speed = car.fwdSpeed, sn = Math.sin(car.h), cs = Math.cos(car.h);
     const dT = Math.hypot(T.x - car.x, T.z - car.z);
-    this.direct = this.mode === 'chase' && !this.offRoad && dT < CHASE.ram && this.los(T.x, T.z);
+    this.direct = this.mode === 'chase' && !this.polite && !this.offRoad && dT < CHASE.ram && this.los(T.x, T.z);
     let tx, tz, v;
     if (this.direct) {
       const lead = clamp(dT / 14, 0, 0.55);
@@ -87,7 +88,7 @@ export class Chaser {
     const look = clamp(6 + Math.abs(speed) * 1.2, 8, 22);
     let gap = Infinity;
     for (const o of obstacles) {
-      if (o.ref === car || (T.ref && o.ref === T.ref) || (this.mode === 'chase' && (o.kind === 'player' || o.kind === 'playercar'))) continue;
+      if (o.ref === car || (T.ref && o.ref === T.ref) || (this.mode === 'chase' && !this.polite && (o.kind === 'player' || o.kind === 'playercar'))) continue;
       const dx = o.x - car.x, dz = o.z - car.z, f = dx * sn + dz * cs;
       if (f < 0 || f > look + o.r) continue;
       if (Math.abs(-dx * cs + dz * sn) > o.r + 1.25) continue;
