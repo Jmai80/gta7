@@ -171,6 +171,50 @@ export class AudioFX {
     this.tone(f * 1.26, 0.38, 'square', v * 0.8);
   }
 
+  // a voice for the dialogue (v0.9): a quick babble of syllables at the speaker's own pitch, about as
+  // long as the line (capped), like the little voices in old adventure games. A new line cuts off the last.
+  voice(pitch, text, vol = 0.07) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    for (const o of this.voiceOsc || []) { try { o.stop(); } catch (_) { /* already done */ } }
+    this.voiceOsc = [];
+    if (!text || !(pitch > 20)) return;   // (an empty line just stops the voice)
+    const n = Math.max(2, Math.min(16, Math.round(String(text).length / 6)));
+    let seed = 0;
+    for (const ch of String(text)) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    const rnd = () => { seed ^= seed << 13; seed >>>= 0; seed ^= seed >>> 17; seed ^= seed << 5; seed >>>= 0; return seed / 4294967296; };
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = pitch * 3.2; bp.Q.value = 0.9;
+    const out = ctx.createGain(); out.gain.value = 1;
+    bp.connect(out); out.connect(this.master);
+    let t = ctx.currentTime + 0.02;
+    const end = text.endsWith('?') ? 1.18 : text.endsWith('!') ? 1.1 : 0.9; // a question goes up at the end
+    for (let i = 0; i < n; i++) {
+      const last = i === n - 1;
+      const f = pitch * (0.86 + rnd() * 0.36) * (last ? end : 1);
+      const d = 0.055 + rnd() * 0.04;
+      for (const [type, k] of [['triangle', 1], ['square', 0.22]]) {
+        const o = ctx.createOscillator(); o.type = type;
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.exponentialRampToValueAtTime(f * (0.92 + rnd() * 0.16), t + d);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol * k, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        o.connect(g); g.connect(bp);
+        o.start(t); o.stop(t + d + 0.02);
+        this.voiceOsc.push(o);
+      }
+      t += d + 0.018 + (rnd() < 0.18 ? 0.06 : 0);   // a little pause now and then, between "words"
+    }
+  }
+
+  // the dialogue box opening: a soft two-note pop
+  talkOpen() {
+    if (!this.ctx) return;
+    this.tone(520, 0.08, 'sine', 0.06);
+    this.tone(780, 0.1, 'sine', 0.05, 0.06);
+  }
+
   // Lasse's melody horn (v0.8): a cheerful little tune on two square waves
   melody() {
     if (!this.ctx || this.melodyT > this.ctx.currentTime) return;

@@ -10,7 +10,7 @@ import { Ped } from './peds.js';
 import { Chaser, CHASE, ESCAPE_BONUS } from './bikejob.js';
 import { fmt } from './rng.js';
 
-const BENGT_LOOK = { shirt: 0xf2efe6, pants: 0xe2ddd0, skin: 0xe9c3a6, hair: 0x3a2a1a, height: 1.04, bulk: 1.28 };
+const BENGT_LOOK = { shirt: 0xf2efe6, pants: 0xe2ddd0, skin: 0xe9c3a6, hair: 0x3a2a1a, height: 1.04, bulk: 1.28, style: 4 | 32 | 64, accent: 0xf8f6f0 }; // beard, apron, baker's hat
 const GUN = { who: 'Tant Gun', letter: 'G', color: '#c58be0' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 const VANS = 2;

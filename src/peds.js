@@ -17,12 +17,33 @@ export const LINES = {
   bumped: ['Ursäkta?!', 'Se dig för!', 'Hörru, aj!', 'Trängs inte!'],
 };
 
+const ACCENTS = [0x2b2e35, 0x6b4a32, 0x3a5f8a, 0x7a2f2a, 0x2f6b45, 0xc8a24a, 0x4b4f58, 0x8e6fb8, 0xd2342c];
 export function makeLook(R) {
-  return {
+  const look = {
     shirt: R.pick(SHIRTS), pants: R.pick(PANTS), skin: R.pick(SKINS), hair: R.pick(HAIRS),
     height: R.range(0.92, 1.06), bulk: R.range(0.92, 1.12),
   };
+  return dressUp(look);
 }
+
+// a style for a passer-by (v0.9): long hair, a beard, glasses, a cap or a jacket. Worked out from the
+// look itself (not the game's random numbers), so the town's random sequence stays the same.
+export function dressUp(look) {
+  let h = (Math.imul(look.shirt ^ 0x9e3779b9, 2654435761) ^ Math.imul(look.hair + 7, 40503) ^ Math.round(look.height * 1e4) * 31 ^ Math.round(look.bulk * 1e4)) >>> 0;
+  const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
+  let style = 0;
+  const long = rnd() < 0.4;
+  if (long) style |= STYLE_BITS.long; else if (rnd() < 0.3) style |= STYLE_BITS.beard;
+  if (rnd() < 0.18) style |= STYLE_BITS.glasses;
+  if (rnd() < 0.14) style |= STYLE_BITS.cap;
+  if (rnd() < 0.3) style |= STYLE_BITS.jacket;
+  if (long && rnd() < 0.25) style = (style & ~STYLE_BITS.long) | STYLE_BITS.bun;
+  look.style = style;
+  look.accent = ACCENTS[Math.floor(rnd() * ACCENTS.length)];
+  return look;
+}
+// (the same bits as STYLE in models.js – this file stays free of three.js for the Node tests)
+export const STYLE_BITS = { long: 1, bun: 2, beard: 4, glasses: 8, cap: 16, apron: 32, baker: 64, jacket: 128 };
 
 // render-facing body state shared by peds and the player
 export function makeBody(look) {

@@ -8,7 +8,7 @@ import { BIKE_GEO } from './vehicle.js';
 export class Player {
   constructor(game) {
     this.game = game;
-    this.look = { shirt: 0x1d5fd1, pants: 0x2a2e35, skin: 0xf0c8a8, hair: 0xb07a35, height: 1.0, bulk: 1.0, stripe: true };
+    this.look = { shirt: 0x1d5fd1, pants: 0x2a2e35, skin: 0xf0c8a8, hair: 0xb07a35, height: 1.0, bulk: 1.0, style: 128, accent: 0x23262c }; // a dark jacket over the blue shirt
     this.body = makeBody(this.look);
     this.x = START.x; this.z = START.z; this.y = 0.15; this.h = START.h;
     this.vx = 0; this.vz = 0; this.vy = 0;

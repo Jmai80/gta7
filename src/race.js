@@ -19,9 +19,9 @@ const GRID = [3.2, 0, -3.2]; // lateral slots (right of the route is positive): 
 export const TOUCH_PACE = 0.8;
 const RIVALS = [
   { name: 'Kim', paint: 'yellow', skill: 0.86, base: 0.6, slot: 1, line: 'Lycka till. Du behöver det!',
-    look: { shirt: 0xe5b923, pants: 0x1f2a36, skin: 0xe8b996, hair: 0x1a1a1a, height: 1.0, bulk: 0.95 } },
+    look: { shirt: 0xe5b923, pants: 0x1f2a36, skin: 0xe8b996, hair: 0x1a1a1a, height: 1.0, bulk: 0.95, style: 16 | 128, accent: 0x1d1f22 } },
   { name: 'Bosse', paint: 'black', skill: 0.82, base: -1.8, slot: 2, line: 'Brum brum!',
-    look: { shirt: 0x7f8c8d, pants: 0x111418, skin: 0xf2d0b5, hair: 0xa0a0a0, height: 1.04, bulk: 1.12 } },
+    look: { shirt: 0x7f8c8d, pants: 0x111418, skin: 0xf2d0b5, hair: 0xa0a0a0, height: 1.04, bulk: 1.12, style: 4 | 8 } },
 ];
 
 export class RaceJob {

@@ -173,7 +173,12 @@ function wire(g) {
   g.on('hint', (e) => hud.hint(e));
   g.on('toast', (e) => hud.toast(e.text, e.long));
   g.on('wanted', (e) => { hud.stars(e.stars); if (e.stars) audio.wanted(); });
-  g.on('say', (e) => hud.say(e.who, e.text));
+  g.on('say', (e) => {
+    hud.say(e.who, e.text);
+    // the people in the story speak up (quietly, and only when they are close to you)
+    const w = e.who;
+    if (w && w.npc && w.body && Math.hypot(w.x - g.player.x, w.z - g.player.z) < 16) audio.voice(npcVoice(w), e.text, 0.045);
+  });
   g.on('honk', (e) => {
     const d = Math.hypot(e.car.x - view.camera.position.x, e.car.z - view.camera.position.z);
     audio.honk(d);
@@ -416,6 +421,17 @@ function pickQuest(q) {
 // A dialogue box at the bottom of the screen, a page at a time (tap, or Enter/Space/E). The game
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
+// each speaker's voice pitch (v0.9) – everyone else gets one from their name
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Samuel: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270 };
+function voiceOf(who) {
+  if (VOICES[who]) return VOICES[who];
+  let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
+  return 150 + (h % 160);
+}
+
+const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270 };
+function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
+
 function openTalk(e) {
   if (state !== 'play' || !e.pages || !e.pages.length) return;
   talk = { id: e.id, pages: e.pages, i: -1, at: 0 };
@@ -424,6 +440,7 @@ function openTalk(e) {
   try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (_) { /* nothing focused */ }
   $('game').classList.add('talking');
   $('talk').hidden = false;
+  audio.talkOpen();
   showPage(0);
 }
 
@@ -442,6 +459,7 @@ function showPage(i) {
   $('tkStep').textContent = `${i + 1} / ${talk.pages.length}`;
   card.classList.remove('turn'); void card.offsetWidth; card.classList.add('turn');
   if (p.fx) game.mission.talkFx(talk.id, p.fx);
+  audio.voice(voiceOf(p.who), p.text);
 }
 
 function nextTalk() {
@@ -455,6 +473,7 @@ function nextTalk() {
 
 function closeTalk() {
   talk = null;
+  audio.voice(0, '');
   $('talk').hidden = true;
   $('game').classList.remove('talking');
   if (state === 'talk') leaveMenu();

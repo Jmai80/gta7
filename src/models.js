@@ -393,35 +393,112 @@ export function buildFlag(uvFront, uvBack) {
   return B.toGeometry(THREE);
 }
 
+// People (v0.9: more detail). One shared, instanced geometry; the shader moves the bones and colours
+// the slots (shirt, pants, skin, hair, accent). Optional parts – long hair, a bun, a beard, glasses,
+// a cap, an apron, a baker's hat, a jacket – are always in the geometry and folded away by the shader
+// unless the person's style mask (STYLE below) has that bit.
+export const STYLE = { long: 1, bun: 2, beard: 4, glasses: 8, cap: 16, apron: 32, baker: 64, jacket: 128 };
 export function buildHumanGeometry() {
-  const B = new GeomBuilder([['aBS', 2], ['aPivot', 3]]);
-  const part = (bone, sel, pivot) => { B.cur.aBS = [bone, sel]; B.cur.aPivot = pivot; };
+  const B = new GeomBuilder([['aBS', 3], ['aPivot', 3]]);
+  // bone: 0 torso, 1 head, 3/4 arms, 5/6 legs · sel: 0 fixed colour, 1 shirt, 2 pants, 3 skin, 4 hair, 5 accent
+  const part = (bone, sel, pivot, opt = 0) => { B.cur.aBS = [bone, sel, opt]; B.cur.aPivot = pivot; }; // (z: the optional part's style bit)
+  const SOLE = 0xe9e4da, SHOE = 0x2a2420, LEATHER = 0x2a2420, EYE = 0xf4f1ea, PUPIL = 0x1d1b1a, LIPS = 0x9a5a4c, FRAME = 0x26282c, BAKER = 0xf6f3ec;
+  // ---- legs (thigh, shin, shoe with a light sole)
   for (const [sx, bone] of [[1, 5], [-1, 6]]) {
-    const x = 0.105 * sx;
-    part(bone, 2, [x, 0.92, 0]);
-    B.box(x - 0.085, 0.1, -0.095, x + 0.085, 0.95, 0.095, WHITE);
-    part(bone, 0, [x, 0.92, 0]);
-    B.box(x - 0.09, 0.0, -0.11, x + 0.09, 0.11, 0.16, 0x2a2420, M.PLAIN, { skipBottom: true });
+    const x = 0.105 * sx, P = [x, 0.92, 0];
+    part(bone, 2, P);
+    B.box(x - 0.088, 0.5, -0.098, x + 0.088, 0.96, 0.098, WHITE);
+    B.box(x - 0.078, 0.11, -0.085, x + 0.078, 0.52, 0.085, WHITE);
+    part(bone, 0, P);
+    B.box(x - 0.088, 0.03, -0.11, x + 0.088, 0.13, 0.15, SHOE, M.PLAIN, { skipBottom: true });
+    B.box(x - 0.092, 0.0, -0.115, x + 0.092, 0.035, 0.172, SOLE, M.PLAIN, { skipBottom: true });
   }
-  part(0, 1, [0, 0, 0]);
-  B.box(-0.245, 0.9, -0.14, 0.245, 1.52, 0.14, WHITE, M.PLAIN, { skipBottom: false });
-  // the head is its own bone (turned at the neck when someone lounges on a sofa and looks around)
+  // ---- torso: hips, belt, waist, chest
+  const T0 = [0, 0, 0];
+  part(0, 2, T0);
+  B.box(-0.205, 0.86, -0.125, 0.205, 1.0, 0.125, WHITE, M.PLAIN, { skipBottom: false });
+  part(0, 0, T0);
+  B.box(-0.21, 0.97, -0.13, 0.21, 1.02, 0.13, LEATHER);
+  B.box(-0.035, 0.972, 0.13, 0.035, 1.018, 0.136, 0xc9b27a);
+  part(0, 1, T0);
+  B.box(-0.2, 1.01, -0.124, 0.2, 1.26, 0.124, WHITE);
+  B.box(-0.245, 1.24, -0.14, 0.245, 1.5, 0.14, WHITE);
+  B.box(-0.22, 1.49, -0.12, 0.22, 1.53, 0.12, WHITE);                     // shoulders
+  B.box(-0.075, 1.5, 0.06, 0.075, 1.54, 0.125, WHITE);                    // collar
+  part(0, 3, T0);
+  B.box(-0.058, 1.5, -0.058, 0.058, 1.6, 0.058, WHITE);                   // neck
+  // jacket (open at the front, over the shirt)
+  part(0, 5, T0, STYLE.jacket);
+  B.box(-0.258, 0.98, 0.128, -0.075, 1.53, 0.152, WHITE);
+  B.box(0.075, 0.98, 0.128, 0.258, 1.53, 0.152, WHITE);
+  B.box(-0.258, 0.98, -0.152, 0.258, 1.53, -0.128, WHITE);
+  B.box(-0.258, 0.98, -0.13, -0.24, 1.53, 0.13, WHITE);
+  B.box(0.24, 0.98, -0.13, 0.258, 1.53, 0.13, WHITE);
+  B.box(-0.13, 1.5, 0.11, -0.06, 1.58, 0.156, WHITE);                     // collar flaps
+  B.box(0.06, 1.5, 0.11, 0.13, 1.58, 0.156, WHITE);
+  // apron (shop, bakery)
+  part(0, 5, T0, STYLE.apron);
+  B.box(-0.185, 0.55, 0.13, 0.185, 1.36, 0.152, WHITE);
+  B.box(-0.03, 1.36, 0.13, 0.03, 1.53, 0.15, WHITE);
+  B.box(-0.21, 1.0, -0.13, 0.21, 1.03, 0.13, WHITE);                     // the ties round the waist
+  // ---- head
   const NECK = [0, 1.53, 0];
   part(1, 3, NECK);
-  B.box(-0.06, 1.5, -0.06, 0.06, 1.57, 0.06, WHITE);
-  B.box(-0.13, 1.56, -0.13, 0.13, 1.83, 0.13, WHITE, M.PLAIN, { skipTop: true });
-  part(1, 4, NECK);
-  B.box(-0.14, 1.79, -0.145, 0.14, 1.9, 0.14, WHITE);
-  B.box(-0.14, 1.6, -0.15, 0.14, 1.8, -0.12, WHITE);
+  B.box(-0.13, 1.62, -0.13, 0.13, 1.86, 0.13, WHITE, M.PLAIN, { skipTop: true });
+  B.box(-0.115, 1.56, -0.11, 0.115, 1.63, 0.122, WHITE);                  // jaw
+  B.box(-0.022, 1.665, 0.13, 0.022, 1.725, 0.162, WHITE);                 // nose
+  B.box(-0.148, 1.66, -0.025, -0.13, 1.745, 0.03, WHITE);                 // ears
+  B.box(0.13, 1.66, -0.025, 0.148, 1.745, 0.03, WHITE);
   part(1, 0, NECK);
-  B.box(0.035, 1.69, 0.13, 0.08, 1.73, 0.136, 0x1a1a1a);
-  B.box(-0.08, 1.69, 0.13, -0.035, 1.73, 0.136, 0x1a1a1a);
+  for (const sx of [1, -1]) {
+    B.box(sx > 0 ? 0.028 : -0.088, 1.695, 0.13, sx > 0 ? 0.088 : -0.028, 1.74, 0.134, EYE);
+    B.box(sx > 0 ? 0.044 : -0.074, 1.7, 0.134, sx > 0 ? 0.074 : -0.044, 1.735, 0.137, PUPIL);
+  }
+  B.box(-0.042, 1.612, 0.122, 0.042, 1.628, 0.127, LIPS);
+  part(1, 4, NECK);
+  for (const sx of [1, -1]) B.box(sx > 0 ? 0.026 : -0.094, 1.755, 0.13, sx > 0 ? 0.094 : -0.026, 1.772, 0.138, WHITE); // eyebrows
+  B.box(-0.142, 1.82, -0.146, 0.142, 1.91, 0.142, WHITE);                 // hair: top
+  B.box(-0.142, 1.6, -0.152, 0.142, 1.83, -0.12, WHITE);                  //       back
+  B.box(-0.146, 1.74, -0.13, -0.128, 1.84, 0.07, WHITE);                  //       sides
+  B.box(0.128, 1.74, -0.13, 0.146, 1.84, 0.07, WHITE);
+  B.box(-0.135, 1.79, 0.11, 0.07, 1.845, 0.15, WHITE);                    //       fringe
+  part(1, 4, NECK, STYLE.long);
+  B.box(-0.155, 1.36, -0.172, 0.155, 1.84, -0.12, WHITE);
+  B.box(-0.158, 1.48, -0.13, -0.128, 1.8, 0.05, WHITE);
+  B.box(0.128, 1.48, -0.13, 0.158, 1.8, 0.05, WHITE);
+  part(1, 4, NECK, STYLE.bun);
+  B.box(-0.065, 1.84, -0.2, 0.065, 1.97, -0.08, WHITE);
+  part(1, 4, NECK, STYLE.beard);
+  B.box(-0.112, 1.545, 0.05, 0.112, 1.64, 0.14, WHITE);
+  B.box(-0.135, 1.58, -0.03, -0.11, 1.71, 0.11, WHITE);
+  B.box(0.11, 1.58, -0.03, 0.135, 1.71, 0.11, WHITE);
+  B.box(-0.058, 1.632, 0.128, 0.058, 1.656, 0.146, WHITE);                // moustache
+  part(1, 0, NECK, STYLE.glasses);
+  for (const sx of [1, -1]) {
+    const a = sx > 0 ? 0.022 : -0.096, b = sx > 0 ? 0.096 : -0.022;
+    B.box(a, 1.742, 0.136, b, 1.754, 0.146, FRAME);
+    B.box(a, 1.686, 0.136, b, 1.696, 0.146, FRAME);
+    B.box(sx > 0 ? b - 0.01 : a, 1.686, 0.136, sx > 0 ? b : a + 0.01, 1.754, 0.146, FRAME);
+    B.box(sx > 0 ? 0.13 : -0.146, 1.738, -0.02, sx > 0 ? 0.146 : -0.13, 1.75, 0.146, FRAME);   // the arm to the ear
+  }
+  B.box(-0.022, 1.725, 0.138, 0.022, 1.735, 0.148, FRAME);                 // bridge
+  part(1, 5, NECK, STYLE.cap);
+  B.box(-0.152, 1.83, -0.155, 0.152, 1.97, 0.152, WHITE);
+  B.box(-0.13, 1.83, 0.15, 0.13, 1.852, 0.26, WHITE);
+  part(1, 0, NECK, STYLE.baker);
+  B.box(-0.148, 1.84, -0.152, 0.148, 1.93, 0.152, BAKER);
+  B.box(-0.17, 1.93, -0.172, 0.17, 2.14, 0.172, BAKER);
+  // ---- arms: sleeve, forearm, hand with a thumb; the jacket's sleeve over it
   for (const [sx, bone] of [[1, 3], [-1, 4]]) {
-    const x = 0.31 * sx;
-    part(bone, 1, [x, 1.47, 0]);
-    B.box(x - 0.065, 1.17, -0.075, x + 0.065, 1.52, 0.075, WHITE);
-    part(bone, 3, [x, 1.47, 0]);
-    B.box(x - 0.055, 0.84, -0.065, x + 0.055, 1.18, 0.065, WHITE, M.PLAIN, { skipBottom: false });
+    const x = 0.31 * sx, P = [x, 1.47, 0];
+    part(bone, 1, P);
+    B.box(x - 0.066, 1.16, -0.076, x + 0.066, 1.52, 0.076, WHITE);
+    part(bone, 3, P);
+    B.box(x - 0.054, 0.9, -0.063, x + 0.054, 1.18, 0.063, WHITE);
+    B.box(x - 0.05, 0.79, -0.052, x + 0.05, 0.91, 0.058, WHITE, M.PLAIN, { skipBottom: false });
+    B.box(x - sx * 0.07, 0.84, 0.0, x - sx * 0.04, 0.9, 0.05, WHITE);
+    part(bone, 5, P, STYLE.jacket);
+    B.box(x - 0.074, 1.0, -0.084, x + 0.074, 1.535, 0.084, WHITE);
   }
   return B.toGeometry(THREE);
 }

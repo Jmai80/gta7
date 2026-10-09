@@ -8,8 +8,8 @@ import { SHOP } from './shop.js';
 import { Ped } from './peds.js';
 import { fmt } from './rng.js';
 
-const YASMIN_LOOK = { shirt: 0x2f8f83, pants: 0x2b2d36, skin: 0xb98a64, hair: 0x1e1612, height: 0.97, bulk: 1.0 };
-const INGVAR_LOOK = { shirt: 0x2b3d5c, pants: 0x3b3f46, skin: 0xe9c3a6, hair: 0xd8d8d8, height: 1.0, bulk: 1.15 };
+const YASMIN_LOOK = { shirt: 0x2f8f83, pants: 0x2b2d36, skin: 0xb98a64, hair: 0x1e1612, height: 0.97, bulk: 1.0, style: 1 | 32, accent: 0x2c62a8 }; // long hair, the shop's blue apron
+const INGVAR_LOOK = { shirt: 0x2b3d5c, pants: 0x3b3f46, skin: 0xe9c3a6, hair: 0xd8d8d8, height: 1.0, bulk: 1.15, style: 4 | 16, accent: 0x1d2a44 }; // a grey beard, a captain's cap
 const YASMIN = { who: 'Yasmin', letter: 'Y', color: '#ff6fae' };
 const KEEPER = { who: 'Fyrvaktaren Ingvar', letter: 'I', color: '#5b8fd6' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };

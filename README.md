@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.8 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, fem sidouppdrag, fem delar av ett huvuduppdrag, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, och till sist till invigningen av Sjuby Konditori.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.8.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, fem sidouppdrag, fem delar av ett huvuduppdrag, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, och till sist till invigningen av Sjuby Konditori.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -72,6 +72,8 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Det går även folk på trottoarerna.
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
+- **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Samuel i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde.
+- **Röster:** i samtalen pratar alla med en egen pipig "röst", ett litet pladder i talarens tonläge som är ungefär lika långt som repliken och går upp i slutet av en fråga. Repliker i pratbubblor hörs också när personen står nära dig.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
 - **Lås & nyckel:** Leifs nyckelservice på Skolgatan, med en stor mässingsnyckel över dörren.

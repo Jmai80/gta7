@@ -44,12 +44,14 @@ attribute vec4 iCar;   // spin, steer, roll, pitch
 attribute vec2 iCar2;  // brake light, damage
 #endif
 #ifdef HUMAN
-attribute vec2 aBS;    // x: bone (0 torso/head, 3 arm L, 4 arm R, 5 leg L, 6 leg R), y: colour slot (0 fixed, 1 shirt, 2 pants, 3 skin, 4 hair)
+attribute vec3 aBS;    // x: bone (0 torso, 1 head, 3 arm L, 4 arm R, 5 leg L, 6 leg R), y: colour slot (0 fixed, 1 shirt, 2 pants, 3 skin, 4 hair, 5 accent),
+                       // z: an optional part's bit in the style mask (0: always there)
 attribute vec3 aPivot;
 attribute vec4 iAnim;  // phase, leg amp, arm amp, pose
-attribute vec3 iPants;
+attribute vec4 iPants; // rgb, and w: which optional parts this person has (models.js STYLE)
 attribute vec3 iSkin;
 attribute vec3 iHair;
+attribute vec3 iAccent;
 #endif
 uniform float uTime;
 varying vec3 vColor;
@@ -91,6 +93,8 @@ void main() {
 #ifdef HUMAN
   int bone = int(aBS.x + 0.5);
   float pose = iAnim.w;
+  // optional parts this person does not have fold away into a single point
+  if (aBS.z > 0.5 && mod(floor(iPants.w / aBS.z + 0.001), 2.0) < 0.5) { p = vec3(0.0); n = vec3(0.0, 1.0, 0.0); }
   if (pose > 3.5 && pose < 5.5) {
     // 4: lounging on a sofa – leaning far back, legs out in front, phone in both hands
     // 5: sitting upright on a bench, hands in the lap
@@ -147,9 +151,10 @@ void main() {
   #ifdef USE_INSTANCING_COLOR
     if (sel == 1) vColor = instanceColor;
   #endif
-  if (sel == 2) vColor = iPants;
+  if (sel == 2) vColor = iPants.rgb;
   else if (sel == 3) vColor = iSkin;
   else if (sel == 4) vColor = iHair;
+  else if (sel == 5) vColor = iAccent;
 #endif
   vec4 wp = vec4(p, 1.0);
   vec3 wn = n;

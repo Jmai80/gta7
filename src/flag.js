@@ -2,11 +2,11 @@
 // waves at passers-by: her shoulder hurts and the Swedish flag should be up. Talk to her, then
 // hold the action button at the flagpole to hoist the flag.
 import { GUN, PIER_BENCH, CURB_H } from './config.js';
-import { Ped } from './peds.js';
+import { Ped, STYLE_BITS as ST } from './peds.js';
 
-const LOOK = { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1 };
+const LOOK = { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1, style: ST.bun | ST.glasses | ST.jacket, accent: 0x7a5a9a }; // a lilac cardigan
 // main quest, part 2: the figure on the pier bench, in a dark coat with a hat pulled down
-const COAT = { ...LOOK, shirt: 0x343846, pants: 0x23252b, hair: 0x1c1d22 };
+const COAT = { ...LOOK, shirt: 0x343846, pants: 0x23252b, hair: 0x1c1d22, style: ST.cap | ST.jacket, accent: 0x25272d }; // coat and hat pulled down
 const PIER_LINES = ['Norra bron, kom ihåg.', 'Akta dig för Bullbilen.', 'Ät bullen nu, innan den kallnar.', 'Inte ett ord till Samuel!'];
 const HOIST_TIME = 3.2; // seconds of pulling from the bottom to the top
 const POLE_R = 1.9, TALK_R = 2.4;

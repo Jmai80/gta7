@@ -6,7 +6,7 @@ import { WHO, LEIF, SAMUEL_WAIT, KEY_TIME, KEY_REWARD } from './config.js';
 import { LOOK as SAMUEL_LOOK } from './samuel.js';
 import { Ped } from './peds.js';
 
-const LEIF_LOOK = { shirt: 0x3a5f8a, pants: 0x2b2d36, skin: 0xd9a77e, hair: 0x8a8a8a, height: 0.98, bulk: 1.18 };
+const LEIF_LOOK = { shirt: 0x3a5f8a, pants: 0x2b2d36, skin: 0xd9a77e, hair: 0x8a8a8a, height: 0.98, bulk: 1.18, style: 4 | 8 | 32, accent: 0x6b4a32 }; // moustache, glasses, a leather apron
 const LEIF_TALK = { who: 'Lås-Leif', letter: 'N', color: '#36c2b4' };
 const SAMUEL = { who: 'Samuel', letter: 'S', color: '#6e7a46' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };

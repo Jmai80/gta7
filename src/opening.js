@@ -11,9 +11,9 @@ import { Chaser, CHASE } from './bikejob.js';
 const GUN = { who: 'Tant Gun', letter: 'G', color: '#c58be0' };
 const BENGT = { who: 'Bagar-Bengt', letter: 'B', color: '#d9534f' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
-const BENGT_LOOK = { shirt: 0xf2efe6, pants: 0xe2ddd0, skin: 0xe9c3a6, hair: 0x3a2a1a, height: 1.04, bulk: 1.28 };
-const MAJKEN_LOOK = { shirt: 0xe8e2d2, pants: 0x5a4632, skin: 0xf0c8a8, hair: 0xb8b0a0, height: 0.95, bulk: 1.05 };
-const YASMIN_LOOK = { shirt: 0x2f8f83, pants: 0x2b2d36, skin: 0xb98a64, hair: 0x1e1612, height: 0.97, bulk: 1.0 };
+const BENGT_LOOK = { shirt: 0xf2efe6, pants: 0xe2ddd0, skin: 0xe9c3a6, hair: 0x3a2a1a, height: 1.04, bulk: 1.28, style: 4 | 32 | 64, accent: 0xf8f6f0 }; // beard, apron, baker's hat
+const MAJKEN_LOOK = { shirt: 0xe8e2d2, pants: 0x5a4632, skin: 0xf0c8a8, hair: 0xb8b0a0, height: 0.95, bulk: 1.05, style: 2 | 32, accent: 0x8a6a48 }; // a bun, a floury apron
+const YASMIN_LOOK = { shirt: 0x2f8f83, pants: 0x2b2d36, skin: 0xb98a64, hair: 0x1e1612, height: 0.97, bulk: 1.0, style: 1 | 32, accent: 0x2c62a8 };
 const ORDER = ['kardemumma', 'smor', 'mjol'];
 const VAN = { vMax: 15, burst: 2.5, start: 2.0 };
 const CATCH = { foot: 2.6, nose: 3.0, slow: 3.0, pressT: 1.4 };

@@ -82,7 +82,8 @@ export class View {
     // people
     const hg = buildHumanGeometry();
     hg.setAttribute('iAnim', new THREE.InstancedBufferAttribute(new Float32Array(MAX_HUMANS * 4), 4));
-    for (const n of ['iPants', 'iSkin', 'iHair']) hg.setAttribute(n, new THREE.InstancedBufferAttribute(new Float32Array(MAX_HUMANS * 3), 3));
+    for (const n of ['iSkin', 'iHair', 'iAccent']) hg.setAttribute(n, new THREE.InstancedBufferAttribute(new Float32Array(MAX_HUMANS * 3), 3));
+    hg.setAttribute('iPants', new THREE.InstancedBufferAttribute(new Float32Array(MAX_HUMANS * 4), 4)); // (w: the style mask)
     this.humans = new THREE.InstancedMesh(hg, this.matHuman, MAX_HUMANS);
     this.humans.setColorAt(0, new THREE.Color(1, 1, 1));
     this.humans.count = 0;
@@ -560,6 +561,7 @@ export class View {
   syncHumans(game) {
     const H = this.humans, geo = H.geometry;
     const anim = geo.attributes.iAnim, pants = geo.attributes.iPants, skin = geo.attributes.iSkin, hair = geo.attributes.iHair;
+    const accent = geo.attributes.iAccent;
     let i = 0, b = this.blobBase || 0;
     const add = (body) => {
       if (!body.visible || i >= MAX_HUMANS) return;
@@ -573,9 +575,10 @@ export class View {
       tmpM.setPosition(body.x, body.y + body.lie * 0.15, body.z);
       H.setMatrixAt(i, tmpM);
       tmpC.setHex(L.shirt); H.setColorAt(i, tmpC);
-      tmpC.setHex(L.pants); pants.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
+      tmpC.setHex(L.pants); pants.setXYZW(i, tmpC.r, tmpC.g, tmpC.b, L.style || 0);
       tmpC.setHex(L.skin); skin.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       tmpC.setHex(L.hair); hair.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
+      tmpC.setHex(L.accent ?? 0x3a3c41); accent.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
       if (body.pose === 4 || body.pose === 5) anim.setXYZW(i, body.headYaw || 0, body.phone || 0, body.headPitch || 0, body.pose); // lounging / sitting
       else anim.setXYZW(i, body.phase, body.legAmp, body.armAmp, body.pose);
       i++;
@@ -599,7 +602,7 @@ export class View {
     H.count = i;
     H.instanceMatrix.needsUpdate = true;
     if (H.instanceColor) H.instanceColor.needsUpdate = true;
-    anim.needsUpdate = pants.needsUpdate = skin.needsUpdate = hair.needsUpdate = true;
+    anim.needsUpdate = pants.needsUpdate = skin.needsUpdate = hair.needsUpdate = accent.needsUpdate = true;
     this.blobs.count = b;
     this.blobs.instanceMatrix.needsUpdate = true;
   }
