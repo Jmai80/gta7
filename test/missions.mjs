@@ -1,7 +1,8 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS } from '../src/config.js';
+import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
 import { routePoints } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
@@ -794,6 +795,142 @@ function unlockAndMount(g) {
     else check(['deliver', 'talk', 'caught'].includes(job.stage), `${name}: it ends one way or the other (this rider does not dodge cars)`);
     check(vanRun > 250, `${name}: the van chased you all the way (${vanRun.toFixed(0)} m)`);
   }
+}
+
+// ---------- 13. side quest: "Fyrvaktarens kasse" – from Hörnlivs to the lighthouse ----------
+function livsSave(done) { return { v: 2, money: 0, done, known: done.filter((d) => d !== 'red'), seen: done.filter((d) => d !== 'red'), stats: {} }; }
+function intoShop(g) {
+  g.player.x = LIVS_DOOR.x; g.player.z = LIVS_DOOR.z; g.player.y = g.world.groundHeight(g.player.x, g.player.z);
+  run(g, 1.4);
+}
+{
+  console.log('Fyrvaktarens kasse (sidouppdrag)');
+  // not before the north bridge is open
+  const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g0.mission.restore(livsSave(['lasse', 'pizza', 'race', 'samuel']));
+  const ev0 = record(g0, ['sms']);
+  run(g0, 60);
+  check(!ev0.some(([n, d]) => n === 'sms' && d.offer === 'livs'), 'no text from Yasmin while the north bridge is shut');
+
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'fade', 'indoor']);
+  run(g, 30);
+  check(!m.known.has('livs'), 'not right away');
+  run(g, 7);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'livs');
+  check(offer && offer[1].from === 'Yasmin (Hörnlivs)' && /Norrholmen/.test(offer[1].text), 'Yasmin at Hörnlivs texts: a delivery out to Norrholmen');
+  check(m.info('livs').side && m.list().find((q) => q.id === 'livs').side, 'it is a side quest');
+  m.accept('livs');
+  run(g, 0.1);
+  const Y = m.targets.find((t) => t.letter === 'Y' && t.gps);
+  check(Y && Math.hypot(Y.x - LIVS_DOOR.x, Y.z - LIVS_DOOR.z) < 0.1, 'the GPS leads to the shop door on Kungsgatan');
+  check(m.objective === 'Gå in på Hörnlivs (Y)', `objective: go into Hörnlivs (${m.objective})`);
+  // in a car: no
+  const car = g.addVehicle('sedan', 'blue', LIVS_DOOR.x - 2.5, LIVS_DOOR.z, 0);
+  enterCar(g, car);
+  parkAt(g, LIVS_DOOR.x - 0.5, LIVS_DOOR.z, 0);
+  run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /till fots/.test(d.text)), 'you cannot drive into the shop');
+  parkAt(g, LIVS_DOOR.x - 6, LIVS_DOOR.z + 8, 0);  // (out of the car right by the door would take you in)
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  check(!g.player.inCar && !m.active, 'parked a bit further off, out of the car');
+  // walk in: the shop
+  intoShop(g);
+  const job = m.active;
+  check(job && job.id === 'livs' && g.indoor && g.indoors.where === 'shop', 'walking to the door takes you into Hörnlivs');
+  check(Math.hypot(g.player.x - SHOP.spawn.x, g.player.z - SHOP.spawn.z) < 0.3 && Math.abs(g.player.y - SHOP.y) < 0.01, 'you stand inside the door, on the shop floor');
+  check(job.yasmin && Math.hypot(job.yasmin.x - SHOP.yasmin.x, job.yasmin.z - SHOP.yasmin.z) < 0.1, 'Yasmin stands behind the till');
+  check(m.prompt !== 'GÅ UT', 'not at the door the moment you come in');
+  // nobody gets behind the till
+  walkTo(g, SHOP.yasmin.x, SHOP.yasmin.z, 1, 4);
+  check(g.player.z > SHOP.room.z0 + 3.7, `the counter is in the way (z ${(g.player.z - SHOP.room.z0).toFixed(2)})`);
+  check(m.prompt === 'PRATA', 'at the till: PRATA');
+  g.step(DT, { ...idle, action: true }); run(g, 0.2);
+  const talk = ev.find(([n, d]) => n === 'talk' && d.id === 'livs');
+  check(talk && talk[1].pages.some((pg) => pg.fx === 'bag') && /Ingvar/.test(talk[1].pages.map((pg) => pg.text).join(' ')), 'Yasmin tells you about Ingvar the lighthouse keeper');
+  check(g.player.frozen && job.stage === 'talk', 'you stand still while she talks');
+  m.talkFx('livs', 'bag');
+  check(job.bag, 'she hands you the bag');
+  m.talkDone('livs');
+  run(g, 0.2);
+  check(job.stage === 'bag' && !g.player.frozen && m.objective === 'Gå ut med kassen', 'then out of the shop with it');
+  // the door
+  walkTo(g, SHOP.door.x, SHOP.door.z, 1, 6);
+  check(m.prompt === 'GÅ UT', 'at the door: GÅ UT');
+  g.step(DT, { ...idle, action: true }); run(g, 1.4);
+  check(!g.indoor && Math.hypot(g.player.x - (LIVS_DOOR.x - 1.1), g.player.z - (LIVS_DOOR.z - 0.6)) < 0.3, 'back out on the sidewalk on Kungsgatan');
+  check(!g.peds.list.includes(job.yasmin || {}) && job.stage === 'carry', 'Yasmin stays in the shop, you carry the bag');
+  check(m.objective === 'Kör kassen till fyren' && /12 hela ägg/.test(m.sub), `objective: to the lighthouse, 12 eggs (${m.sub})`);
+  const ing = m.ingvar;
+  check(ing && Math.hypot(ing.x - INGVAR.x, ing.z - INGVAR.z) < 0.1 && onIsle(ing.x, ing.z) && g.world.groundHeight(ing.x, ing.z) === CURB_H, 'Ingvar waits outside his cottage by the lighthouse');
+  check(!g.world.query(INGVAR.x, INGVAR.z, 1.2).some((c) => c.h > 0.5 && c.t === 'box' && INGVAR.x > c.x0 - 0.6 && INGVAR.x < c.x1 + 0.6 && INGVAR.z > c.z0 - 0.6 && INGVAR.z < c.z1 + 0.6), 'nothing in the way around him');
+  const Z = m.targets.find((t) => t.kind === 'zone' && t.gps);
+  check(Z && Math.hypot(Z.x - INGVAR.x, Z.z - INGVAR.z) < 0.1, 'the GPS leads to the lighthouse');
+  const r = routePoints(g.layout.gps, g.player.x, g.player.z, INGVAR.x, INGVAR.z);
+  check(r.some(([x, z]) => x === 40 && z === -178), 'over the north bridge');
+  // knocks crack eggs
+  const c2 = g.addVehicle('sedan', 'blue', g.player.x - 3, g.player.z, 0);
+  enterCar(g, c2);
+  g.emit('crash', { x: c2.x, z: c2.z, impact: 6, player: true, car: c2 });
+  g.emit('crash', { x: c2.x, z: c2.z, impact: 9, player: true, car: c2 }); // the same crash, a moment later
+  check(job.eggs === EGGS - 2, `a hard knock cracks two eggs (${job.eggs} left)`);
+  run(g, 1);
+  g.emit('crash', { x: c2.x, z: c2.z, impact: 2.5, player: true, car: c2 });
+  g.emit('crash', { x: c2.x, z: c2.z, impact: 8, player: false, car: c2 });
+  check(job.eggs === EGGS - 2, 'a bump, or somebody else\'s crash: no harm');
+  check(/10 hela ägg/.test(m.sub) && ev.some(([n, d]) => n === 'toast' && /ägg sprack/.test(d.text)), 'the objective counts the eggs that are left');
+  // at the cottage: in the car nothing happens, on foot Ingvar takes the bag
+  parkAt(g, INGVAR.x - 2, INGVAR.z + 3, 0);
+  run(g, 0.5);
+  check(job.stage === 'carry', 'not from the car');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  g.player.x = INGVAR.x + 0.4; g.player.z = INGVAR.z + 2.0; g.player.y = g.world.groundHeight(g.player.x, g.player.z);
+  const money0 = g.money;
+  run(g, 1.2);
+  const talk2 = ev.find(([n, d]) => n === 'talk' && d.id === 'livs' && d !== talk[1]);
+  check(job.stage === 'meet' && talk2 && /10 hela ägg/.test(talk2[1].pages.map((pg) => pg.text).join(' ')), 'Ingvar counts the eggs');
+  check(/Bullbilens/.test(talk2[1].pages.map((pg) => pg.text).join(' ')), 'and tells you about a light in the bakery office');
+  m.talkDone('livs');
+  run(g, 0.5);
+  check(m.done.has('livs') && !m.active, 'side quest done');
+  check(g.money - money0 === LIVS_REWARD + 10 * EGG_BONUS, `paid ${LIVS_REWARD} + 10 × ${EGG_BONUS} kr (got ${g.money - money0})`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && /Fyrvaktarens kasse/.test(d.sub)), 'SIDOUPPDRAG KLART banner');
+  run(g, 9);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Yasmin (Hörnlivs)' && /Ingvar ringde/.test(d.text)), 'Yasmin texts: Ingvar called');
+  check(!g.player.frozen && !g.camFocus, 'you can move again');
+  // saved: Ingvar is at his cottage
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(JSON.parse(JSON.stringify(m.progress())));
+  check(g2.mission.done.has('livs') && g2.mission.ingvar && g2.peds.list.includes(g2.mission.ingvar), 'restored: done, and Ingvar is out by the lighthouse');
+  const ev2 = record(g2, ['sms']);
+  run(g2, 40);
+  check(!ev2.some(([n, d]) => n === 'sms' && d.offer === 'livs'), 'and Yasmin does not ask again');
+
+  // walking out without the bag: no failure, the marker comes back
+  const g3 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g3.mission.restore(livsSave(['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel']));
+  const ev3 = record(g3, ['sms', 'banner']);
+  g3.mission.offer('livs'); g3.mission.accept('livs');
+  intoShop(g3);
+  walkTo(g3, SHOP.door.x, SHOP.door.z, 1, 6);
+  g3.step(DT, { ...idle, action: true }); run(g3, 1.4);
+  check(!g3.indoor && !g3.mission.active && !ev3.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'out without the bag: no failure');
+  run(g3, 1);
+  check(ev3.some(([n, d]) => n === 'sms' && d.from === 'Yasmin (Hörnlivs)' && /Kassen står kvar/.test(d.text)), 'Yasmin: the bag is still on the counter');
+  check(!g3.peds.list.some((q) => q.npc === 'yasmin'), 'Yasmin is not left behind out at sea');
+  g3.player.x = LIVS_DOOR.x - 8; run(g3, 4);
+  intoShop(g3);
+  check(g3.mission.active && g3.mission.active.id === 'livs' && g3.indoor, 'and you can go in again');
+  // all twelve eggs whole
+  const j3 = g3.mission.active;
+  j3.talkFx('bag'); j3.stage = 'talk'; j3.talkDone();
+  walkTo(g3, SHOP.door.x, SHOP.door.z, 1, 6);
+  g3.step(DT, { ...idle, action: true }); run(g3, 1.4);
+  g3.player.x = INGVAR.x; g3.player.z = INGVAR.z + 2.2; run(g3, 1.2);
+  const m3 = g3.money; j3.talkDone(); run(g3, 0.3);
+  check(g3.money - m3 === LIVS_REWARD + EGGS * EGG_BONUS, `twelve whole eggs: ${LIVS_REWARD + EGGS * EGG_BONUS} kr`);
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

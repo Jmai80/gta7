@@ -4,11 +4,14 @@ import { fmt } from './rng.js';
 import { STREET_NAMES, ROADS, RING, WHO } from './config.js';
 import { PAINTS } from './vehicle.js';
 import { INT, WALLS, FURN } from './interior.js';
+import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
 import { SEE } from './samuel.js';
 import { ISLE } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
+// the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
+const IN_BOUNDS = { x0: Math.min(INT.bounds.x0, SHOP.bounds.x0), z0: Math.min(INT.bounds.z0, SHOP.bounds.z0), x1: Math.max(INT.bounds.x1, SHOP.bounds.x1), z1: Math.max(INT.bounds.z1, SHOP.bounds.z1) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
 const MAP_PX = 2;
@@ -138,7 +141,7 @@ export class HUD {
 
   // the floor plan of the tower's 7th floor (corridor + Samuel's flat)
   buildIndoorMap() {
-    const B = INT.bounds, ox = B.x0, oz = B.z0;
+    const B = IN_BOUNDS, ox = B.x0, oz = B.z0;
     const c = document.createElement('canvas');
     c.width = Math.ceil((B.x1 - B.x0) * IN_PX); c.height = Math.ceil((B.z1 - B.z0) * IN_PX);
     const g = c.getContext('2d');
@@ -158,6 +161,14 @@ export class HUD {
     g.fillStyle = '#b9bec4'; g.fillRect(X(ix + 0.05), Zs(iz + 0.6), 0.5 * IN_PX, 1.2 * IN_PX);
     g.fillStyle = '#14181d'; g.font = `900 ${IN_PX * 0.7}px "Big Shoulders Display", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('H', X(ix + 0.3), Zs(iz + 1.2));
+    // Hörnlivs (v0.6.1): the shop floor, its shelves and the door
+    const S = SHOP.room;
+    rect(S.x0, S.z0, S.x1, S.z1, '#6f6a5f');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of SHOP_FURN.slice(0, -1)) g.fillRect(X(S.x0 + x0), Zs(S.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of SHOP_WALLS) g.fillRect(X(S.x0 + x0), Zs(S.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#9fb7c4'; g.fillRect(X(S.x0 + 1.2), Zs(S.z0 + 7), 1.2 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -165,7 +176,7 @@ export class HUD {
     const g = this.ctx, W = this.el.map.width, R = W / 2;
     const p = game.player, u = W / 150;
     const range = 9.5, k = R / range;
-    const B = INT.bounds;
+    const B = IN_BOUNDS;
     g.save();
     g.clearRect(0, 0, W, W);
     g.beginPath(); g.arc(R, R, R - 1, 0, Math.PI * 2); g.clip();
@@ -199,6 +210,11 @@ export class HUD {
       const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
       g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
       g.beginPath(); g.arc(x, z, 4.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    if (job && job.id === 'livs' && job.yasmin) { // Yasmin at the till
+      const [x, z] = P(job.yasmin.x, job.yasmin.z);
+      g.fillStyle = '#ff6fae'; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u;
+      g.beginPath(); g.arc(x, z, 4.6 * u, 0, Math.PI * 2); g.fill(); g.stroke();
     }
     if (sam) {
       const [x, z] = P(sam.ped.x, sam.ped.z);
@@ -479,7 +495,7 @@ export class HUD {
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

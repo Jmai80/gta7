@@ -1,8 +1,10 @@
-// Going in and out of the dark tower. The inside (interior.js) is built out at sea: going in is a
-// fade to black and a lift ride, and the town is hidden while you are in there. Samuel lives up
-// there; he is only around while you are inside.
-import { TOWER_DOOR } from './config.js';
+// Going in and out of the dark tower – and Hörnlivs on Kungsgatan (v0.6.1). The insides
+// (interior.js, shop.js) are built out at sea: going in is a fade to black (and a lift ride in the
+// tower), and the town is hidden while you are in there. Samuel lives up in the tower; he is only
+// around while you are inside. `where` says which place you are in: 'tower' or 'shop'.
+import { TOWER_DOOR, LIVS_DOOR } from './config.js';
 import { INT } from './interior.js';
+import { SHOP } from './shop.js';
 import { Samuel } from './samuel.js';
 
 const FADE = 0.5;  // seconds of black before the move
@@ -11,6 +13,7 @@ export class Indoors {
   constructor(game) {
     this.game = game;
     this.inside = false;
+    this.where = null;     // 'tower' | 'shop'
     this.busy = false;     // fading in or out
     this.timers = [];
     this.samuel = null;
@@ -24,24 +27,27 @@ export class Indoors {
 
   after(delay, fn) { this.timers.push({ t: this.game.time + delay, fn }); }
 
-  // the lift up to floor 7 (the job calls this when you walk in through the door)
-  enter(done) {
+  // the lift up to floor 7, or in through the shop door (the job calls this when you walk in)
+  enter(done, where = 'tower') {
     if (this.busy || this.inside) return;
     const g = this.game;
     this.busy = true;
     g.emit('fade', { on: true });
     this.after(FADE, () => {
       this.inside = true;
-      if (!this.game.mission.done.has('samuel')) this.openDoor();
-      this.samuel = new Samuel(g);
-      this.place(INT.spawn.x, INT.spawn.z, INT.spawn.h);
+      this.where = where;
+      if (where === 'tower') {
+        if (!this.game.mission.done.has('samuel')) this.openDoor();
+        this.samuel = new Samuel(g);
+        this.place(INT.spawn.x, INT.spawn.z, INT.spawn.h);
+      } else this.place(SHOP.spawn.x, SHOP.spawn.z, SHOP.spawn.h);
       g.emit('indoor', { on: true });
       if (done) done();
     });
     this.after(FADE + 0.35, () => { g.emit('fade', { on: false }); this.busy = false; });
   }
 
-  // back down and out onto the square
+  // back down and out onto the square (or out of the shop onto Kungsgatan)
   exit(done) {
     if (this.busy || !this.inside) return;
     const g = this.game;
@@ -50,7 +56,9 @@ export class Indoors {
     this.after(FADE, () => {
       this.inside = false;
       if (this.samuel) { this.samuel.remove(); this.samuel = null; }
-      this.place(TOWER_DOOR.x, TOWER_DOOR.z + 2.4, 0); // a few steps out on the square
+      if (this.where === 'shop') this.place(LIVS_DOOR.x - 1.1, LIVS_DOOR.z - 0.6, Math.PI); // out on the sidewalk, facing north up Kungsgatan
+      else this.place(TOWER_DOOR.x, TOWER_DOOR.z + 2.4, 0); // a few steps out on the square
+      this.where = null;
       g.emit('indoor', { on: false });
       if (done) done();
     });
@@ -77,13 +85,14 @@ export class Indoors {
     if (!this.inside) return;
     if (this.samuel) this.samuel.update(dt);
     const p = g.player;
-    if (!this.busy && !p.frozen && p.state === 'foot' && Math.hypot(p.x - INT.lift.x, p.z - INT.lift.z) < INT.lift.r) this.prompt = 'HISS';
+    if (this.busy || p.frozen || p.state !== 'foot') return;
+    if (this.where === 'tower' && Math.hypot(p.x - INT.lift.x, p.z - INT.lift.z) < INT.lift.r) this.prompt = 'HISS';
+    if (this.where === 'shop' && Math.hypot(p.x - SHOP.door.x, p.z - SHOP.door.z) < SHOP.door.r) this.prompt = 'GÅ UT';
   }
 
   interact() {
-    if (this.prompt !== 'HISS') return false;
-    this.game.emit('toast', { text: 'Hissen ner…' });
-    this.exit();
-    return true;
+    if (this.prompt === 'HISS') { this.game.emit('toast', { text: 'Hissen ner…' }); this.exit(); return true; }
+    if (this.prompt === 'GÅ UT') { this.exit(); return true; }
+    return false;
   }
 }

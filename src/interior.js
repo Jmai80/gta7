@@ -11,6 +11,7 @@
 //   z=10.4     └──────── windows ─── TV ─── windows ────┘
 //              x=1                                      x=11
 import { INDOOR } from './config.js';
+import { shopLayout, shopInto } from './shop.js';
 
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
@@ -87,7 +88,9 @@ export function interiorLayout() {
     signPrims.push({ t: 'sign', id, x: X + s.x + nx * 0.035, y: Y + s.y, z: Z + s.z + nz * 0.035, w: s.w, h: s.h, rot: Math.atan2(nx, nz) });
   }
   const B = INT.bounds;
-  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }], signs, signPrims };
+  const shop = shopLayout(); // Hörnlivs (v0.6.1), a little further out
+  colliders.push(...shop.colliders);
+  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor], signs, signPrims };
 }
 
 // ------------------------------------------------------------------ geometry
@@ -218,6 +221,8 @@ export function interiorInto(B) {
   };
   chair(7.95, 7.5, 'w');
   chair(8.85, 8.3, 's');
+
+  shopInto(B); // Hörnlivs
 }
 
 // door panel for Samuel's front door, hinge at the origin, closed along +x (render.js turns it)

@@ -5,6 +5,7 @@ import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, n
 import { buildWorld } from './worldmesh.js';
 import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, BIKE } from './models.js';
 import { INT, doorInto, inFlat } from './interior.js';
+import { SHOP, bagInto } from './shop.js';
 import { SEE, phoneOf } from './samuel.js';
 import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
@@ -299,6 +300,13 @@ export class View {
     this.glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTexture(), color: 0xfff1b0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
     this.glint.position.set(INT.keys.x, INT.keys.y + 0.05, INT.keys.z);
     g.add(this.glint);
+    // Hörnlivs: Yasmin's bag for the lighthouse keeper on the counter, until she hands it over
+    const BB = new GeomBuilder();
+    bagInto(BB);
+    this.bag = new THREE.Mesh(BB.toGeometry(THREE), this.matInterior);
+    this.bag.position.set(SHOP.bag.x, SHOP.bag.y, SHOP.bag.z);
+    this.bag.rotation.y = 0.35;
+    g.add(this.bag);
     // Samuel's phone (its screen lights up his face… well, it glows)
     this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
     this.phone.scale.setScalar(1.35);
@@ -362,6 +370,7 @@ export class View {
     const taken = !(job && job.id === 'samuel' && !job.keys);
     this.keys.visible = !taken;
     this.glint.visible = !taken;
+    this.bag.visible = !game.mission.done.has('livs') && !(job && job.id === 'livs' && job.bag);
     if (!taken) {
       const k = 0.13 + 0.07 * Math.max(0, Math.sin(this.time * 3.1)) ** 6;
       this.glint.scale.set(k, k, 1);
@@ -813,6 +822,16 @@ export class CameraRig {
     if (this.flatK > 0.001) {
       const F = INT.flat, k = this.flatK * (portrait ? 0.4 : 0.32);
       tx += ((F.x0 + F.x1) / 2 - tx) * k; tz += ((F.z0 + F.z1) / 2 + 0.6 - tz) * k;
+    }
+    // in Hörnlivs, the same: the whole little shop stays in view
+    this.shopK = game.indoor && game.indoors.where === 'shop' ? smooth(this.shopK || 0, 1, 2.5, dt) : 0; // (gone at once outside)
+    if (this.shopK > 0.001) {
+      const S = SHOP.room, k = this.shopK * (portrait ? 0.45 : 0.35);
+      tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
+      // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
+      const j = game.mission.active, talking = j && j.id === 'livs' && j.stage === 'talk' ? 1 : 0;
+      this.talkK = smooth(this.talkK || 0, talking, 3, dt);
+      tz += this.talkK * this.shopK * (portrait ? 1.6 : 2.6);
     }
     if (near) { tx += (this.fPos.x - tx) * this.fk; tz += (this.fPos.z - tz) * this.fk; }
     // keep the camera out of buildings

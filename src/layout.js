@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -610,6 +610,16 @@ export function createLayout(seed = 7) {
     box(b.x0 - 0.3, CURB_H + 3.2, b.z0 + 21, b.x0 + 1, CURB_H + 3.35, b.cz + 8, 0x2c62a8);  // awning (livs)
     sign('pizza', { lines: ['PIZZERIA SJUAN'], bg: '#2e7a46', fg: '#fff6e0', font: 0.62, stripe: true }, b.x0 + 0.94, CURB_H + 3.9, b.z0 + 10, 7.5, 1.0, -Math.PI / 2);
     sign('livs', { lines: ['HÖRNLIVS'], bg: '#2c62a8', fg: '#ffffff', font: 0.62 }, b.x0 + 0.94, CURB_H + 3.9, b.z0 + 27.5, 5.6, 1.0, -Math.PI / 2);
+    // Hörnlivs' door (v0.6.1): a glass door under the blue awning – Yasmin is inside
+    {
+      const fx = b.x0 + 1, dz = LIVS_DOOR.z;
+      box(fx - 0.06, CURB_H, dz - 0.75, fx, CURB_H + 2.5, dz + 0.75, 0x1d2a3a);
+      box(fx - 0.085, CURB_H, dz - 0.62, fx - 0.06, CURB_H + 2.36, dz + 0.62, 0x9fb7c4, M.GLASS);
+      box(fx - 0.13, CURB_H + 0.95, dz + 0.42, fx - 0.085, CURB_H + 1.35, dz + 0.47, 0xc9ccd0, M.CHROME);
+      box(fx - 0.09, CURB_H + 1.6, dz - 0.45, fx - 0.086, CURB_H + 1.9, dz + 0.15, 0xffffff); // ÖPPET card in the glass
+      box(fx - 0.093, CURB_H + 1.66, dz - 0.4, fx - 0.09, CURB_H + 1.84, dz + 0.1, 0xd2342c);
+      poly([[fx - 1.2, dz - 0.8], [fx, dz - 0.8], [fx, dz + 0.8], [fx - 1.2, dz + 0.8]], 0x3a3f46, M.PAVING, OVERLAY_H + 0.006);
+    }
     // south building: brick with shops
     building({ x0: b.x0 + 18, z0: b.z1 - 13, x1: b.x1 - 1, z1: b.z1 - 1, h: 13.6, c: COL.brick, m: M.BRICKWIN, cell: [3.2, 3.4], mapC: 0x8a5a48 });
     sign('bibblan', { lines: ['BIBLIOTEK'], bg: '#f1ede2', fg: '#7c3c2b', font: 0.62 }, b.cx + 10, CURB_H + 3.6, b.z1 - 13.08, 5, 0.9, Math.PI);

@@ -362,6 +362,12 @@ export function islandInto(H) {
   H.casters.push({ t: 'pole', x: L.x, z: L.z, h: CURB_H + 17, w: 4.2 });
   H.footprints.push({ x0: L.x - 2.4, z0: L.z - 2.4, x1: L.x + 2.4, z1: L.z + 2.4, c: 0xd8d4cc });
   building({ x0: 99, z0: -393, x1: 105, z1: -388.4, h: 2.6, c: 0xeeeae0, m: M.FALU, cell: [2, 2.6], roof: 'gable', roofH: 1.6, roofC: 0x8c3f2d, axis: 'x', mapC: 0xb8b2a6 });
+  // the keeper's front door, a step and a mailbox (fyrvaktaren Ingvar lives here, v0.6.1)
+  box(101.45, CURB_H, -388.4, 102.55, CURB_H + 2.05, -388.34, 0x2f5d3a, M.BOARDS);
+  box(102.3, CURB_H + 0.95, -388.34, 102.38, CURB_H + 1.05, -388.28, 0xc9ccd0, M.CHROME);
+  box(101.3, CURB_H, -388.4, 102.7, CURB_H + 0.06, -387.9, 0x8f8a83, M.STONE);
+  P({ t: 'cyl', x: 104.2, z: -387.4, y0: CURB_H, y1: CURB_H + 1.0, r: 0.04, n: 4, c: 0x5a4430 });
+  box(103.98, CURB_H + 1.0, -387.6, 104.42, CURB_H + 1.28, -387.2, 0x2c62a8);
   bench(L.x - 6, L.z + 5.5, -Math.PI * 0.2);
 
   // ---- the beach (south-west) and the marina (south-east), both facing the town

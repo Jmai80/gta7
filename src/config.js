@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', anon: 'Okänt nummer', game: 'GTA 7' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', anon: 'Okänt nummer', game: 'GTA 7' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -81,5 +81,9 @@ export const HANDOVER_REWARD = 1000;
 export const GUN_GATE = { x: -97.5, z: -46.8, r: 2.4 };        // ride the bike up to tant Gun's garden gate (the gap in her hedge)
 export const GUN_BIKE = { x: -93.4, z: -46.6, h: Math.PI / 2 }; // where the bike stands once she has it
 export const BIKE_REWARD = 2000;
+// ---- version 0.6.1: side quest "Fyrvaktarens kasse" – from Hörnlivs to the lighthouse on Norrholmen ----
+export const LIVS_DOOR = { x: -32.9, z: -4.5, r: 1.3 };       // the marker on the sidewalk outside Hörnlivs' door (Kungsgatan)
+export const INGVAR = { x: 102, z: -386.3, h: 0 };           // the lighthouse keeper, outside his cottage by the lighthouse
+export const LIVS_REWARD = 500, EGG_BONUS = 50, EGGS = 12;   // 500 kr + 50 kr for every egg that arrives whole
 
 export const SIM_HZ = 60;

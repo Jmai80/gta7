@@ -472,6 +472,7 @@ function showEnd(s) {
     ['Pizzor levererade', s.pizzas || 0],
     ['Gatloppet', s.raceTime != null ? mmss(s.raceTime) : '–'],
     ['Bullbilen', s.bikeEscaped ? 'Skakad av' : s.bikeEscaped === false ? 'Hack i häl' : '–'],
+    ['Ägg till fyren', s.eggsDelivered != null ? `${s.eggsDelivered} av 12 hela` : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

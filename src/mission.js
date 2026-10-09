@@ -12,12 +12,14 @@
 //   G  Tant Gun:           "Arnes budcykel" – main quest, part 3: the north bridge opens; ride Arne's
 //                          bike from Norrholmen to Gun with a Bullbilen van on your heels (v0.6)
 //   G  Tant Gun:           "Kassaskåpet" – what comes next, in the list as "Kommer snart"
+//   Y  Yasmin (Hörnlivs):  "Fyrvaktarens kasse" – side quest once the north bridge is open: take a
+//                          bag of groceries (and twelve eggs) from the shop to the lighthouse (v0.6.1)
 // The pizza job, the race, Samuel's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
-  PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD,
+  PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -25,6 +27,7 @@ import { FlagQuest } from './flag.js';
 import { SamuelJob } from './samuel.js';
 import { HandoverJob } from './handover.js';
 import { BikeJob, ESCAPE_BONUS } from './bikejob.js';
+import { LivsJob, spawnIngvar } from './livs.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -68,6 +71,13 @@ export const QUESTS = [
     after: 'overlamning', at: 14, needFoot: 'Kliv ur bilen – cykeln står inne bland kolonilotterna.',
     text: 'Norra bron är öppen igen! Åk över till Norrholmen och hämta Arnes cykel – den står vid lott 7 bland kolonilotterna. Samuels nycklar passar i låset. Och se upp för Bullbilen.',
     reward: `${fmt(BIKE_REWARD)} kr (+${fmt(ESCAPE_BONUS)} kr om du skakar av dig Bullbilen)`, where: 'Kolonilotterna på Norrholmen, lott 7',
+  },
+  {
+    // a side quest that comes by SMS (sms) once the north bridge is open (bridge)
+    id: 'livs', letter: 'Y', who: WHO.yasmin, title: 'Fyrvaktarens kasse', color: '#ff6fae', x: LIVS_DOOR.x, z: LIVS_DOOR.z, r: LIVS_DOOR.r, Job: LivsJob,
+    side: true, sms: true, bridge: true, after: 'overlamning', at: 35, needFoot: 'Kliv ur bilen – in i butiken går man till fots.',
+    text: 'Hej, det är Yasmin på Hörnlivs, Kungsgatan! Nu när norra bron är öppen igen behöver jag hjälp med en leverans ut till Norrholmen. Titta in i butiken!',
+    reward: `${fmt(LIVS_REWARD)} kr + ${fmt(EGG_BONUS)} kr per helt ägg`, where: 'Hörnlivs på Kungsgatan, under den blå markisen',
   },
   {
     // the next part of the main quest: shown in the list, not playable yet
@@ -221,6 +231,7 @@ export class Missions {
       case 'samuel': return 'Ta Samuels cykelnycklar i höghuset vid torget';
       case 'overlamning': return 'Lämna nycklarna på bänken längst ut på bryggan';
       case 'cykel': return 'Hämta Arnes cykel på Norrholmen och cykla den till tant Gun';
+      case 'livs': return 'Gå in på Hörnlivs på Kungsgatan';
     }
     return '';
   }
@@ -260,6 +271,7 @@ export class Missions {
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
     if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
+    if (this.done.has('livs')) this.ingvar = spawnIngvar(g); // the lighthouse keeper, outside his cottage
     if (this.allDone()) this.flags.allDone = true;
     if (QUESTS.some((q) => !q.main && this.done.has(q.id))) this.flags.firstDone = 0;
     this.restored = true;
@@ -296,7 +308,9 @@ export class Missions {
     // the next part of a quest chain: a few seconds after the part before, once you are outdoors
     const next = (q) => this.done.has(q.after) && !g.indoor && this.outT >= 2.5 && this.t >= ((this.flags.doneAt || {})[q.after] ?? 0) + q.at;
     for (const q of QUESTS) {
-      if (q.side || q.soon || this.known.has(q.id) || this.done.has(q.id)) continue;
+      if ((q.side && !q.sms) || q.soon || this.known.has(q.id) || this.done.has(q.id)) continue;
+      if (q.bridge && !this.bridgeOpen) continue;
+      if (q.side && this.active) continue; // a side quest texts you when you are not busy
       if (q.after ? !next(q) : this.t < q.at && !early(q)) continue;
       this.offer(q.id);
       if (q.id === 'lasse' && this.lasse === 'intro') this.lasse = 'steal';
@@ -440,6 +454,7 @@ export class Missions {
       case 'samuel': return { text: 'Gå till höghuset vid torget (?)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Porten på södra sidan' };
       case 'overlamning': return { text: 'Gå till bryggan i hamnen (?)', sub: this.game.player.inCar ? 'Parkera och gå ut på bryggan' : 'Bänken längst ut på bryggan' };
       case 'cykel': return { text: 'Hämta Arnes cykel (G)', sub: this.game.player.z < -229 ? 'Lott 7 bland kolonilotterna' : 'Över norra bron till Norrholmen' };
+      case 'livs': return { text: 'Gå in på Hörnlivs (Y)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Kungsgatan, under den blå markisen' };
     }
     return null;
   }
