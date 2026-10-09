@@ -81,7 +81,7 @@ export class AudioFX {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     const p = game.player;
-    const car = p.inCar ? p.car : null;
+    const car = p.inCar && !p.car.spec.bike ? p.car : null; // (a bike has no engine)
     const E = this.eng;
     if (car) {
       const v = Math.abs(car.fwdSpeed);
@@ -239,6 +239,16 @@ export class AudioFX {
       this.tone(f, 0.07, 'triangle', 0.035, i * 0.045 + Math.random() * 0.02);
     }
     this.burst(0.05, 6500, 0.18, 'highpass', 0.02);
+  }
+
+  // the bike's bell: pling-pling
+  bell() {
+    if (!this.ctx) return;
+    for (const at of [0, 0.16]) {
+      this.tone(2350, 0.32, 'sine', 0.07, at);
+      this.tone(3520, 0.22, 'sine', 0.03, at);
+      this.tone(5870, 0.08, 'triangle', 0.012, at);
+    }
   }
 
   // spotted! a sharp sting

@@ -17,7 +17,18 @@ export const CAR_TYPES = {
     grip: 12.5, hbGrip: 3.6, steerMax: 0.56,
     circles: [-1.55, 0, 1.55], radius: 1.0,
   },
+  // Arne's old delivery bike from Sjuby Konditori (v0.6): light, quick to turn, never breaks down
+  bike: {
+    key: 'bike', name: 'Arnes budcykel', len: 1.9, wid: 0.62, height: 1.1,
+    wheelbase: 1.26, track: 0, wheelR: 0.34, wheelZ: [0.66, -0.6],
+    mass: 120, accel: 3.6, maxSpeed: 9.9, brake: 8, revAccel: 1.2, revMax: 1.3,   // flat out about 9.1 m/s (33 km/h)
+    grip: 15, hbGrip: 7, steerMax: 0.72,
+    circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
+  },
 };
+
+// where things are on Arne's bike (models.js builds it, the player sits on the saddle)
+export const BIKE_GEO = { rearZ: -0.6, rearR: 0.34, frontZ: 0.66, frontR: 0.26, pivot: [0, 0.62, 0.5], saddle: [0, 0.94, -0.3] };
 
 export const PAINTS = {
   red: { hex: 0xc4191b, name: 'röd', red: true },
@@ -29,6 +40,7 @@ export const PAINTS = {
   green: { hex: 0x2f6b45, name: 'grön' },
   lightblue: { hex: 0x86acd1, name: 'ljusblå' },
   pizza: { hex: 0x2e7a46, name: 'grön' },        // Pizzeria Sjuan's delivery car
+  bike: { hex: 0x23452f, name: 'grön' },         // Arne's bike
 };
 
 const GRAVITY = 16;
@@ -211,7 +223,7 @@ export class Vehicle {
   }
 
   damage(amount) {
-    if (amount <= 0) return;
+    if (amount <= 0 || this.spec.noDamage) return;
     this.health = Math.max(0, this.health - amount);
     this.power = this.health < 25 ? 0.6 : 1;
     if (this.health <= 0) this.dead = true;

@@ -102,8 +102,11 @@ export class FlagQuest {
     else if (!gun.disguised && onFoot && dGun < TALK_R && gun.state === 'stand') this.prompt = 'PRATA';
     // she waves at anyone passing by until somebody helps her (and waves goodbye on the pier)
     if (this.byeT > 0) this.byeT -= dt;
-    gun.wave = (!away && !known && !done && m.gunVisible && dGun < 16) || (away && !gun.disguised && this.byeT > 0 && dGun > 2.5);
-    if (!away && gun.wave && !this.said.hello && dGun < 15) { this.said.hello = true; this.say('Hallå där! Kan du hjälpa en gammal tant?'); }
+    gun.wave = !this.hush && ((!away && !known && !done && m.gunVisible && dGun < 16) || (away && !gun.disguised && this.byeT > 0 && dGun > 2.5));
+    if (!away && gun.wave && !this.said.hello && dGun < 15) {
+      this.said.hello = true;
+      this.say(m.done.has('overlamning') ? 'Lilla vän! Hjälper du mig med flaggan också?' : 'Hallå där! Kan du hjälpa en gammal tant?'); // (she knows you after the pier)
+    }
     if (away && !gun.disguised && !this.said.bye && dGun > 7 && m.done.has('overlamning')) { this.said.bye = true; this.say('Norra bron, lilla vän. Glöm inte!'); }
     if (away && !gun.disguised && dGun < 12) gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z); // she keeps an eye on you
     if (!away && dGun > 8 && !this.pulling) gun.standH = 0;

@@ -1,6 +1,6 @@
 {
   "name": "gta7",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "GTA 7 – ett litet GTA-inspirerat skämtspel i three.js, byggt för mobilen.",
   "type": "module",

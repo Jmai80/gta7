@@ -9,19 +9,23 @@
 //                          on floor 7 of the dark tower and take his bike keys (v0.4)
 //   ?  Okänt nummer:       "Överlämningen" – main quest, part 2: hand the keys over on the bench at
 //                          the end of the harbour pier – to tant Gun, it turns out (v0.5)
-//   G  Tant Gun:           "Arnes budcykel" – what comes next, in the list as "Kommer snart"
+//   G  Tant Gun:           "Arnes budcykel" – main quest, part 3: the north bridge opens; ride Arne's
+//                          bike from Norrholmen to Gun with a Bullbilen van on your heels (v0.6)
+//   G  Tant Gun:           "Kassaskåpet" – what comes next, in the list as "Kommer snart"
 // The pizza job, the race, Samuel's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
-  PIER_MEET, HANDOVER_REWARD,
+  PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
 import { FlagQuest } from './flag.js';
 import { SamuelJob } from './samuel.js';
 import { HandoverJob } from './handover.js';
+import { BikeJob, ESCAPE_BONUS } from './bikejob.js';
+import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
 export { fmt };
@@ -60,14 +64,20 @@ export const QUESTS = [
     reward: `${fmt(HANDOVER_REWARD)} kr och svar på dina frågor`, where: 'Bryggan i Sjuby hamn, längst ut',
   },
   {
+    id: 'cykel', letter: 'G', who: WHO.gun, title: 'Arnes budcykel', color: '#c58be0', x: ISLE.bike.x, z: ISLE.bike.z, r: 2.0, Job: BikeJob, main: true,
+    after: 'overlamning', at: 14, needFoot: 'Kliv ur bilen – cykeln står inne bland kolonilotterna.',
+    text: 'Norra bron är öppen igen! Åk över till Norrholmen och hämta Arnes cykel – den står vid lott 7 bland kolonilotterna. Samuels nycklar passar i låset. Och se upp för Bullbilen.',
+    reward: `${fmt(BIKE_REWARD)} kr (+${fmt(ESCAPE_BONUS)} kr om du skakar av dig Bullbilen)`, where: 'Kolonilotterna på Norrholmen, lott 7',
+  },
+  {
     // the next part of the main quest: shown in the list, not playable yet
-    id: 'cykel', letter: 'G', who: WHO.gun, title: 'Arnes budcykel', color: '#c58be0', main: true, soon: true, after: 'overlamning',
+    id: 'kassaskap', letter: 'G', who: WHO.gun, title: 'Kassaskåpet', color: '#c58be0', main: true, soon: true, after: 'cykel',
   },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning']; // all five → the end card; Gun's flag is a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel']; // all six → the end card; Gun's flag is a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -94,9 +104,12 @@ export class Missions {
     game.on('enterCar', (e) => this.onEnterCar(e));
     game.on('exitCar', (e) => this.active && this.active.onExitCar && this.active.onExitCar(e));
     game.on('crash', (e) => this.active && this.active.onCrash && this.active.onCrash(e));
+    game.on('bikeFall', (e) => this.active && this.active.onBikeFall && this.active.onBikeFall(e));
   }
 
   quest(id) { return BY_ID[id]; }
+  // the north bridge to Norrholmen is open once tant Gun has sent you for Arne's bike
+  get bridgeOpen() { return this.known.has('cykel') || this.done.has('cykel'); }
   get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
   // the action button's label: the lift, something the running job wants (take the keys), or tant Gun
   get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt; }
@@ -197,7 +210,7 @@ export class Missions {
 
   // what to do next, in one line (for the list)
   questLine(id) {
-    if (id === 'cykel') return 'Fortsättning följer – när norra bron öppnar';
+    if (id === 'kassaskap') return 'Fortsättning följer – bageriet på Norrholmen';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -207,6 +220,7 @@ export class Missions {
       case 'flag': return 'Hissa flaggan hos tant Gun på Storgatan';
       case 'samuel': return 'Ta Samuels cykelnycklar i höghuset vid torget';
       case 'overlamning': return 'Lämna nycklarna på bänken längst ut på bryggan';
+      case 'cykel': return 'Hämta Arnes cykel på Norrholmen och cykla den till tant Gun';
     }
     return '';
   }
@@ -245,6 +259,7 @@ export class Missions {
     this.tracked = valid(d.tracked) && this.isOpen(d.tracked) ? d.tracked : null;
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
+    if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
     if (this.allDone()) this.flags.allDone = true;
     if (QUESTS.some((q) => !q.main && this.done.has(q.id))) this.flags.firstDone = 0;
     this.restored = true;
@@ -304,12 +319,12 @@ export class Missions {
       const d = Math.hypot(x - c.x, z - c.z);
       if (d > c.r + 1.5) { c.armed = true; c.warned = false; continue; }
       if (d > c.r || !c.armed) continue;
-      if (c.needCar && (!car || car.dead)) {
+      if (c.needCar && (!car || car.dead || car.spec.bike)) {
         if (!c.warned) { c.warned = true; g.emit('toast', { text: 'Kim kör bara mot folk med bil. Kom tillbaka med en!', long: true }); }
         continue;
       }
       if (c.needFoot && car) {
-        if (!c.warned) { c.warned = true; g.emit('toast', { text: c.needFoot, long: true }); }
+        if (!c.warned) { c.warned = true; g.emit('toast', { text: car.spec.bike ? c.needFoot.replace('Kliv ur bilen', 'Kliv av cykeln') : c.needFoot, long: true }); }
         continue;
       }
       if (car && car.speed > 12) continue;
@@ -383,10 +398,10 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = last === 'overlamning' ? 4.3 : 0; // after tant Gun's kanelbulle and her text
+    const wait = last === 'overlamning' || last === 'cykel' ? 4.3 : 0; // after tant Gun's kanelbulle and her text
     this.later(7.2 + wait, () => this.sms(WHO.game, this.done.has('flag')
-      ? 'Det var allt i version 0.5! Huvuduppdraget fortsätter när norra bron öppnar. Kör runt fritt så länge.'
-      : 'Det var allt i version 0.5! Huvuduppdraget fortsätter när norra bron öppnar. Kör runt fritt – och har du hissat flaggan hos tant Gun?'));
+      ? 'Det var allt i version 0.6! Huvuduppdraget fortsätter på bageriet ute på Norrholmen. Cykla runt fritt så länge.'
+      : 'Det var allt i version 0.6! Huvuduppdraget fortsätter på bageriet ute på Norrholmen. Cykla runt fritt – och har du hissat flaggan hos tant Gun?'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -424,6 +439,7 @@ export class Missions {
       case 'flag': return this.flag.objective();
       case 'samuel': return { text: 'Gå till höghuset vid torget (?)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Porten på södra sidan' };
       case 'overlamning': return { text: 'Gå till bryggan i hamnen (?)', sub: this.game.player.inCar ? 'Parkera och gå ut på bryggan' : 'Bänken längst ut på bryggan' };
+      case 'cykel': return { text: 'Hämta Arnes cykel (G)', sub: this.game.player.z < -229 ? 'Lott 7 bland kolonilotterna' : 'Över norra bron till Norrholmen' };
     }
     return null;
   }
@@ -462,6 +478,14 @@ export class Missions {
   onEnterCar(e) {
     const { car, jacked } = e;
     const g = this.game;
+    if (car.spec.bike) { // the bike is not a car to steal
+      if (!this.flags.bikeHint) {
+        this.flags.bikeHint = true;
+        this.later(0.6, () => g.emit('hint', { id: 'bikecontrols', touch: 'Dra spaken uppåt för att trampa. BROMS bromsar – och PLING plingar.', keys: 'W trampa · S eller mellanslag bromsa · A/D styr · H plinga · E kliv av' }));
+      }
+      if (this.active && this.active.onEnterCar) this.active.onEnterCar(e);
+      return;
+    }
     g.stats.carsStolen++;
     if (jacked) g.stats.carsJacked++;
     if (jacked && !this.flags.wantedJoke) {
@@ -605,7 +629,7 @@ export class Missions {
     }
     // car wash: stop inside to fix dents
     const w = CARWASH;
-    const inside = car && car.x > w.x0 && car.x < w.x1 && car.z > w.z0 && car.z < w.z1;
+    const inside = car && !car.spec.bike && car.x > w.x0 && car.x < w.x1 && car.z > w.z0 && car.z < w.z1;
     if (inside) {
       if (!this.inWash) { this.inWash = true; this.washT = 0; this.washDone = false; }
       if (car.speed < 1.2 && !this.washDone) {

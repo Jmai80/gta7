@@ -112,6 +112,23 @@ void main() {
       vec3 hip = vec3(0.0, 0.92, 0.0);
       p = hip + Bk * (p - hip); n = Bk * n;
     }
+  } else if (pose > 5.5 && pose < 6.5) {
+    // 6: riding a bike – sitting, leaning forward, hands on the handlebar, legs pedalling (x: pedal phase)
+    float sw = sin(iAnim.x);
+    if (bone >= 5) {
+      float s = bone == 5 ? 1.0 : -1.0;
+      mat3 R = rotX(-0.62 + s * 0.4 * sw) * rotZ(bone == 5 ? 0.07 : -0.07);
+      p = aPivot + R * (p - aPivot); n = R * n;
+    } else {
+      if (bone >= 3) {
+        float s = bone == 3 ? 1.0 : -1.0;
+        mat3 R = rotX(-1.25) * rotZ(-s * 0.16);
+        p = aPivot + R * (p - aPivot); n = R * n;
+      }
+      mat3 Bk = rotX(0.3);
+      vec3 hip = vec3(0.0, 0.92, 0.0);
+      p = hip + Bk * (p - hip); n = Bk * n;
+    }
   } else {
     float sw = sin(iAnim.x);
     float a = 0.0;

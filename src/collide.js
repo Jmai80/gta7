@@ -1,12 +1,12 @@
 // Static collision world: uniform grid of colliders + ground height (roads, curbs, ramps).
 import { CURB_H } from './config.js';
-import { onRoad, onIsland } from './layout.js';
+import { onRoad, onIsland, onIsle } from './layout.js';
 
 export class CollisionWorld {
   constructor(layout, cell = 8) {
     this.cell = cell;
-    this.min = -280;
-    this.n = Math.ceil(560 / cell);
+    this.min = -440;                     // the town, the bridges, Norrholmen up north and the tower's inside
+    this.n = Math.ceil(700 / cell);
     this.cells = new Array(this.n * this.n);
     this.cols = layout.colliders;
     this.ramps = layout.ramps;
@@ -69,7 +69,7 @@ export class CollisionWorld {
       }
     }
     if (onRoad(x, z)) return 0;
-    if (onIsland(x, z)) return CURB_H;
+    if (onIsland(x, z) || onIsle(x, z)) return CURB_H;
     return -3;
   }
 

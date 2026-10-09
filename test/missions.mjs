@@ -1,7 +1,10 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD } from '../src/config.js';
+import { ISLE, onIsle } from '../src/island.js';
+import { routePoints } from '../src/route.js';
+import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp } from '../src/rng.js';
@@ -284,8 +287,12 @@ function startRace(g) {
   g2.mission.done.add('overlamning');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all five are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.5/.test(d.text) && /norra bron/.test(d.text)), 'the last text: version 0.5, continued when the north bridge opens');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while Arne's bike is left");
+  g2.mission.done.add('cykel');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all six are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.6/.test(d.text) && /bageriet/.test(d.text)), 'the last text: version 0.6, continued at the bakery');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -471,6 +478,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(!sam.caught && sam.meter < 0.2, 'sneaking behind him, nobody notices');
   check(!sam.los(g.player.x, g.player.z), 'the stub wall hides the kitchen corner from the sofa');
   check(waitUntil(g, () => sam.mode === 'look'), 'now and then he looks up');
+  waitUntil(g, () => sam.cone.on > 0.5 || sam.mode !== 'look', 2);
   check(sam.cone.on > 0.5 && !sam.seen, 'his gaze shows on the floor, but the corner stays hidden');
   check(waitUntil(g, () => sam.mode === 'phone' && sam.t > 2.5), '… and goes back to his phone');
   walkTo(g, X0 + 9.2, Z0 + 6.5);
@@ -619,8 +627,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(ev.some(([n, d]) => n === 'toast' && /kanelbulle/.test(d.text)), 'and a kanelbulle');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /Bullbilen/.test(d.text)), 'tant Gun texts: keep an eye on the Bullbilen');
   check(gun.away && gun.state === 'stand', 'she stays on the pier while you are there');
-  const soon = m.list().find((x) => x.id === 'cykel');
-  check(soon && soon.state === 'soon' && /norra bron/.test(soon.line), 'next in the list: "Arnes budcykel", coming soon');
+  check(!m.list().some((x) => x.id === 'cykel') && m.quest('cykel').after === 'overlamning', 'Arnes budcykel comes next (tant Gun texts about it a little later)');
   check(!m.accept('cykel') && !m.isOpen('cykel') && !m.list().some((x) => x.id === 'cykel' && x.state === 'new'), '… and it cannot be started yet');
   g.player.x = gun.x - 1.2; g.player.z = gun.z + 1.2;
   run(g, 0.2);
@@ -644,6 +651,149 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   const g4 = new Game({ seed: 7, traffic: 0, peds: 0 });
   g4.mission.restore({ v: 2, money: 100, done: [], known: ['samuel', 'overlamning', 'cykel'], seen: [], stats: {} });
   check(!g4.mission.known.has('overlamning') && !g4.mission.known.has('cykel'), 'a save cannot skip ahead in the chain');
+}
+
+// ---------- 12. main quest, part 3: Arne's bike, the north bridge and Norrholmen ----------
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+function bikeAfterHandover(seed = 7, traffic = 0) {
+  const g = new Game({ seed, traffic, peds: 0, trafficTarget: traffic });
+  g.mission.restore({ v: 2, money: 0, done: ['lasse', 'pizza', 'race', 'samuel', 'overlamning'], known: ['lasse', 'pizza', 'race', 'samuel', 'overlamning'], seen: ['lasse', 'pizza', 'race', 'samuel', 'overlamning'], stats: {} });
+  return g;
+}
+function unlockAndMount(g) {
+  const m = g.mission, b = g.bike;
+  g.player.x = b.x + 0.9; g.player.z = b.z - 1.3; g.player.y = g.world.groundHeight(g.player.x, g.player.z);
+  run(g, 0.3);
+  g.step(DT, { ...idle, action: true }); run(g, 0.2);   // LÅS UPP
+  g.step(DT, { ...idle, action: true }); run(g, 0.2);   // CYKLA
+  return m.active;
+}
+{
+  console.log('Arnes budcykel (huvuduppdrag del 3)');
+  const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  run(g0, 1);
+  check(g0.bike && g0.bike.type === 'bike' && g0.bike.locked && Math.hypot(g0.bike.x - ISLE.bike.x, g0.bike.z - ISLE.bike.z) < 0.1, "Arne's bike stands locked at lott 7 on Norrholmen");
+  check(!g0.gateN.open && g0.layout.colliders.find((c) => c.gate === 'north').h > 1, 'the north bridge is shut at first');
+  check(onIsle(40, -300) && !onIsle(40, -200) && g0.world.groundHeight(40, -300) === CURB_H && g0.world.groundHeight(40, -200) === 0, 'Norrholmen is land, the bridge is a road');
+  g0.player.x = ISLE.bike.x + 0.9; g0.player.z = ISLE.bike.z - 1.2; run(g0, 0.2);
+  check(!g0.player.near, 'a locked bike is no bike to ride');
+
+  const g = bikeAfterHandover();
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'honk', 'caught', 'fade']);
+  run(g, 8);
+  check(!m.known.has('cykel') && !g.gateN.open, 'a little while after the handover: nothing yet');
+  run(g, 8);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'cykel');
+  check(offer && offer[1].from === 'Tant Gun (Storgatan)' && /norra bron/i.test(offer[1].text), 'tant Gun texts: the north bridge is open, fetch the bike');
+  check(g.gateN.open && g.layout.colliders.find((c) => c.gate === 'north').h === 0, 'the gate on the north bridge opens');
+  run(g, 3);
+  check(g.gateN.k === 1, 'it swings all the way open');
+  m.accept('cykel');
+  run(g, 0.1);
+  const G = m.targets.find((t) => t.letter === 'G' && t.gps);
+  check(G && Math.hypot(G.x - ISLE.bike.x, G.z - ISLE.bike.z) < 0.1, 'the GPS leads to lott 7');
+  const r = routePoints(g.layout.gps, -33.4, 4, ISLE.bike.x, ISLE.bike.z);
+  check(r.some(([x, z]) => x === 40 && z === -178) && r.some(([x, z]) => z < -229), 'the GPS line runs over the north bridge');
+  // drive over the bridge (it is open) and walk into the allotments
+  const car = g.addVehicle('sedan', 'blue', 40, -150, Math.PI);
+  enterCar(g, car);
+  run(g, 6, { ...idle, moveY: 1 });
+  run(g, 3, { ...idle, handbrake: true });
+  check(car.z < -232 && onIsle(car.x, car.z), `you can drive over the bridge to Norrholmen (z ${car.z.toFixed(0)})`);
+  g.step(DT, { ...idle, action: true }); run(g, 1.5);
+  const job = unlockAndMount(g);
+  check(job && job.id === 'cykel' && ev.some(([n, d]) => n === 'banner' && d.title === 'ARNES BUDCYKEL'), 'at the bike: the job begins');
+  check(!g.bike.locked && ev.some(([n, d]) => n === 'toast' && /nycklar passade/.test(d.text)), "LÅS UPP: Samuel's keys fit");
+  check(g.player.inCar && g.player.car === g.bike && g.player.body.pose === 6, 'on the bike, pedalling');
+  run(g, 1.5);
+  check(job.van && job.chaser && job.chaser.hold > 0 && ev.some(([n, d]) => n === 'toast' && /Bullbilen/.test(d.text)), 'a Bullbilen van at the bakery has seen you');
+  const v0 = { x: job.van.x, z: job.van.z };
+  run(g, CHASE.start + 2.5);
+  check(Math.hypot(job.van.x - v0.x, job.van.z - v0.z) > 8 && ev.some(([n]) => n === 'honk'), 'a few seconds later it comes after you');
+  check(m.targets.some((t) => t.kind === 'racer' && t.car === job.van), 'the van is on the map');
+  // caught: the van right up behind you
+  const b = g.bike;
+  b.x = 40; b.z = -300; b.h = Math.PI; b.vx = b.vz = 0;
+  job.van.x = 40; job.van.z = -296.2; job.van.h = Math.PI; job.van.vx = job.van.vz = 0;
+  waitUntil(g, () => job.stage === 'caught', 4);
+  check(job.stage === 'caught' && ev.some(([n]) => n === 'caught'), 'the van right up behind you: they push you off');
+  run(g, 3);
+  check(ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Bullbilen tog cykeln/.test(d.sub)), 'UPPDRAG MISSLYCKAT: Bullbilen tog cykeln');
+  check(!m.active && m.isOpen('cykel') && g.bike.locked && Math.hypot(g.bike.x - ISLE.bike.x, g.bike.z - ISLE.bike.z) < 0.1, 'the bike is back at lott 7, locked: try again');
+  check(!g.racers.length && !job.van.racer, 'the van has stopped chasing');
+  // second go: shake them off, then ride up to tant Gun
+  run(g, 7);
+  const job2 = unlockAndMount(g);
+  check(job2 && job2 !== job && job2.stage === 'ride', 'second try');
+  run(g, 1.5 + CHASE.start + 1);
+  job2.chaseT = CHASE.minChase + 1;
+  const vn = job2.van, b2 = g.bike;                                // (a new bike: the old one went back to lott 7)
+  vn.x = 100; vn.z = 60; vn.vx = vn.vz = 0;                        // far away, behind the blocks
+  b2.x = GUN_GATE.x + 30; b2.z = GUN_GATE.z + 1; b2.h = -Math.PI / 2; b2.vx = b2.vz = 0;
+  waitUntil(g, () => job2.escaped, 5);
+  check(job2.escaped && ev.some(([n, d]) => n === 'toast' && /skakade av dig Bullbilen/.test(d.text)), 'out of sight and far behind: you shook them off');
+  check(job2.chaser.mode === 'home' || job2.chaser.mode === 'done', 'they drive back to the bakery');
+  b2.x = GUN_GATE.x + 1; b2.z = GUN_GATE.z; b2.vx = b2.vz = 0;
+  run(g, 0.2);
+  check(job2.stage === 'deliver' || job2.stage === 'talk', "at tant Gun's gate: the delivery");
+  check(!g.player.inCar && g.player.frozen && g.camFocus && g.camFocus.near, 'off the bike, the camera comes in');
+  run(g, 1.2);
+  const talk = ev.find(([n, d]) => n === 'talk' && d.id === 'cykel');
+  check(talk && talk[1].pages.length >= 6 && talk[1].pages.some((p) => /kassaskåpet/.test(p.text)) && talk[1].pages.some((p) => /Receptet/.test(p.text)), 'Gun finds half the recipe – the other half is in the bakery safe');
+  check(talk[1].pages.some((p) => p.you && /skakade av/.test(p.text)), 'you tell her you shook them off');
+  const money0 = g.money;
+  m.talkDone('cykel');
+  check(m.done.has('cykel') && !m.active, 'the last page: part 3 done');
+  check(g.money === money0 + BIKE_REWARD + ESCAPE_BONUS && ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Arnes budcykel'), `HUVUDUPPDRAG KLART, ${BIKE_REWARD + ESCAPE_BONUS} kr with the bonus`);
+  check(!g.player.frozen && !g.camFocus, 'you can move again');
+  check(Math.hypot(g.bike.x - GUN_BIKE.x, g.bike.z - GUN_BIKE.z) < 0.1 && !g.bike.locked, "the bike stands by Gun's gate – yours to ride");
+  const soon = m.list().find((q) => q.id === 'kassaskap');
+  check(soon && soon.state === 'soon' && /bageriet/.test(soon.line), 'next in the list: "Kassaskåpet", coming soon');
+  run(g, 10);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /cykeln/.test(d.text)), 'and a text from Gun');
+  g.player.x = GUN_BIKE.x - 0.9; g.player.z = GUN_BIKE.z + 0.4; run(g, 0.2);
+  check(g.player.near === g.bike, 'you can ride it whenever you like');
+  // saved: the bike is by Gun's gate, the bridge open
+  const save = JSON.parse(JSON.stringify(m.progress()));
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(save);
+  run(g2, 0.1);
+  check(Math.hypot(g2.bike.x - GUN_BIKE.x, g2.bike.z - GUN_BIKE.z) < 0.1 && !g2.bike.locked && g2.gateN.open, "restored: the bike by Gun's gate, the bridge open");
+}
+// a whole ride: out of the allotments, over the bridge, through town to Gun – the van behind you
+{
+  console.log('Arnes budcykel: hela vägen');
+  for (const [name, traffic] of [['utan trafik', 0], ['med trafik', 12]]) {
+    const g = bikeAfterHandover(7, traffic);
+    const m = g.mission;
+    run(g, 16);
+    m.accept('cykel');
+    const job = unlockAndMount(g);
+    const wps = [[7.5, -309.2], [24, -309], [31, -309], [38, -309]];
+    for (const p of routePoints(g.layout.gps, 38, -309, GUN_GATE.x, GUN_GATE.z).slice(1)) wps.push(p);
+    let wi = 0, t = 0, vanRun = 0, lastVan = null, minD = 1e9;
+    while (t < 110 && m.active === job && job.stage === 'ride' || (t < 110 && job.stage === 'mount')) {
+      const c = g.player.inCar ? g.player.car : null;
+      let inp = idle;
+      if (c) {
+        while (wi < wps.length - 1 && Math.hypot(wps[wi][0] - c.x, wps[wi][1] - c.z) < 4) wi++;
+        const err = wrapA(Math.atan2(wps[wi][0] - c.x, wps[wi][1] - c.z) - c.h);
+        inp = { ...idle, moveY: 1, moveX: clamp(-err * 2.2, -1, 1) };
+        if (Math.hypot(GUN_GATE.x - c.x, GUN_GATE.z - c.z) < 12) inp = { ...idle, handbrake: c.speed > 2.5, moveY: c.speed > 2.5 ? 0 : 0.3, moveX: inp.moveX };
+      }
+      g.step(DT, inp); t += DT;
+      if (job.van) {
+        if (lastVan) vanRun += Math.hypot(job.van.x - lastVan.x, job.van.z - lastVan.z);
+        lastVan = { x: job.van.x, z: job.van.z };
+        minD = Math.min(minD, Math.hypot(job.van.x - g.player.x, job.van.z - g.player.z));
+      }
+    }
+    console.log(`  ${name}: ${job.stage} after ${t.toFixed(0)} s, the van drove ${vanRun.toFixed(0)} m, closest ${minD.toFixed(0)} m${job.escaped ? ', shaken off' : ''}`);
+    if (!traffic) check(job.stage === 'deliver' || job.stage === 'talk', `${name}: riding flat out on the roads gets the bike to Gun`);
+    else check(['deliver', 'talk', 'caught'].includes(job.stage), `${name}: it ends one way or the other (this rider does not dodge cars)`);
+    check(vanRun > 250, `${name}: the van chased you all the way (${vanRun.toFixed(0)} m)`);
+  }
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

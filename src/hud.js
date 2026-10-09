@@ -5,11 +5,14 @@ import { STREET_NAMES, ROADS, RING, WHO } from './config.js';
 import { PAINTS } from './vehicle.js';
 import { INT, WALLS, FURN } from './interior.js';
 import { SEE } from './samuel.js';
+import { ISLE } from './island.js';
+import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
-const MAP_RANGE = 170, MAP_PX = 2;
+const MAP_PX = 2;
+const MAP = { x0: -170, z0: -430, x1: 170, z1: 170 };   // the town and Norrholmen up north
 
 export class HUD {
   constructor(root, layout) {
@@ -19,7 +22,7 @@ export class HUD {
       hud: $('hud'), map: $('map'), money: $('money'), stars: $('stars'), objective: $('objective'), objText: $('objText'),
       phone: $('phone'), street: $('street'), carinfo: $('carinfo'), speed: $('speed'), cond: $('condBar'), condWrap: $('cond'),
       banner: $('banner'), toast: $('toast'), hint: $('hint'), bubbles: $('bubbles'), fps: $('fps'),
-      bAction: $('bAction'), bExit: $('bExit'), touch: $('touch'), keyhint: $('keyhint'),
+      bAction: $('bAction'), bExit: $('bExit'), bHand: $('bHand'), bHorn: $('bHorn'), bGas: $('bGas'), touch: $('touch'), keyhint: $('keyhint'),
       objSub: $('objSub'), count: $('count'), fade: $('fade'), quests: $('quests'), qBadge: $('qBadge'),
       eye: $('eye'),
     };
@@ -78,12 +81,13 @@ export class HUD {
 
   // ---------------------------------------------------------------- minimap
   buildMap(L) {
-    const S = MAP_RANGE * 2 * MAP_PX;
     const c = document.createElement('canvas');
-    c.width = c.height = S;
+    c.width = (MAP.x1 - MAP.x0) * MAP_PX; c.height = (MAP.z1 - MAP.z0) * MAP_PX;
     const g = c.getContext('2d');
-    const P = (v) => (v + MAP_RANGE) * MAP_PX;
-    g.fillStyle = '#244f5c'; g.fillRect(0, 0, S, S);
+    const P = (v) => (v + 170) * MAP_PX;                 // x (and town z) to pixels
+    const Q = (z) => (z - MAP.z0) * MAP_PX;              // z to pixels
+    g.fillStyle = '#244f5c'; g.fillRect(0, 0, c.width, c.height);
+    g.translate(0, Q(-170));                             // the town part keeps its old drawing code below
     g.fillStyle = '#4b5a4c'; g.fillRect(P(-146), P(-146), 292 * MAP_PX, 292 * MAP_PX);
     for (const b of L.blocks) {
       g.fillStyle = '#' + b.c.toString(16).padStart(6, '0');
@@ -99,17 +103,37 @@ export class HUD {
       g.fillRect(P(r - 5), P(-RING), 10 * MAP_PX, 2 * RING * MAP_PX);
       g.fillRect(P(-RING), P(r - 5), 2 * RING * MAP_PX, 10 * MAP_PX);
     }
-    g.fillRect(P(35), P(-200), 10 * MAP_PX, 75 * MAP_PX);
+    g.fillRect(P(35), P(-233), 10 * MAP_PX, 108 * MAP_PX);   // the north bridge (its gate is drawn live)
     g.fillRect(P(-200), P(-45), 75 * MAP_PX, 10 * MAP_PX);
     g.fillStyle = '#d2342c';
-    g.fillRect(P(34), P(-179), 12 * MAP_PX, 2 * MAP_PX);
     g.fillRect(P(-179), P(-46), 2 * MAP_PX, 12 * MAP_PX);
     // pond + pitch
     const z = L.zones;
     if (z.pond) { g.fillStyle = '#2f6a76'; g.beginPath(); g.arc(P(z.pond.x), P(z.pond.z), z.pond.r * MAP_PX, 0, 7); g.fill(); }
     if (z.pitch) { g.fillStyle = '#5c9a45'; g.fillRect(P(z.pitch.x0), P(z.pitch.z0), (z.pitch.x1 - z.pitch.x0) * MAP_PX, (z.pitch.z1 - z.pitch.z0) * MAP_PX); }
     if (z.pier) { g.fillStyle = '#8a6a48'; g.fillRect(P(z.pier.x0), P(z.pier.z0), (z.pier.x1 - z.pier.x0) * MAP_PX, (z.pier.z1 - z.pier.z0) * MAP_PX); }
+    this.drawIsle(g, P, L);
     return c;
+  }
+
+  // Norrholmen on the map: the shore, the beach, the roads, the allotments and the buildings
+  drawIsle(g, P, L) {
+    const path = (pts) => { g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z)))); g.closePath(); };
+    g.fillStyle = '#4f6448'; path(ISLE.coast); g.fill();
+    const A = ISLE.allot;
+    g.fillStyle = '#5f7a4a'; g.fillRect(P(A.x0), P(A.z0), (A.x1 - A.x0) * MAP_PX, (A.z1 - A.z0) * MAP_PX);
+    const Y = ISLE.yard;
+    g.fillStyle = '#3d4249'; g.fillRect(P(Y.x0), P(Y.z0), (Y.x1 - Y.x0) * MAP_PX, (Y.z1 - Y.z0) * MAP_PX);
+    g.fillStyle = '#b9a874'; g.beginPath(); g.ellipse(P(-2), P(-243), 26 * MAP_PX, 6 * MAP_PX, -0.22, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#d8d3c6'; g.lineWidth = 8 * MAP_PX; g.lineJoin = 'round'; g.lineCap = 'round';
+    for (const R of Object.values(L.isleRoads || {})) {
+      g.beginPath();
+      R.pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z))));
+      if (R.closed) g.closePath();
+      g.stroke();
+    }
+    g.fillStyle = '#2b2f36';
+    for (const f of L.footprints) if (f.z1 < -200) g.fillRect(P(f.x0), P(f.z0), (f.x1 - f.x0) * MAP_PX, (f.z1 - f.z0) * MAP_PX);
   }
 
   // the floor plan of the tower's 7th floor (corridor + Samuel's flat)
@@ -189,26 +213,10 @@ export class HUD {
     g.restore();
   }
 
+  // the yellow GPS line: along the roads (town, north bridge, Norrholmen) to the target
   routeTo(game, tx, tz) {
-    // BFS over the intersection graph from the node nearest the player to the node nearest the target
-    const nodes = game.layout.nodes;
-    const near = (x, z) => { let b = 0, bd = 1e9; for (const n of nodes) { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = n.id; } } return b; };
     const p = game.player;
-    const s = near(p.x, p.z), t = near(tx, tz);
-    const prev = new Array(nodes.length).fill(-1);
-    const seen = new Array(nodes.length).fill(false);
-    const q = [s]; seen[s] = true;
-    while (q.length) {
-      const u = q.shift();
-      if (u === t) break;
-      for (let d = 0; d < 4; d++) {
-        const v = nodes[u].nbr[d];
-        if (v >= 0 && !seen[v]) { seen[v] = true; prev[v] = u; q.push(v); }
-      }
-    }
-    const path = [];
-    for (let v = t; v !== -1; v = prev[v]) path.unshift(nodes[v]);
-    return [[p.x, p.z], ...path.map((n) => [n.x, n.z]), [tx, tz]];
+    return routePoints(game.layout.gps, p.x, p.z, tx, tz);
   }
 
   drawMap(game, camYaw, dt) {
@@ -227,7 +235,8 @@ export class HUD {
     const rot = camYaw - Math.PI;
     g.rotate(rot);
     const s = k / MAP_PX;
-    g.drawImage(this.mapImg, -(p.x + MAP_RANGE) * MAP_PX * s, -(p.z + MAP_RANGE) * MAP_PX * s, this.mapImg.width * s, this.mapImg.height * s);
+    g.drawImage(this.mapImg, -(p.x - MAP.x0) * MAP_PX * s, -(p.z - MAP.z0) * MAP_PX * s, this.mapImg.width * s, this.mapImg.height * s);
+    if (!game.gateN || !game.gateN.open) { g.fillStyle = '#d2342c'; g.fillRect((34 - p.x) * k, (-179 - p.z) * k, 12 * k, 2 * k); } // the north gate, shut
     const T = game.missionActive ? game.mission.targets : [];
     const line = (pts, color, width) => {
       g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.lineCap = 'round';
@@ -295,7 +304,7 @@ export class HUD {
     const hex = (h) => '#' + h.toString(16).padStart(6, '0');
     for (const t of T) {
       if (t.kind === 'car') blip(t.car.x, t.car.z, t.color ? hex(t.color) : '#ff3b2f', 5 * u);
-      else if (t.kind === 'racer') blip(t.car.x, t.car.z, hex(PAINTS[t.car.paint].hex), 4.2 * u, t.car.paint === 'black' ? '#ffffff' : '#111317');
+      else if (t.kind === 'racer') blip(t.car.x, t.car.z, t.color ? hex(t.color) : hex(PAINTS[t.car.paint].hex), (t.color ? 5 : 4.2) * u, t.color || t.car.paint === 'black' ? '#ffffff' : '#111317');
       else if (t.kind === 'ring') { if (!t.dim) blip(t.x, t.z, '#ffcf33', 5.5 * u, '#1d1f22'); }
       else if (t.letter) letter(t.x, t.z, t.letter, t.color, 7.5 * u);
       else blip(t.x, t.z, '#ffcf33', 6.5 * u, '#1d1f22');
@@ -449,18 +458,28 @@ export class HUD {
       this.el.objSub.hidden = !sub;
     }
     // context controls
-    const mode = car ? 'car' : 'foot';
-    if (mode !== this.mode) { this.mode = mode; this.root.classList.toggle('in-car', mode === 'car'); }
+    const mode = car ? (car.spec.bike ? 'bike' : 'car') : 'foot';
+    if (mode !== this.mode) {
+      this.mode = mode;
+      this.root.classList.toggle('in-car', mode !== 'foot');
+      this.root.classList.toggle('on-bike', mode === 'bike');
+      const bike = mode === 'bike';
+      this.el.bExit.innerHTML = bike ? 'KLIV<br>AV' : 'KLIV<br>UR';
+      this.el.bHand.innerHTML = bike ? 'BROMS' : 'HAND-<br>BROMS';
+      this.el.bHorn.textContent = bike ? 'PLING' : 'TUTA';
+      this.el.bGas.textContent = bike ? 'TRAMPA' : 'GAS';
+      this.el.condWrap.hidden = bike; // a bike does not get dented
+    }
     let label = '';
     const prompt = game.missionActive ? game.mission.prompt : null;
     if (!car && prompt) label = prompt;
-    else if (!car && p.near) label = p.near.driver ? 'STJÄL' : 'KLIV IN';
+    else if (!car && p.near) label = p.near.spec.bike ? 'CYKLA' : p.near.driver ? 'STJÄL' : 'KLIV IN';
     if (label !== this.actionLabel) {
       this.actionLabel = label;
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner' };
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata med tant Gun', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta nycklarna', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

@@ -77,5 +77,9 @@ export const PIER = { x: -75, x0: -77.5, x1: -72.5, z0: -172, z1: -146 }; // the
 export const PIER_BENCH = { x: -75, z: -169.4 };          // the bench at the far end, facing the sea
 export const PIER_MEET = { x: -75, z: -166.9, r: 1.3 };   // walk up behind the bench
 export const HANDOVER_REWARD = 1000;
+// ---- version 0.6: Norrholmen and Arne's delivery bike (main quest, part 3) ----
+export const GUN_GATE = { x: -97.5, z: -46.8, r: 2.4 };        // ride the bike up to tant Gun's garden gate (the gap in her hedge)
+export const GUN_BIKE = { x: -93.4, z: -46.6, h: Math.PI / 2 }; // where the bike stands once she has it
+export const BIKE_REWARD = 2000;
 
 export const SIM_HZ = 60;

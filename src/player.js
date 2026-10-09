@@ -3,6 +3,7 @@ import { circleVs } from './collide.js';
 import { clamp, smoothAngle } from './rng.js';
 import { Ped, makeBody, makeLook } from './peds.js';
 import { START } from './config.js';
+import { BIKE_GEO } from './vehicle.js';
 
 export class Player {
   constructor(game) {
@@ -38,8 +39,20 @@ export class Player {
     }
     this.near = this.state === 'foot' ? this.findCar() : null;
     const b = this.body;
-    b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
-    b.visible = this.state !== 'car';
+    const bike = this.state === 'car' && this.car && this.car.spec.bike ? this.car : null;
+    if (bike) {
+      // on the saddle, pedalling while you push on, leaning into the turns with the bike
+      const G = BIKE_GEO, sn = Math.sin(bike.h), cs = Math.cos(bike.h);
+      b.x = bike.x + sn * G.saddle[2]; b.z = bike.z + cs * G.saddle[2];
+      b.y = bike.y + G.saddle[1] + 0.03 - 0.92 * this.look.height;
+      b.h = bike.h; b.pose = 6; b.roll = bike.lean || 0; b.lean = 0; b.lie = 0;
+      if (bike.input.throttle > 0.05) b.phase += (1.2 + Math.max(0, bike.fwdSpeed)) * dt * 1.5;
+      b.visible = true;
+    } else {
+      b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
+      b.roll = 0;
+      b.visible = this.state !== 'car';
+    }
   }
 
   onAction() {
@@ -49,6 +62,7 @@ export class Player {
       if (g.missionActive && g.mission.interact()) return; // talking to someone, pulling a flag rope…
       const car = this.findCar();
       if (!car) return;
+      if (car.spec.bike) { this.finishEnter(car); return; }  // a bike: just hop on
       if (car.dead) { g.emit('toast', { text: 'Den bilen är helt död.' }); return; }
       if (car.speed > 3.5) { g.emit('toast', { text: 'Den rullar för fort! Ställ dig framför den.' }); return; }
       this.state = 'enter'; this.stateT = 0; this.target = car;
@@ -63,7 +77,7 @@ export class Player {
     const g = this.game;
     let best = null, bd = 2.2;
     for (const v of g.vehicles) {
-      if (Math.abs(v.y - this.y) > 1.2) continue;
+      if (v.locked || Math.abs(v.y - this.y) > 1.2) continue;
       const dx0 = v.x - this.x, dz0 = v.z - this.z;
       if (dx0 * dx0 + dz0 * dz0 > 25) continue;
       const sn = Math.sin(v.h), cs = Math.cos(v.h);
@@ -112,6 +126,7 @@ export class Player {
     }
     car.driver = 'player';
     car.ai = null;
+    car.fallen = false;
     car.input.park = false; car.input.throttle = 0; car.input.handbrake = false;
     car.steerFade = 14;
     car.parkedSpot = false;
@@ -122,11 +137,15 @@ export class Player {
     g.emit('enterCar', { car, jacked });
   }
 
-  exitCar() {
+  // knocked off the bike (rammed): you tumble off and the bike falls over
+  fallOff() { if (this.car && this.car.spec.bike) this.exitCar(true); }
+
+  exitCar(force = false) {
     const g = this.game, car = this.car;
     if (!car) return;
-    const sp = car.speed;
-    const spots = [car.local(-1.6, 0.2), car.local(1.65, 0.2), car.local(0, car.spec.len / 2 + 0.9), car.local(0, -car.spec.len / 2 - 0.9)];
+    const sp = car.speed, bike = !!car.spec.bike;
+    const spots = bike ? [car.local(-0.75, -0.1), car.local(0.75, -0.1), car.local(0, -car.spec.len / 2 - 0.6)]
+      : [car.local(-1.6, 0.2), car.local(1.65, 0.2), car.local(0, car.spec.len / 2 + 0.9), car.local(0, -car.spec.len / 2 - 0.9)];
     let spot = spots[0];
     for (const s of spots) {
       let blocked = false;
@@ -141,7 +160,8 @@ export class Player {
     this.hornOn && g.emit('horn', { on: false, car });
     this.hornOn = false;
     car.driver = null;
-    const bail = sp > 7;
+    const bail = force || sp > (bike ? 5 : 7);
+    if (bike) { car.fallen = bail; car.lean = 0; }
     car.input.throttle = 0; car.input.steer = 0; car.input.handbrake = false; car.input.park = !bail;
     if (bail) {
       car.coastT = 3;
@@ -173,6 +193,10 @@ export class Player {
     car.input.throttle = this.locked ? 0 : thr;
     car.input.steer = steer;
     car.input.handbrake = !!input.handbrake;
+    if (car.spec.bike) {
+      if (input.handbrake) { car.input.throttle = car.fwdSpeed > 0.3 ? -1 : 0; car.input.handbrake = false; } // the brake levers
+      car.lean = (car.lean || 0) + (clamp(-car.accLat * 0.05, -0.42, 0.42) - (car.lean || 0)) * Math.min(1, dt * 6);
+    }
     car.input.park = this.locked;
     if (input.horn !== this.hornOn) {
       this.hornOn = !!input.horn;

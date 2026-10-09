@@ -8,6 +8,7 @@ import {
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
 import { interiorLayout } from './interior.js';
+import { islandInto, onIsle, ISLE } from './island.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
@@ -67,6 +68,7 @@ export function createLayout(seed = 7) {
   const goals = [];
   const zones = {};
   const kioskSpots = [];
+  const millSails = [];   // the windmill's sails on Norrholmen: a mesh of their own that turns
 
   // ---------- helpers ----------
   const P = (o) => (prims.push(o), o);
@@ -929,12 +931,22 @@ export function createLayout(seed = 7) {
       const [qx, qz] = along(s, 0);
       box(qx - (bdg.axis === 'z' ? 4 : 1), -6, qz - (bdg.axis === 'z' ? 1 : 4), qx + (bdg.axis === 'z' ? 4 : 1), -1.4, qz + (bdg.axis === 'z' ? 1 : 4), COL.concrete);
     }
-    // barrier
+    // barrier: the north bridge gets a gate that swings open later in the story (render.js draws it,
+    // the game switches its colliders); the west one stays shut
     const [bx0, bz0] = along(bdg.barrier - 0.3, -5), [bx1, bz1] = along(bdg.barrier + 0.3, 5);
-    solid(Math.min(bx0, bx1), 0, Math.min(bz0, bz1), Math.max(bx0, bx1), 1.1, Math.max(bz0, bz1), 0xd2342c, M.PLAIN);
-    const [ssx, ssz] = along(bdg.barrier + 0.35, 0);
-    sign('stangt' + bdg.axis, { kind: 'closed' }, ssx, 1.75, ssz, 6.4, 1.3, bdg.axis === 'z' ? 0 : Math.PI / 2);
-    for (const l of [-4, 4]) {
+    if (bdg.axis === 'z') {
+      const z = bdg.barrier;
+      colBox(bdg.at - 5, z - 0.3, bdg.at + 5, z + 0.3, 1.1, { gate: 'north', hClosed: 1.1 });
+      colBox(bdg.at - 5, z - 5.3, bdg.at - 4.4, z - 0.3, 0, { gateSide: 'north', hOpen: 1.1 });
+      colBox(bdg.at + 4.4, z - 5.3, bdg.at + 5, z - 0.3, 0, { gateSide: 'north', hOpen: 1.1 });
+      signs.stangtz = { w: 6.4, h: 1.3, kind: 'closed', sub: 'Öppnar snart' };
+      zones.gateN = { x: bdg.at, z, y: 0 };
+    } else {
+      solid(Math.min(bx0, bx1), 0, Math.min(bz0, bz1), Math.max(bx0, bx1), 1.1, Math.max(bz0, bz1), 0xd2342c, M.PLAIN);
+      const [ssx, ssz] = along(bdg.barrier + 0.35, 0);
+      sign('stangt' + bdg.axis, { kind: 'closed' }, ssx, 1.75, ssz, 6.4, 1.3, Math.PI / 2);
+    }
+    for (const l of [-4.4, 4.4]) {
       const [cx, cz] = along(bdg.barrier + 2.5, l);
       P({ t: 'cyl', x: cx, z: cz, y0: 0, y1: 0.75, r: 0.25, r1: 0.04, n: 6, c: 0xe0782c });
     }
@@ -973,6 +985,14 @@ export function createLayout(seed = 7) {
   P({ t: 'cyl', x: pierX + 1.9, z: -ISLAND + 0.6, y0: CURB_H, y1: CURB_H + 2.0, r: 0.05, n: 4, c: COL.darkMetal });
 
   // =====================================================================
+  // NORRHOLMEN: the island across the north bridge (island.js)
+  // =====================================================================
+  const isle = islandInto({
+    P, box, solid, area, poly, sign, colBox, colOBox, colCircle, castBox, building, tree, lamp, bench, hedge, meshFence, mark,
+    R, M, COL, casters, footprints, parked, zones, loops, blocks, ramps, millSails,
+  });
+
+  // =====================================================================
   // PEDESTRIAN LOOPS (sidewalk centerlines)
   // =====================================================================
   for (let bz = 0; bz < 3; bz++) {
@@ -991,5 +1011,44 @@ export function createLayout(seed = 7) {
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,
     zones, kioskSpots, marks, nodes, floors: inside.floors, interiorSigns: inside.signPrims,
+    millSails, isleRoads: isle.roads, gps: gpsGraph(nodes, isle.roads),
   };
 }
+
+// The graph the GPS line and the chasing Bullbilen van drive on: the town's intersections, the
+// north bridge and the island roads (sampled every ~12 m), plus the driveways into the bakery yard
+// and the allotments' parking strip. Each node: { x, z, adj: [ids], land: 'town' | 'bridge' | 'isle' }.
+function gpsGraph(nodes, roads) {
+  const G = [];
+  const add = (x, z, land) => (G.push({ x, z, adj: [], land }), G.length - 1);
+  const link = (a, b) => { if (a !== b && !G[a].adj.includes(b)) { G[a].adj.push(b); G[b].adj.push(a); } };
+  for (const n of nodes) add(n.x, n.z, 'town');
+  for (const n of nodes) for (let d = 0; d < 4; d++) if (n.nbr[d] >= 0) link(n.id, n.nbr[d]);
+  const chain = (R) => {
+    const ids = [];
+    let acc = 1e9, prev = null;
+    R.pts.forEach((p, i) => {
+      if (prev) acc += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+      prev = p;
+      if (acc >= 12 || i === R.pts.length - 1) { ids.push(add(p[0], p[1], 'isle')); acc = 0; }
+    });
+    for (let i = 1; i < ids.length; i++) link(ids[i - 1], ids[i]);
+    if (R.closed) link(ids[ids.length - 1], ids[0]);
+    return ids;
+  };
+  const loop = chain(roads.loop), spine = chain(roads.spine);
+  const nearest = (ids, x, z) => ids.reduce((b, i) => (Math.hypot(G[i].x - x, G[i].z - z) < Math.hypot(G[b].x - x, G[b].z - z) ? i : b), ids[0]);
+  const near2 = (ids, x, z) => [...ids].sort((i, j) => Math.hypot(G[i].x - x, G[i].z - z) - Math.hypot(G[j].x - x, G[j].z - z)).slice(0, 2);
+  for (const [x, z] of [[40, -250], [40, -386]]) for (const l of near2(loop, x, z)) link(nearest(spine, x, z), l); // the T-junctions
+  const town = nodes.find((q) => q.x === 40 && q.z === -120).id;
+  const gate = add(40, -178, 'bridge'), land = add(40, -229, 'bridge');
+  link(town, gate); link(gate, land); link(land, spine[0]);
+  const yard = add(ISLE.vanSpawn.x, ISLE.yard.gateZ0 / 2 + ISLE.yard.gateZ1 / 2, 'isle');
+  const yardGate = add(ISLE.yard.x0 - 1, (ISLE.yard.gateZ0 + ISLE.yard.gateZ1) / 2, 'isle');
+  link(yard, yardGate); link(yardGate, nearest(spine, 40, (ISLE.yard.gateZ0 + ISLE.yard.gateZ1) / 2));
+  const strip = add(33.2, ISLE.allotGate.z, 'isle');
+  link(strip, nearest(spine, 40, ISLE.allotGate.z));
+  return { nodes: G };
+}
+
+export { onIsle, ISLE };

@@ -41,37 +41,37 @@ function casterPoints(c) {
   return pts;
 }
 
-function boxBlur(src, dst, size, r) {
+function boxBlur(src, dst, W, H, r) {
   // horizontal then vertical running-sum blur, written back into src
-  const n = size;
   const k = 1 / (2 * r + 1);
-  for (let y = 0; y < n; y++) {
+  for (let y = 0; y < H; y++) {
     let acc = 0;
-    const row = y * n;
-    for (let x = -r; x <= r; x++) acc += src[row + Math.min(n - 1, Math.max(0, x))];
-    for (let x = 0; x < n; x++) {
+    const row = y * W;
+    for (let x = -r; x <= r; x++) acc += src[row + Math.min(W - 1, Math.max(0, x))];
+    for (let x = 0; x < W; x++) {
       dst[row + x] = acc * k;
-      acc += src[row + Math.min(n - 1, x + r + 1)] - src[row + Math.max(0, x - r)];
+      acc += src[row + Math.min(W - 1, x + r + 1)] - src[row + Math.max(0, x - r)];
     }
   }
-  for (let x = 0; x < n; x++) {
+  for (let x = 0; x < W; x++) {
     let acc = 0;
-    for (let y = -r; y <= r; y++) acc += dst[Math.min(n - 1, Math.max(0, y)) * n + x];
-    for (let y = 0; y < n; y++) {
-      src[y * n + x] = acc * k;
-      acc += dst[Math.min(n - 1, y + r + 1) * n + x] - dst[Math.max(0, y - r) * n + x];
+    for (let y = -r; y <= r; y++) acc += dst[Math.min(H - 1, Math.max(0, y)) * W + x];
+    for (let y = 0; y < H; y++) {
+      src[y * W + x] = acc * k;
+      acc += dst[Math.min(H - 1, y + r + 1) * W + x] - dst[Math.max(0, y - r) * W + x];
     }
   }
 }
 
-export function makeShadowMap(layout, size = 1024, rect = { x0: -160, z0: -160, w: 320 }) {
-  const k = size / rect.w;
+// Baked sun shadows and ambient occlusion for the town and Norrholmen (north of it): 3.2 px/m.
+export function makeShadowMap(layout, W = 1024, H = 2048, rect = { x0: -160, z0: -480, w: 320, h: 640 }) {
+  const k = W / rect.w;
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
+  canvas.width = W; canvas.height = H;
   const g = canvas.getContext('2d', { willReadFrequently: true });
   const draw = (filter, color) => {
     g.fillStyle = '#ffffff';
-    g.fillRect(0, 0, size, size);
+    g.fillRect(0, 0, W, H);
     g.fillStyle = color;
     for (const c of layout.casters) {
       if (!filter(c)) continue;
@@ -83,9 +83,9 @@ export function makeShadowMap(layout, size = 1024, rect = { x0: -160, z0: -160, 
       g.closePath();
       g.fill();
     }
-    return g.getImageData(0, 0, size, size).data;
+    return g.getImageData(0, 0, W, H).data;
   };
-  const n = size * size;
+  const n = W * H;
   const sh = new Float32Array(n), ao = new Float32Array(n), tmp = new Float32Array(n);
   let px = draw(() => true, '#000000');
   for (let i = 0; i < n; i++) sh[i] = px[i * 4];
@@ -93,28 +93,28 @@ export function makeShadowMap(layout, size = 1024, rect = { x0: -160, z0: -160, 
   px = draw((c) => (c.t === 'box' || c.t === 'gable') && c.y0 < 0.5 && c.y1 > 0.9, '#000000');
   for (let i = 0; i < n; i++) ao[i] = px[i * 4];
   // trees: small dark disc under the crown
-  g.fillStyle = '#ffffff'; g.fillRect(0, 0, size, size);
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#5a5a5a';
   for (const c of layout.casters) {
     if (c.t !== 'sphere') continue;
     g.beginPath(); g.arc((c.x - rect.x0) * k, (c.z - rect.z0) * k, c.r * 0.9 * k, 0, Math.PI * 2); g.fill();
   }
-  px = g.getImageData(0, 0, size, size).data;
+  px = g.getImageData(0, 0, W, H).data;
   for (let i = 0; i < n; i++) ao[i] = Math.min(ao[i], px[i * 4]);
-  boxBlur(sh, tmp, size, 1); boxBlur(sh, tmp, size, 1);
-  boxBlur(ao, tmp, size, 4); boxBlur(ao, tmp, size, 3);
+  boxBlur(sh, tmp, W, H, 1); boxBlur(sh, tmp, W, H, 1);
+  boxBlur(ao, tmp, W, H, 4); boxBlur(ao, tmp, W, H, 3);
   const data = new Uint8Array(n * 2);
   for (let i = 0; i < n; i++) {
     data[i * 2] = sh[i];
     data[i * 2 + 1] = 255 - (255 - ao[i]) * 0.62;
   }
-  const tex = new THREE.DataTexture(data, size, size, THREE.RGFormat, THREE.UnsignedByteType);
+  const tex = new THREE.DataTexture(data, W, H, THREE.RGFormat, THREE.UnsignedByteType);
   tex.magFilter = THREE.LinearFilter;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.generateMipmaps = true;
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.needsUpdate = true;
-  return { tex, data, size, rect };
+  return { tex, data, W, H, rect };
 }
 
 // ---------------------------------------------------------------- sign atlas
@@ -216,7 +216,8 @@ const PAINTERS = {
     g.fillStyle = '#d2342c'; g.textAlign = 'center'; g.textBaseline = 'middle';
     fitText(g, 'AVSTÄNGT', w * 0.6, h * 0.36); g.fillText('AVSTÄNGT', x + w / 2, y + h * 0.38);
     g.fillStyle = '#1d1f22';
-    fitText(g, 'Öppnar i nästa version', w * 0.6, h * 0.2, 700); g.fillText('Öppnar i nästa version', x + w / 2, y + h * 0.68);
+    const sub = d.sub || 'Öppnar i nästa version';
+    fitText(g, sub, w * 0.6, h * 0.2, 700); g.fillText(sub, x + w / 2, y + h * 0.68);
   },
   lasse(g, d, x, y, w, h) {
     g.fillStyle = '#1d1f22'; g.fillRect(x, y, w, h);
@@ -269,12 +270,15 @@ const PAINTERS = {
 };
 
 export function makeSignAtlas(signs) {
-  const W = 1024, H = 1024;
+  const W = 1024, H = 2048;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const g = canvas.getContext('2d');
   g.fillStyle = '#808080'; g.fillRect(0, 0, W, H);
-  const all = { ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 }, pizzatak: { kind: 'pizzatak', w: 2.6, h: 0.8 } };
+  const all = {
+    ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 }, pizzatak: { kind: 'pizzatak', w: 2.6, h: 0.8 },
+    konditori: { lines: ['SJUBY', 'Konditori · sedan 1952'], bg: '#f1e3c4', fg: '#7a4a26', border: '#7a4a26', w: 2.2, h: 1.0 }, // Arne's bike
+  };
   // identical signs (both faces of a flag, the two MACKEN boards…) share one slot
   const byKey = new Map();
   for (const [id, d] of Object.entries(all)) {

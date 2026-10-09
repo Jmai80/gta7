@@ -3,13 +3,14 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, BIKE } from './models.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SEE, phoneOf } from './samuel.js';
 import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
 import { PAINTS } from './vehicle.js';
 import { SUN, CARWASH } from './config.js';
+import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 
 const MAX_HUMANS = 48;
@@ -33,7 +34,7 @@ export class View {
     // baked textures
     const shadow = makeShadowMap(layout);
     this.U.uShadow.value = shadow.tex;
-    this.U.uShadowRect.value.set(shadow.rect.x0, shadow.rect.z0, 1 / shadow.rect.w, 1 / shadow.rect.w);
+    this.U.uShadowRect.value.set(shadow.rect.x0, shadow.rect.z0, 1 / shadow.rect.w, 1 / shadow.rect.h);
     this.atlas = makeSignAtlas(layout.signs);
     this.U.uSigns.value = this.atlas.tex;
     this.U.uNoise.value = noiseTexture();
@@ -119,11 +120,79 @@ export class View {
     this.particles = new Particles(this.scene, 160);
     this.makeCarWash();
     this.makeIndoor();
+    this.makeGate(layout);
+    this.makeBike();
 
     this.rig = new CameraRig(this.camera);
     this.quality = quality;
     this.dpr = 1;
     this.resize();
+  }
+
+  // Arne's delivery bike: one bike in moving parts – frame and box, wheels, steering (models.js)
+  makeBike() {
+    const P = buildBike(this.atlas.uv.konditori);
+    const g = new THREE.Group();
+    g.rotation.order = 'YXZ';
+    const rear = new THREE.Mesh(P.rear, this.matStatic);
+    rear.position.set(0, BIKE.rearR, BIKE.rearZ);
+    const steer = new THREE.Group();
+    steer.position.set(BIKE.pivot[0], BIKE.pivot[1], BIKE.pivot[2]);
+    const front = new THREE.Mesh(P.front, this.matStatic);
+    front.position.set(0, BIKE.frontR - BIKE.pivot[1], BIKE.frontZ - BIKE.pivot[2]);
+    steer.add(new THREE.Mesh(P.steer, this.matStatic), front);
+    g.add(new THREE.Mesh(P.frame, this.matStatic), rear, steer);
+    g.visible = false;
+    this.scene.add(g);
+    this.bike = { g, rear, front, steer };
+  }
+
+  syncBike(game, dt) {
+    const B = this.bike;
+    if (!B) return;
+    const v = game.vehicles.find((q) => q.type === 'bike' && !q.removed);
+    B.g.visible = !!v && !this.indoor;
+    if (!v) return;
+    // standing on its kickstand, leaning into turns while ridden, or lying on its side after a fall
+    const roll = v.fallen ? 1.42 : v.driver === 'player' ? v.lean || 0 : 0.12;
+    v.bikeRoll = smooth(v.bikeRoll ?? roll, roll, v.fallen ? 9 : 10, dt);
+    B.g.position.set(v.x, v.visY ?? v.y, v.z);
+    B.g.rotation.set(0, v.h, v.bikeRoll);
+    B.rear.rotation.x = v.spin;
+    B.front.rotation.x = v.spin * (BIKE.rearR / BIKE.frontR);
+    B.steer.rotation.y = -v.steer;
+  }
+
+  // the gate on the north bridge: two red-and-white halves that swing open toward Norrholmen,
+  // and the AVSTÄNGT sign on top while it is shut
+  makeGate(layout) {
+    const Z = layout.zones.gateN;
+    if (!Z) return;
+    const L = 4.95;
+    const half = (dir) => {
+      const B = new GeomBuilder();
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * L, b = ((i + 1) / 5) * L;
+        B.box(dir > 0 ? a : -b, 0.36, -0.2, dir > 0 ? b : -a, 1.08, 0.2, i % 2 ? 0xf2f0ea : 0xd2342c, 0);
+      }
+      for (const f of [0.35, L - 0.5]) B.box(dir * f - 0.07, 0, -0.32, dir * f + 0.07, 0.38, 0.32, 0x3b4148);
+      B.box(dir > 0 ? 0 : -0.16, 0, -0.16, dir > 0 ? 0.16 : 0, 1.25, 0.16, 0x3b4148); // the hinge post
+      const m = new THREE.Mesh(B.toGeometry(THREE), this.matStatic);
+      m.position.set(Z.x - dir * 5, Z.y, Z.z);
+      this.scene.add(m);
+      return m;
+    };
+    this.gateW = half(1); this.gateE = half(-1);
+    const uv = this.atlas.uv.stangtz;
+    if (uv) {
+      const S = new GeomBuilder();
+      const [u0, v0, u1, v1] = uv, w = 6.4, h = 1.3;
+      S.quad([-w / 2, -h / 2, 0.22], [-w / 2, h / 2, 0.22], [w / 2, h / 2, 0.22], [w / 2, -h / 2, 0.22], 0xffffff, M.SIGN, [[u0, v0], [u0, v1], [u1, v1], [u1, v0]], [0, 0, 1]);
+      S.box(-w / 2, -h / 2, 0.1, w / 2, h / 2, 0.2, 0xd2342c);
+      this.gateSign = new THREE.Mesh(S.toGeometry(THREE), this.matStatic);
+      this.gateSign.position.set(Z.x, 1.75, Z.z);
+      this.scene.add(this.gateSign);
+    }
   }
 
   makeMarkers() {
@@ -263,6 +332,7 @@ export class View {
     this.sky.visible = !on;
     for (const b of this.brushes) b.visible = !on;
     if (this.gunFlag) this.gunFlag.visible = !on;
+    if (this.gateW) { this.gateW.visible = this.gateE.visible = !on; }
     const U = this.U, L = this.outLight;
     if (on) {
       U.uSunCol.value.setRGB(1.0, 0.86, 0.68).multiplyScalar(0.55);
@@ -380,11 +450,18 @@ export class View {
     this.time += dt;
     this.U.uTime.value = this.time;
     this.syncCars(game, dt);
+    this.syncBike(game, dt);
     this.syncHumans(game, dt);
     this.syncMarkers(game);
     this.syncFx(game, dt);
     this.syncIndoor(game, dt);
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
+    if (this.world.mill) this.world.mill.rotation.z = -this.time * 0.45;  // the windmill on Norrholmen
+    if (this.gateW && game.gateN) {
+      const a = game.gateN.k * Math.PI / 2 * 0.98;
+      this.gateW.rotation.y = a; this.gateE.rotation.y = -a;
+      if (this.gateSign) this.gateSign.visible = !this.indoor && game.gateN.k < 0.01;
+    }
     if (this.gunFlag) {
       // folded at the foot of the pole; unfurls on the way up and flutters at the top
       const z = this.flagZone, h = game.mission.flag.h;
@@ -400,21 +477,23 @@ export class View {
     let b = 0;
     const blobs = this.blobs;
     for (const v of game.vehicles) {
-      const mesh = this.cars[v.type];
-      const i = counts[v.type]++;
       if (v.visY === undefined) { v.visY = v.y; v.visRoll = 0; v.visPitch = 0; }
       v.visY = Math.abs(v.y - v.visY) > 1 ? v.y : smooth(v.visY, v.y, v.air ? 60 : 22, dt);
-      v.visRoll = smooth(v.visRoll, clamp(v.accLat * 0.011, -0.075, 0.075), 7, dt);
-      v.visPitch = smooth(v.visPitch, clamp(-v.accLong * 0.0055, -0.05, 0.05), 7, dt);
-      tmpM.makeRotationY(v.h);
-      if (v.rampPitch) { tmpR.makeRotationX(-v.rampPitch); tmpM.multiply(tmpR); }
-      tmpM.setPosition(v.x, v.visY, v.z);
-      mesh.setMatrixAt(i, tmpM);
-      tmpC.setHex(PAINTS[v.paint].hex);
-      mesh.setColorAt(i, tmpC);
-      const a = mesh.geometry.attributes.iCar, a2 = mesh.geometry.attributes.iCar2;
-      a.setXYZW(i, v.spin % (Math.PI * 2), -v.steer, v.visRoll, v.visPitch);
-      a2.setXY(i, v.brakeLight, clamp((100 - v.health) / 100, 0, 1));
+      if (!v.spec.bike) { // (the bike has a mesh of its own: syncBike)
+        const mesh = this.cars[v.type];
+        const i = counts[v.type]++;
+        v.visRoll = smooth(v.visRoll, clamp(v.accLat * 0.011, -0.075, 0.075), 7, dt);
+        v.visPitch = smooth(v.visPitch, clamp(-v.accLong * 0.0055, -0.05, 0.05), 7, dt);
+        tmpM.makeRotationY(v.h);
+        if (v.rampPitch) { tmpR.makeRotationX(-v.rampPitch); tmpM.multiply(tmpR); }
+        tmpM.setPosition(v.x, v.visY, v.z);
+        mesh.setMatrixAt(i, tmpM);
+        tmpC.setHex(PAINTS[v.paint].hex);
+        mesh.setColorAt(i, tmpC);
+        const a = mesh.geometry.attributes.iCar, a2 = mesh.geometry.attributes.iCar2;
+        a.setXYZW(i, v.spin % (Math.PI * 2), -v.steer, v.visRoll, v.visPitch);
+        a2.setXY(i, v.brakeLight, clamp((100 - v.health) / 100, 0, 1));
+      }
       // blob shadow
       if (b < blobs.count + 96) {
         const gh = game.world.groundHeight(v.x, v.z);
@@ -460,6 +539,7 @@ export class View {
       const L = body.look;
       tmpM.makeRotationY(body.h);
       if (body.lean) { tmpR.makeRotationX(body.lean); tmpM.multiply(tmpR); }
+      if (body.roll) { tmpR.makeRotationZ(body.roll); tmpM.multiply(tmpR); }   // on the bike, leaning into a turn
       if (body.lie > 0) { tmpR.makeRotationX(body.lieDir * body.lie * Math.PI / 2); tmpM.multiply(tmpR); }
       tmpS.makeScale(L.bulk || 1, L.height || 1, L.bulk || 1);
       tmpM.multiply(tmpS);
@@ -664,7 +744,17 @@ export class CameraRig {
     const car = p.inCar ? p.car : null;
     const portrait = aspect < 0.9;
     let dist, height, lookH, ahead, fov, rate = 0, target = this.yaw;
-    if (car) {
+    if (car && car.spec.bike) {
+      // on the bike: closer and lower than in a car
+      const sp = car.speed, f = Math.min(sp / 9, 1);
+      dist = (portrait ? 7.6 : 5.1) + f * 1.0;
+      height = portrait ? 5.6 : 2.3;
+      lookH = 1.05; ahead = portrait ? 2.6 : 1.5;
+      fov = (portrait ? 62 : 55) + f * 6;
+      let hd = car.h;
+      if (sp > 1.5 && car.fwdSpeed > 0) hd = car.h + wrapAngle(Math.atan2(car.vx, car.vz) - car.h) * 0.45;
+      target = hd; rate = 2.6;
+    } else if (car) {
       const sp = car.speed, f = Math.min(sp / 30, 1);
       dist = (portrait ? 11.5 : 8.4) + f * 1.6;
       height = portrait ? 8.6 : 3.5;

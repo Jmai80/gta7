@@ -8,14 +8,14 @@ import { wreckInto, boatInto } from './models.js';
 import { treeInto } from './trees.js';
 import { interiorInto } from './interior.js';
 
-const CH = 80, X0 = -160, NC = 4;
+const CH = 80, X0 = -160;
 
 function primCenter(p) {
   switch (p.t) {
     case 'box': case 'ramp': return [(p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2];
     case 'rbox': return [p.cx, p.cz];
     case 'gable': return [(p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2];
-    case 'poly': return p.pts[0];
+    case 'poly': case 'quad': return p.pts[0];
     case 'wall': case 'mesh': return [(p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2];
     default: return [p.x, p.z];
   }
@@ -89,9 +89,8 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
   // two builders per chunk: flat ground (cheap shader variant) and everything standing on it
   const chunks = new Map();
   const getChunk = (x, z, ground) => {
-    const i = Math.max(0, Math.min(NC - 1, Math.floor((x - X0) / CH)));
-    const j = Math.max(0, Math.min(NC - 1, Math.floor((z - X0) / CH)));
-    const k = (j * NC + i) * 2 + (ground ? 1 : 0);
+    const i = Math.floor((x - X0) / CH) + 32, j = Math.floor((z - X0) / CH) + 32; // the town is 4×4 chunks, Norrholmen a few more
+    const k = (j * 64 + i) * 2 + (ground ? 1 : 0);
     let B = chunks.get(k);
     if (!B) { B = new GeomBuilder(); B.ground = ground; chunks.set(k, B); }
     return B;
@@ -101,7 +100,7 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
   let seed = 1;
   for (const p of layout.prims) {
     const [cx, cz] = primCenter(p);
-    const flat = (p.t === 'poly' || (p.t === 'wall' && p.y1 - p.y0 < 0.5)) && GROUND_MATS.has(p.m || 0);
+    const flat = (p.t === 'poly' || p.t === 'quad' || (p.t === 'wall' && p.y1 - p.y0 < 0.5)) && GROUND_MATS.has(p.m || 0);
     const B = getChunk(cx, cz, flat);
     switch (p.t) {
       case 'box': B.box(p.x0, p.y0, p.z0, p.x1, p.y1, p.z1, p.c, p.m, { cell: p.cell, top: p.top, skipTop: p.skipTop }); break;
@@ -112,6 +111,7 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
       case 'ico': B.ico(p.x, p.y, p.z, p.r, p.sy, p.c, 0, seed++); break;
       case 'tree': treeInto(B, p); break;
       case 'poly': B.poly(p.pts, p.y, p.c, p.m || 0); break;
+      case 'quad': B.quad(p.pts[0], p.pts[1], p.pts[2], p.pts[3], p.c, p.m || 0, p.pts.map((q) => [q[0], q[2]]), [0, 1, 0]); break;
       case 'wall': B.wall(p.x0, p.z0, p.x1, p.z1, p.y0, p.y1, p.c, p.m || 0, !!p.flip); break;
       case 'sign': sign(B, p, atlas); break;
       case 'ramp': ramp(B, p); break;
@@ -162,6 +162,15 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
     crane.position.set(layout.zones.crane.x, 0, layout.zones.crane.z);
     group.add(crane);
   }
+  // the windmill's sails on Norrholmen: built around the hub, turned by the view
+  let mill = null;
+  if (layout.millSails && layout.millSails.length && layout.zones.mill) {
+    const S = new GeomBuilder();
+    for (const b of layout.millSails) S.rbox(b.cx, b.cy, b.cz, b.sx, b.sy, b.sz, b.rot, b.c, 0, b.tilt);
+    mill = new THREE.Mesh(S.toGeometry(THREE), material);
+    mill.position.set(layout.zones.mill.x, layout.zones.mill.y, layout.zones.mill.z);
+    group.add(mill);
+  }
   // the inside of the tower: its own mesh (not in the group), shown only while you are in there
   let interior = null;
   if (interiorMaterial) {
@@ -172,5 +181,5 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
     interior.matrixAutoUpdate = false;
     interior.visible = false;
   }
-  return { group, crane, interior, tris: Math.round(tris), chunks: chunks.size };
+  return { group, crane, mill, interior, tris: Math.round(tris), chunks: chunks.size };
 }

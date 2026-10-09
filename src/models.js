@@ -4,7 +4,7 @@
 import * as THREE from './three.js';
 import { GeomBuilder } from './geom.js';
 import { M } from './layout.js';
-import { CAR_TYPES } from './vehicle.js';
+import { CAR_TYPES, BIKE_GEO } from './vehicle.js';
 
 const DARK = 0x26282c, BLACK = 0x121314, TIRE = 0x161718, LIGHT = 0xfff2d2, TAIL = 0xd41a14, WHITE = 0xffffff;
 
@@ -424,6 +424,60 @@ export function buildHumanGeometry() {
     B.box(x - 0.055, 0.84, -0.065, x + 0.055, 1.18, 0.065, WHITE, M.PLAIN, { skipBottom: false });
   }
   return B.toGeometry(THREE);
+}
+
+// Arne's delivery bike (v0.6), built in parts that move: the frame with the cargo box, the two
+// wheels (each around its hub) and the steering (fork + handlebar, around the head tube).
+// Local axes: +z forward, y up. Sizes in metres; the rear hub is at z = -0.6, the front one at 0.66.
+export const BIKE = BIKE_GEO;
+export function buildBike(signUV) {
+  const FRAME = 0x23452f, CREAMBOX = 0xf1e3c4, BROWN = 0x7a4a26;
+  const tube = (B, a, b, r = 0.024, c = FRAME) => B.tube(a, b, r, r, 6, c, M.PAINT);
+  // frame
+  const F = new GeomBuilder();
+  const R = [0, BIKE.rearR, BIKE.rearZ], BB = [0, 0.3, -0.06], S = [0, 0.86, -0.27], Hb = [0, 0.62, 0.5], Ht = [0, 0.92, 0.44];
+  for (const sx of [-0.05, 0.05]) { tube(F, [sx, R[1], R[2]], [sx * 0.6, BB[1], BB[2]], 0.018); tube(F, [sx, R[1], R[2]], [sx * 0.5, 0.82, -0.26], 0.016); }
+  tube(F, BB, S); tube(F, BB, Hb, 0.03); tube(F, [0, 0.66, -0.2], [0, 0.82, 0.46], 0.026); tube(F, Hb, Ht, 0.032);
+  tube(F, S, [0, BIKE.saddle[1] - 0.02, BIKE.saddle[2]], 0.015, 0x9aa0a6);                         // seat post
+  F.box(-0.08, BIKE.saddle[1] - 0.03, BIKE.saddle[2] - 0.14, 0.08, BIKE.saddle[1] + 0.03, BIKE.saddle[2] + 0.12, 0x3b2a1e, M.PLAIN, { skipBottom: false });
+  F.box(-0.15, 0.7, -0.84, 0.15, 0.72, -0.4, 0x2d3238, M.PLAIN, { skipBottom: false });             // rear rack
+  tube(F, [0, 0.71, -0.42], [0, 0.82, -0.26], 0.012, 0x2d3238);
+  F.box(-0.04, BB[1] - 0.06, BB[2] - 0.08, 0.04, BB[1] + 0.06, BB[2] + 0.08, 0x2d3238);             // chain case
+  F.box(-0.035, 0.26, -0.62, 0.035, 0.36, BB[2] - 0.02, 0x1d1f22);
+  // the cargo box on its rack over the front wheel
+  const bx0 = -0.29, bx1 = 0.29, by0 = 0.56, by1 = 0.92, bz0 = 0.5, bz1 = 1.04;
+  F.box(bx0, by0, bz0, bx1, by1, bz1, CREAMBOX, M.BOARDS, { skipBottom: false });
+  F.box(bx0 - 0.012, by1 - 0.035, bz0 - 0.012, bx1 + 0.012, by1 + 0.01, bz1 + 0.012, BROWN);
+  F.box(bx0 - 0.012, by0 - 0.01, bz0 - 0.012, bx1 + 0.012, by0 + 0.03, bz1 + 0.012, BROWN);
+  for (const sx of [-0.2, 0.2]) tube(F, [sx, by0, 0.56], [0, 0.66, 0.48], 0.014, 0x2d3238);
+  F.hcyl(0, 0.72, bz1 + 0.045, 0.09, 0.055, 'z', 8, 0xd9dde2, M.CHROME);                       // the lamp
+  F.hcyl(0, 0.72, bz1 + 0.092, 0.006, 0.045, 'z', 8, 0xfff2d2, M.LIGHT);
+  if (signUV) {
+    const [u0, v0, u1, v1] = signUV;
+    const uv = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]];
+    decal(F, [bx1 + 0.004, 0.74, (bz0 + bz1) / 2], [1, 0, 0], 0.46, 0.21, WHITE, M.SIGN, uv);
+    decal(F, [bx0 - 0.004, 0.74, (bz0 + bz1) / 2], [-1, 0, 0], 0.46, 0.21, WHITE, M.SIGN, uv);
+    decal(F, [0, 0.74, bz1 + 0.004], [0, 0, 1], 0.46, 0.21, WHITE, M.SIGN, uv);
+  }
+  // wheels: tyre, a lighter disc for the spokes, the hub
+  const wheel = (r) => {
+    const W = new GeomBuilder();
+    W.hcyl(0, 0, 0, 0.05, r, 'x', 16, TIRE);
+    W.hcyl(0, 0, 0, 0.056, r - 0.05, 'x', 16, 0xb7bcc2, M.CHROME);
+    W.hcyl(0, 0, 0, 0.12, 0.045, 'x', 8, 0x6f7479, M.CHROME);
+    for (let i = 0; i < 4; i++) W.rbox(0, 0, 0, 0.064, (r - 0.05) * 2, 0.014, 0, 0x5d6268, 0, (i / 4) * Math.PI); // spokes you can see turn
+    return W.toGeometry(THREE);
+  };
+  // the steering, around the pivot on the head tube
+  const T = new GeomBuilder();
+  const [px, py, pz] = BIKE.pivot, rel = (q) => [q[0] - px, q[1] - py, q[2] - pz];
+  for (const sx of [-0.055, 0.055]) tube(T, rel([sx, 0.62, 0.5]), rel([sx, BIKE.frontR, BIKE.frontZ]), 0.016);
+  tube(T, rel([0, 0.92, 0.44]), rel([0, 1.04, 0.4]), 0.018, 0x9aa0a6);
+  tube(T, rel([-0.31, 1.04, 0.33]), rel([0.31, 1.04, 0.33]), 0.016, 0x9aa0a6);
+  tube(T, rel([-0.04, 1.04, 0.4]), rel([0.04, 1.04, 0.33]), 0.014, 0x9aa0a6);
+  for (const sx of [-1, 1]) tube(T, rel([sx * 0.31, 1.04, 0.33]), rel([sx * 0.4, 1.035, 0.3]), 0.022, 0x1d1f22);
+  T.cyl(0.22 - px, 0.33 - pz, 1.05 - py, 1.09 - py, 0.032, 0.03, 8, 0xd9dde2, M.CHROME, true); // the bell
+  return { frame: F.toGeometry(THREE), rear: wheel(BIKE.rearR), front: wheel(BIKE.frontR), steer: T.toGeometry(THREE) };
 }
 
 // Samuel's phone: screen on +z (it is turned to face him)

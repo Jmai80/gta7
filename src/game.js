@@ -9,9 +9,10 @@ import { Player } from './player.js';
 import { Missions } from './mission.js';
 import { Indoors } from './indoors.js';
 import { PIZZA_CAR } from './config.js';
+import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -32,9 +33,11 @@ export class Game {
     this.vehicles = [];
     this.racers = [];      // computer drivers in Kim's street race
     this.pizzaCar = null;  // Sanna's car, parked across from the pizzeria
+    this.bike = null;      // Arne's delivery bike (Norrholmen, later at tant Gun's)
     this.view = { x: 0, z: 0, fx: 0, fz: -1, valid: false };
     this.input = null;
     this.camFocus = null;  // { x, y, z }: something a mission wants the camera to look at
+    this.gateN = { open: false, k: 0, init: false }; // the gate on the north bridge (k: 0 shut … 1 open)
     this.traffic = new Traffic(this);
     this.peds = new Peds(this);
     this.player = new Player(this);
@@ -44,6 +47,7 @@ export class Game {
     this.obsPool = [];
     this.spawnT = 0;
     this.missionActive = opts.missionActive ?? true;
+    this.trafficTarget = opts.trafficTarget ?? TRAFFIC_TARGET; // (tests can switch the traffic off for good)
     this.on('honk', () => {});
     this.spawnInitial(opts.traffic ?? TRAFFIC_TARGET, opts.peds ?? PED_TARGET);
   }
@@ -59,7 +63,7 @@ export class Game {
     if (this.count(type) >= CAPACITY[type]) return null;
     const v = new Vehicle(type, paint, x, z, h);
     v.y = this.world.groundHeight(x, z);
-    v.driverLook = makeLook(this.rng);
+    v.driverLook = type === 'bike' ? null : makeLook(this.rng); // (no draw for the bike: the traffic stays as it was)
     this.vehicles.push(v);
     return v;
   }
@@ -77,6 +81,7 @@ export class Game {
       if (v) v.parkedSpot = true;
     }
     this.spawnPizzaCar();
+    this.spawnBike(ISLE.bike.x, ISLE.bike.z, ISLE.bike.h, true);
     const plan = [
       ['sedan', 'red'], ['van', 'white'], ['sedan', 'blue'], ['sedan', 'red'], ['van', 'red'], ['sedan', 'white'],
       ['sedan', 'yellow'], ['van', 'lightblue'], ['sedan', 'black'], ['sedan', 'silver'], ['van', 'green'], ['sedan', 'red'],
@@ -116,6 +121,17 @@ export class Game {
     }
     if (far) this.removeVehicle(far);
     return !!far;
+  }
+
+  // Arne's delivery bike: locked by lott 7 on Norrholmen until the main quest gets there
+  spawnBike(x, z, h, locked) {
+    if (this.bike && !this.bike.removed) this.removeVehicle(this.bike);
+    const v = this.addVehicle('bike', 'bike', x, z, h);
+    if (!v) return null;
+    v.parkedSpot = true;
+    v.locked = !!locked;
+    this.bike = v;
+    return v;
   }
 
   // Sanna's green pizza car with the roof sign, parked in its stall
@@ -184,6 +200,7 @@ export class Game {
     p.postPhysics(dt);
     this.indoors.update(dt);
     if (this.missionActive) this.mission.update(dt);
+    this.updateGate(dt);
 
     if (playerCar) {
       const kmh = playerCar.speed * 3.6;
@@ -195,6 +212,11 @@ export class Game {
 
   onCrash(v, imp, other, x, z, secondary = false) {
     const isPlayer = this.player.car === v;
+    // on the bike a hard knock throws you off (a van ramming you, a wall at full speed)
+    if (isPlayer && v.spec.bike && imp > (other ? 4.2 : 6.5)) {
+      this.player.fallOff();
+      this.emit('bikeFall', { by: other || null, impact: imp });
+    }
     const dmg = Math.max(0, imp - 3.2) * (v.type === 'van' ? 1.7 : 2.2) * (v.driver === 'racer' ? 0.5 : 1);
     v.damage(dmg);
     if (isPlayer && imp > 3.5) this.stats.crashes++;
@@ -226,12 +248,27 @@ export class Game {
     }
     // top up traffic
     const ai = this.vehicles.filter((v) => v.driver === 'ai' && v.ai && !v.ai.lost).length;
-    if (ai < TRAFFIC_TARGET) this.spawnTraffic();
+    if (ai < this.trafficTarget) this.spawnTraffic();
     // keep the crowd size sane (carjacked drivers join the crowd)
     if (this.peds.list.length > PED_TARGET + 6) {
       const far = this.peds.list.filter((q) => !q.keep && Math.hypot(q.x - p.x, q.z - p.z) > 70 && !this.visible(q.x, q.z));
       if (far.length) this.peds.list.splice(this.peds.list.indexOf(far[0]), 1);
     }
+  }
+
+  // the north bridge opens when the story gets there (mission.bridgeOpen); the gate swings open
+  updateGate(dt) {
+    const G = this.gateN, want = !!(this.missionActive && this.mission.bridgeOpen);
+    if (want !== G.open || !G.init) {
+      G.open = want;
+      for (const c of this.layout.colliders) {
+        if (c.gate === 'north') c.h = want ? 0 : c.hClosed;
+        else if (c.gateSide === 'north') c.h = want ? c.hOpen : 0;
+      }
+      if (!G.init && want) G.k = 1;
+      G.init = true;
+    }
+    G.k = Math.max(0, Math.min(1, G.k + (G.open ? dt : -dt) / 2.6));
   }
 
   visible(x, z) {

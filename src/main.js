@@ -47,7 +47,7 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning'];
+const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel'];
 const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
 
 // ---------------------------------------------------------------- performance
@@ -185,7 +185,7 @@ function wire(g) {
   });
   g.on('enterCar', (e) => { audio.door(); hud.street(CAR_TYPES[e.car.type].name); });
   g.on('exitCar', () => audio.door());
-  g.on('horn', (e) => audio.horn(e.on));
+  g.on('horn', (e) => { if (e.car && e.car.spec.bike) { if (e.on) audio.bell(); } else audio.horn(e.on); });
   g.on('pedHit', (e) => { audio.thud(0.8); if (e.car === g.player.car) g.stats.pedsKnocked++; });
   g.on('playerHit', () => { audio.thud(1); view.rig.shake = 0.6; buzz(40); });
   g.on('stunt', (e) => { audio.stunt(); hud.banner('STUNTHOPP!', `${e.dist} meter i luften`, e.amount); });
@@ -471,6 +471,7 @@ function showEnd(s) {
     ['Körsträcka', `${(s.driven / 1000).toFixed(1).replace('.', ',')} km`],
     ['Pizzor levererade', s.pizzas || 0],
     ['Gatloppet', s.raceTime != null ? mmss(s.raceTime) : '–'],
+    ['Bullbilen', s.bikeEscaped ? 'Skakad av' : s.bikeEscaped === false ? 'Hack i häl' : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';
