@@ -1,16 +1,16 @@
 # GTA 7 – överlämning till nästa chatt
 
-Senast uppdaterad: 10 oktober 2026, efter version 1.1.1 (buggfix: Långhoppets K startar nu ett försök när man kör in i det med bil, och det står där satsen räcker). Version 1.1 gav tre nya namn (Melker, Jonte, Vera), nya cykelhjul och en ny badplats.
+Senast uppdaterad: 10 oktober 2026, efter version 1.1.2 (underhåll: testmiljön och dokumenten). Version 1.1.1 var en buggfix: Långhoppets K startar nu ett försök när man kör in i det med bil, och det står där satsen räcker). Version 1.1 gav tre nya namn (Melker, Jonte, Vera), nya cykelhjul och en ny badplats.
 Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten. Börja med `CLAUDE.md` i repots rot (den läses in automatiskt av Claude Code och har snabbstarten, reglerna och leveranschecklistan); här finns detaljerna.
 
 ---
 
 ## 1. Snabbstart för nästa session
 
-1. Klona repot: `git clone https://github.com/Jmai80/gta7.git` (i molnsessioner: `add_repo` Jmai80/gta7 med push-behörighet, klona till `/home/claude/gta7`).
+1. Klona repot: `git clone https://github.com/Jmai80/gta7.git` (i claude.ai/code är det redan klonat, t.ex. i `/home/user/gta7`). Kör alla kommandon från repots rot.
 2. Installera three.js lokalt för testerna (finns inte i package.json, används bara av webbläsartesterna): `npm install --no-save three@0.184.0`.
 3. Kör Node-testerna: `npm test` → ska sluta med `All checks passed`, `All extras passed`, `All mission checks passed`.
-4. Starta en lokal server för webbläsartester: `python3 -m http.server 8765 --directory /home/claude/gta7` (servern dör ibland – starta om med `(nohup python3 -m http.server 8765 --directory /home/claude/gta7 > /dev/null 2>&1 &)`).
+4. Starta en lokal server för webbläsartester: `python3 -m http.server 8765 --directory "$PWD"` (servern dör ibland – starta om med `(nohup python3 -m http.server 8765 --directory "$PWD" > /dev/null 2>&1 &)`).
 5. Webbläsargenomgångar (Playwright, Python, SwiftShader): `python3 test/browser/v09.py phone` (eller `land`, `desk`), `v091.py` för lastbilen i stadstrafiken, `v10.py` för Salong Saxen och Bullfesten, `v111.py` för Långhoppet och `v11.py` för namnen, cyklarna i en sväng (och en geometrikoll av hjulen) och badplatsen (ut på bryggan). Närbilder med handplacerad kamera: `beach_studio.py TAG [phone]` och `bike_studio.py TAG`. Skärmdumpar hamnar i `test/shots/` (gitignorerad).
 6. Läs README.md (svenska, spelarperspektiv) och den här filen (utvecklarperspektiv).
 
@@ -20,7 +20,7 @@ Det här dokumentet är skrivet så att en ny Claude-session (eller en människa
 - Användaren **testar på mobilen** via GitHub Pages: https://jmai80.github.io/gta7/ – varje ändring ska därför **committas och pushas till `main`**.
 - Commit-format: `GTA 7 vX.Y: kort beskrivning på svenska`, sedan en punktlista på svenska. Avsluta alltid med raderna
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` och `Claude-Session: <sessionslänk>` (sessionslänken anges i varje sessions systemmeddelande).
-- Kör `git fetch` före push. Arbeta direkt på `main` (användaren har aldrig bett om grenar/PR).
+- Kör `git fetch` före push. Allt ska hamna på `main` (användaren har aldrig bett om grenar/PR). Jobbar sessionen på en egen `claude/…`-gren: pusha den och snabbspola main till den (se CLAUDE.md, avsnitt 2).
 - Versionsnummer höjs vid varje leverans: `package.json` (`version`), `index.html` (`<div class="ver">Version X · Sjuby och Norrholmen</div>`), README (första stycket och rubriken "Uppdrag i version X"), slutskärmens text i `index.html` (`#endcard`) och sms:et i `Missions.checkAllDone()`.
 - Efter push: kontrollera att Pages byggt rätt commit med `gh run list -R Jmai80/gta7 -L 2 --json headSha,status,conclusion,createdAt`. **Kända problem:** `headSha` kan visa en äldre commit trots att bygget gällde den nya (jämför `createdAt` med commit-tiden). Om inget bygge alls startar inom ~5 min: pusha en tom commit (`git commit --allow-empty -m "…"`), det har fungerat. `gh api …/pages` och WebFetch av github.io blockeras ofta i sandlådan.
 - Leveransmönster som användaren gillat: kort svensk sammanfattning (vad som är nytt, hur uppdragen fungerar, när sms kommer med sparat spel), plus ett skärmdumpsark (4–5 telefonbilder i rad med gula bildtexter) skickat som fil.
@@ -160,7 +160,7 @@ Förslag på fortsättning som användaren kan vilja ha: "Cykelgömman" (Polis-P
 - Cykelns ekrar var lådor som stack ut 24 cm utanför däcket (syntes mest när framhjulet svängde). Nu är de `tube` från navet till fälgens insida; `v11.py` kollar att inget i hjulen når utanför däcket (radie ≤ hjulets radie, och nära fälgen inte bredare än däcket).
 - Tant Guns hejdå-replik från bryggan ("Norra bron, lilla vän. Glöm inte!") kom även på festen och vid konditoriet i ett laddat spel – den kräver nu att cykeluppdraget inte är klart och att hon inte är `pinned`/`konditori`.
 
-## 9. Senaste ändringar (v0.6 → v1.1.1)
+## 9. Senaste ändringar (v0.6 → v1.1.2)
 
 - v0.6: Norrholmen, norra bron, Arnes budcykel (cykel som fordon), Bullbilen-jakt (`Chaser`), GPS över ön.
 - v0.6.1: Hörnlivs inifrån, Yasmin, Fyrvaktarens kasse (ägg), Ingvars stuga.
@@ -172,3 +172,4 @@ Förslag på fortsättning som användaren kan vilja ha: "Cykelgömman" (Polis-P
 - v1.0: sidouppdraget Salong Saxen (inomhus, Veras frisersalong på Skolgatan: klippa, raka, färga), huvuduppdragets del 8 Bullfesten (festen på torget, cykeltjuven Jonte, röda racercykeln `racebike`, `Rider` på trottoarnätet, Polis-Pia), teasern Cykelgömman, `ped.goto`, festdekorationer och bullar i Arnes låda, nya röster och salongsljud, två nya rader på slutskärmen.
 - v1.1: nya namn – Samuel heter Melker, Sander heter Jonte och Fia heter Vera (koden behåller de gamla id:na, se avsnitt 5). Cyklarna: nya hjul (runt däck, fälg, nav och korsade ekrar innanför fälgen – förut stack ekrarna ut genom däcket), Arnes cykel med kedjeskydd, pakethållare, stänkskärmar och vevar, och racercykeln med en riktig racerram och två stora hjul (`RACER_GEO`). Norrholmens badplats byggd på nytt (`beach.js`, `BEACH`): sand med våt kant och skum, strandpromenad och portal, brygga att gå ut på med hoppsvikt, badhytter, livräddartorn, glasskiosk, parasoller med solstolar och handdukar, volleyboll, sandslott, flotte och bojar, strandråg och vresrosor, och badgäster i badkläder (`STYLE.swim`) som bara ritas. Skosulorna har fått undersida.
 - v1.1.1: buggfix i Långhoppet. K:et på parkeringen var bara en markör (inget jobb), så ingenting hände när man gick in i det, och från dess plats räckte inte ens en rak sats utan turbo (30 m). Nu står K:et i parkeringens norra ände och startar ett försök med bil (`longjump.js`, ringar, tillbaka till K:et efter ett för kort hopp), och till fots säger det att du behöver en bil. `needCar` kan vara en egen text och `fastStart` låter en markör starta i full fart. Även: `CLAUDE.md` för nya sessioner, och webbläsartesterna hittar `node_modules` var repot än är klonat (`GTA7_CHROME` för en annan Chrome).
+- v1.1.2: underhåll utan ändringar i spelet (utom versionsnumret). Ny session verifierade projektet: `npm test` och `v111.py` gröna. Dokumenten pekar inte längre på `/home/claude/gta7`, och CLAUDE.md beskriver hur webbläsartesterna körs när `pip install playwright` ger en nyare Playwright än sandlådans förinstallerade Chromium (`GTA7_CHROME=/opt/pw-browsers/chromium`).

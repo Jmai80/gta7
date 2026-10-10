@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 10 oktober 2026, efter version 1.1.1 (buggfixen i Långhoppet, avsnitt 4). Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 10 oktober 2026, efter version 1.1.2 (underhåll av testmiljön och dokumenten; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -27,7 +27,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.1.1 (buggfixen i Långhoppet,
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.1.1 innehåller:
+- Version 1.1.2 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar,
   - åtta sidouppdrag,
   - Lasses trimningsbutik,
@@ -58,7 +58,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.1.1 (buggfixen i Långhoppet,
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.1.1 eller senare
+git log --oneline -3                         # överst: v1.1.2 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
 npm test                                     # ~555 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
@@ -70,7 +70,7 @@ python3 test/browser/v111.py phone           # en genomgång (Långhoppet): ska 
 
 **Webbläsartesterna** (`test/browser/*.py`) använder Python, Playwright och Chromium med SwiftShader (mjukvaru-WebGL). Kör dem från repots rot. Webbläsaren hittas på något av tre sätt:
 
-1. **Anthropics sandlåda** har Playwright och Chromium förinstallerade (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). Kör inte `playwright install` där.
+1. **Anthropics sandlåda** har Chromium förinstallerat (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). Kör inte `playwright install` där. Saknas Python-paketet: `pip install --break-system-packages playwright`. Klagar Playwright sedan på att webbläsaren saknas (nyare version än den förinstallerade), kör testerna med `GTA7_CHROME=/opt/pw-browsers/chromium python3 test/browser/v111.py phone`.
 2. **Annars** prövar du `pip install --break-system-packages playwright` och sedan `python3 -m playwright install --with-deps chromium`.
 3. **Om den nedladdningen blockeras** (Playwrights egen nedladdningsserver finns inte i Trusted-listan):
    - hämta Chrome for Testing från storage.googleapis.com, som är tillåten: `npx -y @puppeteer/browsers install chrome@stable --path /opt/chrome`,

@@ -313,7 +313,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all eleven are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1\.1/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1.1, Jonte is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1\.2/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1.2, Jonte is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1814,7 +1814,7 @@ function festStart(g) {
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Bullfesten'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /räddad/.test(d.text)), 'tant Gun: the party is saved');
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1\.1/.test(d.text)), 'all eleven done: the end card (version 1.1.1)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1\.2/.test(d.text)), 'all eleven done: the end card (version 1.1.2)');
   const next = m.list().find((q) => q.id === 'cykelgomman');
   check(next && next.state === 'soon' && /Jonte/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
   // you walk off: Pia takes Jonte away, the bike goes home, the party winds down
