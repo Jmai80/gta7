@@ -1,4 +1,4 @@
-# Version 0.7 walkthrough (Lås-Leif and Samuel, the bakery office and the safe) – based on the 0.6: tant Gun's text, the north bridge opening, Norrholmen, unlocking Arne's
+# Version 0.7 walkthrough (Lås-Leif and Melker, the bakery office and the safe) – based on the 0.6: tant Gun's text, the north bridge opening, Norrholmen, unlocking Arne's
 # bike at lott 7, the Bullbilen van coming after you, the ride, the delivery at Gun's gate and the
 # quest log. Screenshots in test/shots/v06_<mode>_*.png
 import asyncio, sys, json
@@ -89,7 +89,7 @@ async def main(name, w, h, mobile):
         await pg.evaluate(STEP, [0.8, None])
         print(name, 'leif', json.dumps(await info(pg), ensure_ascii=False))
         await talkThrough(pg, name, '03_leiftalk', 1)
-        # out to Samuel
+        # out to Melker
         await pg.evaluate(TP, [42, -305, -1.5708])
         await pg.evaluate(STEP, [0.5, None])
         await frames(pg, 20)

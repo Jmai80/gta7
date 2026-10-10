@@ -1,5 +1,5 @@
 // Two side quests that come a few seconds after "Kassaskåpet" (v0.9):
-//   "Samuels cykel": Samuel has worked out who took his keys. Ride Arne's old bike from tant Gun's
+//   "Melkers cykel": Melker has worked out who took his keys. Ride Arne's old bike from tant Gun's
 //                    gate to him outside the tower – it was his, after all.
 //   "Hemleverans":   Yasmin's customers can't get to Hörnlivs. Three bags to three doors before the
 //                    clock runs out – by car, by bike or on foot.
@@ -8,7 +8,7 @@ import { LOOK as SAMUEL_LOOK } from './samuel.js';
 import { Ped } from './peds.js';
 import { fmt } from './rng.js';
 
-const SAMUEL = { who: 'Samuel', letter: 'S', color: '#6e7a46' };
+const SAMUEL = { who: 'Melker', letter: 'M', color: '#6e7a46' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 
 function spawnPed(game, look, x, z, h, npc) {
@@ -30,11 +30,11 @@ export function bikeReturnPages() {
   ];
 }
 
-// ------------------------------------------------------------------ Samuels cykel
+// ------------------------------------------------------------------ Melkers cykel
 export class BikeReturnJob {
   constructor(mgr) {
     this.mgr = mgr; this.game = mgr.game; this.id = 'cykelretur';
-    this.stage = 'ride';     // ride (get on the bike and ride it to Samuel) → talk → done
+    this.stage = 'ride';     // ride (get on the bike and ride it to Melker) → talk → done
     this.prompt = null;
     this.samuel = null;
     this.titleCard = false;
@@ -43,7 +43,7 @@ export class BikeReturnJob {
   start() {
     const g = this.game;
     this.samuel = spawnPed(g, SAMUEL_LOOK, BIKE_RETURN.x + 0.8, BIKE_RETURN.z + 0.9, Math.PI * 0.75, 'samuel-out');
-    g.emit('toast', { text: 'Cykla Arnes gamla cykel till Samuel vid höghuset.', long: true });
+    g.emit('toast', { text: 'Cykla Arnes gamla cykel till Melker vid höghuset.', long: true });
   }
 
   get bike() { const b = this.game.bike; return b && !b.removed ? b : null; }
@@ -56,7 +56,7 @@ export class BikeReturnJob {
     const riding = p.inCar && p.car === bike;
     const d = Math.hypot(bike.x - BIKE_RETURN.x, bike.z - BIKE_RETURN.z);
     if (riding && d < BIKE_RETURN.r && bike.speed < 3.5) { this.deliver(); return; }
-    m.setObjective(riding ? 'Cykla till Samuel' : 'Hämta cykeln', riding ? 'Porten till höghuset vid torget' : 'Vid tant Guns grind på Storgatan');
+    m.setObjective(riding ? 'Cykla till Melker' : 'Hämta cykeln', riding ? 'Porten till höghuset vid torget' : 'Vid tant Guns grind på Storgatan');
     const s = this.samuel;
     if (s) s.standH = Math.atan2(p.x - s.x, p.z - s.z);
   }
@@ -81,7 +81,7 @@ export class BikeReturnJob {
     this.stage = 'done';
     const g = this.game, m = this.mgr, bike = this.bike;
     if (bike) { bike.x = BIKE_RETURN.x - 1.4; bike.z = BIKE_RETURN.z + 0.4; bike.h = Math.PI / 2; bike.y = g.world.groundHeight(bike.x, bike.z); }
-    m.complete(this, { title: 'SIDOUPPDRAG KLART', sub: 'Samuels cykel', amount: BIKE_RETURN.reward });
+    m.complete(this, { title: 'SIDOUPPDRAG KLART', sub: 'Melkers cykel', amount: BIKE_RETURN.reward });
     m.sms(WHO.gun, 'Gav du tillbaka cykeln till pojken? Bra gjort, lilla vän. Arne hade gillat det.', 7);
   }
 
@@ -90,7 +90,7 @@ export class BikeReturnJob {
     if (this.stage !== 'ride' || !bike) return;
     if (!(p.inCar && p.car === bike)) T.push({ kind: 'car', car: bike, color: 0x46c96f, gps: true });
     else T.push({ kind: 'zone', x: BIKE_RETURN.x, z: BIKE_RETURN.z, r: BIKE_RETURN.r, gps: true });
-    if (this.samuel) T.push({ kind: 'contact', x: this.samuel.x, z: this.samuel.z, r: 1, letter: 'S', color: '#6e7a46', badgeOnly: true, badgeY: 2.75, ref: this.samuel });
+    if (this.samuel) T.push({ kind: 'contact', x: this.samuel.x, z: this.samuel.z, r: 1, letter: SAMUEL.letter, color: SAMUEL.color, badgeOnly: true, badgeY: 2.75, ref: this.samuel });
   }
 
   cleanup() {

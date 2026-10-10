@@ -3,7 +3,7 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, BIKE } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest } from './models.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
 import { OFFICE, safeDoorInto, recipeInto } from './office.js';
@@ -15,6 +15,7 @@ import { PAINTS } from './vehicle.js';
 import { SUN, CARWASH, FEST, CURB_H } from './config.js';
 import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
+import { makeBody } from './peds.js';
 
 const MAX_HUMANS = 64; // (v1.0: the bun party on the square and the hair salon bring a few more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
@@ -130,6 +131,10 @@ export class View {
     this.fest = new THREE.Mesh(buildFest(FEST.table, CURB_H, this.atlas.uv.festbanner), this.matStatic);
     this.fest.visible = false;
     this.scene.add(this.fest);
+    // (v1.1) people on Norrholmen's beach: only drawn, never simulated (layout.zones.beachFolk)
+    const BF = layout.zones.beachFolk;
+    this.beachAt = BF ? { x: BF.x, z: BF.z } : null;
+    this.beachFolk = BF ? BF.list.map((f) => Object.assign(makeBody(f.look), { x: f.x, y: f.y, z: f.z, h: f.h, pose: f.pose, lie: f.lie, lieDir: f.lieDir, headPitch: f.headPitch })) : [];
     this.bunBurstT = 0;
 
     this.rig = new CameraRig(this.camera);
@@ -139,27 +144,27 @@ export class View {
   }
 
   // the bikes, each in moving parts – frame (and box), wheels, steering (models.js): Arne's delivery
-  // bike, and (v1.0) the red racing bike Sander leaves behind at the party
+  // bike, and (v1.0) the red racing bike Jonte leaves behind at the party
   makeBike() {
     this.bikes = {};
     for (const [type, opt] of [['bike', {}], ['racebike', { racer: true }]]) {
-      const P = buildBike(opt.racer ? null : this.atlas.uv.konditori, opt);
+      const P = buildBike(opt.racer ? null : this.atlas.uv.konditori, opt), G = P.geo; // (each bike has its own wheel sizes)
       const g = new THREE.Group();
       g.rotation.order = 'YXZ';
       const rear = new THREE.Mesh(P.rear, this.matStatic);
-      rear.position.set(0, BIKE.rearR, BIKE.rearZ);
+      rear.position.set(0, G.rearR, G.rearZ);
       const steer = new THREE.Group();
-      steer.position.set(BIKE.pivot[0], BIKE.pivot[1], BIKE.pivot[2]);
+      steer.position.set(G.pivot[0], G.pivot[1], G.pivot[2]);
       const front = new THREE.Mesh(P.front, this.matStatic);
-      front.position.set(0, BIKE.frontR - BIKE.pivot[1], BIKE.frontZ - BIKE.pivot[2]);
+      front.position.set(0, G.frontR - G.pivot[1], G.frontZ - G.pivot[2]);
       steer.add(new THREE.Mesh(P.steer, this.matStatic), front);
       g.add(new THREE.Mesh(P.frame, this.matStatic), rear, steer);
-      // Arne's bike can carry a box full of buns (to the party, and away with Sander)
+      // Arne's bike can carry a box full of buns (to the party, and away with Jonte)
       const buns = opt.racer ? null : new THREE.Mesh(buildBikeBuns(), this.matStatic);
       if (buns) { buns.visible = false; g.add(buns); }
       g.visible = false;
       this.scene.add(g);
-      this.bikes[type] = { g, rear, front, steer, buns };
+      this.bikes[type] = { g, rear, front, steer, buns, geo: G };
     }
   }
 
@@ -168,13 +173,13 @@ export class View {
       const v = game.vehicles.find((q) => q.type === type && !q.removed);
       B.g.visible = !!v && !this.indoor;
       if (!v) continue;
-      // standing on its kickstand, leaning into turns while ridden (by you, or by Sander), or lying on its side after a fall
+      // standing on its kickstand, leaning into turns while ridden (by you, or by Jonte), or lying on its side after a fall
       const roll = v.fallen ? 1.42 : v.driver === 'player' || v.driver === 'racer' ? v.lean || 0 : 0.12;
       v.bikeRoll = smooth(v.bikeRoll ?? roll, roll, v.fallen ? 9 : 10, dt);
       B.g.position.set(v.x, v.visY ?? v.y, v.z);
       B.g.rotation.set(0, v.h, v.bikeRoll);
       B.rear.rotation.x = v.spin;
-      B.front.rotation.x = v.spin * (BIKE.rearR / BIKE.frontR);
+      B.front.rotation.x = v.spin * (B.geo.rearR / B.geo.frontR);
       B.steer.rotation.y = -v.steer;
       if (B.buns) B.buns.visible = !!v.buns;
     }
@@ -301,7 +306,7 @@ export class View {
     const g = (this.indoorGroup = new THREE.Group());
     g.visible = false;
     this.scene.add(g);
-    // Samuel's front door: swings on its hinge (open while you sneak about, shut when you leave)
+    // Melker's front door: swings on its hinge (open while you sneak about, shut when you leave)
     const DB = new GeomBuilder();
     doorInto(DB);
     this.door = new THREE.Mesh(DB.toGeometry(THREE), this.matInterior);
@@ -335,11 +340,11 @@ export class View {
     this.recipe.position.set(OFFICE.recipe.x, OFFICE.recipe.y, OFFICE.recipe.z);
     this.recipe.rotation.y = 0.2;
     g.add(this.recipe);
-    // Samuel's phone (its screen lights up his face… well, it glows)
+    // Melker's phone (its screen lights up his face… well, it glows)
     this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
     this.phone.scale.setScalar(1.35);
     g.add(this.phone);
-    // where Samuel is looking: a fan of light on the floor, stopped by the walls
+    // where Melker is looking: a fan of light on the floor, stopped by the walls
     const N = 22;
     this.coneN = N;
     const cg = new THREE.BufferGeometry();
@@ -408,7 +413,7 @@ export class View {
       this.glint.scale.set(k, k, 1);
       this.glint.material.opacity = 0.55 + 0.45 * Math.sin(this.time * 3.1);
     }
-    // Samuel's phone and the fan of his gaze
+    // Melker's phone and the fan of his gaze
     const sam = ind.samuel;
     const lounging = sam && sam.ped.state === 'lounge';
     this.phone.visible = !!lounging;
@@ -613,6 +618,8 @@ export class View {
       this.matGhost.uniforms.uGhost.value = ga;
     }
     for (const p of game.peds.list) add(p.body);
+    const cp = this.camera.position, ba = this.beachAt;
+    if (ba && !this.indoor && Math.hypot(cp.x - ba.x, cp.z - ba.z) < 170) for (const f of this.beachFolk) add(f); // (v1.1) the people on the beach
     H.count = i;
     H.instanceMatrix.needsUpdate = true;
     if (H.instanceColor) H.instanceColor.needsUpdate = true;
@@ -724,7 +731,7 @@ export class View {
     }
   }
 
-  // (v1.0) buns flying out of the box when Sander comes off Arne's bike
+  // (v1.0) buns flying out of the box when Jonte comes off Arne's bike
   bunBurst(x, z) {
     for (let i = 0; i < 16; i++) {
       const a = Math.random() * Math.PI * 2, s = 1.2 + Math.random() * 2.6, k = 0.85 + Math.random() * 0.25;
@@ -859,7 +866,7 @@ export class CameraRig {
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
     let tx = (car ? car.x : p.x), tz = (car ? car.z : p.z);
     const ty = (car ? (car.visY ?? car.y) : p.y);
-    // in Samuel's flat the view leans toward the middle of the room, so he stays in the picture
+    // in Melker's flat the view leans toward the middle of the room, so he stays in the picture
     const fl = game.indoor && inFlat(p.x, p.z) ? 1 : 0;
     this.flatK = smooth(this.flatK || 0, fl, 2.5, dt);
     if (this.flatK > 0.001) {

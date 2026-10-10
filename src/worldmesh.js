@@ -6,6 +6,7 @@ import { M, COL } from './layout.js';
 import { CURB_H, WATER_Y } from './config.js';
 import { wreckInto, boatInto } from './models.js';
 import { treeInto } from './trees.js';
+import { beachPropInto } from './beach.js';
 import { interiorInto } from './interior.js';
 
 const CH = 80, X0 = -160;
@@ -117,6 +118,7 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
       case 'ramp': ramp(B, p); break;
       case 'wreck': wreckInto(B, p.x, CURB_H + 0.02 + (p.y || 0), p.z, p.h, p.c); break;
       case 'boat': boatInto(B, p.x, WATER_Y + 0.05, p.z, p.rot, p.c, p.c2); break;
+      case 'beach': beachPropInto(B, p); break;                  // Norrholmen's beach (v1.1)
       case 'mesh': {
         const len = Math.hypot(p.x1 - p.x0, p.z1 - p.z0);
         fence.quad([p.x0, p.y0, p.z0], [p.x0, p.y1, p.z0], [p.x1, p.y1, p.z1], [p.x1, p.y0, p.z1], 0xffffff, 0,

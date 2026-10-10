@@ -134,7 +134,7 @@ export class Game {
     return v;
   }
 
-  // (v1.0) the red racing bike Sander leaves behind at the party: there is only ever one
+  // (v1.0) the red racing bike Jonte leaves behind at the party: there is only ever one
   spawnRedBike(x, z, h) {
     if (this.redBike && !this.redBike.removed) this.removeVehicle(this.redBike);
     const v = this.addVehicle('racebike', 'racer', x, z, h);

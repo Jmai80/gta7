@@ -1,4 +1,4 @@
-// Sander the bike thief (v1.0): rides a bike along the town's pavements – the corners of the nine
+// Jonte the bike thief (v1.0): rides a bike along the town's pavements – the corners of the nine
 // blocks, joined along each side and across each street at the zebra crossings – and away from you.
 // He keeps to the pavement line (the lamps are just beside it), slows for the corners, rings his bell
 // at people in the way (they jump), teases you when you fall behind, and backs out if he gets wedged.
@@ -232,7 +232,7 @@ export class Rider {
     g.emit('say', { who: this.ped, text: ['Kom igen då!', 'Bullarna är mina!', 'Du får aldrig tag på mig!', 'Mums, kanelbulle!', 'Pling pling!', 'Snyggt försök!'][Math.floor(g.rng() * 6)] });
   }
 
-  // Sander on the saddle, pedalling, leaning into the turns (like you on a bike: player.js). The job
+  // Jonte on the saddle, pedalling, leaning into the turns (like you on a bike: player.js). The job
   // calls this after the physics step, so he sits where the bike is now.
   pose(dt) {
     const bike = this.bike, ped = this.ped, b = ped.body, G = BIKE_GEO;
@@ -246,7 +246,7 @@ export class Rider {
     b.x = ped.x; b.y = ped.y; b.z = ped.z; b.h = ped.h;
   }
 
-  // knocked off (or grabbed): the bike falls over, Sander tumbles off
+  // knocked off (or grabbed): the bike falls over, Jonte tumbles off
   fall(vx, vz) {
     const g = this.game, bike = this.bike, ped = this.ped;
     this.on = false;

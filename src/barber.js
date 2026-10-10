@@ -1,15 +1,15 @@
-// Side quest "Salong Saxen" (v1.0). Fia has the hair salon on Skolgatan, on the ground floor of the
+// Side quest "Salong Saxen" (v1.0). Vera has the hair salon on Skolgatan, on the ground floor of the
 // square's brick building. She has broken her wrist – somebody had stolen the saddle off her bike – and
 // three customers are waiting on the sofa. She can't hold the scissors, so you do the work: take a tool
 // from the counter by the west wall (scissors, razor, three colours of dye), go to the chair and use it.
 // Do exactly what each customer asks. A cut or a shave can't be undone; a wrong colour you can dye over.
-// Each customer only waits so long. Two happy customers out of three and Fia's day is saved.
+// Each customer only waits so long. Two happy customers out of three and Vera's day is saved.
 import { WHO, SALON_PAY } from './config.js';
 import { SALON, TOOLS, DYES } from './salon.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { fmt } from './rng.js';
 
-const FIA = { who: 'Fia', letter: 'F', color: '#e8833a' };
+const FIA = { who: 'Vera', letter: 'V', color: '#e8833a' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 // red hair in a bun, glasses, the salon's orange apron over black
 export const FIA_LOOK = { shirt: 0x2b2e35, pants: 0x2b2e35, skin: 0xe8b996, hair: 0xc8442c, height: 0.98, bulk: 1.0, style: ST.bun | ST.glasses | ST.apron, accent: 0xe8833a };
@@ -47,7 +47,7 @@ const IMPATIENT = 'Jag har inte hela dagen. Hej då!';
 export function fiaPages() {
   return [
     { ...FIA, text: 'Hej och välkommen till Salong Saxen! Ursäkta att jag inte reser mig – jag bröt handleden i förrgår.' },
-    { ...FIA, text: 'Någon hade snott sadeln från min cykel, och jag märkte det först när jag satte mig. Det sägs att det är en kille som heter Sander som snor cyklar i stan.' },
+    { ...FIA, text: 'Någon hade snott sadeln från min cykel, och jag märkte det först när jag satte mig. Det sägs att det är en kille som heter Jonte som snor cyklar i stan.' },
     { ...YOU, text: 'Aj. Och kunderna?' },
     { ...FIA, text: 'Tre stycken, alla bokade i dag. Jag kan inte hålla i saxen – men du kan. Jag säger hur man gör.' },
     { ...FIA, text: 'Saxen, rakhyveln och färgerna står på disken vid väggen. Ta det du behöver och gå fram till stolen.' },
@@ -79,7 +79,7 @@ export function verdictPages(happy, amount) {
 export class SalonJob {
   constructor(mgr) {
     this.mgr = mgr; this.game = mgr.game; this.id = 'salong';
-    this.stage = 'enter';   // enter → shop (talk to Fia) → talk → work → verdict → done
+    this.stage = 'enter';   // enter → shop (talk to Vera) → talk → work → verdict → done
     this.prompt = null;
     this.fia = null;
     this.queue = [];        // the customers, each { def, ped, state: queue | walk | chair | leave | gone, ... }
@@ -99,11 +99,11 @@ export class SalonJob {
       this.spawnPeople();
       g.emit('toast', { text: 'Salong Saxen · Skolgatan', long: false });
       m.later(0.9, () => { if (this.stage === 'shop') this.say('Kom in, kom in! Hit till mig.', this.fia); }, this);
-      m.later(1.4, () => g.emit('hint', { id: 'fia', touch: 'Gå fram till Fia och tryck PRATA.', keys: 'Gå fram till Fia och tryck E för att prata.' }), this);
+      m.later(1.4, () => g.emit('hint', { id: 'fia', touch: 'Gå fram till Vera och tryck PRATA.', keys: 'Gå fram till Vera och tryck E för att prata.' }), this);
     }, 'salon');
   }
 
-  // Fia on her stool, the three customers on the sofa
+  // Vera on her stool, the three customers on the sofa
   spawnPeople() {
     const g = this.game;
     this.fia = seat(new Ped(g, { ...FIA_LOOK }), SALON.fia, 'fia');
@@ -136,7 +136,7 @@ export class SalonJob {
     if (this.stage === 'shop') {
       const near = p.state === 'foot' && !p.frozen && Math.hypot(p.x - SALON.talk.x, p.z - SALON.talk.z) < SALON.talk.r;
       if (near) this.prompt = 'PRATA';
-      m.setObjective('Prata med Fia', 'Hon sitter vid stolarna');
+      m.setObjective('Prata med Vera', 'Hon sitter vid stolarna');
       return;
     }
     // work: the customers, one at a time
@@ -212,7 +212,7 @@ export class SalonJob {
     if (this.ci === 0) this.mgr.later(1.6, () => this.game.emit('hint', { id: 'salon', touch: 'Ta ett verktyg vid disken och gå till stolen. Gör som kunden säger!', keys: 'Ta ett verktyg vid disken (E) och gå till stolen. Gör som kunden säger!' }), this);
   }
 
-  // the action button: talk to Fia, pick up a tool, or use it on the customer
+  // the action button: talk to Vera, pick up a tool, or use it on the customer
   interact() {
     const g = this.game, p = g.player, pr = this.prompt;
     if (!pr) return false;
@@ -305,7 +305,7 @@ export class SalonJob {
     if (this.ci >= this.queue.length) this.mgr.later(happy ? 2.6 : 3.0, () => this.verdict(), this);
   }
 
-  // all three served: what Fia thinks
+  // all three served: what Vera thinks
   verdict() {
     const g = this.game, m = this.mgr, p = g.player, F = this.fia;
     if (this.stage !== 'work') return;
@@ -348,14 +348,14 @@ export class SalonJob {
     m.complete(this, { title: 'SIDOUPPDRAG KLART', sub: 'Salong Saxen', amount: this.amount });
     if (this.tips) m.later(3.9, () => g.emit('toast', { text: `Varav ${fmt(this.tips)} kr i dricks för att du var snabb.`, long: true }));
     m.sms(WHO.fia, happy === 3
-      ? 'Telefonen har inte slutat ringa sedan du gick! Om du ser till Sander – han med cykelsadeln – säg att jag vill ha tillbaka den.'
-      : 'Tack för hjälpen i dag! Och håll utkik efter den där Sander – jag vill ha tillbaka min cykelsadel.', 8);
+      ? 'Telefonen har inte slutat ringa sedan du gick! Om du ser till Jonte – han med cykelsadeln – säg att jag vill ha tillbaka den.'
+      : 'Tack för hjälpen i dag! Och håll utkik efter den där Jonte – jag vill ha tillbaka min cykelsadel.', 8);
   }
 
   targets(T) {
     const g = this.game;
     if (!g.indoors.inside) return;
-    if ((this.stage === 'shop' || this.stage === 'talk') && this.fia) T.push({ kind: 'contact', x: this.fia.x, z: this.fia.z, r: 1, letter: 'F', color: FIA.color, badgeOnly: true, badgeY: 2.2, ref: this.fia });
+    if ((this.stage === 'shop' || this.stage === 'talk') && this.fia) T.push({ kind: 'contact', x: this.fia.x, z: this.fia.z, r: 1, letter: FIA.letter, color: FIA.color, badgeOnly: true, badgeY: 2.2, ref: this.fia });
     const c = this.current;
     if (this.stage === 'work' && c && c.state === 'chair') {
       // the badge of whoever is in the chair; an arrow over the chair once you hold a tool

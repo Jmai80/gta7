@@ -1,4 +1,4 @@
-# Version 0.8 walkthrough (Lasse's shop, Kim's jump, Nyöppningen); was: Version 0.7 walkthrough (Lås-Leif and Samuel, the bakery office and the safe) – based on the 0.6: tant Gun's text, the north bridge opening, Norrholmen, unlocking Arne's
+# Version 0.8 walkthrough (Lasse's shop, Kim's jump, Nyöppningen); was: Version 0.7 walkthrough (Lås-Leif and Melker, the bakery office and the safe) – based on the 0.6: tant Gun's text, the north bridge opening, Norrholmen, unlocking Arne's
 # bike at lott 7, the Bullbilen van coming after you, the ride, the delivery at Gun's gate and the
 # quest log. Screenshots in test/shots/v06_<mode>_*.png
 import asyncio, sys, json

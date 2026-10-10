@@ -1,4 +1,4 @@
-// Main quest, part 2: "Överlämningen" (v0.5). The unknown number wants Samuel's bike keys, handed
+// Main quest, part 2: "Överlämningen" (v0.5). The unknown number wants Melker's bike keys, handed
 // over on the bench at the far end of the harbour pier. Walk up behind the figure in the dark coat:
 // it is tant Gun. She takes the keys and tells you what they are for – and where the story goes
 // next (across the north bridge, once it opens).
@@ -21,11 +21,11 @@ export function handoverPages(mgr) {
     { ...GUN, fx: 'reveal', text: flag
       ? 'Jag skrev att du inte kände mig. Det var nästan sant – du hissade ju min flagga, lilla vän.'
       : 'Jag skrev att du inte kände mig. Det var nästan sant – jag är tanten med flaggstången på Storgatan.' },
-    { ...GUN, text: 'Nycklarna går till min Arnes gamla budcykel från Sjuby Konditori. Samuel köpte den på loppis för en hundralapp, den dumbommen.' },
+    { ...GUN, text: 'Nycklarna går till min Arnes gamla budcykel från Sjuby Konditori. Melker köpte den på loppis för en hundralapp, den dumbommen.' },
     { ...GUN, text: 'Det han inte vet är att Arne gömde receptet på Sjubybullen i cykelramen. Bullbilen har jagat det i trettio år.' },
     { ...YOU, text: 'Bullbilen? Skåpbilarna som kör runt i stan?' },
     { ...GUN, text: 'Just det. ”Nybakat varje dag” – pyttsan. De är bara ute efter Arnes recept.' },
-    { ...GUN, text: 'Samuel ställde cykeln på andra sidan norra bron innan den stängdes. När bron öppnar hämtar du den åt mig – före Bullbilen.' },
+    { ...GUN, text: 'Melker ställde cykeln på andra sidan norra bron innan den stängdes. När bron öppnar hämtar du den åt mig – före Bullbilen.' },
     { ...GUN, text: 'Här, för besväret. Och ta en kanelbulle, såklart.', last: 'TACK!' },
   ];
 }

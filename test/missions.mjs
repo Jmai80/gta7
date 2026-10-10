@@ -313,7 +313,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all eleven are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.0/.test(d.text) && /Sander/.test(d.text)), 'the last text: version 1.0, Sander is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1, Jonte is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -438,7 +438,7 @@ function startRace(g) {
   check(g2.mission.flag.h === 1 && g2.mission.done.has('flag'), 'the flag stays up after a restore');
 }
 
-// ---------- 10. main quest, part 1: Samuel's bike keys ----------
+// ---------- 10. main quest, part 1: Melker's bike keys ----------
 // walk toward (x, z) at a sneaking pace (the stick half way), camera behind facing north
 function walkTo(g, x, z, mag = 0.5, max = 15) {
   const p = g.player;
@@ -459,7 +459,7 @@ function intoTower(g) {
 }
 const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
 {
-  console.log('Samuels cykelnycklar (huvuduppdrag)');
+  console.log('Melkers cykelnycklar (huvuduppdrag)');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
   const m = g.mission;
   const ev = record(g, ['sms', 'banner', 'toast', 'fade', 'indoor', 'keys', 'caught', 'say']);
@@ -467,7 +467,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(!m.known.has('samuel'), 'no main quest in the first half minute');
   run(g, 11);
   const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'samuel');
-  check(offer && offer[1].from === 'Okänt nummer', 'after 40 s an unknown number texts about Samuel');
+  check(offer && offer[1].from === 'Okänt nummer', 'after 40 s an unknown number texts about Melker');
   check(m.info('samuel').main && m.list().find((q) => q.id === 'samuel').main, 'it is a main quest (offer card and list)');
   m.accept('samuel');
   run(g, 0.1);
@@ -487,14 +487,14 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(m.active && m.active.id === 'samuel' && g.indoor, 'walking in through the door: the lift up to floor 7');
   check(ev.some(([n, d]) => n === 'fade' && d.on) && ev.some(([n, d]) => n === 'indoor' && d.on), 'fade to black on the way in');
   const sam = g.indoors.samuel;
-  check(sam && sam.ped.state === 'lounge' && g.peds.list.includes(sam.ped), 'Samuel lounges on his sofa');
+  check(sam && sam.ped.state === 'lounge' && g.peds.list.includes(sam.ped), 'Melker lounges on his sofa');
   check(Math.hypot(g.player.x - INT.spawn.x, g.player.z - INT.spawn.z) < 0.3 && g.world.groundHeight(g.player.x, g.player.z) === INT.y, 'you step out of the lift on floor 7');
   // the walls hold
   walkTo(g, X0 + 20, Z0 + 1.2, 0.5, 6);
   check(g.player.x < X0 + 15, 'the corridor ends at its window');
   // into the flat and behind the sofa to the kitchen corner
   walkTo(g, X0 + 2.1, Z0 + 1.6); walkTo(g, X0 + 2.1, Z0 + 3.3);
-  check(inFlat(g.player.x, g.player.z), "through Samuel's door");
+  check(inFlat(g.player.x, g.player.z), "through Melker's door");
   walkTo(g, X0 + 7.0, Z0 + 3.2); walkTo(g, X0 + 9.0, Z0 + 3.4); walkTo(g, X0 + 9.0, Z0 + 4.4);
   check(!sam.caught && sam.meter < 0.2, 'sneaking behind him, nobody notices');
   check(!sam.los(g.player.x, g.player.z), 'the stub wall hides the kitchen corner from the sofa');
@@ -525,11 +525,11 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   g.step(DT, { ...idle, action: true });
   run(g, 1.2);
   check(!g.indoor && Math.hypot(g.player.x - TOWER_DOOR.x, g.player.z - TOWER_DOOR.z) < 3, 'back out on the square');
-  check(!g.indoors.samuel && !g.peds.list.some((p) => p.npc === 'samuel'), 'Samuel stays upstairs');
+  check(!g.indoors.samuel && !g.peds.list.some((p) => p.npc === 'samuel'), 'Melker stays upstairs');
   check(!m.targets.some((t) => t.letter === '?'), 'the ? is gone from the map');
 }
 {
-  console.log('Samuel ser dig');
+  console.log('Melker ser dig');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
   const m = g.mission;
   const ev = record(g, ['banner', 'sms', 'caught']);
@@ -543,7 +543,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   check(g.player.frozen, 'you freeze');
   run(g, 3);
   check(!g.indoor && !g.player.frozen, 'thrown out onto the square');
-  check(ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Samuel såg dig/.test(d.sub)), 'UPPDRAG MISSLYCKAT: Samuel såg dig');
+  check(ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Melker såg dig/.test(d.sub)), 'UPPDRAG MISSLYCKAT: Melker såg dig');
   check(m.isOpen('samuel') && m.tracked === 'samuel', 'the quest is still open (try again)');
   // running is loud
   const g2 = new Game({ seed: 11, traffic: 0, peds: 0 });
@@ -575,7 +575,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   const ev = record(g, ['sms', 'banner', 'toast', 'talk', 'keys', 'say']);
   run(g, 1);
   m.offer('overlamning');
-  check(!m.known.has('overlamning'), "no handover before Samuel's keys");
+  check(!m.known.has('overlamning'), "no handover before Melker's keys");
   check(!m.list().some((q) => q.id === 'cykel'), 'and no teaser in the list yet');
   // part 1, the short way: in through the door, the keys in your pocket, out in the corridor
   intoTower(g);
@@ -655,7 +655,7 @@ const X0 = INT.corridor.x0, Z0 = INT.corridor.z0;
   run(g, 0.2);
   check(m.prompt === 'PRATA', 'you can still talk to her');
   g.step(DT, { ...idle, action: true });
-  check(ev.some(([n, d]) => n === 'say' && d.who === gun && /bron|Bullbilen|bullen|Samuel/.test(d.text)), 'she reminds you of the bridge');
+  check(ev.some(([n, d]) => n === 'say' && d.who === gun && /bron|Bullbilen|bullen|Melker/.test(d.text)), 'she reminds you of the bridge');
   g.player.x = -40; g.player.z = -60; g.player.y = g.world.groundHeight(-40, -60);
   run(g, 0.5);
   check(!gun.away && Math.hypot(gun.x - GUN.x, gun.z - GUN.z) < 0.1, 'when you are gone she is back home on Storgatan');
@@ -726,7 +726,7 @@ function unlockAndMount(g) {
   g.step(DT, { ...idle, action: true }); run(g, 1.5);
   const job = unlockAndMount(g);
   check(job && job.id === 'cykel' && ev.some(([n, d]) => n === 'banner' && d.title === 'ARNES BUDCYKEL'), 'at the bike: the job begins');
-  check(!g.bike.locked && ev.some(([n, d]) => n === 'toast' && /nycklar passade/.test(d.text)), "LÅS UPP: Samuel's keys fit");
+  check(!g.bike.locked && ev.some(([n, d]) => n === 'toast' && /nycklar passade/.test(d.text)), "LÅS UPP: Melker's keys fit");
   check(g.player.inCar && g.player.car === g.bike && g.player.body.pose === 6, 'on the bike, pedalling');
   run(g, 1.5);
   check(job.van && job.chaser && job.chaser.hold > 0 && ev.some(([n, d]) => n === 'toast' && /Bullbilen/.test(d.text)), 'a Bullbilen van at the bakery has seen you');
@@ -954,12 +954,12 @@ function intoShop(g) {
   check(g3.money - m3 === LIVS_REWARD + EGGS * EGG_BONUS, `twelve whole eggs: ${LIVS_REWARD + EGGS * EGG_BONUS} kr`);
 }
 
-// ---------- 14. side quest: "Samuels nya nycklar" – Lås-Leif's keys out to Samuel ----------
+// ---------- 14. side quest: "Melkers nya nycklar" – Lås-Leif's keys out to Melker ----------
 const UP_TO_BIKE = ['red', 'lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel'];
 function press(g) { g.step(DT, { ...idle, action: true }); run(g, 0.2); }
 function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.world.groundHeight(x, z); g.player.vx = g.player.vz = 0; run(g, 0.2); }
 {
-  console.log('Samuels nya nycklar (sidouppdrag)');
+  console.log('Melkers nya nycklar (sidouppdrag)');
   const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
   g0.mission.restore(livsSave(['red', 'lasse', 'pizza', 'race', 'samuel', 'overlamning', 'livs']));
   const ev0 = record(g0, ['sms']);
@@ -972,7 +972,7 @@ function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.worl
   const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk']);
   run(g, 15.5);
   const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'nycklar');
-  check(offer && offer[1].from === 'Lås-Leif (Skolgatan)' && /Samuel/.test(offer[1].text), 'shortly after the eggs: Lås-Leif texts about Samuel\'s new keys');
+  check(offer && offer[1].from === 'Lås-Leif (Skolgatan)' && /Melker/.test(offer[1].text), 'shortly after the eggs: Lås-Leif texts about Melker\'s new keys');
   check(m.leif && Math.hypot(m.leif.x - LEIF.x, m.leif.z - LEIF.z) < 0.1, 'Leif stands outside his shop on Skolgatan');
   m.accept('nycklar');
   run(g, 0.1);
@@ -985,16 +985,16 @@ function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.worl
   check(job && job.id === 'nycklar' && t1 && /köksbordet/.test(t1[1].pages.map((q) => q.text).join(' ')), 'Leif hands over the keys: the old ones vanished from the kitchen table');
   m.talkDone('nycklar');
   run(g, 0.2);
-  check(job.stage === 'carry' && !g.player.frozen && /Samuel/.test(m.objective), `then out to Samuel (${m.objective} · ${m.sub})`);
+  check(job.stage === 'carry' && !g.player.frozen && /Melker/.test(m.objective), `then out to Melker (${m.objective} · ${m.sub})`);
   const sam = job.samuel;
-  check(sam && onIsle(sam.x, sam.z) && g.world.groundHeight(sam.x, sam.z) === CURB_H, 'Samuel waits by the allotments on Norrholmen');
+  check(sam && onIsle(sam.x, sam.z) && g.world.groundHeight(sam.x, sam.z) === CURB_H, 'Melker waits by the allotments on Norrholmen');
   check(!g.world.query(sam.x, sam.z, 1).some((c) => c.t === 'box' && c.h > 0.5 && sam.x > c.x0 - 0.5 && sam.x < c.x1 + 0.5 && sam.z > c.z0 - 0.5 && sam.z < c.z1 + 0.5), 'nothing in the way around him');
   const r = routePoints(g.layout.gps, LEIF_MARK.x, LEIF_MARK.z, SAMUEL_WAIT.x, SAMUEL_WAIT.z);
   let len = 0; for (let i = 1; i < r.length; i++) len += Math.hypot(r[i][0] - r[i - 1][0], r[i][1] - r[i - 1][1]);
   check(r.some(([x, z]) => x === 40 && z === -178) && len < KEY_TIME * 9, `over the north bridge, ${len.toFixed(0)} m in ${KEY_TIME} s (an average of ${(len / KEY_TIME * 3.6).toFixed(0)} km/h)`);
-  // too slow: Samuel goes home
+  // too slow: Melker goes home
   run(g, KEY_TIME + 0.5);
-  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Samuel/.test(d.sub)), 'too slow: Samuel goes home (failed)');
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /Melker/.test(d.sub)), 'too slow: Melker goes home (failed)');
   run(g, 4);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Lås-Leif (Skolgatan)' && /nytt försök/.test(d.text)), 'Leif: come back and try again');
   // again, and in time
@@ -1006,7 +1006,7 @@ function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.worl
   walkHere(g, SAMUEL_WAIT.x - 2.2, SAMUEL_WAIT.z + 0.5);
   run(g, 1);
   const t2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'nycklar').pop();
-  check(job2.stage === 'talk2' && /budcykel/.test(t2[1].pages.map((q) => q.text).join(' ')), 'Samuel takes the keys – and asks if you have seen an old delivery bike');
+  check(job2.stage === 'talk2' && /budcykel/.test(t2[1].pages.map((q) => q.text).join(' ')), 'Melker takes the keys – and asks if you have seen an old delivery bike');
   const money0 = g.money;
   m.talkDone('nycklar'); run(g, 0.3);
   check(m.done.has('nycklar') && g.money - money0 === KEY_REWARD, `side quest done, ${KEY_REWARD} kr`);
@@ -1014,7 +1014,7 @@ function walkHere(g, x, z) { g.player.x = x; g.player.z = z; g.player.y = g.worl
   run(g, 9);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Lås-Leif (Skolgatan)' && /hederlig/.test(d.text)), 'Leif texts afterwards');
   run(g, 25);
-  check(!g.peds.list.includes(sam) && !g.peds.list.includes(job2.samuel), 'Samuel has gone home');
+  check(!g.peds.list.includes(sam) && !g.peds.list.includes(job2.samuel), 'Melker has gone home');
 }
 
 // ---------- 15. main quest, part 4: the safe in the bakery office ----------
@@ -1296,23 +1296,23 @@ function jumpFrom(g, z0) {
   m.accept('konditori'); run(g, 0.2);
   check(m.active && m.active.id === 'konditori', 'accept it and it starts');
   run(g, 4);
-  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur' && d.from === 'Samuel'), 'a few seconds later: Samuel texts (side quest)');
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur' && d.from === 'Melker'), 'a few seconds later: Melker texts (side quest)');
   run(g, 5);
   check(ev.some(([n, d]) => n === 'sms' && d.offer === 'hemleverans' && d.from === 'Yasmin (Hörnlivs)'), 'and Yasmin (side quest) – even in the middle of "Nyöppningen"');
 }
 
-// ---------- 20. side quest: "Samuels cykel" ----------
+// ---------- 20. side quest: "Melkers cykel" ----------
 {
-  console.log('Samuels cykel (sidouppdrag)');
+  console.log('Melkers cykel (sidouppdrag)');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
   const m = g.mission;
   m.restore(livsSave(UP_TO_SAFE));
   const ev = record(g, ['sms', 'banner', 'talk']);
   run(g, 4.5);
-  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur'), 'Samuel texts');
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelretur'), 'Melker texts');
   m.accept('cykelretur'); run(g, 0.2);
   const job = m.active;
-  check(job && job.id === 'cykelretur' && job.samuel, 'it starts: Samuel waits outside the tower');
+  check(job && job.id === 'cykelretur' && job.samuel, 'it starts: Melker waits outside the tower');
   check(m.targets.some((t) => t.kind === 'car' && t.car === g.bike && t.gps), 'the GPS leads to the bike at Gun\'s gate');
   g.player.x = g.bike.x + 0.9; g.player.z = g.bike.z + 0.4; run(g, 0.2); press(g);
   check(g.player.car === g.bike, 'on the bike');
@@ -1320,11 +1320,11 @@ function jumpFrom(g, z0) {
   check(job.stage === 'ride', 'not there yet');
   b.x = BIKE_RETURN.x - 1; run(g, 1.2);
   const t = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelretur').pop();
-  check(job.stage === 'talk' && t && /loppis/.test(t[1].pages.map((q) => q.text).join(' ')), 'at the tower: Samuel forgives you');
+  check(job.stage === 'talk' && t && /loppis/.test(t[1].pages.map((q) => q.text).join(' ')), 'at the tower: Melker forgives you');
   const money0 = g.money;
   m.talkDone('cykelretur'); run(g, 0.3);
   check(m.done.has('cykelretur') && g.money - money0 === BIKE_RETURN.reward, `done, ${BIKE_RETURN.reward} kr`);
-  check(Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 2, 'the bike stays with Samuel by the tower');
+  check(Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 2, 'the bike stays with Melker by the tower');
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
   g2.mission.restore(JSON.parse(JSON.stringify(m.progress())));
   check(g2.bike && Math.hypot(g2.bike.x - BIKE_RETURN.x, g2.bike.z - BIKE_RETURN.z) < 2, 'saved: the bike by the tower');
@@ -1536,7 +1536,7 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   check(!m.known.has('salong'), 'not right away');
   run(g, 6);
   const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'salong');
-  check(offer && offer[1].from === 'Fia (Salong Saxen)' && /Skolgatan/.test(offer[1].text), 'Fia at Salong Saxen texts: three customers, a broken wrist');
+  check(offer && offer[1].from === 'Vera (Salong Saxen)' && /Skolgatan/.test(offer[1].text), 'Vera at Salong Saxen texts: three customers, a broken wrist');
   check(m.info('salong').side && m.list().find((q) => q.id === 'salong').side, 'it is a side quest');
   m.accept('salong');
   // in a car at the door: in you go on foot
@@ -1550,12 +1550,12 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   const job = m.active;
   check(job && job.id === 'salong' && g.indoors.inside && g.indoors.where === 'salon', 'through the door: inside the salon');
   check(m.prompt !== 'GÅ UT', 'a step inside the door (not straight out again)');
-  check(job.fia && job.queue.length === 3 && job.queue.every((c) => c.ped.state === 'lounge'), 'Fia on her stool, three customers on the sofa');
+  check(job.fia && job.queue.length === 3 && job.queue.every((c) => c.ped.state === 'lounge'), 'Vera on her stool, three customers on the sofa');
   walkHere(g, SALON.talk.x - 1.2, SALON.talk.z);
-  check(m.prompt === 'PRATA', 'PRATA by Fia');
+  check(m.prompt === 'PRATA', 'PRATA by Vera');
   press(g);
   const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
-  check(job.stage === 'talk' && tk && tk[1].pages.some((pg) => /Sander/.test(pg.text)), 'Fia explains – and a bike thief called Sander took her saddle');
+  check(job.stage === 'talk' && tk && tk[1].pages.some((pg) => /Jonte/.test(pg.text)), 'Vera explains – and a bike thief called Jonte took her saddle');
   m.talkDone('salong'); run(g, 0.5);
   check(job.stage === 'work', 'to work');
   const waitChair = () => { for (let t = 0; t < 20 && !(job.current && job.current.state === 'chair'); t += 0.1) run(g, 0.1); return job.current; };
@@ -1592,14 +1592,14 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   check(lasse.happy === true, 'blond: happy');
   run(g, 3.5);
   const vk = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
-  check(job.stage === 'verdict' && /Två av tre/.test(vk[1].pages[0].text), 'two out of three: Fia is pleased');
+  check(job.stage === 'verdict' && /Två av tre/.test(vk[1].pages[0].text), 'two out of three: Vera is pleased');
   const money0 = g.money;
   m.talkDone('salong'); run(g, 0.5);
   const paid = g.money - money0;
   check(m.done.has('salong') && paid >= SALON_PAY.base + 2 * SALON_PAY.happy && paid <= SALON_PAY.base + 2 * (SALON_PAY.happy + SALON_PAY.tip), `side quest done: ${paid} kr with the tips`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Salong Saxen') && g.stats.salonHappy === 2, 'SIDOUPPDRAG KLART, two happy customers in the stats');
   run(g, 9);
-  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Sander/.test(d.text)), 'Fia texts afterwards: keep an eye out for Sander');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Vera (Salong Saxen)' && /Jonte/.test(d.text)), 'Vera texts afterwards: keep an eye out for Jonte');
   walkHere(g, SALON.door.x, SALON.door.z);
   check(m.prompt === 'GÅ UT', 'GÅ UT by the door');
   press(g); run(g, 1.2);
@@ -1637,33 +1637,33 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   m.talkDone('salong'); run(g, 0.5);
   check(!m.done.has('salong') && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'failed – but the quest stays open');
   run(g, 4);
-  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Kom tillbaka/.test(d.text)), 'Fia: come back and try three new customers');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Vera (Salong Saxen)' && /Kom tillbaka/.test(d.text)), 'Vera: come back and try three new customers');
   walkHere(g, SALON.door.x, SALON.door.z); press(g); run(g, 1.2);
   check(!g.indoors.inside && !g.peds.list.includes(job.fia), 'out you go, and the salon empties');
-  // again: the short version from Fia, and walking out half way is no failure
+  // again: the short version from Vera, and walking out half way is no failure
   walkHere(g, SALON_DOOR.x + 2, SALON_DOOR.z + 3); run(g, 7);
   walkHere(g, SALON_DOOR.x, SALON_DOOR.z); run(g, 1.4);
   job = m.active;
   check(job && job.id === 'salong' && g.indoors.inside, 'back in: three new customers');
   walkHere(g, SALON.talk.x - 1.2, SALON.talk.z); press(g);
   const tk2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
-  check(tk2 && tk2[1].pages.length === 2 && /Nya kunder/.test(tk2[1].pages[0].text), 'Fia keeps it short the second time');
+  check(tk2 && tk2[1].pages.length === 2 && /Nya kunder/.test(tk2[1].pages[0].text), 'Vera keeps it short the second time');
   m.talkDone('salong'); run(g, 0.5);
   const fails0 = ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length;
   walkHere(g, SALON.door.x, SALON.door.z); press(g); run(g, 1.6);
   check(!m.active && ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length === fails0, 'walking out half way: no failure, the quest waits');
   run(g, 1);
-  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Kunderna gick hem/.test(d.text)), 'Fia texts: the customers went home');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Vera (Salong Saxen)' && /Kunderna gick hem/.test(d.text)), 'Vera texts: the customers went home');
 }
 
-// ---------- 26. main quest, part 8: "Bullfesten" – Sander the bike thief (v1.0) ----------
+// ---------- 26. main quest, part 8: "Bullfesten" – Jonte the bike thief (v1.0) ----------
 const UP_TO_FACTORY = [...UP_TO_OPENING, 'syltburken', 'fabriken', 'cykelretur'];
 function festGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   const g = new Game({ seed, ...opts });
   g.mission.restore(livsSave(UP_TO_FACTORY));
   return g;
 }
-// into the party: the talk up to Sander on the bike, then after him
+// into the party: the talk up to Jonte on the bike, then after him
 function festStart(g) {
   const m = g.mission;
   walkHere(g, FEST.mark.x, FEST.mark.z); run(g, 1.6);
@@ -1684,7 +1684,7 @@ function festStart(g) {
   walkHere(g, -100, -60); run(g, 0.5);
   const P = m.party, gun = m.flag.gun;
   const table = g.layout.colliders.find((c) => c.fest);
-  check(P.up && P.sander && P.pia && P.people.length >= 10, 'out of sight: the party is up – people, Polis-Pia, and Sander in the crowd');
+  check(P.up && P.sander && P.pia && P.people.length >= 10, 'out of sight: the party is up – people, Polis-Pia, and Jonte in the crowd');
   check(g.bike && Math.hypot(g.bike.x - FEST.bike.x, g.bike.z - FEST.bike.z) < 0.5 && g.bike.buns && g.redBike && g.redBike.type === 'racebike', 'Arne\'s bike with a box of buns by the table, a red racing bike by the square');
   check(table.h > 0.5 && Math.hypot(gun.x - FEST.table.x0, gun.z - FEST.table.z1) < 3 && m.flag.pinned, 'the long table is up, tant Gun behind it');
   // Gun at the party: a party line (not the old "the north bridge, don't forget")
@@ -1696,15 +1696,15 @@ function festStart(g) {
   m.accept('bullfest');
   const job = festStart(g);
   const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
-  check(tk && tk[1].pages.length === 9 && tk[1].pages.some((pg) => pg.who === 'Sander' && pg.fx === 'steal') && tk[1].pages.some((pg) => /cykeltjuv/.test(pg.text)), 'the party talk: Gun, Bengt, Samuel, Polis-Pia warns about a bike thief – and Sander');
+  check(tk && tk[1].pages.length === 9 && tk[1].pages.some((pg) => pg.who === 'Jonte' && pg.fx === 'steal') && tk[1].pages.some((pg) => /cykeltjuv/.test(pg.text)), 'the party talk: Gun, Bengt, Melker, Polis-Pia warns about a bike thief – and Jonte');
   const S = P.sander, bike = g.bike;
-  check(job.stage === 'chase' && S.state === 'ride' && bike.driver === 'racer' && bike.locked, 'Sander is off on Arne\'s bike (locked: no getting on while he rides it)');
+  check(job.stage === 'chase' && S.state === 'ride' && bike.driver === 'racer' && bike.locked, 'Jonte is off on Arne\'s bike (locked: no getting on while he rides it)');
   check(ev.some(([n, d]) => n === 'horn' && d.car === bike), 'with a ring of the bell');
   run(g, 4);
   const away = Math.hypot(bike.x - FEST.bike.x, bike.z - FEST.bike.z);
   check(away > 18 && Math.abs(S.x - bike.x) < 1 && Math.abs(S.z - bike.z) < 1, `he rides off – ${away.toFixed(0)} m in 4 s – sitting on the saddle`);
   check(m.targets.some((t) => t.kind === 'racer' && t.car === bike && t.gps), 'the red arrow and the GPS on him');
-  check(/Ta fast Sander/.test(m.objective), 'objective: catch Sander');
+  check(/Ta fast Jonte/.test(m.objective), 'objective: catch Jonte');
   // onto the red racer, and after him (close behind: you grab his hood)
   const red = g.redBike;
   walkHere(g, red.x - 0.6, red.z); press(g);
@@ -1730,7 +1730,7 @@ function festStart(g) {
   check(job.stage === 'caught', `caught on foot after ${t.toFixed(1)} s`);
   run(g, 1);
   const ck = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
-  check(ck && ck[1].pages.some((pg) => pg.who === 'Sander' && /ger mig/.test(pg.text)) && ck[1].pages.some((pg) => pg.who === 'Polis-Pia' && /Var är de andra/.test(pg.text)) && ck[1].pages.some((pg) => /båthuset/.test(pg.text)), 'he gives up – Polis-Pia asks where the other bikes are (the old boathouse)');
+  check(ck && ck[1].pages.some((pg) => pg.who === 'Jonte' && /ger mig/.test(pg.text)) && ck[1].pages.some((pg) => pg.who === 'Polis-Pia' && /Var är de andra/.test(pg.text)) && ck[1].pages.some((pg) => /båthuset/.test(pg.text)), 'he gives up – Polis-Pia asks where the other bikes are (the old boathouse)');
   m.talkFx('bullfest', 'pia');
   check(Math.hypot(P.pia.x - S.x, P.pia.z - S.z) < 3, 'Polis-Pia is there');
   const money0 = g.money;
@@ -1739,18 +1739,18 @@ function festStart(g) {
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Bullfesten'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /räddad/.test(d.text)), 'tant Gun: the party is saved');
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.0/.test(d.text)), 'all eleven done: the end card (version 1.0)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1/.test(d.text)), 'all eleven done: the end card (version 1.1)');
   const next = m.list().find((q) => q.id === 'cykelgomman');
-  check(next && next.state === 'soon' && /Sander/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
-  // you walk off: Pia takes Sander away, the bike goes home, the party winds down
+  check(next && next.state === 'soon' && /Jonte/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
+  // you walk off: Pia takes Jonte away, the bike goes home, the party winds down
   walkHere(g, -100, -60); run(g, 14);
-  check(!g.peds.list.includes(S) && !g.peds.list.includes(P.pia), 'Pia and Sander are gone');
+  check(!g.peds.list.includes(S) && !g.peds.list.includes(P.pia), 'Pia and Jonte are gone');
   check(Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 3 && !g.bike.fallen, 'Arne\'s bike is back by the tower');
   check(!P.up && table.h === 0 && !m.flag.pinned, 'the party is over: the table is gone, Gun goes home');
 }
 {
   console.log('Bullfesten: han kommer undan, bilen, trafiken');
-  // standing still: Sander gets away; back at the party he tries again
+  // standing still: Jonte gets away; back at the party he tries again
   const g = festGame(9);
   const m = g.mission;
   const ev = record(g, ['sms', 'banner', 'talk', 'toast']);
@@ -1763,7 +1763,7 @@ function festStart(g) {
   run(g, 4);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Polis-Pia' && /festen/.test(d.text)), 'Polis-Pia: he has been seen by the square again');
   walkHere(g, -100, -60); run(g, 4);
-  check(g.bike && Math.hypot(g.bike.x - FEST.bike.x, g.bike.z - FEST.bike.z) < 0.5 && m.party.sander && Math.hypot(m.party.sander.x - 0.9, m.party.sander.z - 13.9) < 1, 'out of sight: Sander and the bike are back at the party');
+  check(g.bike && Math.hypot(g.bike.x - FEST.bike.x, g.bike.z - FEST.bike.z) < 0.5 && m.party.sander && Math.hypot(m.party.sander.x - 0.9, m.party.sander.z - 13.9) < 1, 'out of sight: Jonte and the bike are back at the party');
   run(g, 4);
   job = festStart(g);
   const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
@@ -1793,7 +1793,7 @@ function festStart(g) {
   check(job2.stage === 'run' && g2.stats.sanderHow === 'traffic', 'a car hits him: off he comes');
 }
 {
-  console.log('Sanders röda racercykel');
+  console.log('Jontes röda racercykel');
   const g = new Game({ seed: 7, traffic: 0, peds: 0 });
   g.mission.restore(livsSave(['lasse']));
   g.mission.lasse = 'steal';

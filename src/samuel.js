@@ -1,5 +1,5 @@
-// Main quest, part 1: "Samuels cykelnycklar".
-// Samuel lounges on his sofa on floor 7 of the dark tower, staring at his phone. Now and then he
+// Main quest, part 1: "Melkers cykelnycklar".
+// Melker lounges on his sofa on floor 7 of the dark tower, staring at his phone. Now and then he
 // looks up and around the room; noise (running, the keys jingling) makes him look up sooner and
 // toward the sound. If he sees you for long enough – quicker the closer you are, and quicker
 // when you move – he jumps up and throws you out.
@@ -264,8 +264,8 @@ export class SamuelJob {
       g.emit('toast', { text: 'Höghuset · plan 7', long: false });
       m.later(1.2, () => g.emit('hint', {
         id: 'sneak',
-        touch: 'Samuel sitter i soffan. Smyg: dra spaken bara lite. Springer du hör han dig.',
-        keys: 'Samuel sitter i soffan. Gå lugnt – springer du (Shift) hör han dig.',
+        touch: 'Melker sitter i soffan. Smyg: dra spaken bara lite. Springer du hör han dig.',
+        keys: 'Melker sitter i soffan. Gå lugnt – springer du (Shift) hör han dig.',
       }), this);
     });
   }
@@ -288,7 +288,7 @@ export class SamuelJob {
     if (!this.keys) {
       const k = INT.keys;
       this.prompt = p.state === 'foot' && Math.hypot(p.x - k.x, p.z - k.z) < 1.3 ? 'TA' : null;
-      m.setObjective('Ta cykelnycklarna', inside ? 'På köksbordet · smyg när han tittar i telefonen' : 'Samuels lägenhet, lgh 1703');
+      m.setObjective('Ta cykelnycklarna', inside ? 'På köksbordet · smyg när han tittar i telefonen' : 'Melkers lägenhet, lgh 1703');
     } else {
       this.prompt = null;
       if (!inside && p.z < INT.door.z - 0.1) { this.finish(); return; } // out in the corridor
@@ -311,7 +311,7 @@ export class SamuelJob {
     const g = this.game, m = this.mgr;
     g.indoors.shutDoor();
     g.stats.keysTaken = true;
-    m.complete(this, { title: 'HUVUDUPPDRAG KLART', sub: 'Samuels cykelnycklar', amount: SAMUEL_REWARD });
+    m.complete(this, { title: 'HUVUDUPPDRAG KLART', sub: 'Melkers cykelnycklar', amount: SAMUEL_REWARD });
     m.sms(WHO.anon, 'Snyggt. Ta dig ut ur huset, så hör jag av mig om cykeln.', 3.6);
     m.later(1.0, () => g.emit('toast', { text: 'Dörren gick i lås bakom dig. Hissen är i slutet av korridoren.', long: true }));
   }
@@ -326,7 +326,7 @@ export class SamuelJob {
       if (sam) sam.say('out');
       g.indoors.exit(() => {
         g.player.frozen = false;
-        m.fail(this, 'Samuel såg dig', [WHO.anon, 'Klantigt. Vänta tills han har lugnat ner sig och försök igen.']);
+        m.fail(this, 'Melker såg dig', [WHO.anon, 'Klantigt. Vänta tills han har lugnat ner sig och försök igen.']);
       });
     }, this);
   }

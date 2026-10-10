@@ -1,4 +1,4 @@
-// Salong Saxen from the inside (v1.0): Fia's hair salon on Skolgatan, on the ground floor of the
+// Salong Saxen from the inside (v1.0): Vera's hair salon on Skolgatan, on the ground floor of the
 // square's brick building. Like the tower, Hörnlivs and the bakery office it is built out at sea
 // (INDOOR in config.js) and shown instead of the town while you are in there. Local coordinates:
 // x east, z south, y up from the floor; the origin is the room's north-west corner. The street door
@@ -7,7 +7,7 @@
 //   z=0  ┌ shelf ── mirror ── mirror ── products ┐
 //        │ SAX     [chair A]  [chair B]           │
 //        │ RAKHYVEL                         sofa  │
-//        │ BLÅ             Fia (stool)      (the  │
+//        │ BLÅ             Vera (stool)      (the  │
 //        │ ROSA                             queue)│
 //        │ BLOND                                  │
 //   z=7  └─door──┴── desk ─── windows ────────────┘
@@ -18,7 +18,7 @@ const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, FLOORTILE = 31, FABRIC = 33,
 const IH = 2.45;
 const X = INDOOR.x + 28, Y = INDOOR.y, Z = INDOOR.z + 4;
 
-// the hair colours in Fia's bottles (and what the customers ask for)
+// the hair colours in Vera's bottles (and what the customers ask for)
 export const DYES = {
   bla: { name: 'blått', bottle: 'BLÅ FÄRG', hex: 0x2f6fe0 },
   rosa: { name: 'rosa', bottle: 'ROSA FÄRG', hex: 0xf06aa8 },
@@ -39,13 +39,13 @@ for (const [k, t] of Object.entries(TOOLS)) { t.id = k; t.x = X + 0.95; t.z = Z 
 export const SALON = {
   spawn: { x: X + 1.9, z: Z + 5.6, h: Math.PI },          // a step inside the door, facing the mirrors
   door: { x: X + 1.8, z: Z + 6.6, r: 0.8 },                // stand here and press GÅ UT
-  fia: { x: X + 6.5, z: Z + 3.2, y: Y + 0.66, h: -Math.PI / 2 }, // Fia on her stool, watching the chair (her hips on the seat)
+  fia: { x: X + 6.5, z: Z + 3.2, y: Y + 0.66, h: -Math.PI / 2 }, // Vera on her stool, watching the chair (her hips on the seat)
   talk: { x: X + 6.5, z: Z + 3.2, r: 1.9 },               // walk up to her and press PRATA
   chair: { x: X + 4.2, z: Z + 1.45, y: Y + 0.55, h: Math.PI }, // the customer's chair (hips on the seat), facing the mirror
   work: { x: X + 4.2, z: Z + 1.45, r: 1.5 },              // close enough to the chair to cut, shave or dye
   stand: { x: X + 4.2, z: Z + 2.55 },                      // where a customer steps up to (and off) the chair
   seats: [3.05, 4.05, 5.05].map((z) => ({ x: X + 9.5, z: Z + z, y: Y + 0.47, h: -Math.PI / 2 })), // the queue on the sofa
-  toChair: [[X + 7.8, Z + 2.4], [X + 5.0, Z + 2.4]],     // from the sofa to the chair (north of Fia's stool, south of chair B)
+  toChair: [[X + 7.8, Z + 2.4], [X + 5.0, Z + 2.4]],     // from the sofa to the chair (north of Vera's stool, south of chair B)
   out: [[X + 2.6, Z + 4.6], [X + 1.8, Z + 6.0], [X + 1.8, Z + 6.85]], // the way out for a finished customer
   room: { x0: X, x1: X + 10, z0: Z, z1: Z + 7 },
   bounds: { x0: X - 0.5, x1: X + 10.5, z0: Z - 0.5, z1: Z + 7.5 },
@@ -71,7 +71,7 @@ export const SALON_FURN = [
   [8.5, 0, 10, 0.45, 1.9],       // shelves of shampoo
   [9.25, 2.5, 10, 5.6, 0.85],    // the sofa
   [9.3, 1.45, 9.95, 2.3, 0.45],  // a little table with magazines
-  [6.3, 3.05, 6.7, 3.45, 0.6],   // Fia's stool
+  [6.3, 3.05, 6.7, 3.45, 0.6],   // Vera's stool
   [3.2, 6.15, 5.0, 6.75, 1.05],  // the desk by the door
   [0, 0, 1.4, 0.55, 0.9],        // the wash basin
   [1.2, 7, 2.4, 7.2, IH],        // the glass door (shut behind you)
@@ -187,7 +187,7 @@ export function salonInto(B) {
   bx(9.3, 0.4, 1.45, 9.95, 0.45, 2.3, 0xc49a6c, PLAIN, { skipBottom: false });
   for (const [x, z] of [[9.34, 1.5], [9.87, 1.5], [9.34, 2.22], [9.87, 2.22]]) bx(x, 0, z, x + 0.04, 0.4, z + 0.04, 0x8a6a48);
   for (const [z, c] of [[1.55, 0xf06aa8], [1.8, 0xf2efe6], [2.0, 0x2f6fe0]]) bx(9.4, 0.45, z, 9.85, 0.47, z + 0.22, c);
-  // Fia's stool and a little trolley
+  // Vera's stool and a little trolley
   cyl(6.5, 3.25, 0, 0.04, 0.24, 0x9aa0a6, CHROME);
   cyl(6.5, 3.25, 0.04, 0.58, 0.035, 0x9aa0a6, CHROME);
   cyl(6.5, 3.25, 0.58, 0.64, 0.2, 0x1d1f22, FABRIC);

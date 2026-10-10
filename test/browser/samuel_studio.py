@@ -1,4 +1,4 @@
-# Close-ups of Samuel on his sofa (phone up / looking around / caught) with a hand-placed camera.
+# Close-ups of Melker on his sofa (phone up / looking around / caught) with a hand-placed camera.
 import asyncio, sys, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, "/home/claude/gta7/test/browser")

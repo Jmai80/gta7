@@ -1,4 +1,4 @@
-// The inside of the dark tower: the 7th-floor corridor with the lift, and Samuel's little flat.
+// The inside of the dark tower: the 7th-floor corridor with the lift, and Melker's little flat.
 // It is built out at sea (INDOOR in config.js) and shown instead of the town while you are
 // inside. Local coordinates: x east, z south, y up from the floor; the origin is the corridor's
 // west end, where the lift is.
@@ -6,7 +6,7 @@
 //   z=0    ┌─────────────────────────────────────────────────────┐
 //   lift → │ corridor   (doors: Lindqvist · Nguyen · Persson)    │ window
 //   z=2.4  └───┬door┬───────────────────────────────────┬─────────┘
-//              │hall         Samuel on the sofa    stub │ kitchen corner
+//              │hall         Melker on the sofa    stub │ kitchen corner
 //              │             (faces the TV, south)      │ table · counter
 //   z=10.4     └──────── windows ─── TV ─── windows ────┘
 //              x=1                                      x=11
@@ -25,10 +25,10 @@ const X = INDOOR.x, Y = INDOOR.y, Z = INDOOR.z;
 export const INT = {
   spawn: { x: X + 1.7, z: Z + 1.2, h: Math.PI / 2 },              // out of the lift, facing east along the corridor
   lift: { x: X + 0.45, z: Z + 1.2, r: 1.05 },                      // stand here and press HISS to go down
-  door: { x0: X + 1.6, x1: X + 2.6, z: Z + 2.5, hinge: [X + 1.62, Z + 2.5] }, // Samuel's front door
+  door: { x0: X + 1.6, x1: X + 2.6, z: Z + 2.5, hinge: [X + 1.62, Z + 2.5] }, // Melker's front door
   flat: { x0: X + 1.0, x1: X + 11.0, z0: Z + 2.6, z1: Z + 10.4 }, // inside the flat
   corridor: { x0: X, x1: X + 15, z0: Z, z1: Z + 2.4 },
-  seat: { x: X + 4.9, z: Z + 6.62, y: Y + 0.46, h: 0 },             // Samuel's hips on the sofa, facing the TV (south)
+  seat: { x: X + 4.9, z: Z + 6.62, y: Y + 0.46, h: 0 },             // Melker's hips on the sofa, facing the TV (south)
   tv: { x: X + 4.8, z: Z + 10.17, y: Y + 0.86 },
   table: { x: X + 9.05, z: Z + 7.7 },
   keys: { x: X + 9.2, y: Y + 0.775, z: Z + 7.5 },
@@ -42,7 +42,7 @@ export const INT = {
 const CORR = 0xc5ccc2, FLAT = 0xebe4d7, KITCH = 0xe3e8e4;
 export const WALLS = [
   [-0.2, -0.2, 15.2, 0, CORR],      // corridor: north side
-  [-0.2, 2.4, 1.6, 2.5, CORR],      // corridor: south side, west of Samuel's door …
+  [-0.2, 2.4, 1.6, 2.5, CORR],      // corridor: south side, west of Melker's door …
   [-0.2, 2.5, 1.6, 2.6, FLAT],
   [2.6, 2.4, 15.2, 2.5, CORR],      // … and east of it
   [2.6, 2.5, 11.2, 2.6, FLAT],
@@ -67,7 +67,7 @@ export const FURN = [
 ];
 
 const SIGNS = {
-  nSamuel: { def: { lines: ['SAMUEL', 'LGH 1703'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 3.0, y: 1.5, z: 2.4, n: 'nz', w: 0.34, h: 0.17 },
+  nSamuel: { def: { lines: ['MELKER', 'LGH 1703'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 3.0, y: 1.5, z: 2.4, n: 'nz', w: 0.34, h: 0.17 },
   nHolm: { def: { lines: ['HOLM', 'LGH 1704'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 13.45, y: 1.5, z: 2.4, n: 'nz', w: 0.34, h: 0.17 },
   nLindqvist: { def: { lines: ['LINDQVIST', 'LGH 1701'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 4.05, y: 1.5, z: 0, n: 'pz', w: 0.34, h: 0.17 },
   nNguyen: { def: { lines: ['NGUYEN', 'LGH 1705'], bg: '#f4efe4', fg: '#1d1f22', font: 0.55, border: '#8a7a5a' }, x: 8.85, y: 1.5, z: 0, n: 'pz', w: 0.34, h: 0.17 },
@@ -81,7 +81,7 @@ export function interiorLayout() {
   const colliders = [];
   const box = (x0, z0, x1, z1, h, extra) => colliders.push({ t: 'box', x0: X + x0, z0: Z + z0, x1: X + x1, z1: Z + z1, h: Y + h, ...extra });
   for (const [x0, z0, x1, z1] of WALLS) box(x0, z0, x1, z1, IH);
-  box(1.6, 2.4, 2.6, 2.6, 0, { door: 'samuel', hClosed: Y + IH }); // Samuel's front door: open (h 0) until you leave with the keys
+  box(1.6, 2.4, 2.6, 2.6, 0, { door: 'samuel', hClosed: Y + IH }); // Melker's front door: open (h 0) until you leave with the keys
   for (const [x0, z0, x1, z1, h] of FURN) box(x0, z0, x1, z1, h);
   const signs = {}, signPrims = [];
   for (const [id, s] of Object.entries(SIGNS)) {
@@ -96,7 +96,7 @@ export function interiorLayout() {
   colliders.push(...office.colliders);
   Object.assign(signs, office.signs);
   signPrims.push(...office.signPrims);
-  const salon = salonLayout(); // Fia's hair salon on Skolgatan (v1.0)
+  const salon = salonLayout(); // Vera's hair salon on Skolgatan (v1.0)
   colliders.push(...salon.colliders);
   Object.assign(signs, salon.signs);
   signPrims.push(...salon.signPrims);
@@ -125,17 +125,17 @@ export function interiorInto(B) {
 
   // walls (the shader cuts a hole where they would hide you from the camera)
   for (const [x0, z0, x1, z1, c] of WALLS) bx(x0, 0, z0, x1, IH, z1, c, IWALL, { top: { c: 0x2a2e34, m: IWALL } });
-  bx(1.6, 2.1, 2.4, 2.6, IH, 2.5, CORR, IWALL, { top: { c: 0x2a2e34, m: IWALL } }); // over Samuel's door
+  bx(1.6, 2.1, 2.4, 2.6, IH, 2.5, CORR, IWALL, { top: { c: 0x2a2e34, m: IWALL } }); // over Melker's door
   bx(1.6, 2.1, 2.5, 2.6, IH, 2.6, FLAT, IWALL, { top: { c: 0x2a2e34, m: IWALL } });
 
   const WHITE = 0xf1eee7;
-  // Samuel's door frame (the door itself is its own mesh: open now, shut when you leave)
+  // Melker's door frame (the door itself is its own mesh: open now, shut when you leave)
   for (const zz of [[2.37, 2.4], [2.6, 2.63]]) {
     bx(1.52, 0, zz[0], 1.6, 2.18, zz[1], WHITE, ITRIM);
     bx(2.6, 0, zz[0], 2.68, 2.18, zz[1], WHITE, ITRIM);
     bx(1.52, 2.1, zz[0], 2.68, 2.18, zz[1], WHITE, ITRIM);
   }
-  // closed doors to the neighbours (and Samuel's bathroom)
+  // closed doors to the neighbours (and Melker's bathroom)
   const wallDoor = (x, z, n, col) => {
     const [nx, nz] = NORMALS[n];
     const along = nx !== 0 ? 'z' : 'x';
@@ -237,7 +237,7 @@ export function interiorInto(B) {
   salonInto(B); // Salong Saxen
 }
 
-// door panel for Samuel's front door, hinge at the origin, closed along +x (render.js turns it)
+// door panel for Melker's front door, hinge at the origin, closed along +x (render.js turns it)
 export function doorInto(B) {
   B.box(0, 0, -0.024, 0.96, 2.08, 0.024, 0x6f4a3a, ITRIM, { skipBottom: false });
   for (const s of [1, -1]) {

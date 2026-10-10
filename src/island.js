@@ -1,6 +1,6 @@
 // Norrholmen (v0.6): the island across the north bridge, about a third the size of Sjuby.
 // A curvy coastal road loops around it and a straight road runs up the middle from the bridge.
-// West of it: the allotments (kolonilotterna), where Samuel left Arne's delivery bike, and an old
+// West of it: the allotments (kolonilotterna), where Melker left Arne's delivery bike, and an old
 // windmill. East of it: Bullbilen's bakery with its vans, a spruce wood and, out on the point,
 // the lighthouse. A beach and a small marina face the town across the water.
 // Pure data like layout.js: everything goes out through the helpers createLayout hands over.
@@ -41,6 +41,16 @@ export const ISLE = {
   mill: { x: -5, z: -360, hubY: CURB_H + 10.6 },
   lighthouse: { x: 113, z: -386 },
   beach: { x: 0, z: -242 },
+};
+
+// the beach (v1.1): the sand between the shoreline and its edge toward the road, the boardwalk from
+// the road, the jetty you can walk out on, and the corners of the swimming area (the buoys)
+export const BEACH = {
+  shore: [[-34.5, -249.1], [-12, -236], [25.2, -230]],
+  inland: [[-34.5, -249.6], [-31, -252.8], [-25, -255], [-18, -254.4], [-10, -252], [-2, -250.6], [6, -249.4], [14, -248], [20, -246.4], [24.4, -243], [26.2, -238], [26, -232.6], [25.4, -230.4]],
+  walk: { x0: 3.2, x1: 4.8, z0: -251.2, z1: -233.6 },
+  jetty: { x0: 3.1, x1: 4.9, z0: -233.9, z1: -220.5 },
+  swim: [[-16.8, -234.6], [-20.5, -220.5], [13.5, -215.2], [12.4, -229.0]],
 };
 
 // ---------------------------------------------------------------- geometry helpers
@@ -154,7 +164,11 @@ export function islandInto(H) {
     // you cannot walk or drive into the sea; the gap at the bridge landing lets the road through
     const ux = dx / l, uz = dz / l, nx = out ? dz / l : -dz / l, nz = out ? -dx / l : dx / l; // outward normal
     if (!(mx > 34 && mx < 46 && mz > -234)) {                             // (the notch the bridge road comes in through)
-      colOBox(mx - nx * 0.45, mz - nz * 0.45, l / 2 + 0.4, 0.35, Math.atan2(-uz, ux), 1.3);
+      // (v1.1) the beach's jetty: a gap you can walk out through
+      const J = BEACH.jetty, s0 = (J.x0 - 0.05 - a[0]) / ux, s1 = (J.x1 + 0.05 - a[0]) / ux;
+      const cuts = Math.abs(ux) > 0.5 && s0 > 0 && s1 < l && Math.abs(a[1] + uz * s0 - J.z0) < 1.5;
+      const wall = (sa, sb) => colOBox(a[0] + ux * (sa + sb) / 2 - nx * 0.45, a[1] + uz * (sa + sb) / 2 - nz * 0.45, (sb - sa) / 2, 0.35, Math.atan2(-uz, ux), 1.3);
+      if (cuts) { wall(-0.4, s0); wall(s1, l + 0.4); } else wall(-0.4, l + 0.4);
     }
     // granite boulders along the shore (not on the beach, the landing or the marina)
     const sandy = (x, z) => (z > -258 && x < 30 && x > -40) || (z > -250 && x > 30 && x < 125);
@@ -268,7 +282,7 @@ export function islandInto(H) {
         const veg = [0x4f8a2e, 0x6a9a3a, 0x3f7a2a, 0x7aa84a][plotNo % 4];
         for (let x = bx0 + 0.5; x < bx1 - 0.3; x += 0.9) box(x, CURB_H, bz0 + 0.4, x + 0.35, CURB_H + R.range(0.18, 0.4), bz1 - 0.4, veg, M.FOLIAGE);
       } else {
-        H.area(bx0, bz0, bx1, bz1, COL.gravel, M.DIRT, MARK_Y); // lott 7: Samuel's mother's plot, all gravel
+        H.area(bx0, bz0, bx1, bz1, COL.gravel, M.DIRT, MARK_Y); // lott 7: Melker's mother's plot, all gravel
       }
       if (plotNo % 3 === 1) tree(left ? x1 - 2.2 : x0 + 2.2, gateNorth ? z1 - 2.3 : z0 + 2.3, 'oak', 0.55);
     }
@@ -382,18 +396,8 @@ export function islandInto(H) {
   box(103.98, CURB_H + 1.0, -387.6, 104.42, CURB_H + 1.28, -387.2, 0x2c62a8);
   bench(L.x - 6, L.z + 5.5, -Math.PI * 0.2);
 
-  // ---- the beach (south-west) and the marina (south-east), both facing the town
-  poly([[-4, -246], [-33, -253], [-28, -247.5], [-12, -238.8], [8, -235.2], [26, -232.8], [28.5, -238], [8, -245.5], [-14, -251], [-26, -255.5], [-33, -253]], 0xd8c38c, M.DIRT, PATCH_Y);
-  for (const [x, z, c, rot] of [[-6, -243, 0xd2342c, 0.2], [2, -241, 0x2c62a8, -0.1], [10, -239.6, 0xe5b923, 0.3]]) P({ t: 'rbox', cx: x, cy: PATCH_Y + 0.03, cz: z, sx: 0.9, sy: 0.04, sz: 1.9, rot, c });
-  for (const [x, z, c] of [[-2, -244.5, 0xd2342c], [13, -241.5, 0x2c62a8]]) {
-    P({ t: 'cyl', x, z, y0: CURB_H, y1: CURB_H + 2.3, r: 0.04, n: 4, c: 0xdddddd });
-    P({ t: 'cyl', x, z, y0: CURB_H + 1.95, y1: CURB_H + 2.45, r: 1.4, r1: 0.06, n: 8, c, cap: true });
-  }
-  building({ x0: -21, z0: -253.2, x1: -18.6, z1: -250.8, h: 2.1, c: 0xe5b923, m: M.BOARDS, roof: 'gable', roofH: 0.8, roofC: 0x3a3c41, mapC: 0xb8a060 });
-  sign('badplats', { lines: ['NORRHOLMENS BADPLATS'], bg: '#1f5aa6', fg: '#ffffff', border: '#ffffff', font: 0.5 }, -12, CURB_H + 1.9, -251.3, 2.6, 0.5, Math.PI * 0.92);
-  P({ t: 'cyl', x: -12.9, z: -251.35, y0: CURB_H, y1: CURB_H + 2.15, r: 0.04, n: 4, c: 0x9aa0a6 });
-  P({ t: 'cyl', x: -11.1, z: -251.2, y0: CURB_H, y1: CURB_H + 2.15, r: 0.04, n: 4, c: 0x9aa0a6 });
-  bench(-24, -258.5, Math.PI * 0.92); bench(16, -246, Math.PI * 0.95);
+  // ---- the beach (south-west, v1.1) and the marina (south-east), both facing the town
+  beach(H);
   // marina: gravel, a boathouse, a jetty and boats
   poly([[56, -232.5], [95, -236.4], [121, -245.4], [118, -248.2], [95, -245.6], [60, -245.2]], COL.gravel, M.DIRT, PATCH_Y);
   building({ x0: 100, z0: -245.2, x1: 108, z1: -240.4, h: 3.0, c: COL.falu, m: M.FALU, cell: [2.6, 3], roof: 'gable', roofH: 1.6, roofC: 0x3a3c41, axis: 'z', mapC: 0x8e2c20 });
@@ -463,4 +467,194 @@ function millSails() {
     out.push({ cx: sn * cm + px, cy: cs * cm + py, cz: -0.06, sx: 0.025, sy: L1 - s0 - 0.6, sz: w - 0.25, rot: Math.PI / 2, tilt: a, c: 0xd6cfbf });
   }
   return out;
+}
+
+// ---------------------------------------------------------------- the beach (v1.1)
+// Sand all the way down to the water (and on into it), a boardwalk from the road under an arch,
+// a jetty you can walk out on with a diving board at the end, beach huts, a lifeguard tower, an
+// ice-cream kiosk, parasols with sun loungers and towels, a volleyball court, a raft and a line of
+// buoys round the swimming area. What the props look like: beach.js. No random numbers from the
+// layout's own sequence here (everything after this would move).
+function beach(H) {
+  const { P, poly, sign, colBox, colOBox, colCircle, bench, M } = H;
+  const SAND = 0xdcc690, WET = 0xc8b07a, DEEP = 0xa58e5c, Y = PATCH_Y, WY = -0.7;
+  const prop = (kind, o) => P({ t: 'beach', kind, ...o });
+  // the sand: the area between the shoreline and its inland edge, cut into triangles
+  for (const t of triangulate([...BEACH.shore, ...BEACH.inland.slice().reverse()])) poly(t, SAND, M.DIRT, Y);
+  // along the water: wet sand, then a slope down under the surface, and a line of foam
+  const S = BEACH.shore, out = [];
+  for (let i = 0; i < S.length - 1; i++) {
+    const a = S[i], b = S[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / l, uz = (b[1] - a[1]) / l;
+    const nx = -uz, nz = ux;                       // out to sea (the sea is on this side of the shore here)
+    out.push([nx, nz]);
+    const at = (p, d, y) => [p[0] + nx * d, y, p[1] + nz * d];
+    P({ t: 'quad', pts: [at(a, -1.3, Y + 0.004), at(b, -1.3, Y + 0.004), at(b, 0, Y + 0.004), at(a, 0, Y + 0.004)], c: WET, m: M.DIRT });
+    P({ t: 'quad', pts: [at(a, 0, Y), at(b, 0, Y), at(b, 1.1, Y - 0.47), at(a, 1.1, Y - 0.47)], c: WET, m: M.DIRT });
+    P({ t: 'quad', pts: [at(a, 1.1, Y - 0.47), at(b, 1.1, Y - 0.47), at(b, 2.6, -0.95), at(a, 2.6, -0.95)], c: DEEP, m: M.DIRT });
+    P({ t: 'quad', pts: [at(a, 1.92, WY + 0.012), at(b, 1.92, WY + 0.012), at(b, 2.22, WY + 0.012), at(a, 2.22, WY + 0.012)], c: 0xeaf2ee, m: M.PLAIN });
+    P({ t: 'quad', pts: [at(a, 2.75, WY + 0.01), at(b, 2.75, WY + 0.01), at(b, 2.9, WY + 0.01), at(a, 2.9, WY + 0.01)], c: 0xcfe2e2, m: M.PLAIN });
+  }
+  { // the bend in the shore: fill the wedge between the two slopes
+    const c = S[1], [n0, n1] = out;
+    P({ t: 'quad', pts: [[c[0], Y, c[1]], [c[0] + n0[0] * 2.6, -0.95, c[1] + n0[1] * 2.6], [c[0] + n1[0] * 2.6, -0.95, c[1] + n1[1] * 2.6], [c[0] + n1[0] * 2.6, -0.95, c[1] + n1[1] * 2.6]], c: WET, m: M.DIRT });
+  }
+
+  // ---- the way in: the arch with the sign, the boardwalk, the jetty (a floor in layout.js), a bike rack, bins
+  const W = BEACH.walk, J = BEACH.jetty, xm = (W.x0 + W.x1) / 2;
+  prop('boardwalk', { ...W, x: xm, z: (W.z0 + W.z1) / 2 });
+  prop('arch', { x0: W.x0 - 0.45, x1: W.x1 + 0.45, z: W.z0 + 0.9, x: xm });
+  for (const x of [W.x0 - 0.45, W.x1 + 0.45]) colCircle(x, W.z0 + 0.9, 0.12, 3.1);
+  const badplats = { lines: ['NORRHOLMENS BADPLATS'], bg: '#1f5aa6', fg: '#ffffff', border: '#ffffff', font: 0.5 };
+  sign('badplats', badplats, xm, Y + 2.13, W.z0 + 0.87, 2.6, 0.5, Math.PI);
+  sign('badplats', badplats, xm, Y + 2.13, W.z0 + 0.93, 2.6, 0.5, 0);
+  prop('jetty', { ...J, x: (J.x0 + J.x1) / 2, z: (J.z0 + J.z1) / 2 });
+  colBox(J.x0 - 0.25, J.z0 + 0.35, J.x0, J.z1 + 0.25, 1.2);           // the railings (you walk out, not off)
+  colBox(J.x1, J.z0 + 0.35, J.x1 + 0.25, J.z1 + 0.25, 1.2);
+  colBox(J.x0 - 0.25, J.z1, J.x1 + 0.25, J.z1 + 0.25, 1.2);
+  colBox(J.x0 - 0.45, J.z0 + 0.65, J.x0 - 0.25, J.z0 + 0.75, 1.6);  // the life-ring post
+  H.footprints.push({ x0: J.x0, z0: J.z0, x1: J.x1, z1: J.z1, c: 0x8a6a48 });
+  prop('rack', { x: 0.9, z: -250.6, rot: 0, n: 4 }); colOBox(0.9, -250.6, 1.5, 0.35, 0, 0.9);
+  for (const [x, z] of [[6.1, -249.9], [-8.2, -251.1]]) { prop('bin', { x, z }); colCircle(x, z, 0.28, 0.95); }
+
+  // ---- beach huts in a row along the west shore, facing the water
+  const n1 = [-0.5046, 0.8633], u1 = [0.8633, 0.5046], rotW = Math.atan2(n1[0], n1[1]);
+  const huts = [[0x9fd8c4, 0x2f8f83], [0xf2b8c6, 0xc0466a], [0xa8cde8, 0x2c62a8], [0xf4dc8a, 0xc87a1a]];
+  huts.forEach(([c, door], i) => {
+    const s = 4.4 + i * 2.1, x = -36 + u1[0] * s - n1[0] * 4.4, z = -250 + u1[1] * s - n1[1] * 4.4;
+    prop('hut', { x, z, rot: rotW, c, door, roof: 0xe9e5dc });
+    colOBox(x, z, 0.95, 0.85, rotW, 2.7);
+    H.casters.push({ t: 'box', x0: x - 0.95, x1: x + 0.95, y0: CURB_H, y1: CURB_H + 2.5, z0: z - 0.95, z1: z + 0.95 });
+    H.footprints.push({ x0: x - 0.8, x1: x + 0.8, z0: z - 0.8, z1: z + 0.8, c: c });
+  });
+  prop('pennant', { x: -22.4, z: -250.8, h: 6.5 }); colCircle(-22.4, -250.8, 0.1, 7);
+
+  // ---- the lifeguard tower, between the parasols and the jetty
+  const rotS = Math.atan2(-0.1613, 0.9869);                            // facing out across the water
+  const T = { x: -3.6, z: -239.6 }, fwd = [Math.sin(rotS), Math.cos(rotS)], rt = [Math.cos(rotS), -Math.sin(rotS)];
+  const tl = (lx, lz) => [T.x + rt[0] * lx + fwd[0] * lz, T.z + rt[1] * lx + fwd[1] * lz];
+  prop('tower', { ...T, rot: rotS });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const [x, z] = tl(sx * 1.12, sz * 1.12); colCircle(x, z, 0.12, 2.2); }
+  { const [x, z] = tl(0, -1.6); colOBox(x, z, 0.35, 0.2, rotS, 1.8); }    // the ladder
+  H.casters.push({ t: 'box', x0: T.x - 1.1, x1: T.x + 1.1, y0: CURB_H + 2.0, y1: CURB_H + 3.8, z0: T.z - 1.1, z1: T.z + 1.1 });
+  H.footprints.push({ x0: T.x - 1.1, x1: T.x + 1.1, z0: T.z - 1.1, z1: T.z + 1.1, c: 0xd2342c });
+  { const [x, z] = tl(0, 1.135); sign('livraddning', { lines: ['LIVRÄDDNING'], bg: '#d2342c', fg: '#ffffff', font: 0.7 }, x, Y + 2.0, z, 1.7, 0.22, rotS); }
+
+  // ---- the ice-cream kiosk with tables in front of it
+  const K = { x0: 8.4, x1: 11.9, z0: -248.9, z1: -246.3 };
+  prop('kiosk', { ...K, x: (K.x0 + K.x1) / 2, z: (K.z0 + K.z1) / 2 });
+  colBox(K.x0, K.z0, K.x1, K.z1, 3.4);
+  colBox(K.x0 + 0.35, K.z1, K.x1 - 0.35, K.z1 + 0.34, 1.1);           // the counter
+  H.casters.push({ t: 'box', x0: K.x0, x1: K.x1, y0: CURB_H, y1: CURB_H + 3.0, z0: K.z0, z1: K.z1 });
+  H.footprints.push({ x0: K.x0, x1: K.x1, z0: K.z0, z1: K.z1, c: 0xe58fa8 });
+  sign('glass', { lines: ['GLASS · KAFFE'], bg: '#e58fa8', fg: '#ffffff', border: '#ffffff', font: 0.62 }, (K.x0 + K.x1) / 2, Y + 2.53, K.z1 + 0.02, 3.0, 0.44, 0);
+  sign('glassmeny', { lines: ['STRUT 25:-', 'PINNE 15:-', 'KAFFE 20:-'], bg: '#f6ead2', fg: '#7c3c2b', border: '#e58fa8', font: 0.3 }, K.x1 + 0.02, Y + 1.5, (K.z0 + K.z1) / 2, 0.9, 0.85, Math.PI / 2);
+  for (const [x, z, rot] of [[9.2, -243.9, 0.1], [12.7, -244.7, -0.2]]) { prop('picnic', { x, z, rot }); colOBox(x, z, 0.85, 0.72, rot, 0.8); }
+  parasol(12.7, -244.7, 0xe8833a, 0xf4f1ea, 0, 0, 1.15, 2.35);
+
+  // ---- parasols, sun loungers and towels
+  function parasol(x, z, c1, c2, tilt = 0, rot = 0, r = 1.3, h = 2.3, spin = 0) {
+    prop('parasol', { x, z, c1, c2, tilt, rot, r, h, spin });
+    colCircle(x, z, 0.08, 2.3);
+    const A = [Math.sin(tilt) * Math.sin(rot), Math.cos(tilt), Math.sin(tilt) * Math.cos(rot)];
+    H.casters.push({ t: 'sphere', x: x + A[0] * (h - 0.22), y: Y + A[1] * (h - 0.22), z: z + A[2] * (h - 0.22), r: r * 0.95, sy: 0.16 });
+  }
+  const lounger = (x, z, rot, c, flat = false) => { prop('lounger', { x, z, rot, c, flat }); colOBox(x, z, 0.34, 0.98, rot, 0.6); };
+  const towel = (x, z, rot, c1, c2, extra = {}) => prop('towel', { x, z, rot, c1, c2, ...extra });
+  const u2 = [0.9869, 0.1613], n2 = [-0.1613, 0.9869];
+  // by the huts: red and white, two loungers
+  { const p = [-19.4, -244.0]; parasol(p[0], p[1], 0xd2342c, 0xf4f1ea, 0.1, rotW);
+    lounger(p[0] - u1[0] * 0.8 + n1[0] * 0.25, p[1] - u1[1] * 0.8 + n1[1] * 0.25, rotW, 0x1f5aa6);
+    lounger(p[0] + u1[0] * 0.8 + n1[0] * 0.25, p[1] + u1[1] * 0.8 + n1[1] * 0.25, rotW, 0xf4f1ea); }
+  // blue and white, towels, a bag, a cool box, a beach ball
+  parasol(-13.2, -241.4, 0x2c62a8, 0xf4f1ea, 0.16, -0.35, 1.3, 2.3, 0.3);
+  towel(-14.3, -240.9, -0.42, 0xe5b923, 0xf4f1ea, { bag: 0x46a35e, flops: 0x2c62a8 });
+  towel(-12.2, -240.5, -0.28, 0x46a35e, 0xf4f1ea, { book: 0xd2342c, bottle: 0x9fd8f0 });
+  prop('cooler', { x: -13.9, z: -242.9, rot: 0.3 });
+  prop('beachBall', { x: -10.6, z: -238.9 });
+  // a sand castle by the water, in front of the tower
+  prop('castle', { x: -0.4, z: -236.7, rot: 0.25 });
+  // east of the jetty: turquoise and white, two loungers
+  { const p = [8.0, -238.8]; parasol(p[0], p[1], 0x2fb3a8, 0xf4f1ea, 0.08, rotS, 1.3, 2.3, 0.15);
+    lounger(p[0] - u2[0] * 0.85 + n2[0] * 0.25, p[1] - u2[1] * 0.85 + n2[1] * 0.25, rotS, 0xe8833a, true);
+    lounger(p[0] + u2[0] * 0.85 + n2[0] * 0.25, p[1] + u2[1] * 0.85 + n2[1] * 0.25, rotS, 0x2fb3a8); }
+  // by the court: yellow and white, two towels
+  parasol(12.5, -237.9, 0xf2c21b, 0xf4f1ea, 0.2, rotS + 0.5, 1.25, 2.25, 0.2);
+  towel(11.9, -236.6, rotS - 0.15, 0xf08fb8, 0xf4f1ea, { flops: 0xd2342c });
+  towel(13.4, -236.8, rotS + 0.1, 0xe8833a, 0xf4f1ea, { bag: 0x2c62a8, bottle: 0x46a35e });
+
+  // ---- the volleyball court, the raft and the buoys
+  const V = { x: 19.6, z: -238.8 };
+  prop('volley', { ...V, rot: rotS, len: 9, wid: 4.5 });
+  for (const s of [-1, 1]) colCircle(V.x + fwd[0] * s * 2.8, V.z + fwd[1] * s * 2.8, 0.08, 2.5);
+  prop('beachBall', { x: 22.8, z: -242.4, r: 0.11, cols: [0xf4f1ea, 0xf2c21b, 0x2c62a8] });
+  prop('raft', { x: -7.6, z: -224.6, s: 1.3 });
+  prop('buoys', { x: BEACH.swim[0][0], z: BEACH.swim[0][1], pts: BEACH.swim });
+
+  // ---- dune grass along the edge of the sand, wild roses, benches
+  const tufts = [], I = BEACH.inland;
+  let k = 0;
+  for (let i = 0; i < I.length - 1; i++) {
+    const a = I[i], b = I[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    for (let s = 0.5; s < l; s += 0.95) {
+      const h1 = hash(k * 3 + 1), h2 = hash(k * 3 + 2); k++;
+      const x = a[0] + (b[0] - a[0]) * (s / l) + (h1 - 0.5) * 0.9, z = a[1] + (b[1] - a[1]) * (s / l) + 0.5 + h2 * 0.9;
+      if (Math.abs(x - xm) < 1.6 || (x > K.x0 - 0.6 && x < K.x1 + 0.6 && z < K.z1 + 0.5) || (x < -21 && z > -253)) continue;
+      tufts.push([x, z, 0.8 + h1 * 0.5, k * 7 + 3]);
+    }
+  }
+  for (const [x, z] of [[-31.8, -249.9], [-33.2, -249.4], [-22.6, -246.4], [-17.2, -246.9], [-7.6, -238.6], [6.2, -236.4], [15.3, -244.4], [24.8, -235.6], [25.2, -232.2]]) tufts.push([x, z, 1.0, Math.round(x * 13 - z * 7)]);
+  prop('grass', { x: tufts[0][0], z: tufts[0][1], pts: tufts });
+  for (const [x, z, sd] of [[-14.6, -253.0, 3], [-6.4, -251.5, 5], [17.6, -247.6, 7], [23.4, -244.2, 11], [-27.4, -254.0, 13]]) { prop('rose', { x, z, seed: sd }); colCircle(x, z, 0.5, 0.9); }
+  bench(-24, -258.5, Math.PI * 0.92); bench(16, -246, Math.PI * 0.95);
+
+  // ---- people: sunbathers, the lifeguard, a child at the sand castle, volleyball, someone at the
+  // kiosk and someone sitting at the end of the jetty. They are only for the eye (render.js draws
+  // them when you are near): not in the simulation, so they never touch the game's random numbers.
+  // The ones standing about get a collider so you do not walk straight through them. SWIM: dressed for
+  // the beach (bare arms, legs and feet; the shirt and the pants are the swimsuit – models.js STYLE).
+  const skin = [0xf0c8a8, 0xe8b996, 0xc68e62, 0x9c6b45, 0xf2d0b5];
+  const SWIM = 256, LONG = 1, GLASSES = 8, CAP = 16, BEARD = 4;
+  const look = (shirt, pants, sk, hair, style = 0, height = 1, bulk = 1, accent = 0x1d1f22) => ({ shirt: shirt ?? skin[sk], pants, skin: skin[sk], hair, style, height, bulk, accent });
+  const folk = [];
+  const person = (lk, x, z, h, o = {}) => folk.push({ look: lk, x, z, h, y: o.y ?? Y, pose: o.pose ?? 0, lie: o.lie ?? 0, lieDir: o.lieDir ?? 1, headPitch: o.headPitch ?? 0 });
+  const stand = (lk, x, z, h, pose = 0) => { person(lk, x, z, h, { pose }); colCircle(x, z, 0.28, 1.6); };
+  { const [x, z] = tl(0.35, 0.55); person(look(0xf2c21b, 0xd2342c, 1, 0x5a3a22, CAP | SWIM, 1.02, 1.05, 0xd2342c), x, z, rotS, { y: Y + 2.16 }); }  // the lifeguard
+  { const p = [8.0 - u2[0] * 0.85 + n2[0] * 0.25, -238.8 - u2[1] * 0.85 + n2[1] * 0.25];                      // on her front on the lounger
+    person(look(0x24365e, 0x24365e, 4, 0x2b1d14, LONG | SWIM, 0.97, 0.95), p[0] + fwd[0] * 0.86, p[1] + fwd[1] * 0.86, rotS + Math.PI, { y: Y + 0.37, lie: 1, lieDir: 1 }); }
+  { const r = -0.42; person(look(0xd2342c, 0xd2342c, 4, 0xe8d29a, LONG | GLASSES | SWIM, 0.96, 0.95), -14.3 + Math.sin(r) * 0.8, -240.9 + Math.cos(r) * 0.8, r, { lie: 1, lieDir: -1 }); colOBox(-14.3, -240.9, 0.45, 0.95, r, 0.6); }
+  { const r = rotS + 0.1; person(look(null, 0x2fb3a8, 2, 0x1a1a1a, BEARD | SWIM, 1.02, 1.08), 13.4 + Math.sin(r) * 0.8, -236.8 + Math.cos(r) * 0.8, r, { lie: 1, lieDir: -1 }); colOBox(13.4, -236.8, 0.45, 0.95, r, 0.6); }
+  { const a = 0.25, cx = -0.4 - Math.cos(a) * 0.8, cz = -236.7 + Math.sin(a) * 0.8; stand(look(null, 0x2c62a8, 4, 0xd9b26b, CAP | SWIM, 0.62, 0.88, 0xd2342c), cx, cz, Math.atan2(-0.4 - cx, -236.7 - cz)); } // a child at the castle
+  { const ha = Math.atan2(rt[0], rt[1]), hb = Math.atan2(-rt[0], -rt[1]);                                       // volleyball, one on each side
+    stand(look(0xf4f1ea, 0x1d1f22, 3, 0x1a1a1a, SWIM, 1.04, 0.98), V.x - rt[0] * 2.4 + fwd[0] * 0.5, V.z - rt[1] * 2.4 + fwd[1] * 0.5, ha, 1);
+    stand(look(0xd2342c, 0x2b2e35, 0, 0xd9b26b, LONG | SWIM, 0.97, 0.95), V.x + rt[0] * 2.7 - fwd[0] * 0.7, V.z + rt[1] * 2.7 - fwd[1] * 0.7, hb); }
+  stand(look(0x8e44ad, 0x7f8c8d, 1, 0x8a5a2b, 2, 0.99, 1.02), 10.15, K.z1 + 0.95, Math.PI);                        // at the kiosk (on the way past)
+  person(look(null, 0xe5b923, 1, 0x5a3a22, CAP | SWIM, 1.0, 1.0, 0x2c62a8), J.x0 + 0.38, J.z1 - 0.12, 0, { y: Y + 0.02 - 0.92 + 0.03, pose: 5, headPitch: 0.1 }); // on the end of the jetty
+  colCircle(J.x0 + 0.38, J.z1 - 0.3, 0.3, 1.0);
+  H.zones.beachFolk = { x: -2, z: -242, list: folk };
+}
+
+// a little hash from an integer (0..1): props placed "at random" without the layout's random sequence
+function hash(i) { const s = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); }
+
+// a simple polygon (no holes) cut into triangles, by clipping ears
+function triangulate(pts) {
+  const n = pts.length, idx = pts.map((_, i) => i), tris = [];
+  let area = 0;
+  for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+  const turn = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const convex = (a, b, c) => (area > 0 ? turn(a, b, c) > 1e-9 : turn(a, b, c) < -1e-9);
+  const inside = (p, a, b, c) => { const d1 = turn(a, b, p), d2 = turn(b, c, p), d3 = turn(c, a, p); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+  for (let guard = 0; idx.length > 3 && guard < 500; guard++) {
+    let cut = false;
+    for (let i = 0; i < idx.length; i++) {
+      const ia = idx[(i + idx.length - 1) % idx.length], ib = idx[i], ic = idx[(i + 1) % idx.length];
+      const a = pts[ia], b = pts[ib], c = pts[ic];
+      if (!convex(a, b, c) || idx.some((j) => j !== ia && j !== ib && j !== ic && inside(pts[j], a, b, c))) continue;
+      tris.push([a, b, c]); idx.splice(i, 1); cut = true;
+      break;
+    }
+    if (!cut) break;
+  }
+  if (idx.length === 3) tris.push(idx.map((i) => pts[i]));
+  return tris;
 }

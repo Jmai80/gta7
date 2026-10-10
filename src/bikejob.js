@@ -1,5 +1,5 @@
 // Main quest, part 3: "Arnes budcykel" (v0.6). The north bridge is open again. Ride across to
-// Norrholmen, unlock Arne's old delivery bike at lott 7 with Samuel's keys and get it to tant Gun
+// Norrholmen, unlock Arne's old delivery bike at lott 7 with Melker's keys and get it to tant Gun
 // on Storgatan – with a Bullbilen van out of the bakery on your heels. It drives along the roads
 // (route.js); you can cut through where it can't. Don't let it ram you off the bike. Out of its
 // sight and far enough ahead, it gives up. At Gun's gate she opens the saddle post…
@@ -207,8 +207,8 @@ export class BikeJob {
   start() {
     const g = this.game, m = this.mgr;
     if (!this.bike) g.spawnBike(ISLE.bike.x, ISLE.bike.z, ISLE.bike.h, true);
-    m.setObjective('Lås upp Arnes cykel', 'Lott 7 · med Samuels nycklar');
-    m.later(0.8, () => { if (this.stage === 'unlock') g.emit('hint', { id: 'unlock', touch: 'Tryck LÅS UPP – Samuels nycklar passar i låset.', keys: 'Tryck E för att låsa upp cykeln med Samuels nycklar.' }); }, this);
+    m.setObjective('Lås upp Arnes cykel', 'Lott 7 · med Melkers nycklar');
+    m.later(0.8, () => { if (this.stage === 'unlock') g.emit('hint', { id: 'unlock', touch: 'Tryck LÅS UPP – Melkers nycklar passar i låset.', keys: 'Tryck E för att låsa upp cykeln med Melkers nycklar.' }); }, this);
   }
 
   update(dt) {
@@ -220,7 +220,7 @@ export class BikeJob {
       const d = Math.hypot(p.x - bike.x, p.z - bike.z);
       if (p.state === 'foot' && d < 2.0) this.prompt = 'LÅS UPP';
       if (d > 25) { m.quit(this); return; }   // walked off before unlocking: no harm done
-      m.setObjective('Lås upp Arnes cykel', 'Lott 7 · med Samuels nycklar');
+      m.setObjective('Lås upp Arnes cykel', 'Lott 7 · med Melkers nycklar');
       return;
     }
     if (this.stage === 'deliver' || this.stage === 'talk' || this.stage === 'done' || this.stage === 'caught') return;
@@ -315,7 +315,7 @@ export class BikeJob {
     g.emit('chaseLost', {});
   }
 
-  // the action button at the bike: Samuel's keys fit the lock
+  // the action button at the bike: Melker's keys fit the lock
   interact() {
     if (this.prompt !== 'LÅS UPP') return false;
     const g = this.game, m = this.mgr, bike = this.bike;
@@ -324,7 +324,7 @@ export class BikeJob {
     this.stage = 'mount';
     this.unlockT = this.t;
     g.emit('keys', { unlocked: true });
-    g.emit('toast', { text: 'Klick! Samuels nycklar passade.', long: false });
+    g.emit('toast', { text: 'Klick! Melkers nycklar passade.', long: false });
     m.later(1.4, () => this.releaseVan(), this);
     return true;
   }

@@ -43,7 +43,7 @@ export function dressUp(look) {
   return look;
 }
 // (the same bits as STYLE in models.js – this file stays free of three.js for the Node tests)
-export const STYLE_BITS = { long: 1, bun: 2, beard: 4, glasses: 8, cap: 16, apron: 32, baker: 64, jacket: 128 };
+export const STYLE_BITS = { long: 1, bun: 2, beard: 4, glasses: 8, cap: 16, apron: 32, baker: 64, jacket: 128, swim: 256 };
 
 // render-facing body state shared by peds and the player
 export function makeBody(look) {
@@ -135,7 +135,7 @@ export class Ped {
     const g = this.game, b = this.body;
     this.stateT += dt;
     this.sayT -= dt;
-    if (this.state === 'lounge' || this.state === 'ride') { // on a sofa (Samuel), on a bike (Sander): someone else poses the body
+    if (this.state === 'lounge' || this.state === 'ride') { // on a sofa (Melker), on a bike (Jonte): someone else poses the body
       b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
       return;
     }

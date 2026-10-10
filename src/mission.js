@@ -5,7 +5,7 @@
 //   S  Sanna (Pizzerian):  "Pizzabudet" – starts at the marker outside Pizzeria Sjuan
 //   K  Kim (Macken):       "Gatloppet" – drive into the marker at Macken
 //   G  Tant Gun:           "Flaggan i topp" – side quest: hoist the flag in her front garden
-//   ?  Okänt nummer:       "Samuels cykelnycklar" – main quest, part 1: sneak into Samuel's flat
+//   ?  Okänt nummer:       "Melkers cykelnycklar" – main quest, part 1: sneak into Melker's flat
 //                          on floor 7 of the dark tower and take his bike keys (v0.4)
 //   ?  Okänt nummer:       "Överlämningen" – main quest, part 2: hand the keys over on the bench at
 //                          the end of the harbour pier – to tant Gun, it turns out (v0.5)
@@ -17,17 +17,17 @@
 //                          opens again by the square (v0.8)
 //   G  Tant Gun:           "Syltburken" – main quest, part 6: ram the black car, get the jam jar back (v0.9)
 //   B  Bagar-Bengt:        "Bullfabriken" – main quest, part 7: tail Dahlgren's truck to his factory (v0.9)
-//   S  Samuel:             "Samuels cykel" – side quest after the safe: ride the bike back to Samuel (v0.9)
+//   M  Melker:             "Melkers cykel" – side quest after the safe: ride the bike back to Melker (v0.9)
 //   Y  Yasmin (Hörnlivs):  "Hemleverans" – side quest after the safe: three bags against the clock (v0.9)
 //   L  Lasse (Verkstan):   "Lasses trimning" – side quest: spend your money in Lasse's tuning shop (v0.8)
 //   K  Kim (Macken):       "Långhoppet" – side quest: a stunt jump of 34 m at the construction site (v0.8)
-//   N  Lås-Leif:           "Samuels nya nycklar" – side quest after the eggs: new keys out to Samuel (v0.7)
+//   N  Lås-Leif:           "Melkers nya nycklar" – side quest after the eggs: new keys out to Melker (v0.7)
 //   Y  Yasmin (Hörnlivs):  "Fyrvaktarens kasse" – side quest once the north bridge is open: take a
 //                          bag of groceries (and twelve eggs) from the shop to the lighthouse (v0.6.1)
-//   F  Fia (Salong Saxen): "Salong Saxen" – side quest indoors: cut, shave and dye for three customers (v1.0)
-//   G  Tant Gun:           "Bullfesten" – main quest, part 8: the party on the square, and Sander the
+//   V  Vera (Salong Saxen): "Salong Saxen" – side quest indoors: cut, shave and dye for three customers (v1.0)
+//   G  Tant Gun:           "Bullfesten" – main quest, part 8: the party on the square, and Jonte the
 //                          bike thief rides off with Arne's bike and the buns (v1.0)
-// The pizza job, the race, Samuel's flat and the pier take over while they run (one at a time).
+// The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
 import {
@@ -80,9 +80,9 @@ export const QUESTS = [
     reward: '300 kr och en kanelbulle', where: 'Tant Guns trädgård, Storgatan',
   },
   {
-    id: 'samuel', letter: '?', who: WHO.anon, title: 'Samuels cykelnycklar', color: '#ff7a59', x: TOWER_DOOR.x, z: TOWER_DOOR.z, r: TOWER_DOOR.r, Job: SamuelJob, at: 40, main: true,
+    id: 'samuel', letter: '?', who: WHO.anon, title: 'Melkers cykelnycklar', color: '#ff7a59', x: TOWER_DOOR.x, z: TOWER_DOOR.z, r: TOWER_DOOR.r, Job: SamuelJob, at: 40, main: true,
     needFoot: 'Kliv ur bilen – du måste gå in genom porten.',
-    text: 'Du känner inte mig, men jag vet vem du är. Samuel bor på plan 7 i det mörka höghuset vid torget. Hans cykelnycklar ligger på köksbordet, och jag vill ha dem. Han är hemma, men han glor bara i telefonen. Smyg.',
+    text: 'Du känner inte mig, men jag vet vem du är. Melker bor på plan 7 i det mörka höghuset vid torget. Hans cykelnycklar ligger på köksbordet, och jag vill ha dem. Han är hemma, men han glor bara i telefonen. Smyg.',
     reward: `${fmt(SAMUEL_REWARD)} kr`, where: 'Höghuset vid torget, plan 7 (ingången på södra sidan)',
   },
   {
@@ -94,7 +94,7 @@ export const QUESTS = [
   {
     id: 'cykel', letter: 'G', who: WHO.gun, title: 'Arnes budcykel', color: '#c58be0', x: ISLE.bike.x, z: ISLE.bike.z, r: 2.0, Job: BikeJob, main: true,
     after: 'overlamning', at: 14, needFoot: 'Kliv ur bilen – cykeln står inne bland kolonilotterna.',
-    text: 'Norra bron är öppen igen! Åk över till Norrholmen och hämta Arnes cykel – den står vid lott 7 bland kolonilotterna. Samuels nycklar passar i låset. Och se upp för Bullbilen.',
+    text: 'Norra bron är öppen igen! Åk över till Norrholmen och hämta Arnes cykel – den står vid lott 7 bland kolonilotterna. Melkers nycklar passar i låset. Och se upp för Bullbilen.',
     reward: `${fmt(BIKE_REWARD)} kr (+${fmt(ESCAPE_BONUS)} kr om du skakar av dig Bullbilen)`, where: 'Kolonilotterna på Norrholmen, lott 7',
   },
   {
@@ -106,9 +106,9 @@ export const QUESTS = [
   },
   {
     // a side quest a little while after the eggs – once Arne's bike is with Gun (ready)
-    id: 'nycklar', letter: 'N', who: WHO.leif, title: 'Samuels nya nycklar', color: '#36c2b4', x: LEIF_MARK.x, z: LEIF_MARK.z, r: LEIF_MARK.r, Job: KeysJob,
+    id: 'nycklar', letter: 'N', who: WHO.leif, title: 'Melkers nya nycklar', color: '#36c2b4', x: LEIF_MARK.x, z: LEIF_MARK.z, r: LEIF_MARK.r, Job: KeysJob,
     side: true, sms: true, after: 'livs', at: 14, ready: (m) => m.done.has('cykel'), needFoot: 'Kliv ur – Leif vill ge dig nycklarna i handen.',
-    text: 'Tjenare! Lås-Leif här, nyckelsmeden på Skolgatan. En kille som heter Samuel har tappat sina cykelnycklar och väntar vid kolonilotterna ute på Norrholmen. Han vill ha nya NU. Kan du köra ut dem åt mig?',
+    text: 'Tjenare! Lås-Leif här, nyckelsmeden på Skolgatan. En kille som heter Melker har tappat sina cykelnycklar och väntar vid kolonilotterna ute på Norrholmen. Han vill ha nya NU. Kan du köra ut dem åt mig?',
     reward: `${fmt(KEY_REWARD)} kr`, where: 'Leifs nyckelservice, Skolgatan (södra sidan av torgkvarteret)',
   },
   {
@@ -142,10 +142,10 @@ export const QUESTS = [
   },
   {
     // two side quests a few seconds after the safe (they text you even in the middle of something)
-    id: 'cykelretur', letter: 'S', who: WHO.samuel, title: 'Samuels cykel', color: '#6e7a46', x: GUN_BIKE.x, z: GUN_BIKE.z, r: 2.2, Job: BikeReturnJob,
+    id: 'cykelretur', letter: 'M', who: WHO.samuel, title: 'Melkers cykel', color: '#6e7a46', x: GUN_BIKE.x, z: GUN_BIKE.z, r: 2.2, Job: BikeReturnJob,
     side: true, sms: true, anytime: true, after: 'kassaskap', at: 4, startOnAccept: true,
-    text: 'Det är Samuel. Jag vet att det var du som tog mina cykelnycklar – Leif pratar för mycket. Och nu står min cykel hos tanten på Storgatan. Kan jag få tillbaka den? Jag väntar vid höghuset.',
-    reward: `${fmt(BIKE_RETURN.reward)} kr och ett rent samvete`, where: 'Cykeln vid tant Guns grind, Samuel vid höghuset',
+    text: 'Det är Melker. Jag vet att det var du som tog mina cykelnycklar – Leif pratar för mycket. Och nu står min cykel hos tanten på Storgatan. Kan jag få tillbaka den? Jag väntar vid höghuset.',
+    reward: `${fmt(BIKE_RETURN.reward)} kr och ett rent samvete`, where: 'Cykeln vid tant Guns grind, Melker vid höghuset',
   },
   {
     id: 'hemleverans', letter: 'Y', who: WHO.yasmin, title: 'Hemleverans', color: '#ff6fae', x: HOME_DELIVERY.start.x, z: HOME_DELIVERY.start.z, r: HOME_DELIVERY.start.r, Job: HomeDeliveryJob,
@@ -168,14 +168,14 @@ export const QUESTS = [
     reward: `${fmt(FACTORY_REWARD)} kr`, where: 'Bageriets infart på Norrholmen – sedan efter lastbilen',
   },
   {
-    // side quest (v1.0), indoors: Fia's hair salon on Skolgatan – three customers, scissors, razor and dye
-    id: 'salong', letter: 'F', who: WHO.fia, title: 'Salong Saxen', color: '#e8833a', x: SALON_DOOR.x, z: SALON_DOOR.z, r: SALON_DOOR.r, Job: SalonJob,
+    // side quest (v1.0), indoors: Vera's hair salon on Skolgatan – three customers, scissors, razor and dye
+    id: 'salong', letter: 'V', who: WHO.fia, title: 'Salong Saxen', color: '#e8833a', x: SALON_DOOR.x, z: SALON_DOOR.z, r: SALON_DOOR.r, Job: SalonJob,
     side: true, sms: true, after: 'konditori', at: 30, needFoot: 'Kliv ur – in i salongen går man till fots.',
-    text: 'Hej, det är Fia på Salong Saxen på Skolgatan! Jag har brutit handleden och har tre kunder bokade i dag. Kan du hålla i saxen åt mig? Jag säger hur man gör.',
+    text: 'Hej, det är Vera på Salong Saxen på Skolgatan! Jag har brutit handleden och har tre kunder bokade i dag. Kan du hålla i saxen åt mig? Jag säger hur man gör.',
     reward: `upp till ${fmt(SALON_PAY.base + 3 * (SALON_PAY.happy + SALON_PAY.tip))} kr`, where: 'Salong Saxen, Skolgatan (bredvid Lås-Leif)',
   },
   {
-    // main quest, part 8 (v1.0): the bun party on the square – and Sander the bike thief
+    // main quest, part 8 (v1.0): the bun party on the square – and Jonte the bike thief
     id: 'bullfest', letter: 'G', who: WHO.gun, title: 'Bullfesten', color: '#c58be0', x: FEST.mark.x, z: FEST.mark.z, r: FEST.mark.r, Job: FestJob, main: true,
     after: 'fabriken', at: 15, needFoot: 'Kliv ur – festen är till fots.',
     text: 'Bullfesten är i dag, lilla vän! Hela Sjuby samlas på torget, och Arnes gamla cykel får köra ut bullarna. Kom och fira – det är din fest också.',
@@ -337,7 +337,7 @@ export class Missions {
   questLine(id) {
     const q0 = BY_ID[id];
     if (q0 && q0.main && !q0.soon && !this.known.has(id) && !this.done.has(id)) return `${q0.who.replace(/ \(.*\)$/, '')} hör av sig om en stund`;
-    if (id === 'cykelgomman') return 'Fortsättning följer – Sanders gömda cyklar';
+    if (id === 'cykelgomman') return 'Fortsättning följer – Jontes gömda cyklar';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -345,7 +345,7 @@ export class Missions {
       case 'pizza': return 'Gå till pizzerian på Kungsgatan';
       case 'race': return 'Kör till Macken med en bil';
       case 'flag': return 'Hissa flaggan hos tant Gun på Storgatan';
-      case 'samuel': return 'Ta Samuels cykelnycklar i höghuset vid torget';
+      case 'samuel': return 'Ta Melkers cykelnycklar i höghuset vid torget';
       case 'overlamning': return 'Lämna nycklarna på bänken längst ut på bryggan';
       case 'cykel': return 'Hämta Arnes cykel på Norrholmen och cykla den till tant Gun';
       case 'livs': return 'Gå in på Hörnlivs på Kungsgatan';
@@ -356,9 +356,9 @@ export class Missions {
       case 'konditori': return 'Hämta kardemumma, smör och mjöl till Sjuby Konditori';
       case 'syltburken': return 'Stoppa den svarta bilen och ta tillbaka syltburken';
       case 'fabriken': return 'Följ Dahlgrens lastbil från bageriet';
-      case 'cykelretur': return 'Cykla tillbaka cykeln till Samuel vid höghuset';
+      case 'cykelretur': return 'Cykla tillbaka cykeln till Melker vid höghuset';
       case 'hemleverans': return 'Kör ut tre matkassar från Hörnlivs';
-      case 'salong': return 'Hjälp Fia med tre kunder på Salong Saxen, Skolgatan';
+      case 'salong': return 'Hjälp Vera med tre kunder på Salong Saxen, Skolgatan';
       case 'bullfest': return 'Gå till Bullfesten på torget';
     }
     return '';
@@ -401,7 +401,7 @@ export class Missions {
     this.bestJump = d.best || 0;
     this.lasse = this.done.has('lasse') ? 'done' : this.done.has('red') ? 'deliver' : this.known.has('lasse') ? 'steal' : 'intro';
     if (this.done.has('flag')) this.flag.h = 1;
-    if (this.done.has('cykelretur')) g.spawnBike(BIKE_RETURN.x - 1.4, BIKE_RETURN.z + 0.4, Math.PI / 2, false); // back with Samuel, by the tower
+    if (this.done.has('cykelretur')) g.spawnBike(BIKE_RETURN.x - 1.4, BIKE_RETURN.z + 0.4, Math.PI / 2, false); // back with Melker, by the tower
     else if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
     if (this.done.has('livs')) this.ingvar = spawnIngvar(g); // the lighthouse keeper, outside his cottage
     if (this.known.has('nycklar') || this.done.has('nycklar')) this.ensureLeif();
@@ -553,8 +553,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.0! Sander är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.0! Sander är fast och Bullfesten räddad. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.1! Jonte är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.1! Jonte är fast och Bullfesten räddad. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -602,7 +602,7 @@ export class Missions {
       case 'konditori': return { text: 'Nyöppningen', sub: 'Tre ingredienser till Sjuby Konditori' };
       case 'syltburken': return { text: 'Syltburken', sub: 'Den svarta bilen' };
       case 'fabriken': return { text: 'Bullfabriken', sub: 'Bageriets infart på Norrholmen' };
-      case 'cykelretur': return { text: 'Samuels cykel', sub: 'Vid tant Guns grind' };
+      case 'cykelretur': return { text: 'Melkers cykel', sub: 'Vid tant Guns grind' };
       case 'hemleverans': return { text: 'Hämta matkassarna (Y)', sub: 'Utanför Hörnlivs, Kungsgatan' };
       case 'salong': return { text: 'Gå till Salong Saxen (F)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Skolgatan, bredvid Lås-Leif' };
       case 'bullfest': return { text: 'Gå till Bullfesten (G)', sub: this.game.player.inCar ? 'Parkera och gå till torget' : 'Torget, framför Sjuby Konditori' };

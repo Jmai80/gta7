@@ -11,7 +11,7 @@ SETUP = '''async () => {
   const ST = { long: 1, bun: 2, beard: 4, glasses: 8, cap: 16, apron: 32, baker: 64, jacket: 128 };
   const looks = [
     ['Gun', { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1, style: ST.bun | ST.glasses | ST.jacket, accent: 0x7a5a9a }],
-    ['Samuel', { shirt: 0x6e7a46, pants: 0x2b2e35, skin: 0xe8b996, hair: 0x3a2618, height: 1.0, bulk: 1.02, style: 16 | 128, accent: 0x3b3f33 }],
+    ['Melker', { shirt: 0x6e7a46, pants: 0x2b2e35, skin: 0xe8b996, hair: 0x3a2618, height: 1.0, bulk: 1.02, style: 16 | 128, accent: 0x3b3f33 }],
     ['Yasmin', { shirt: 0x2f8f83, pants: 0x2b2d36, skin: 0xb98a64, hair: 0x1e1612, height: 0.97, bulk: 1.0, style: 1 | 32, accent: 0x2c62a8 }],
     ['Ingvar', { shirt: 0x2b3d5c, pants: 0x3b3f46, skin: 0xe9c3a6, hair: 0xd8d8d8, height: 1.0, bulk: 1.15, style: 4 | 16, accent: 0x1d2a44 }],
     ['Leif', { shirt: 0x3a5f8a, pants: 0x2b2d36, skin: 0xd9a77e, hair: 0x8a8a8a, height: 0.98, bulk: 1.18, style: 4 | 8 | 32, accent: 0x6b4a32 }],

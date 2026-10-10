@@ -8,7 +8,7 @@ import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
 import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
 import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
 import { SEE } from './samuel.js';
-import { ISLE } from './island.js';
+import { ISLE, BEACH } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
@@ -130,7 +130,7 @@ export class HUD {
     g.fillStyle = '#5f7a4a'; g.fillRect(P(A.x0), P(A.z0), (A.x1 - A.x0) * MAP_PX, (A.z1 - A.z0) * MAP_PX);
     const Y = ISLE.yard;
     g.fillStyle = '#3d4249'; g.fillRect(P(Y.x0), P(Y.z0), (Y.x1 - Y.x0) * MAP_PX, (Y.z1 - Y.z0) * MAP_PX);
-    g.fillStyle = '#b9a874'; g.beginPath(); g.ellipse(P(-2), P(-243), 26 * MAP_PX, 6 * MAP_PX, -0.22, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#b9a874'; path([...BEACH.shore, ...BEACH.inland.slice().reverse()]); g.fill(); // the beach (v1.1)
     g.strokeStyle = '#d8d3c6'; g.lineWidth = 8 * MAP_PX; g.lineJoin = 'round'; g.lineCap = 'round';
     for (const R of Object.values(L.isleRoads || {})) {
       g.beginPath();
@@ -142,7 +142,7 @@ export class HUD {
     for (const f of L.footprints) if (f.z1 < -200) g.fillRect(P(f.x0), P(f.z0), (f.x1 - f.x0) * MAP_PX, (f.z1 - f.z0) * MAP_PX);
   }
 
-  // the floor plan of the tower's 7th floor (corridor + Samuel's flat)
+  // the floor plan of the tower's 7th floor (corridor + Melker's flat)
   buildIndoorMap() {
     const B = IN_BOUNDS, ox = B.x0, oz = B.z0;
     const c = document.createElement('canvas');
@@ -205,7 +205,7 @@ export class HUD {
     const s = k / IN_PX;
     g.drawImage(this.inImg, (B.x0 - p.x) * k, (B.z0 - p.z) * k, this.inImg.width * s, this.inImg.height * s);
     const P = (x, z) => [(x - p.x) * k, (z - p.z) * k];
-    // where Samuel is looking
+    // where Melker is looking
     const sam = game.indoors.samuel;
     if (sam && sam.cone.on > 0.05) {
       const c = sam.cone;
@@ -221,7 +221,7 @@ export class HUD {
       }
       g.closePath(); g.fill();
     }
-    // the keys (until you have them), Samuel
+    // the keys (until you have them), Melker
     const job = game.mission.active;
     if (job && job.id === 'samuel' && !job.keys) {
       const [x, z] = P(INT.keys.x, INT.keys.z);
@@ -242,7 +242,7 @@ export class HUD {
         g.beginPath(); g.arc(x, z, 4.6 * u, 0, Math.PI * 2); g.fill(); g.stroke();
       }
     }
-    if (job && job.id === 'salong' && job.fia) { // Salong Saxen (v1.0): Fia on her stool, whoever is in the chair
+    if (job && job.id === 'salong' && job.fia) { // Salong Saxen (v1.0): Vera on her stool, whoever is in the chair
       const dot = (x0, z0, c) => { const [x, z] = P(x0, z0); g.fillStyle = c; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u; g.beginPath(); g.arc(x, z, 4.4 * u, 0, Math.PI * 2); g.fill(); g.stroke(); };
       dot(job.fia.x, job.fia.z, '#e8833a');
       const c = job.current;
@@ -533,7 +533,7 @@ export class HUD {
       this.el.bAction.hidden = !label;
       this.el.bAction.classList.toggle('long', label.length > 7); // (BLONDERING, RAKHYVEL… in the hair salon)
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar',
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
         KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
@@ -557,7 +557,7 @@ export class HUD {
     // street names
     const sn = streetAt(car ? car.x : p.x, car ? car.z : p.z);
     if (sn && sn !== this.lastStreet) { this.lastStreet = sn; this.street(sn); }
-    // what Samuel is up to: a badge over his head (phone · ? · eye · !) with a ring that fills as he notices you
+    // what Melker is up to: a badge over his head (phone · ? · eye · !) with a ring that fills as he notices you
     this.updateEye(game, view);
     // bubbles
     const tmp = {};

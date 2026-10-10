@@ -1,8 +1,8 @@
 // Going in and out of the dark tower – and Hörnlivs on Kungsgatan (v0.6.1). The insides
 // (interior.js, shop.js) are built out at sea: going in is a fade to black (and a lift ride in the
-// tower), and the town is hidden while you are in there. Samuel lives up in the tower; he is only
+// tower), and the town is hidden while you are in there. Melker lives up in the tower; he is only
 // around while you are inside. `where` says which place you are in: 'tower', 'shop' or 'office'
-// (Bullbilen's bakery office, v0.7) or 'salon' (Fia's hair salon on Skolgatan, v1.0).
+// (Bullbilen's bakery office, v0.7) or 'salon' (Vera's hair salon on Skolgatan, v1.0).
 import { TOWER_DOOR, LIVS_DOOR, OFFICE_DOOR, SALON_DOOR } from './config.js';
 import { INT } from './interior.js';
 import { SHOP } from './shop.js';
@@ -28,7 +28,7 @@ export class Indoors {
     this.timers = [];
     this.samuel = null;
     this.prompt = null;
-    this.door = game.layout.colliders.find((c) => c.door === 'samuel') || null; // Samuel's front door
+    this.door = game.layout.colliders.find((c) => c.door === 'samuel') || null; // Melker's front door
   }
 
   get doorShut() { return !!(this.door && this.door.h > 0); }

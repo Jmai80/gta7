@@ -21,7 +21,7 @@ export class Player {
     this.hornOn = false;
     this.moved = 0;
     this.locked = false;       // race countdown: the car stays put and you can't get out
-    this.frozen = false;       // caught by Samuel: you stand still until you are thrown out
+    this.frozen = false;       // caught by Melker: you stand still until you are thrown out
     this.autoWalk = null;      // { x, z, speed }: a mission walks you there (works while frozen)
     this.body.x = this.x; this.body.z = this.z; this.body.h = this.h;
   }

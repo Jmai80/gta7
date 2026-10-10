@@ -1,4 +1,4 @@
-# Version 0.4 walkthrough: the main quest – the tower door, the lift, Samuel's flat, sneaking,
+# Version 0.4 walkthrough: the main quest – the tower door, the lift, Melker's flat, sneaking,
 # the keys, getting caught. Screenshots in test/shots/v04_<mode>_*.png
 import asyncio, sys, json
 from playwright.async_api import async_playwright

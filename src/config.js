@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Samuel', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Fia (Salong Saxen)', pia: 'Polis-Pia' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -86,13 +86,13 @@ export const LIVS_DOOR = { x: -32.9, z: -4.5, r: 1.3 };       // the marker on t
 export const INGVAR = { x: 102, z: -386.3, h: 0 };           // the lighthouse keeper, outside his cottage by the lighthouse
 export const LIVS_REWARD = 500, EGG_BONUS = 50, EGGS = 12;   // 500 kr + 50 kr for every egg that arrives whole
 
-// ---- version 0.7: main quest part 4 "Kassaskåpet" and side quest "Samuels nya nycklar" ----
+// ---- version 0.7: main quest part 4 "Kassaskåpet" and side quest "Melkers nya nycklar" ----
 export const OFFICE_DOOR = { x: 56.7, z: -322, r: 1.3 };    // the marker outside the bakery office's side door (west wall, Norrholmen)
 export const SAFE_TIME = 75;                                 // seconds before Bagar-Bengt is back from the ovens
 export const SAFE_REWARD = 3000;
 export const LEIF = { x: 4, z: 32.5, h: 0 };                 // Lås-Leif outside his key shop on Skolgatan
 export const LEIF_MARK = { x: 4, z: 33.9, r: 1.3 };          // the marker in front of him
-export const SAMUEL_WAIT = { x: 34.6, z: -305.2, h: -Math.PI / 2 }; // Samuel waits by the allotments' east gate (Norrholmen)
+export const SAMUEL_WAIT = { x: 34.6, z: -305.2, h: -Math.PI / 2 }; // Melker waits by the allotments' east gate (Norrholmen)
 export const KEY_TIME = 65, KEY_REWARD = 800;
 
 // ---- version 0.8: main quest part 5 "Nyöppningen", Lasse's tuning shop and Kim's long jump ----
@@ -113,18 +113,18 @@ export const FACTORY_START = { x: 42.6, z: -279, r: 3.2 };   // wait by the bake
 export const TAIL = { dest: { x: -70, z: 42.5 }, far: 85, farT: 5, near: 9, nearT: 3, vMax: 11 };
 export const SITE_OFFICE = { x: -57, z: 100.8, r: 2.4 };     // the containers at the construction site: Dahlgren's site office
 export const FACTORY_REWARD = 5000;
-export const BIKE_RETURN = { x: 20.2, z: -3.6, r: 3.0, reward: 500 };   // Samuel waits outside the tower for his bike
+export const BIKE_RETURN = { x: 20.2, z: -3.6, r: 3.0, reward: 500 };   // Melker waits outside the tower for his bike
 export const HOME_DELIVERY = { start: { x: -34.2, z: 1.2, r: 1.5 }, time: 120, per: 300, bonus: 5 };
 
-// ---- version 1.0: side quest "Salong Saxen" (indoors) and main quest part 8 "Bullfesten" (Sander) ----
-export const SALON_DOOR = { x: 22, z: 32.6, r: 1.3 };       // the marker outside Fia's hair salon (Skolgatan, the square's brick building)
+// ---- version 1.0: side quest "Salong Saxen" (indoors) and main quest part 8 "Bullfesten" (Jonte) ----
+export const SALON_DOOR = { x: 22, z: 32.6, r: 1.3 };       // the marker outside Vera's hair salon (Skolgatan, the square's brick building)
 export const SALON_PAY = { base: 300, happy: 200, tip: 100, need: 2, patience: 55 }; // pay per happy customer + a tip for being quick
 export const FEST = {
   mark: { x: -6, z: 8.4, r: 1.8 },                           // the party on the square, in front of the konditori
   table: { x0: -9.6, x1: -2.4, z0: 11.6, z1: 12.5 },         // the long table with the buns (its collider is up only while the party is)
   bike: { x: -0.8, z: 12.2, h: Math.PI / 2 },                // Arne's bike with the basket of buns, at the end of the table
-  racer: { x: -2.6, z: 6.6, h: Math.PI / 2 },                // the red racing bike Sander leaves behind
-  exit: [[6, 12.6], [18, 12.6], [33.5, 12.6]],               // Sander's way out of the square: east, onto Drottninggatan's pavement
+  racer: { x: -2.6, z: 6.6, h: Math.PI / 2 },                // the red racing bike Jonte leaves behind
+  exit: [[6, 12.6], [18, 12.6], [33.5, 12.6]],               // Jonte's way out of the square: east, onto Drottninggatan's pavement
   vMax: 8.4, slow: 6.6, corner: 4.0,                         // his speed on Arne's bike (with the buns): flat out, teasing you, round a corner
   lose: 120, loseT: 8, runLose: 70, runLoseT: 6,             // too far behind for too long: he gets away (on the bike / on foot)
   reward: 3000,

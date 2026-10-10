@@ -8,7 +8,7 @@ import {
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
 import { interiorLayout } from './interior.js';
-import { islandInto, onIsle, ISLE } from './island.js';
+import { islandInto, onIsle, ISLE, BEACH } from './island.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
@@ -652,7 +652,7 @@ export function createLayout(seed = 7) {
       P({ t: 'cyl', x: dx + 2.25, z: fz + 0.95, y0: CURB_H + 2.0, y1: CURB_H + 2.2, r: 0.16, n: 10, c: 0xd8b45a, m: M.CHROME, cap: true });
       box(dx + 2.2, CURB_H + 1.55, fz + 0.95, dx + 2.4, CURB_H + 1.62, fz + 1.0, 0xd8b45a, M.CHROME);
     }
-    // Salong Saxen (v1.0): Fia's hair salon on Skolgatan – a glass door, two lit windows, an orange
+    // Salong Saxen (v1.0): Vera's hair salon on Skolgatan – a glass door, two lit windows, an orange
     // awning, a sign and a striped barber's pole
     {
       const fz = b.z1 - 1, dx = SALON_DOOR.x;
@@ -667,7 +667,7 @@ export function createLayout(seed = 7) {
       }
       box(dx - 4.4, CURB_H + 2.9, fz, dx + 4.4, CURB_H + 3.05, fz + 1.2, 0xe8833a);          // the awning
       box(dx - 4.4, CURB_H + 2.7, fz + 1.18, dx + 4.4, CURB_H + 2.9, fz + 1.24, 0xf4efe4);
-      sign('salong', { lines: ['SALONG SAXEN', 'Frisör · Fia'], bg: '#2b2e35', fg: '#f6d9b8', border: '#e8833a', font: 0.5 }, dx, CURB_H + 3.6, fz + 0.07, 3.8, 0.85, 0);
+      sign('salong', { lines: ['SALONG SAXEN', 'Frisör · Vera'], bg: '#2b2e35', fg: '#f6d9b8', border: '#e8833a', font: 0.5 }, dx, CURB_H + 3.6, fz + 0.07, 3.8, 0.85, 0);
       // the barber's pole by the door: white with a red and a blue band, a little ball on top
       const px = dx + 1.25, pz = fz + 0.3;
       P({ t: 'cyl', x: px, z: pz, y0: CURB_H + 1.3, y1: CURB_H + 2.3, r: 0.1, n: 10, c: 0xf2efe6, cap: true });
@@ -1074,6 +1074,7 @@ export function createLayout(seed = 7) {
   colliders.push(...inside.colliders);
   Object.assign(signs, inside.signs);
   inside.floors.push({ x0: PIER.x0, z0: PIER.z0, x1: PIER.x1, z1: -ISLAND + 0.3, y: CURB_H }); // the pier deck
+  inside.floors.push({ x0: BEACH.jetty.x0, z0: BEACH.jetty.z0, x1: BEACH.jetty.x1, z1: BEACH.jetty.z1, y: CURB_H + 0.02 }); // the beach's jetty (v1.1)
 
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,

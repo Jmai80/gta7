@@ -193,7 +193,7 @@ function wire(g) {
   g.on('enterCar', (e) => { audio.door(); hud.street(CAR_TYPES[e.car.type].name); });
   g.on('exitCar', () => audio.door());
   g.on('horn', (e) => {
-    if (e.car && e.car.spec.bike) { // your bell – or Sander's, quieter further off (v1.0)
+    if (e.car && e.car.spec.bike) { // your bell – or Jonte's, quieter further off (v1.0)
       if (e.on) audio.bell(e.car === g.player.car ? 1 : Math.max(0, 1 - Math.hypot(e.car.x - g.player.x, e.car.z - g.player.z) / 45));
     }
     else if (g.mission.upgrades.has('tuta')) { if (e.on) audio.melody(); } // Lasse's melody horn
@@ -205,7 +205,7 @@ function wire(g) {
   g.on('land', (e) => { if (e.impact > 2.5) { audio.thud(Math.min(1, e.impact / 9)); view.rig.shake = Math.min(0.8, e.impact * 0.05); } });
   g.on('wash', (e) => { view.washing = e.on; audio.washing(e.on); });
   g.on('salon', (e) => audio.salon(e.kind));       // Salong Saxen (v1.0): snip, buzz, dye, happy or not
-  g.on('buns', (e) => view.bunBurst(e.x, e.z));    // Sander comes off Arne's bike (v1.0)
+  g.on('buns', (e) => view.bunBurst(e.x, e.z));    // Jonte comes off Arne's bike (v1.0)
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -426,7 +426,7 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Samuel: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Fia: 310, Sander: 215, 'Polis-Pia': 250 };
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
@@ -545,7 +545,7 @@ function showEnd(s) {
     ['Längsta hopp', s.bestJump ? `${s.bestJump} m` : '–'],
     ['Bullfabriken', s.factoryFound ? 'Avslöjad!' : '–'],
     ['Salong Saxen', s.salonHappy != null ? `${s.salonHappy} av 3 nöjda` : '–'],
-    ['Cykeltjuven Sander', s.sanderCaught ? 'Fast!' : '–'],
+    ['Cykeltjuven Jonte', s.sanderCaught ? 'Fast!' : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

@@ -44,7 +44,8 @@ attribute vec4 iCar;   // spin, steer, roll, pitch
 attribute vec2 iCar2;  // brake light, damage
 #endif
 #ifdef HUMAN
-attribute vec3 aBS;    // x: bone (0 torso, 1 head, 3 arm L, 4 arm R, 5 leg L, 6 leg R), y: colour slot (0 fixed, 1 shirt, 2 pants, 3 skin, 4 hair, 5 accent),
+attribute vec3 aBS;    // x: bone (0 torso, 1 head, 3 arm L, 4 arm R, 5 leg L, 6 leg R), y: colour slot (0 fixed, 1 shirt, 2 pants, 3 skin, 4 hair, 5 accent;
+                       //    6 sleeve, 7 leg, 8 shoe, 9 belt: the ones swimwear changes),
                        // z: an optional part's bit in the style mask (0: always there)
 attribute vec3 aPivot;
 attribute vec4 iAnim;  // phase, leg amp, arm amp, pose
@@ -95,6 +96,13 @@ void main() {
   float pose = iAnim.w;
   // optional parts this person does not have fold away into a single point
   if (aBS.z > 0.5 && mod(floor(iPants.w / aBS.z + 0.001), 2.0) < 0.5) { p = vec3(0.0); n = vec3(0.0, 1.0, 0.0); }
+  // (v1.1) swimwear (style bit 256): bare feet are smaller than the shoes (slot 8, see below)
+  bool swim = mod(floor(iPants.w / 256.0 + 0.001), 2.0) > 0.5;
+  if (swim && aBS.y > 7.5 && aBS.y < 8.5) {
+    float fx = sign(p.x) * 0.105;
+    p = vec3(fx + (p.x - fx) * 0.62, p.y * 0.6, -0.02 + (p.z + 0.02) * 0.86);
+  }
+  if (swim && aBS.y > 6.5 && aBS.y < 7.5 && p.y < 0.115) p.y = 0.07;   // the shin down to the smaller foot
   if (pose > 3.5 && pose < 5.5) {
     // 4: lounging on a sofa – leaning far back, legs out in front, phone in both hands
     // 5: sitting upright on a bench, hands in the lap
@@ -148,6 +156,11 @@ void main() {
     if (bone >= 3) { mat3 R = rotX(a); p = aPivot + R * (p - aPivot); n = R * n; }
   }
   int sel = int(aBS.y + 0.5);
+  if (sel >= 6) {
+    // (v1.1) swimwear: sleeves, legs and shoes turn to skin, the belt to the swimsuit's colour
+    if (sel == 9) sel = swim ? 2 : 0;
+    else sel = swim ? 3 : (sel == 8 ? 0 : sel - 5);
+  }
   #ifdef USE_INSTANCING_COLOR
     if (sel == 1) vColor = instanceColor;
   #endif

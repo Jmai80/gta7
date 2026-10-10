@@ -1,6 +1,6 @@
 // Main quest, part 8: "Bullfesten" (v1.0). Dahlgren is caught, and all of Sjuby comes to the square
 // to celebrate: a long table of Sjubybullar in front of the konditori, bunting, and Arne's old bike
-// with its box full of buns. Then Sander the bike thief – eleven bikes this month – jumps on it and
+// with its box full of buns. Then Jonte the bike thief – eleven bikes this month – jumps on it and
 // rides off with the lot. He leaves his own (stolen) red racing bike behind: take it, or a car, and
 // catch him. He keeps to the pavements and rings his bell at people. Knock him off or grab him, then
 // catch him on foot when he runs. Polis-Pia does the rest.
@@ -12,9 +12,9 @@ import { circleVs } from './collide.js';
 
 const GUN = { who: 'Tant Gun', letter: 'G', color: '#c58be0' };
 const BENGT = { who: 'Bagar-Bengt', letter: 'B', color: '#d9534f' };
-const SAMUEL = { who: 'Samuel', letter: 'S', color: '#6e7a46' };
+const SAMUEL = { who: 'Melker', letter: 'M', color: '#6e7a46' };
 const PIA = { who: 'Polis-Pia', letter: 'P', color: '#3b6fd8' };
-const SANDER = { who: 'Sander', letter: 'SA', color: '#c0392b' };
+const SANDER = { who: 'Jonte', letter: 'J', color: '#c0392b' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 
 // blond hair under a dark red beanie, the hoodie to match, a yellow T-shirt
@@ -34,9 +34,9 @@ const SPOTS = {
 // where the camera looks while they talk (fx 'cam:…'): whoever speaks, framed narrow enough for a phone
 const SHOTS = {
   gun: { x: -6.95, y: 1.1, z: 13.0, yaw: 0 },        // Gun and Bengt behind the table, over your shoulder
-  samuel: { x: -3.6, y: 1.2, z: 10.6, yaw: -2.64 },  // Samuel's face, from the konditori side (you behind him)
+  samuel: { x: -3.6, y: 1.2, z: 10.6, yaw: -2.64 },  // Melker's face, from the konditori side (you behind him)
   pia: { x: 2.0, y: 1.2, z: 10.2, yaw: 1.24 },       // Polis-Pia, over your shoulder
-  steal: { x: -0.9, y: 1.0, z: 12.2, yaw: 0.5 },     // Sander on Arne's bike
+  steal: { x: -0.9, y: 1.0, z: 12.2, yaw: 0.5 },     // Jonte on Arne's bike
   red: { x: -3.3, y: 0.8, z: 7.4, yaw: 1.9 },        // the red racing bike he left behind, and you
 };
 export function partyPages() {
@@ -45,7 +45,7 @@ export function partyPages() {
     { ...BENGT, text: 'Mina första bullar som lärling. Tant Gun säger att de är nästan lika goda som Arnes.' },
     { ...GUN, text: 'NÄSTAN, sa jag. Och se – Arnes gamla cykel får köra ut dem, med lådan full.' },
     { ...SAMUEL, fx: 'cam:samuel', text: 'Min cykel. Arnes, menar jag. Den är typ kändis nu.' },
-    { ...PIA, fx: 'cam:pia', text: 'Håll ett öga på den, Samuel. Vi har en cykeltjuv i stan – Sander heter han. Elva cyklar på en månad.' },
+    { ...PIA, fx: 'cam:pia', text: 'Håll ett öga på den, Melker. Vi har en cykeltjuv i stan – Jonte heter han. Elva cyklar på en månad.' },
     { ...YOU, text: 'Mitt på festen? Knappast.' },
     { ...SANDER, fx: 'steal', text: 'Tack för bullarna!' },
     { ...GUN, text: 'ARNES CYKEL! Och alla bullarna!' },
@@ -55,7 +55,7 @@ export function partyPages() {
 // (after a miss: he comes back for more)
 export function againPages() {
   return [
-    { ...PIA, fx: 'cam:pia', text: 'Han är tillbaka! Sander kan inte låta bli bullarna.' },
+    { ...PIA, fx: 'cam:pia', text: 'Han är tillbaka! Jonte kan inte låta bli bullarna.' },
     { ...SANDER, fx: 'steal', text: 'Tack för påfyllningen!' },
     { ...YOU, fx: 'cam:red', text: 'Den här gången kommer du inte undan.', last: 'EFTER HONOM!' },
   ];
@@ -65,9 +65,9 @@ export function caughtPages() {
     { ...SANDER, text: 'Aj, aj, aj… Okej, okej! Jag ger mig!' },
     { ...YOU, text: 'Arnes cykel. Och festbullarna.' },
     { ...SANDER, text: 'Jag åt bara tre! Kanske fyra. De var sjukt goda, alltså.' },
-    { ...PIA, fx: 'pia', text: 'Sander. Elva cyklar på en månad – och nu en budcykel full med bullar. Var är de andra?' },
+    { ...PIA, fx: 'pia', text: 'Jonte. Elva cyklar på en månad – och nu en budcykel full med bullar. Var är de andra?' },
     { ...SANDER, text: '…I gamla båthuset vid hamnen. Jag skulle laga dem och sälja dem. Typ.' },
-    { ...PIA, text: 'Du ska få laga dem – och lämna tillbaka varenda en. Fias cykelsadel också.' },
+    { ...PIA, text: 'Du ska få laga dem – och lämna tillbaka varenda en. Veras cykelsadel också.' },
     { ...PIA, text: 'Bra jobbat. Kom förbi stationen sedan – det blir en hel del cyklar att lämna tillbaka.', last: 'TACK!' },
   ];
 }
@@ -90,8 +90,8 @@ function stand(ped, x, z, h) {
 }
 
 // The party on the square: up as soon as Gun has texted (when you are not looking), until the
-// quest is done (and you have left). Gun is there (her own ped, moved), Bengt, Samuel, Yasmin,
-// Polis-Pia, a few others, Sander in the crowd, Arne's bike with the buns and the red racer.
+// quest is done (and you have left). Gun is there (her own ped, moved), Bengt, Melker, Yasmin,
+// Polis-Pia, a few others, Jonte in the crowd, Arne's bike with the buns and the red racer.
 export class FestParty {
   constructor(mgr) {
     this.mgr = mgr; this.game = mgr.game;
@@ -141,7 +141,7 @@ export class FestParty {
     if (!(p.inCar && p.car === g.redBike)) g.spawnRedBike(FEST.racer.x, FEST.racer.z, FEST.racer.h);
   }
 
-  // after a miss: Sander back in the crowd, the bikes back in their places
+  // after a miss: Jonte back in the crowd, the bikes back in their places
   reset() {
     if (!this.up) { this.setup(); return; }
     const g = this.game;
@@ -194,7 +194,7 @@ export class FestJob {
     m.later(0.85, () => g.emit('fade', { on: false }), this);
   }
 
-  // Sander jumps on Arne's bike (the dialogue is still open: the game waits, so he just sits there)
+  // Jonte jumps on Arne's bike (the dialogue is still open: the game waits, so he just sits there)
   talkFx(fx) {
     const g = this.game;
     if (fx.startsWith('cam:')) { const s = SHOTS[fx.slice(4)]; if (s) g.camFocus = { ...s, owner: 'fest', near: true }; return; }
@@ -209,7 +209,7 @@ export class FestJob {
       g.camFocus = { ...SHOTS.steal, owner: 'fest', near: true };
       g.emit('horn', { on: true, car: bike }); g.emit('horn', { on: false, car: bike });
     } else if (fx === 'pia') {
-      // Polis-Pia arrives (she was right behind you all along) and takes Sander by the arm: a free
+      // Polis-Pia arrives (she was right behind you all along) and takes Jonte by the arm: a free
       // spot beside him (not inside a wall), the one most in the picture; the camera takes in all three
       const p = g.player, S = this.sander;
       const pia = this.party.pia && g.peds.list.includes(this.party.pia) ? this.party.pia : spawnPed(g, LOOKS.pia, p.x, p.z, 0, 'pia');
@@ -241,8 +241,8 @@ export class FestJob {
       this.rider.on = true;
       g.racers.push(this.rider);
       this.safeT = 1.0;
-      g.emit('toast', { text: 'Sander snodde Arnes cykel! Ta den röda cykeln – eller en bil – och ta fast honom.', long: true });
-      m.later(1.2, () => g.emit('hint', { id: 'sander', touch: 'Kör ikapp Sander och knuffa omkull honom – eller ta tag i honom när du är tätt bakom.', keys: 'Kör ikapp Sander och knuffa omkull honom – eller ta tag i honom när du är tätt bakom.' }), this);
+      g.emit('toast', { text: 'Jonte snodde Arnes cykel! Ta den röda cykeln – eller en bil – och ta fast honom.', long: true });
+      m.later(1.2, () => g.emit('hint', { id: 'sander', touch: 'Kör ikapp Jonte och knuffa omkull honom – eller ta tag i honom när du är tätt bakom.', keys: 'Kör ikapp Jonte och knuffa omkull honom – eller ta tag i honom när du är tätt bakom.' }), this);
       return;
     }
     if (this.stage === 'caught') this.finish();
@@ -256,7 +256,7 @@ export class FestJob {
     const S = this.sander;
     if (this.stage === 'chase') {
       const r = this.rider, bike = r && r.bike;
-      if (!bike || bike.removed || !S) { m.fail(this, 'Sander försvann'); return; }
+      if (!bike || bike.removed || !S) { m.fail(this, 'Jonte försvann'); return; }
       r.pose(dt);
       if (this.safeT > 0) this.safeT -= dt;
       const Y = this.you(), d = Math.hypot(Y.x - bike.x, Y.z - bike.z);
@@ -266,12 +266,12 @@ export class FestJob {
       this.grabT = d < reach && this.safeT <= 0 ? this.grabT + dt : 0;
       if (this.grabT > 0.2) { this.knockOff(car && !car.spec.bike ? 'bump' : 'grab'); return; }
       this.farT = d > FEST.lose ? this.farT + dt : 0;
-      if (this.farT > FEST.loseT) { this.lost('Sander kom undan'); return; }
-      m.setObjective('Ta fast Sander', d > FEST.lose * 0.75 ? `${Math.round(d)} m – han kommer undan!` : `${Math.round(d)} m bort · knuffa omkull honom`);
+      if (this.farT > FEST.loseT) { this.lost('Jonte kom undan'); return; }
+      m.setObjective('Ta fast Jonte', d > FEST.lose * 0.75 ? `${Math.round(d)} m – han kommer undan!` : `${Math.round(d)} m bort · knuffa omkull honom`);
       return;
     }
     if (this.stage === 'run') {
-      if (!S) { m.fail(this, 'Sander försvann'); return; }
+      if (!S) { m.fail(this, 'Jonte försvann'); return; }
       const Y = this.you(), d = Math.hypot(Y.x - S.x, Y.z - S.z);
       const onFoot = p.state === 'foot' && !p.frozen;
       // up again: he runs, away from you
@@ -283,8 +283,8 @@ export class FestJob {
       if (onFoot && d < (down ? 1.8 : 1.15)) { this.tackle(); return; }
       if (p.inCar && d < 6 && !this.outHint) { this.outHint = true; g.emit('toast', { text: p.car.spec.bike ? 'Kliv av och ta fast honom!' : 'Kliv ur och ta fast honom!', long: false }); }
       this.farT = d > FEST.runLose ? this.farT + dt : 0;
-      if (this.farT > FEST.runLoseT) { this.lost('Sander sprang sin väg'); return; }
-      m.setObjective('Ta fast Sander', down ? 'Han ligger ner – spring fram!' : `Han springer! ${Math.round(d)} m`);
+      if (this.farT > FEST.runLoseT) { this.lost('Jonte sprang sin väg'); return; }
+      m.setObjective('Ta fast Jonte', down ? 'Han ligger ner – spring fram!' : `Han springer! ${Math.round(d)} m`);
     }
   }
 
@@ -309,8 +309,8 @@ export class FestJob {
     this.farT = 0; this.fleeT = 0;
     g.emit('caught', {});
     g.emit('say', { who: this.sander, text: how === 'traffic' ? 'Aaaj! Vem kör så där?!' : how === 'bump' ? 'Hallå! Aj!' : 'Släpp min luva!' });
-    g.emit('toast', { text: how === 'traffic' ? 'Sander krockade med en bil! Ta fast honom!' : 'Sander ramlade av cykeln! Ta fast honom innan han springer iväg!', long: true });
-    m.later(0.8, () => g.emit('hint', { id: 'tackle', touch: 'Spring ikapp Sander – du är snabbare än han till fots.', keys: 'Spring ikapp Sander (håll Shift) – du är snabbare än han till fots.' }), this);
+    g.emit('toast', { text: how === 'traffic' ? 'Jonte krockade med en bil! Ta fast honom!' : 'Jonte ramlade av cykeln! Ta fast honom innan han springer iväg!', long: true });
+    m.later(0.8, () => g.emit('hint', { id: 'tackle', touch: 'Spring ikapp Jonte – du är snabbare än han till fots.', keys: 'Spring ikapp Jonte (håll Shift) – du är snabbare än han till fots.' }), this);
     g.stats.sanderHow = how;
   }
 
@@ -346,7 +346,7 @@ export class FestJob {
 
   targets(T) {
     if (this.stage === 'chase' && this.rider) T.push({ kind: 'racer', car: this.rider.bike, color: 0xff3b2f, gps: true });
-    else if (this.stage === 'run' && this.sander) T.push({ kind: 'contact', x: this.sander.x, z: this.sander.z, r: 1, letter: 'S', color: '#c0392b', badgeOnly: true, badgeY: 2.4, ref: this.sander, gps: true });
+    else if (this.stage === 'run' && this.sander) T.push({ kind: 'contact', x: this.sander.x, z: this.sander.z, r: 1, letter: SANDER.letter, color: SANDER.color, badgeOnly: true, badgeY: 2.4, ref: this.sander, gps: true });
   }
 
   cleanup() {
@@ -365,7 +365,7 @@ export class FestJob {
     }
     const S = this.sander;
     if (this.stage === 'done') {
-      // Pia walks Sander off to the station, away from you – gone once nobody is looking – and
+      // Pia walks Jonte off to the station, away from you – gone once nobody is looking – and
       // Arne's bike goes back where it lives (the party winds down when you have left)
       const pia = this.party.pia, pair = [S, pia].filter((q) => q && g.peds.list.includes(q));
       const ax = S ? S.x - p.x : 1, az = S ? S.z - p.z : 0, ad = Math.hypot(ax, az) || 1;
@@ -385,12 +385,12 @@ export class FestJob {
         const b = g.bike, P = g.player;
         if (!b || b.removed) return;
         if ((P.inCar && P.car === b) || Math.hypot(b.x - P.x, b.z - P.z) < 70 || g.visible(b.x, b.z)) { m.later(3, home); return; }
-        if (m.done.has('cykelretur')) g.spawnBike(BIKE_RETURN.x - 1.4, BIKE_RETURN.z + 0.4, Math.PI / 2, false); // by the tower, with Samuel
+        if (m.done.has('cykelretur')) g.spawnBike(BIKE_RETURN.x - 1.4, BIKE_RETURN.z + 0.4, Math.PI / 2, false); // by the tower, with Melker
         else g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // by Gun's gate
       };
       m.later(10, home);
     } else if (S) {
-      // a miss: Sander back at the party, the bikes in their places (when you are not looking)
+      // a miss: Jonte back at the party, the bikes in their places (when you are not looking)
       if (S.state === 'ride') stand(S, S.x, S.z, S.h);
       const back = () => {
         if (this.mgr.active && this.mgr.active.id === 'bullfest') return;

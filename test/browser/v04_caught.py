@@ -1,4 +1,4 @@
-# Getting caught by Samuel: the gaze turns red, the ring fills, "!" and out you go.
+# Getting caught by Melker: the gaze turns red, the ring fills, "!" and out you go.
 import asyncio, sys, json
 from playwright.async_api import async_playwright
 sys.path.insert(0, "/home/claude/gta7/test/browser")

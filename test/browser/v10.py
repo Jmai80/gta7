@@ -1,5 +1,5 @@
-# v1.0 walkthrough: Salong Saxen (Fia's hair salon, indoors) and Bullfesten (the party on the square,
-# Sander the bike thief, the chase on the red racing bike, Polis-Pia).
+# v1.0 walkthrough: Salong Saxen (Vera's hair salon, indoors) and Bullfesten (the party on the square,
+# Jonte the bike thief, the chase on the red racing bike, Polis-Pia).
 # Usage: python3 test/browser/v10.py phone|land|desk  (screenshots in test/shots/v10_*)
 import asyncio, sys, json
 from playwright.async_api import async_playwright
@@ -108,7 +108,7 @@ async def main(name, w, h, mobile):
         await shot(pg, name, '09_party')
         await pg.evaluate(TO, [-6, 8.4, 0.15])
         await pg.evaluate(STEP, [1.6])
-        # the party talk, a picture of each camera: Gun, Samuel, Pia, Sander on the bike, the red racer
+        # the party talk, a picture of each camera: Gun, Melker, Pia, Jonte on the bike, the red racer
         await frames(pg, 6)
         for k in range(9):
             await frames(pg, 3)
