@@ -1,7 +1,7 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
 import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
@@ -313,7 +313,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all eleven are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1, Jonte is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1\.1/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1.1, Jonte is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1218,6 +1218,81 @@ function jumpFrom(g, z0) {
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Kim (Macken)' && /hoppkung/.test(d.text)), 'Kim admits it');
 }
 
+// ---------- 17b. (v1.1.1) Långhoppet: the K starts a run ----------
+{
+  console.log('Långhoppet: K:et startar ett försök (v1.1.1)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_SAFE, 'verkstad']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'stunt', 'hint']);
+  m.offer('hopp'); m.accept('hopp'); run(g, 0.1);
+  const K = m.quest('hopp');
+  check(K.x === JUMP_START.x && K.z === JUMP_START.z && m.targets.some((t) => t.letter === 'K' && t.gps && t.x === K.x && t.z === K.z),
+    `the K at the far end of the parking lot (${K.x}, ${K.z}), the GPS leads there`);
+  check(/K:et/.test(m.objective) && /Hörnlivs/.test(m.sub), `the objective box says what to do: ${m.objective} · ${m.sub}`);
+  // on foot: no run, but it says why
+  walkHere(g, K.x, K.z); run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /bil/.test(d.text) && /K:et/.test(d.text)), 'on foot in the K: no run – it says you need a car (there are some on the lot)');
+  walkHere(g, K.x + 7, K.z - 6);
+  // drive in from the north end of the lot: the run starts, two rings show the way
+  const car = g.addVehicle('sedan', 'blue', K.x, K.z - 5, 0);
+  enterCar(g, car);
+  for (let i = 0; i < 60 * 5 && !m.active; i++) g.step(DT, { ...idle, throttleAxis: 0.35, steerAxis: 0 });
+  const job = m.active;
+  check(job && job.id === 'hopp' && ev.some(([n, d]) => n === 'banner' && d.title === 'LÅNGHOPPET'), 'driving into the K starts the run (LÅNGHOPPET)');
+  check(m.objective === `Hoppa minst ${JUMP_GOAL} m` && /söderut/.test(m.sub), `the objective: ${m.objective} · ${m.sub}`);
+  check(m.targets.filter((t) => t.kind === 'ring').length === 2 && !m.targets.some((t) => t.gps), 'a ring over Skolgatan and one past the ramp (no GPS detour along the roads)');
+  // a short run (from just north of Skolgatan) falls short: back to the K
+  const jump = (z0) => {
+    parkAt(g, K.x, z0, 0);
+    const n0 = ev.filter(([n]) => n === 'stunt').length;
+    let landed = -1;
+    for (let i = 0; i < 60 * 12; i++) {
+      g.step(DT, { ...idle, throttleAxis: car.z < 95 ? 1 : -1, steerAxis: 0 });
+      if (landed < 0 && ev.filter(([n]) => n === 'stunt').length > n0) landed = i;
+      if (landed >= 0 && i > landed + 20) break;
+    }
+    const e = ev.filter(([n]) => n === 'stunt').pop();
+    return e && e[1].dist;
+  };
+  const d1 = jump(18);
+  check(d1 < JUMP_GOAL && m.active === job && job.stage === 'back' && m.objective === 'Kör tillbaka till K:et', `${d1} m is too short: back to the K (${m.sub})`);
+  check(m.targets.some((t) => t.letter === 'K' && t.gps), 'the GPS leads back to the K');
+  // back in the K: a new try
+  parkAt(g, K.x, K.z, 0); run(g, 0.2);
+  check(job.stage === 'run' && job.tries === 2 && ev.some(([n, d]) => n === 'toast' && /Nytt försök/.test(d.text)), 'back in the K: a new try');
+  const money0 = g.money;
+  const d2 = jump(K.z);
+  run(g, 3);
+  check(d2 >= JUMP_GOAL && m.done.has('hopp') && !m.active, `flat out from the K: ${d2} m – done`);
+  check(g.money - money0 >= JUMP_REWARD && ev.some(([n, d]) => n === 'banner' && /Långhoppet/.test(d.sub || '')), `${JUMP_REWARD} kr (plus the stunt bonus)`);
+  run(g, 5);
+  check(!m.targets.some((t) => t.letter === 'K' && t.x === K.x && t.z === K.z), 'the K is gone once it is done');
+}
+{
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_SAFE, 'verkstad']));
+  const ev = record(g, ['toast']);
+  m.offer('hopp'); m.accept('hopp'); run(g, 0.1);
+  const K = m.quest('hopp');
+  const car = g.addVehicle('sedan', 'blue', K.x, K.z - 5, 0);
+  enterCar(g, car);
+  // driving straight through the K at speed (other markers want you to slow down) starts it too
+  car.vz = 16;
+  for (let i = 0; i < 60 * 4 && !m.active; i++) g.step(DT, { ...idle, throttleAxis: 1, steerAxis: 0 });
+  check(m.active && m.active.id === 'hopp' && car.speed > 12, `straight through the K at ${(car.speed * 3.6).toFixed(0)} km/h: the run starts all the same`);
+  // in through the gate beside the ramp: missed, back to the K
+  parkAt(g, -64.4, 30, 0);
+  for (let i = 0; i < 60 * 8 && m.active && m.active.stage === 'run'; i++) g.step(DT, { ...idle, throttleAxis: 0.7, steerAxis: 0 });
+  check(m.active && m.active.stage === 'back' && /missade/.test(m.sub), `past the ramp on the ground: ${m.objective} · ${m.sub}`);
+  parkAt(g, K.x + 4, K.z + 10, 0);
+  g.step(DT, { ...idle, action: true }); run(g, 6);
+  check(!m.active && !m.done.has('hopp') && ev.some(([n, d]) => n === 'toast' && /avbrutet/.test(d.text)), 'out of the car for a while: the run is off (no failure)');
+  run(g, 4);
+  check(m.targets.some((t) => t.letter === 'K' && t.x === K.x && t.z === K.z), 'and the K is back');
+}
+
 // ---------- 18. main quest, part 5: "Nyöppningen" ----------
 {
   console.log('Nyöppningen (huvuduppdrag del 5)');
@@ -1739,7 +1814,7 @@ function festStart(g) {
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Bullfesten'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /räddad/.test(d.text)), 'tant Gun: the party is saved');
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1/.test(d.text)), 'all eleven done: the end card (version 1.1)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1\.1/.test(d.text)), 'all eleven done: the end card (version 1.1.1)');
   const next = m.list().find((q) => q.id === 'cykelgomman');
   check(next && next.state === 'soon' && /Jonte/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
   // you walk off: Pia takes Jonte away, the bike goes home, the party winds down

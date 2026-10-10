@@ -34,7 +34,7 @@ import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
-  KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD,
+  KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START,
   JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
@@ -52,6 +52,7 @@ import { JarJob } from './jar.js';
 import { FactoryJob } from './factory.js';
 import { BikeReturnJob, HomeDeliveryJob } from './errands.js';
 import { SalonJob } from './barber.js';
+import { LongJumpJob } from './longjump.js';
 import { FestJob, FestParty } from './fest.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
@@ -128,10 +129,12 @@ export const QUESTS = [
   },
   {
     // side quest: Kim's long jump, after you have been shopping at Lasse's
-    id: 'hopp', letter: 'K', who: WHO.kim, title: 'Långhoppet', color: '#4aa8ff', x: -70, z: 10,
-    side: true, sms: true, after: 'verkstad', at: 15,
-    text: `Kim här. Lasse säger att du har varit och shoppat. Bevisa att det hjälper: hoppa minst ${JUMP_GOAL} meter på byggtomtens hopp. Ta sats från parkeringen på andra sidan Skolgatan.`,
-    reward: `${fmt(JUMP_REWARD)} kr`, where: 'Hoppet på byggtomten, Skolgatan',
+    // (v1.1.1) a job of its own: drive into the K with a car and the run starts (longjump.js)
+    id: 'hopp', letter: 'K', who: WHO.kim, title: 'Långhoppet', color: '#4aa8ff', x: JUMP_START.x, z: JUMP_START.z, r: JUMP_START.r, Job: LongJumpJob,
+    side: true, sms: true, after: 'verkstad', at: 15, fastStart: true,
+    needCar: 'Långhoppet görs med bil. Det står några på parkeringen – ta en och kör in i K:et.',
+    text: `Kim här. Lasse säger att du har varit och shoppat. Bevisa att det hjälper: hoppa minst ${JUMP_GOAL} meter på byggtomtens hopp. Kör in i K:et längst bort på parkeringen mittemot Hörnlivs, så kör vi.`,
+    reward: `${fmt(JUMP_REWARD)} kr`, where: 'K:et på parkeringen mittemot Hörnlivs, sedan hoppet på byggtomten',
   },
   {
     // main quest, part 5: Sjuby Konditori opens again
@@ -352,7 +355,7 @@ export class Missions {
       case 'nycklar': return 'Hämta nycklarna hos Lås-Leif på Skolgatan';
       case 'kassaskap': return 'Smyg in på Bullbilens bagerikontor och öppna kassaskåpet';
       case 'verkstad': return 'Köp något i Lasses trimningsbutik';
-      case 'hopp': return `Hoppa minst ${JUMP_GOAL} m på byggtomten${this.bestJump ? ` (bäst hittills ${this.bestJump} m)` : ''}`;
+      case 'hopp': return `Kör in i K:et på parkeringen mittemot Hörnlivs och hoppa minst ${JUMP_GOAL} m på byggtomten${this.bestJump ? ` (bäst hittills ${this.bestJump} m)` : ''}`;
       case 'konditori': return 'Hämta kardemumma, smör och mjöl till Sjuby Konditori';
       case 'syltburken': return 'Stoppa den svarta bilen och ta tillbaka syltburken';
       case 'fabriken': return 'Följ Dahlgrens lastbil från bageriet';
@@ -472,14 +475,14 @@ export class Missions {
       if (d > c.r + 1.5) { c.armed = true; c.warned = false; continue; }
       if (d > c.r || !c.armed) continue;
       if (c.needCar && (!car || car.dead || car.spec.bike)) {
-        if (!c.warned) { c.warned = true; g.emit('toast', { text: 'Kim kör bara mot folk med bil. Kom tillbaka med en!', long: true }); }
+        if (!c.warned) { c.warned = true; g.emit('toast', { text: typeof c.needCar === 'string' ? c.needCar : 'Kim kör bara mot folk med bil. Kom tillbaka med en!', long: true }); }
         continue;
       }
       if (c.needFoot && car) {
         if (!c.warned) { c.warned = true; g.emit('toast', { text: car.spec.bike ? c.needFoot.replace('Kliv ur bilen', 'Kliv av cykeln') : c.needFoot, long: true }); }
         continue;
       }
-      if (car && car.speed > 12) continue;
+      if (car && car.speed > 12 && !c.fastStart) continue; // (the long jump starts at any speed)
       c.armed = false;
       this.startJob(c);
       return;
@@ -553,8 +556,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.1! Jonte är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.1! Jonte är fast och Bullfesten räddad. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.1.1! Jonte är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.1.1! Jonte är fast och Bullfesten räddad. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -598,7 +601,7 @@ export class Missions {
       case 'livs': return { text: 'Gå in på Hörnlivs (Y)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Kungsgatan, under den blå markisen' };
       case 'nycklar': return { text: 'Gå till Lås-Leif (N)', sub: 'Skolgatan, södra sidan av torgkvarteret' };
       case 'verkstad': return { text: 'Köp något hos Lasse (L)', sub: 'Lasses Verkstad, första garageporten' };
-      case 'hopp': return { text: `Hoppa minst ${JUMP_GOAL} m`, sub: this.bestJump ? `Bäst hittills ${this.bestJump} m · ta längre sats` : 'Byggtomten · ta sats från parkeringen' };
+      case 'hopp': return { text: 'Kör in i K:et med en bil', sub: `Parkeringen mittemot Hörnlivs${this.bestJump ? ` · bäst hittills ${this.bestJump} m` : ` · Kim vill se ${JUMP_GOAL} m`}` };
       case 'konditori': return { text: 'Nyöppningen', sub: 'Tre ingredienser till Sjuby Konditori' };
       case 'syltburken': return { text: 'Syltburken', sub: 'Den svarta bilen' };
       case 'fabriken': return { text: 'Bullfabriken', sub: 'Bageriets infart på Norrholmen' };
@@ -726,9 +729,8 @@ export class Missions {
         T.push({ kind: 'contact', x: c.x, z: c.z, r: c.r, letter: c.letter, color: c.color, gps: tr === c.id });
       }
     }
-    // Lasse's shop (once he has told you about it) and Kim's long jump
+    // Lasse's shop (once he has told you about it). (Kim's long jump has a job of its own since v1.1.1.)
     if (this.known.has('verkstad') || this.done.has('verkstad')) T.push({ kind: 'contact', x: LASSE_SHOP.x, z: LASSE_SHOP.z, r: LASSE_SHOP.r, letter: '$', color: '#ffcf33', gps: tr === 'verkstad', mapOnly: this.done.has('verkstad') });
-    if (this.isOpen('hopp')) T.push({ kind: 'contact', x: BY_ID.hopp.x, z: BY_ID.hopp.z, r: 2.5, letter: 'K', color: '#4aa8ff', gps: tr === 'hopp' });
     // tant Gun
     this.flag.targets(T, tr === 'flag');
   }
@@ -813,14 +815,20 @@ export class Missions {
   }
 
   // ---------------------------------------------------------------- Kim's long jump (v0.8)
+  // a stunt jump has landed: long enough for Kim? (counts with or without the run from the K, v1.1.1)
   onStunt(e) {
     const g = this.game;
     if (e.dist > this.bestJump) this.bestJump = e.dist;
     if (!this.isOpen('hopp')) return;
+    const job = this.active && this.active.id === 'hopp' ? this.active : null;
+    if (job) job.landed(e, e.dist >= JUMP_GOAL);
     if (e.dist >= JUMP_GOAL) {
       g.stats.longJump = e.dist;
       this.later(2.2, () => {
-        this.completeQuest('hopp', { title: 'SIDOUPPDRAG KLART', sub: `Långhoppet · ${e.dist} m`, amount: JUMP_REWARD });
+        if (!this.isOpen('hopp')) return;
+        const r = { title: 'SIDOUPPDRAG KLART', sub: `Långhoppet · ${e.dist} m`, amount: JUMP_REWARD };
+        if (this.active && this.active.id === 'hopp') this.complete(this.active, r);
+        else this.completeQuest('hopp', r);
         this.sms(WHO.kim, `${e.dist} meter?! Okej, jag erkänner. Du är Sjubys hoppkung.`, 4);
       });
     } else {

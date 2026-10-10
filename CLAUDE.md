@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 10 oktober 2026, efter version 1.1 (commit `01afeb5`). Avsnitt 4 är en öppen bugg som ska fixas först.
+Senast uppdaterad 10 oktober 2026, efter version 1.1.1 (buggfixen i Långhoppet, avsnitt 4). Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -13,7 +13,9 @@ Senast uppdaterad 10 oktober 2026, efter version 1.1 (commit `01afeb5`). Avsnitt
 3. Använd miljön **Default**, vars nätverksnivå heter **Trusted**. Den når npm, PyPI och GitHub, vilket räcker för testerna.
 4. Välj repot **Jmai80/gta7** i väljaren under textrutan och skriv uppgiften, till exempel:
 
-   > Läs CLAUDE.md och docs/HANDOFF.md. Fixa buggen i avsnitt 4 (Långhoppet). Testa i Node och i webbläsaren, höj versionen, uppdatera dokumenten och se till att ändringen hamnar på main. Svara på svenska och skicka ett skärmdumpsark när du är klar.
+   > Läs CLAUDE.md och docs/HANDOFF.md. Sedan: <beskriv vad du vill ha, t.ex. "bygg nästa del i huvuduppdraget, Cykelgömman" eller "när jag gör X händer Y, men det borde bli Z">. Testa i Node och i webbläsaren, höj versionen, uppdatera dokumenten och se till att ändringen hamnar på main. Svara på svenska och skicka ett skärmdumpsark när du är klar.
+
+   Beskriv en bugg så som du upplevde den i spelet (var du var, vad du gjorde, vad som hände). Det räcker för att hitta felet.
 
 5. Sessionen fortsätter även om du stänger fliken. Du kan följa den från mobilen under Code-fliken i Claude-appen.
 
@@ -25,7 +27,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.1 (commit `01afeb5`). Avsnitt
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.1 innehåller:
+- Version 1.1.1 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar,
   - åtta sidouppdrag,
   - Lasses trimningsbutik,
@@ -56,14 +58,14 @@ Senast uppdaterad 10 oktober 2026, efter version 1.1 (commit `01afeb5`). Avsnitt
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.1 (01afeb5) eller senare
+git log --oneline -3                         # överst: v1.1.1 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
-npm test                                     # ~540 kontroller, 1–2 min. Ska sluta med:
+npm test                                     # ~555 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
 (nohup python3 -m http.server 8765 --directory "$PWD" > /dev/null 2>&1 &)   # server för webbläsartesterna
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8765/index.html   # ska ge 200
 mkdir -p test/shots                          # skärmdumparna hamnar här (gitignorerad)
-python3 test/browser/v11.py phone            # en genomgång: ska sluta med "logs []" (inga konsolfel)
+python3 test/browser/v111.py phone           # en genomgång (Långhoppet): ska sluta med "LONGJUMP ok" och "logs []"
 ```
 
 **Webbläsartesterna** (`test/browser/*.py`) använder Python, Playwright och Chromium med SwiftShader (mjukvaru-WebGL). Kör dem från repots rot. Webbläsaren hittas på något av tre sätt:
@@ -86,50 +88,52 @@ Fler saker att veta om testmiljön:
   - `start()`, `pause()`, `resume()`,
   - `openOffer(id)`, `nextTalk()`, `openShop()`, `buyItem(id)`,
   - `perf.apply('pretty' | 'auto' | 'saver')`.
-- **Mönster i genomgångarna:** stega simuleringen med `game.step(1/60, input)` och flytta spelaren direkt. Ett sparat spel läggs i `localStorage['gta7-progress']` (`{ v: 2, money, done, known, seen, stats }`). Se `v10.py` och `v11.py`.
+- **Mönster i genomgångarna:** stega simuleringen med `game.step(1/60, input)` och flytta spelaren direkt. Ett sparat spel läggs i `localStorage['gta7-progress']` (`{ v: 2, money, done, known, seen, stats }`). Se `v10.py`, `v11.py` och `v111.py`.
 - **Studioskript:** `beach_studio.py TAG [phone]`, `bike_studio.py TAG` och `people.py` tar närbilder med fast kamera.
 
-## 4. ÖPPEN BUGG – ta den först: Långhoppet
+## 4. Senast fixat: Långhoppet (v1.1.1)
 
-**Vad användaren ser:** Långhoppet är Kims sidouppdrag, id `hopp`. Det visar en blå lysande cirkel med ett K på parkeringen rakt över Kungsgatan från Hörnlivs. Går man in i cirkeln händer ingenting.
+Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkeringen rakt över gatan från Hörnlivs. Inget händer när man går in i cirkeln."
 
 **Orsak:**
 
-- `hopp` saknar `Job` i `QUESTS` (`src/mission.js`). K:et är bara en `contact`-markör som `Missions.updateTargets()` ritar på (−70, 10) med radien 2.5, via raden `if (this.isOpen('hopp')) T.push({ kind: 'contact', … })`. Inget i `checkJobs()` reagerar på den, så den ser ut som en startmarkör men är det inte.
-- Uppdraget klaras i `Missions.onStunt()` så fort spelaren landar ett bilhopp på minst `JUMP_GOAL` = 34 m, var som helst.
-  - Hoppet är byggtomtens kicker söder om Skolgatan: `layout.zones.stunt.kick` = x −74..−66, z 57..66, 2.45 m hög.
-  - Man ska ta sats med bil från parkeringen (`layout.zones.parking` = x −86..−50, z −30..30), rakt söderut genom byggtomtens grind (x −77..−63, vid z ≈ 48).
-- **Från K:ets nuvarande plats räcker inte en rak sats utan turbo.** Simulerat i Node med en sedan på full gas rakt söderut längs x = −70:
+- K:et var bara en `contact`-markör utan `Job` på (−70, 10). Ingenting reagerade när man gick in i det.
+- Uppdraget klarades bara av ett bilhopp på minst 34 m på byggtomtens kicker, var som helst ifrån. Från K:ets plats räckte inte ens en rak sats utan turbo (30 m).
 
-  | Start (z) | Utan turbo | Med turbo |
-  |---|---|---|
-  | 18 | 27 m | 35 m |
-  | 10 | 30 m | 38 m |
-  | 0 | 33 m | 41 m |
-  | −10 | 35 m | 43 m |
-  | −20 | 37 m | 43 m |
-  | −28 | 38 m | 44 m |
+**Fixen:**
 
-  34 m kräver ungefär 100 km/h vid kanten.
+- `hopp` har nu ett jobb, `LongJumpJob` i `src/longjump.js`.
+- K:et står i parkeringens norra ände: `JUMP_START` (−70, −24) i config.js, rakt norr om kickern. Därifrån blir en rak sats utan turbo cirka 37–38 m och med turbo cirka 44 m.
+- **Till fots eller på cykel:** en toast med texten i `needCar` (`needCar` kan nu vara en egen text).
+- **Med bil, i vilken fart som helst** (`fastStart`): försöket startar. Det visar mål-rutan "Hoppa minst 34 m", en gul ring över Skolgatan och en vit ring precis efter kickern.
+- **Kortare hopp eller missad kicker:** "Kör tillbaka till K:et", och GPS:en leder tillbaka.
+- **Avbrott:** ur bilen i mer än 5 s eller mer än 200 m bort avbryter försöket tyst med `mgr.quit`.
+- `Missions.onStunt()` avslutar jobbet med `complete` när hoppet räcker. Ett långt hopp utan försöket räknas fortfarande.
 
-**Plan för fixen (v1.1.1):**
+**Tester:**
 
-1. Flytta K:et till parkeringens norra ände, cirka (−70, −24), så att en rak sats därifrån räcker även utan turbo. Fältet ligger rakt söder om de parkerade bilarna på x −65.75 och är fritt längs x = −70.
-2. Gör `hopp` till ett riktigt jobb: en ny fil `src/longjump.js` med `LongJumpJob`, plus `Job` och `needCar` i `QUESTS`. `needCar` ska kunna vara en egen text, och gatloppets standardtext ska vara kvar.
-   - **Till fots eller på cykel i K:et:** en toast om att det behövs en bil, och att det står några på parkeringen.
-   - **Med bil i K:et:** jobbet startar. Det visar en rubrik och mål-rutan "Hoppa minst 34 m" med underraden "Gasa rakt söderut genom grinden och upp på hoppet". Vid grinden hänger en gul ring och över hoppet en vit ring, som gatloppets ringar (`kind: 'ring'`, renderas på y 4.75 med radien 4.5). Ingen GPS-linje mot ringarna, eftersom GPS:en går längs vägarna och skulle visa en omväg.
-   - **Kortare hopp eller missad kicker:** texten "Kör tillbaka till K:et och ta sats igen", och GPS:en leder till K:et.
-   - **Avbrott:** kliver man ur bilen en stund eller kör långt bort avbryts jobbet tyst med `mgr.quit` och K:et kommer tillbaka.
-   - **Klart:** `Missions.onStunt()` avslutar jobbet med `this.complete(job, …)` när hoppet räcker. Ett hopp på 34 m som inte startat i K:et ska fortfarande räknas, som förut.
-3. **Tester:**
-   - en ny sektion i `test/missions.mjs`:
-     - in i K:et till fots ger en toast och ingen start,
-     - med bil startar jobbet,
-     - full gas ger minst 34 m, klart och betalt,
-     - ett kort hopp skickar dig tillbaka till K:et,
-     - att kliva ur avbryter,
-   - en webbläsargenomgång med skärmdumpar.
-4. **Version 1.1.1** enligt checklistan i avsnitt 6. Uppdatera README:s text om Långhoppet, `docs/HANDOFF.md` (uppdragstabellen, versionshistoriken) och det här avsnittet: skriv att buggen är fixad, eller ta bort avsnittet.
+- `test/missions.mjs`, sektion 17b:
+  - till fots,
+  - start med bil, även i full fart,
+  - ringarna,
+  - för kort hopp och tillbaka till K:et,
+  - nytt försök, 38 m och klart,
+  - missad kicker,
+  - avbrott när man kliver ur.
+- `test/browser/v111.py` (`phone`/`land`) ska sluta med `LONGJUMP ok`.
+
+**Simulerade hopplängder** (sedan, full gas rakt söderut längs x = −70, ingen trafik):
+
+| Start (z) | Utan turbo | Med turbo |
+|---|---|---|
+| 18 | 27 m | 35 m |
+| 10 | 30 m | 38 m |
+| 0 | 33 m | 41 m |
+| −10 | 35 m | 43 m |
+| −20 | 37 m | 43 m |
+| −28 | 38 m | 44 m |
+
+34 m kräver ungefär 100 km/h vid kanten.
 
 ## 5. Karta över koden (detaljer i docs/HANDOFF.md, avsnitt 4)
 
@@ -137,16 +141,16 @@ Fler saker att veta om testmiljön:
 |---|---|
 | `index.html` | All CSS och alla HTML-overlays: titel, HUD, paus, uppdragskortet `#offer`, uppdragslistan `#log`, samtalsrutan `#talk`, butiken `#shop`, slutskärmen `#endcard`. Överst finns en modulepreload-lista, så **lägg till nya src-filer där**. |
 | `src/main.js` | Spel-loopen och tillstånden (`title, play, pause, offer, log, talk, shop, end`). Kopplar `game.on(...)`-händelser till HUD och ljud, samtalsrutan, butiken, slutskärmen och rösterna (`VOICES`). Exponerar `window.__gta`. |
-| `src/config.js` | Konstanter och platser (dörrar, markörer, belöningar), `WHO` (uppdragsgivarnas namn) och `JUMP_GOAL`/`JUMP_REWARD`. |
+| `src/config.js` | Konstanter och platser (dörrar, markörer, belöningar), `WHO` (uppdragsgivarnas namn) och `JUMP_GOAL`/`JUMP_REWARD`/`JUMP_START`. |
 | `src/layout.js` | Hela stan som data: `prims` som byggs till meshar, `colliders`, `casters` (bakade skuggor), `signs`, `ramps`, `parked`, `zones`, `floors` och GPS-grafen. Exporterar `createLayout(seed)` och materialkoderna `M`. |
 | `src/island.js` | Norrholmen: kust, vägar, kolonilotter, bageri, kvarn, fyr, båthamn och badplatsen (`BEACH`, `beach()`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
 | `src/mission.js` | `Missions`: uppdragslistan `QUESTS`, sms-erbjudanden, `checkJobs` (markörer som startar jobb), mål-rutan, `updateTargets`, spara och ladda, Lasses butik, `onStunt` (Långhoppet), `activities` (stunthopp, biltvätt) och slutskärmen. |
-| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
+| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -161,7 +165,7 @@ Allt som syns i spelet ska använda de nya namnen.
 
 1. `npm test` är grönt (alla tre raderna "passed").
 2. En webbläsargenomgång av det du ändrat, i `phone` (390×844) och gärna `land` (844×390). Kontrollera att den slutar med `logs []` och **titta på skärmdumparna**.
-3. Versionen är höjd på alla ställen:
+3. Versionen är höjd på alla ställen (`X.Y` för nytt innehåll, `X.Y.Z` för en buggfix):
    - `package.json`: `"version": "X.Y.Z"`,
    - `index.html`:
      - `<div class="ver">Version X.Y · Sjuby och Norrholmen</div>`,

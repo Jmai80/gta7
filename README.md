@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, åtta sidouppdrag, ett huvudäventyr i åtta delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – och till sist till Bullfesten på torget, där cykeltjuven Jonte slår till.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.1.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, åtta sidouppdrag, ett huvudäventyr i åtta delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – och till sist till Bullfesten på torget, där cykeltjuven Jonte slår till.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.1
+## Uppdrag i version 1.1.1
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -76,7 +76,10 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - **Krockskydd** (2 500 kr): bilarna du kör får hälften så stora bucklor.
   - **Melodituta** (800 kr): tutan spelar en glad melodi.
   - Det första köpet klarar sidouppdraget. Uppgraderingarna sparas, gäller alla bilar du kör (inte cykeln) och butiken finns kvar. Biltvätten på Macken (200 kr) lagar fortfarande bucklor.
-- **K – Kim (sidouppdrag): Långhoppet.** Efter ditt första köp hos Lasse utmanar Kim dig att hoppa minst 34 meter på byggtomtens hopp. Ta lång sats från parkeringen på andra sidan Skolgatan – eller skaffa turbo. Det ger 1 500 kr, och listan visar ditt bästa hopp.
+- **K – Kim (sidouppdrag): Långhoppet.** Efter ditt första köp hos Lasse utmanar Kim dig att hoppa minst 34 meter på byggtomtens hopp. K:et står längst bort på parkeringen mittemot Hörnlivs, på andra sidan Kungsgatan. Kommer du dit till fots säger det att du behöver en bil – det står några på parkeringen.
+  - Kör in i K:et med bilen, så börjar försöket: en gul ring hänger över Skolgatan och en vit ring precis efter hoppet. Gasa rakt söderut genom ringen, in genom byggtomtens grind och upp på hoppet – cirka 100 km/h vid kanten räcker.
+  - Blir hoppet för kort, eller missar du det, visar den gula linjen vägen tillbaka till K:et för ett nytt försök. Kliver du ur bilen en stund, eller kör långt bort, avbryts försöket (K:et finns kvar).
+  - Ett hopp på minst 34 meter ger 1 500 kr (plus stuntbonusen), och listan visar ditt bästa hopp. Med turbo från Lasse går det ännu längre.
 - **M – Melker (sidouppdrag): Melkers cykel.** Några sekunder efter kassaskåpet sms:ar Melker – han vet att det var du. Hämta Arnes cykel vid tant Guns grind och cykla den till Melker vid höghusets port. 500 kr, och cykeln står kvar vid höghuset så att du kan låna den.
 - **Y – Yasmin (sidouppdrag): Hemleverans.** Strax efter Melker sms:ar Yasmin. Hämta tre matkassar utanför Hörnlivs och kör ut dem till tre kunder (två på Storgatan och en på Skolgatan) på 120 sekunder – med bil, cykel eller till fots. 300 kr per kasse plus 5 kr för varje sekund som är kvar.
 - **N – Lås-Leif (sidouppdrag): Melkers nya nycklar.** En stund efter äggleveransen (när Arnes cykel är hos tant Gun) sms:ar Lås-Leif, nyckelsmeden på Skolgatan. Melker har "tappat" sina cykelnycklar och väntar på nya vid kolonilotterna på Norrholmen. Gå till Leif utanför hans butik, ta nycklarna och kör ut dem till Melker på 65 sekunder. Han ger dig 800 kr, och undrar om du har sett hans cykel.
@@ -133,7 +136,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/mission.js`, `pizza.js`, `race.js`, `racer.js`, `flag.js` | Uppdragslistan, pizzabudet, gatloppet, datorförarna och tant Guns flagga |
 | `src/livs.js`, `shop.js`, `leif.js` | Sidouppdragen Fyrvaktarens kasse (och Hörnlivs insida) och Melkers nya nycklar |
 | `src/safe.js`, `office.js` | Huvuduppdragets del 4, Kassaskåpet, och bagerikontoret |
-| `src/opening.js`, `upgrades.js` | Huvuduppdragets del 5, Nyöppningen, och Lasses trimning |
+| `src/opening.js`, `upgrades.js`, `longjump.js` | Huvuduppdragets del 5, Nyöppningen, Lasses trimning och Kims långhopp |
 | `docs/HANDOFF.md` | Utvecklaröverlämning: arkitektur, alla uppdrag, platser, tester och fallgropar |
 | `test/browser/` | Webbläsargenomgångar (Playwright) för varje version |
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Melkers cykel och Hemleverans |

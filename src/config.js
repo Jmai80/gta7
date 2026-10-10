@@ -106,6 +106,8 @@ export const PICKUPS = {                                      // the three ingre
 export const OPENING_REWARD = 4000;
 export const LASSE_SHOP = { x: 76.6, z: 58.1, r: 2.2 };       // in front of the workshop's first garage door
 export const JUMP_GOAL = 34, JUMP_REWARD = 1500;             // Kim's long jump at the construction site
+export const JUMP_START = { x: -70, z: -24, r: 3.2 };          // (v1.1.1) its K: the far end of the parking lot across Kungsgatan from
+                                                              // Hörnlivs, straight north of the ramp (a flat-out run from here: ≈ 37 m)
 
 // ---- version 0.9: main quest parts 6–7 ("Syltburken", "Bullfabriken") and two more side quests ----
 export const JAR = { flee: 165, fleeT: 8, stopAt: 32, reward: 2500 };   // the black car: lost this far away for this long; stops at this health
