@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.3 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, nio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.4 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, tio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -16,7 +16,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 | Stjäla, kliva in och ur, prata | Den gula knappen, KLIV UR | E |
 | Svara på uppdrags-sms | Tryck på sms:et | Klicka eller J |
 | Ljud av och på | Pausmenyn, eller skylten LJUD AV | M |
-| Bilradio av och på | Pausmenyn | B |
+| Bilradio av och på (av från början) | Pausmenyn | B |
 | Nästa replik i ett samtal | Tryck var som helst | Enter, mellanslag eller E |
 | Cykla | Spaken uppåt trampar, BROMS, PLING, KLIV AV | W trampar, S eller mellanslag bromsar, H plingar, E kliver av |
 | Uppdragslistan | Listknappen eller uppdragsrutan | U |
@@ -27,7 +27,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.3
+## Uppdrag i version 1.4
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -70,6 +70,9 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Huset är fullt av cyklar: i vardagsrummet, i köket, mot väggen i sovrummet och till och med i Birgers säng. Gå fram till möblerna med pilar och tryck **LETA**. Du letar efter två saker: Jontes anteckningsbok och Veras cykelsadel. Det finns sju ställen att leta på, och resten är Birgers (och Jontes) liv.
   - När båda är hittade tutar det utanför. Gå ut: Ronny, Jontes kusin, kör iväg med en brun skåpbil full av cyklar. Ta en bil och kör in i skåpbilen tills motorn ger upp (uppdragsrutan visar hur mycket motor som är kvar). Gå sedan fram till Ronny, så kommer Pia. 3 500 kr.
   - Går du ut innan du hittat allt finns uppdraget kvar – nyckeln har du kvar. Kommer skåpbilen för långt bort för länge slinker den undan, men Ronny kommer tillbaka efter resten av cyklarna: gå till grinden igen.
+- **N – Nova (sidouppdrag, inomhus): Konsertbiljetten.** En stund efter Nyöppningen sms:ar Nova, Kims lillasyster (13): K-pop Demonjägarna spelar i kväll, biljetten är borta och mamma säger att hon inte får gå förrän rummet är städat. Gå in genom den nya blå porten till lägenheterna bakom Macken på Skolgatan.
+  - Novas rum har K-pop-affischer, LED-list i taket, gamingskrivbord, ringlampa – och sex saker på golvet: luvtröjan, Labubun, lightsticken, pizzakartongen, skateboarden och hörlurarna. Plocka upp en i taget (**TA**) och lägg den där den ska vara (**LÄGG**) – uppdragsrutan säger var. Biljetten ligger i luvtröjans ficka.
+  - Mamma är hemma om 90 sekunder. Är allt på plats får Nova gå: 700 kr plus 10 kr för varje sekund som är kvar (upp till 1 600 kr). Hinner du inte får du försöka igen.
 - **P – Polis-Pia (sidouppdrag): Cyklarna hem.** En stund efter Cykelgömman: tre av cyklarna har ägare som vill ha dem i dag. Pia har ställt ut dem längs vägen – Veras orange cykel vid Birgers grind, Lasses gula vid Salong Saxen och Yasmins rosa vid Lasses verkstad. Uppdraget startar när du följer det. Cykla hem dem i vilken ordning du vill; ägarna väntar utanför Salong Saxen, Lasses Verkstad och Hörnlivs. Veras cykel har ingen sadel – den låg i badkaret – så du får stå upp och trampa. 400 kr per cykel och 300 kr extra när alla tre är hemma.
 - **V – Vera (sidouppdrag, inomhus): Salong Saxen.** En stund efter invigningen sms:ar Vera, som har frisersalongen i bottenvåningen på Skolgatan, bredvid Lås-Leif (orange markis och en randig frisörstolpe vid dörren). Hon har brutit handleden – någon hade snott sadeln från hennes cykel – och tre kunder väntar i soffan. Gå in genom dörren och prata med Vera.
   - Verktygen står på disken vid väggen: **SAX**, **RAKHYVEL** och tre färger (**BLÅ FÄRG**, **ROSA FÄRG**, **BLONDERING**). Ställ dig vid det du vill ha och ta det, gå sedan fram till stolen och **KLIPP**, **RAKA** eller **FÄRGA**.
@@ -100,7 +103,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Melker i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde. På badplatsen har folk badkläder: baddräkt eller badbyxor, bara armar och ben och bara fötter.
 - **Cyklarna:** Arnes gröna budcykel med lådan, stänkskärmar, pakethållare, kedjeskydd och krämvita däck, Jontes röda racercykel med böjt styre och två stora hjul med svarta fälgar, och damcyklarna med trådkorg på styret (Veras orange, Lasses gula och Yasmins rosa). Hjulen har runda däck, fälgar och korsade ekrar som stannar innanför fälgen, och framhjulet svänger med styret.
-- **Bilradion:** varje bilfärg har en egen kanal med glad midimusik som spelar när du sitter i bilen, och namnet syns på skärmen. Röd bil: Glada Hits (pop), blå: Blå Lounge (jazz), svart: Natt-FM (syntpop), vit: P2 Barock, gul: Sol-Radio (calypso), grön: Dansbandskanalen, ljusblå: Disco 79, silver: Techno Sjuby, pizzabilen: Radio Napoli (tarantella) och Ronnys bruna skåpbil: Country-Kanalen. Cyklar har ingen radio. Stäng av radion i pausmenyn eller med B.
+- **Bilradion** (av från början, slå på den i pausmenyn eller med B): varje bilfärg har en egen kanal med midimusik som spelar svagt under motorljudet, och namnet syns på skärmen. Röd bil: Glada Hits (pop), blå: Blå Lounge (jazz), svart: Natt-FM (syntpop), vit: P2 Barock, gul: Sol-Radio (calypso), grön: Dansbandskanalen, ljusblå: Disco 79, silver: Techno Sjuby, pizzabilen: Radio Napoli (tarantella) och Ronnys bruna skåpbil: Country-Kanalen. Cyklar har ingen radio. Stäng av radion i pausmenyn eller med B.
 - **Ljud av:** när ljudet är avstängt (pausmenyn eller M) står det LJUD AV uppe till höger. Tryck på skylten för att slå på ljudet igen. Startar du spelet med ljudet avstängt säger spelet det.
 - **Röster:** i samtalen pratar alla med en egen pipig "röst", ett litet pladder i talarens tonläge som är ungefär lika långt som repliken och går upp i slutet av en fråga. Repliker i pratbubblor hörs också när personen står nära dig.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
@@ -121,7 +124,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
 - Cykeltjuven Jonte cyklar efter ett eget nät av trottoarer och övergångsställen och planerar hela tiden en ny väg bort från dig. I stan kör Dahlgrens lastbil som den vanliga trafiken.
 - Norrholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över bron och runt ön.
-- Insidorna (höghuset, Hörnlivs, bagerikontoret, Salong Saxen och Birgers hus) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
+- Insidorna (höghuset, Hörnlivs, bagerikontoret, Salong Saxen, Birgers hus och Novas rum) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 
@@ -153,6 +156,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Melkers cykel och Hemleverans |
 | `src/fest.js`, `sander.js` | Huvuduppdragets del 8, Bullfesten, och cykeltjuven Jonte på trottoarerna |
 | `src/barber.js`, `salon.js` | Sidouppdraget Salong Saxen och frisersalongens insida |
+| `src/concert.js`, `nova.js` | Sidouppdraget Konsertbiljetten och Novas rum |
 | `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |

@@ -29,6 +29,8 @@
 //                          bike thief rides off with Arne's bike and the buns (v1.0)
 //   P  Polis-Pia:          "Cykelgömman" – main quest, part 9: Jonte's hideout in Birger's house next
 //                          door to Gun, then Ronny's van full of bikes (v1.2)
+//   N  Nova:               "Konsertbiljetten" – side quest indoors: tidy Nova's room before her mum is home
+//                          (and find her K-pop concert ticket) (v1.4)
 //   P  Polis-Pia:          "Cyklarna hem" – side quest: ride three of the bikes home to Vera, Lasse
 //                          and Yasmin (v1.2)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
@@ -40,7 +42,7 @@ import {
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
   KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START,
   JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST,
-  BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS,
+  BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -61,6 +63,7 @@ import { LongJumpJob } from './longjump.js';
 import { FestJob, FestParty } from './fest.js';
 import { HideoutJob, gatePia } from './hideout.js';
 import { BikesHomeJob } from './bikeshome.js';
+import { ConcertJob } from './concert.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -190,6 +193,13 @@ export const QUESTS = [
     after: 'fabriken', at: 15, needFoot: 'Kliv ur – festen är till fots.',
     text: 'Bullfesten är i dag, lilla vän! Hela Sjuby samlas på torget, och Arnes gamla cykel får köra ut bullarna. Kom och fira – det är din fest också.',
     reward: `${fmt(FEST.reward)} kr och så många bullar du orkar`, where: 'Torget, framför Sjuby Konditori',
+  },
+  {
+    // side quest (v1.4), indoors: Nova's room in the flats behind Macken – tidy it before her mum is home
+    id: 'konsert', letter: 'N', who: WHO.nova, title: 'Konsertbiljetten', color: '#b36cff', x: NOVA_DOOR.x, z: NOVA_DOOR.z, r: NOVA_DOOR.r, Job: ConcertJob,
+    side: true, sms: true, after: 'konditori', at: 40, needFoot: 'Kliv ur – Nova bor en trappa upp.',
+    text: 'hej!! det är Nova, Kims lillasyster. K-pop Demonjägarna spelar i kväll och jag hittar inte min biljett. och mamma säger att jag inte får gå förrän mitt rum är städat?? hon är hemma snart. kan du komma? porten bakom Macken, Skolgatan',
+    reward: `upp till ${fmt(NOVA_PAY.base + NOVA_PAY.time * NOVA_PAY.perSec)} kr`, where: 'Lägenheterna bakom Macken, Skolgatan (den blå porten)',
   },
   {
     // main quest, part 9 (v1.2): Jonte's hideout is in Birger's house, next door to tant Gun – then Ronny's van
@@ -382,6 +392,7 @@ export class Missions {
       case 'bullfest': return 'Gå till Bullfesten på torget';
       case 'cykelgomman': return 'Möt Polis-Pia vid Birgers grind på Storgatan';
       case 'cyklarhem': return 'Cykla hem tre cyklar till Vera, Lasse och Yasmin';
+      case 'konsert': return 'Hjälp Nova att städa – porten bakom Macken, Skolgatan';
     }
     return '';
   }
@@ -576,8 +587,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.3! Jontes cykelgömma är hittad och Ronny fast. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.3! Jontes cykelgömma är hittad och Ronny fast. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.4! Jontes cykelgömma är hittad och Ronny fast. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.4! Jontes cykelgömma är hittad och Ronny fast. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -631,6 +642,7 @@ export class Missions {
       case 'bullfest': return { text: 'Gå till Bullfesten (G)', sub: this.game.player.inCar ? 'Parkera och gå till torget' : 'Torget, framför Sjuby Konditori' };
       case 'cykelgomman': return { text: 'Möt Polis-Pia (P)', sub: this.game.player.inCar ? 'Parkera och gå till grinden' : 'Birgers grind på Storgatan, granne med tant Gun' };
       case 'cyklarhem': return { text: 'Cyklarna hem', sub: 'Veras cykel vid Birgers grind' };
+      case 'konsert': return { text: 'Gå till Nova (N)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Den blå porten bakom Macken, Skolgatan' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }
     return null;

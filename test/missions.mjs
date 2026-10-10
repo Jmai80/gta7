@@ -1,9 +1,10 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
 import { HOUSE, SPOTS as HOUSE_SPOTS } from '../src/birger.js';
+import { ROOM as NOVA_ROOM, THINGS as NOVA_THINGS } from '../src/nova.js';
 import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
@@ -320,7 +321,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all twelve are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.3/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.3, Ronny is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.4/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.4, Ronny is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1983,7 +1984,7 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   check(m.done.has('cykelgomman') && g.money - money0 === BIRGER.reward && g.stats.hideoutFound, `main quest part 9 done: ${BIRGER.reward} kr`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Cykelgömman'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.3/.test(d.text)), 'all twelve done: the end card (version 1.3)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.4/.test(d.text)), 'all twelve done: the end card (version 1.4)');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /kylskåp/.test(d.text)), 'tant Gun texts');
   run(g, 10);
   check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem'), 'a while later: Pia offers "Cyklarna hem"');
@@ -2058,6 +2059,99 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   check(ev.some(([n, d]) => n === 'sms' && d.from === WHO_PIA && /Birger/.test(d.text)), 'Pia: Birger comes home on Saturday');
   walkHere(g, 100, -100); run(g, 10);
   check(!g.vehicles.some((v) => v.type === 'citybike') && !Object.values(job.owners).some((o) => g.peds.list.includes(o)), 'out of sight: the owners go in with their bikes');
+}
+
+// ---------- 29. side quest (indoors): "Konsertbiljetten" – Nova's room (v1.4) ----------
+function intoNova(g) {
+  const m = g.mission;
+  walkHere(g, NOVA_DOOR.x, NOVA_DOOR.z); run(g, 2);
+  const job = m.active;
+  m.talkDone('konsert'); run(g, 0.2);
+  return job;
+}
+function tidyOne(g, t) {
+  walkHere(g, t.fx, t.fz); press(g);
+  walkHere(g, t.sx, t.sz); press(g);
+}
+{
+  console.log('Konsertbiljetten (sidouppdrag, inomhus)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_OPENING));
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk', 'say', 'keys']);
+  walkHere(g, -33.4, 4); run(g, 42);
+  check(m.known.has('konsert') && ev.some(([n, d]) => n === 'sms' && d.offer === 'konsert' && /K-pop Demonjägarna/.test(d.text)), 'Nova texts: K-pop Demonjägarna tonight, the ticket is gone, the room must be tidy');
+  m.accept('konsert'); run(g, 0.1);
+  check(m.targets.some((t) => t.kind === 'contact' && t.letter === 'N' && t.gps), 'the N by the new door behind Macken, with the GPS');
+  const free = !g.world.query(NOVA_DOOR.x, NOVA_DOOR.z, 0.4).some((c) => c.h > 0.5 && circleVs(c, NOVA_DOOR.x, NOVA_DOOR.z, 0.4));
+  check(free, 'the door marker stands free on the pavement');
+  walkHere(g, NOVA_DOOR.x, NOVA_DOOR.z); run(g, 2);
+  const job = m.active;
+  check(job && job.id === 'konsert' && g.indoor && g.indoors.where === 'nova' && job.stage === 'talk', 'in through the door: Nova\'s room, and the talk');
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'konsert').pop();
+  check(tk && tk[1].pages.some((pg) => /Demonjägarna/.test(pg.text)) && tk[1].pages.some((pg) => /90 sekunder/.test(pg.text)), 'the K-pop concert – and mum is home in 90 seconds');
+  check(!!g.layout.signs.kdh && /DEMONJÄGARNA/.test(g.layout.signs.kdh.lines.join(' ')), 'a K-POP DEMONJÄGARNA poster on the wall');
+  m.talkDone('konsert'); run(g, 0.2);
+  check(job.stage === 'tidy' && /Städa: 0 av 6/.test(m.objective) && m.targets.filter((t) => t.kind === 'item').length === 6, 'six things on the floor, arrows over them');
+  // every floor spot and every place to put them is free to stand on
+  for (const t of NOVA_THINGS) {
+    const ok = [[t.fx, t.fz], [t.sx, t.sz]].every(([x, z]) => !g.world.query(x, z, 0.3).some((c) => c.h > g.player.y + 0.3 && circleVs(c, x, z, 0.3)));
+    check(ok, `the ${t.id}: reachable on the floor and where it goes`);
+  }
+  // the hoodie first: the ticket is in its pocket
+  const luva = NOVA_THINGS.find((t) => t.id === 'luva');
+  walkHere(g, luva.fx, luva.fz);
+  check(m.prompt === 'TA', 'TA by the hoodie');
+  press(g);
+  check(job.held && job.held.def.id === 'luva' && job.ticket && ev.some(([n, d]) => n === 'keys' && d.item === 'ticket'), 'the ticket is in the hoodie\'s pocket!');
+  check(/garderoben/.test(m.sub), `the objective says where it goes (${m.sub})`);
+  const lab = NOVA_THINGS.find((t) => t.id === 'labubu');
+  walkHere(g, lab.fx, lab.fz);
+  check(m.prompt !== 'TA', 'one thing at a time');
+  walkHere(g, luva.sx, luva.sz);
+  check(m.prompt === 'LÄGG', 'LÄGG by the wardrobe');
+  press(g);
+  check(job.placed === 1 && !job.held, 'one in place');
+  for (const t of NOVA_THINGS.filter((q) => q.id !== 'luva')) tidyOne(g, t);
+  check(job.stage === 'mom' && job.mom, `all six in place (${job.left.toFixed(0)} s left): mum comes in`);
+  run(g, 4);
+  const mt = ev.filter(([n, d]) => n === 'talk' && d.id === 'konsert').pop();
+  check(job.stage === 'verdict' && mt && mt[1].pages.some((pg) => pg.who === 'Novas mamma' && /hotell/.test(pg.text)), 'her mum: it looks like a hotel');
+  const money0 = g.money;
+  m.talkDone('konsert'); run(g, 0.5);
+  const paid = g.money - money0;
+  check(m.done.has('konsert') && paid >= NOVA_PAY.base && paid <= NOVA_PAY.base + NOVA_PAY.time * NOVA_PAY.perSec && paid % 10 === 0, `side quest done: ${paid} kr (${NOVA_PAY.base} + 10 kr per second left)`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Konsertbiljetten'), 'SIDOUPPDRAG KLART');
+  walkHere(g, NOVA_ROOM.door.x, NOVA_ROOM.door.z); press(g); run(g, 1.5);
+  check(!g.indoor && Math.hypot(g.player.x - NOVA_DOOR.x, g.player.z - NOVA_DOOR.z) < 1.5, 'out through the door onto Skolgatan');
+  run(g, 32);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Nova (Kims lillasyster)' && /KONSERTEN/.test(d.text)), 'later Nova texts: the concert was amazing');
+}
+{
+  console.log('Konsertbiljetten: för sent, och ut halvvägs');
+  const g = new Game({ seed: 9, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_OPENING));
+  const ev = record(g, ['sms', 'banner', 'talk']);
+  m.offer('konsert'); m.accept('konsert');
+  let job = intoNova(g);
+  tidyOne(g, NOVA_THINGS[1]); tidyOne(g, NOVA_THINGS[2]);
+  run(g, NOVA_PAY.time);
+  check(job.stage === 'verdict' && !job.tidy, 'too slow: mum is home and the room is a mess');
+  m.talkDone('konsert'); run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /för tidigt/.test(d.sub)) && m.isOpen('konsert'), 'failed – but you can try again');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && /en chans till/.test(d.text)), 'Nova: mum went shopping again');
+  walkHere(g, NOVA_ROOM.door.x, NOVA_ROOM.door.z); press(g); run(g, 1.5);
+  walkHere(g, NOVA_DOOR.x, NOVA_DOOR.z + 6); run(g, 7);
+  job = intoNova(g);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'konsert').pop();
+  check(job.stage === 'tidy' && tk[1].pages.length === 1 && job.placed === 0, 'the second time: one line from Nova, everything back on the floor');
+  // walk out half-way: no failure
+  walkHere(g, NOVA_ROOM.door.x, NOVA_ROOM.door.z);
+  check(m.prompt === 'GÅ UT', 'GÅ UT by the door');
+  press(g); run(g, 1.5);
+  check(!g.indoor && !m.active && m.isOpen('konsert') && ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length === 1, 'out half-way: no failure, the quest stays open');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

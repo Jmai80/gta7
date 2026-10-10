@@ -27,7 +27,7 @@ let wakeLock = null;
 const settings = loadSettings();
 
 function loadSettings() {
-  const def = { sound: true, quality: 'auto', fps: false, drive: 'stick', radio: true };
+  const def = { sound: true, quality: 'auto', fps: false, drive: 'stick', radioOn: false }; // (v1.4) the car radio is off unless you turn it on
   try { return { ...def, ...JSON.parse(localStorage.getItem('gta7-settings') || '{}') }; } catch (_) { return def; }
 }
 function saveSettings() {
@@ -428,14 +428,14 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150 };
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
+const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -550,6 +550,7 @@ function showEnd(s) {
     ['Cykeltjuven Jonte', s.sanderCaught ? 'Fast!' : '–'],
     ['Cykelgömman', s.hideoutFound ? 'Avslöjad!' : '–'],
     ['Cyklar hem', s.bikesHome != null ? `${s.bikesHome} av 3` : '–'],
+    ['Konsertbiljetten', s.concert != null ? `${s.concert} s över` : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';
@@ -581,14 +582,14 @@ function toggleSound(say = true) {
   if (say && hud) hud.toast(settings.sound ? 'Ljud på' : `Ljud av – ${input && input.lastKind === 'touch' ? 'tryck på LJUD AV' : 'tryck M'} för att slå på igen`, !settings.sound);
 }
 function toggleRadio() {
-  settings.radio = !settings.radio;
+  settings.radioOn = !settings.radioOn;
   saveSettings(); refreshMenu();
-  if (hud) hud.toast(settings.radio ? 'Bilradion på' : 'Bilradion av', false);
+  if (hud) hud.toast(settings.radioOn ? 'Bilradion på' : 'Bilradion av', false);
 }
 
 function refreshMenu() {
   $('mSound').textContent = `Ljud: ${settings.sound ? 'På' : 'Av'}`;
-  $('mRadio').textContent = `Bilradio: ${settings.radio ? 'På' : 'Av'}`;
+  $('mRadio').textContent = `Bilradio: ${settings.radioOn ? 'På' : 'Av'}`;
   $('muted').hidden = settings.sound;
   $('mDrive').textContent = `Körkontroll: ${settings.drive === 'pedals' ? 'Pedaler' : 'Spak'}`;
   $('mQuality').textContent = `Grafik: ${QUALITY_LABEL[settings.quality]}`;
@@ -607,7 +608,7 @@ function bindUi() {
   on('mResume', resume);
   on('mRestart', () => { if (restartArmed) restart(); else armRestart(true); });
   on('mSound', () => toggleSound(false));
-  on('mRadio', () => { settings.radio = !settings.radio; saveSettings(); refreshMenu(); });
+  on('mRadio', () => { settings.radioOn = !settings.radioOn; saveSettings(); refreshMenu(); });
   $('muted').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (!settings.sound) toggleSound(); });
   on('mDrive', () => { settings.drive = settings.drive === 'pedals' ? 'stick' : 'pedals'; game.settings.drive = settings.drive; saveSettings(); refreshMenu(); });
   on('mQuality', () => {
@@ -640,7 +641,7 @@ function bindUi() {
 let radioCar = null;
 function playRadio() {
   const p = game.player, car = p.inCar && !game.indoor ? p.car : null;
-  const S = settings.radio ? stationFor(car) : null;
+  const S = settings.radioOn ? stationFor(car) : null;
   if (S && car !== radioCar) hud.toast(`Bilradio: ${S.name}`, false);
   radioCar = S ? car : null;
   audio.setRadio(S);

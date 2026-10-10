@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR, SALON_DOOR, FEST,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, NOVA_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR, SALON_DOOR, FEST,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -748,6 +748,15 @@ export function createLayout(seed = 7) {
     zones.carwash = { ...CARWASH, brushes: [{ x: (CARWASH.x0 + CARWASH.x1) / 2 - 2, z: wz0 + 1.3 }, { x: (CARWASH.x0 + CARWASH.x1) / 2 - 2, z: wz1 - 1.3 }, { x: (CARWASH.x0 + CARWASH.x1) / 2 + 2, z: wz0 + 1.3 }, { x: (CARWASH.x0 + CARWASH.x1) / 2 + 2, z: wz1 - 1.3 }] };
     // flats in the south part
     building({ x0: b.x0 + 3, z0: b.z1 - 16, x1: b.x1 - 3, z1: b.z1 - 3, h: 12.2, c: COL.plaster3, m: M.RESI, cell: [3.2, 2.9], mapC: 0x9c9686 });
+    // (v1.4) a street door to the flats, where Nova lives (the side quest "Konsertbiljetten")
+    {
+      const dz = b.z1 - 3;
+      box(NOVA_DOOR.x - 0.65, CURB_H, dz, NOVA_DOOR.x + 0.65, CURB_H + 2.3, dz + 0.08, 0xf1ede2);
+      box(NOVA_DOOR.x - 0.55, CURB_H, dz + 0.08, NOVA_DOOR.x + 0.55, CURB_H + 2.2, dz + 0.12, 0x3a5f8a);
+      box(NOVA_DOOR.x + 0.32, CURB_H + 1.0, dz + 0.12, NOVA_DOOR.x + 0.42, CURB_H + 1.06, dz + 0.17, 0xc9ccd0);
+      box(NOVA_DOOR.x - 1.0, CURB_H + 2.4, dz, NOVA_DOOR.x + 1.0, CURB_H + 2.5, dz + 0.9, 0x3a3c41);
+      box(NOVA_DOOR.x - 1.0, CURB_H, dz, NOVA_DOOR.x + 1.0, CURB_H + 0.12, dz + 0.9, COL.concrete);
+    }
     roofUnits(b.x0 + 3, b.z1 - 16, b.x1 - 3, b.z1 - 3, CURB_H + 12.2, 3);
     for (const x of [b.x0 + 8, b.x0 + 26, b.x1 - 8]) tree(x, b.cz + 13, 'birch', 0.9);
   }

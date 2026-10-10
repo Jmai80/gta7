@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia', nova: 'Nova (Kims lillasyster)' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -149,5 +149,9 @@ export const BIKES_HOME = [
   { id: 'yasmin', paint: 'cityPink', bike: { x: 68.2, z: 64.6, h: 0 }, owner: { x: -34.1, z: -6.2, h: -Math.PI / 2 }, zone: { x: -35.2, z: -4.6, r: 2.6 } },
 ];
 export const BIKE_HOME_PAY = 400, BIKES_HOME_BONUS = 300;
+
+// ---- version 1.4: side quest "Konsertbiljetten" – Nova's room in the flats behind Macken ----
+export const NOVA_DOOR = { x: 80, z: 30.4, r: 1.2 };          // the new street door of the flats behind Macken (Skolgatan)
+export const NOVA_PAY = { time: 90, base: 700, perSec: 10 };  // her mum is home in 90 s; 700 kr + 10 kr for every second left
 
 export const SIM_HZ = 60;

@@ -379,7 +379,7 @@ export class SalonJob {
 }
 
 // sat down (pose 5) on a seat { x, z, y (hips), h }, posed by us
-function seat(ped, S, npc) {
+export function seat(ped, S, npc) {
   ped.x = S.x; ped.z = S.z; ped.h = ped.standH = S.h;
   ped.y = S.y - 0.92 * (ped.body.look.height || 1);
   ped.state = 'lounge'; ped.keep = true; ped.npc = npc;

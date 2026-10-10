@@ -35,6 +35,13 @@ async def main(name, w, h, mobile):
         await pg.wait_for_timeout(1200)
         await pg.add_style_tag(content='#phone { visibility: hidden !important; }')
         quiet = await pg.evaluate(LISTEN)
+        # (v1.4) the radio is off unless you turn it on: a red car without it, then B
+        await pg.evaluate(INTO, 'red')
+        await pg.evaluate("() => window.__gta.game.step(1 / 60, { action: true, moveX: 0, moveY: 0 })")
+        await pg.wait_for_timeout(1300)
+        t_none = await pg.evaluate(TOAST)
+        engine = await pg.evaluate(LISTEN)
+        await pg.keyboard.press('KeyB'); await pg.wait_for_timeout(500)
         # a red car: Glada Hits
         await pg.evaluate(INTO, 'red')
         await pg.evaluate("() => window.__gta.game.step(1 / 60, { action: true, moveX: 0, moveY: 0 })")
@@ -78,10 +85,10 @@ async def main(name, w, h, mobile):
             t_start = t_start or await pg.evaluate(TOAST)
         badge3 = await pg.evaluate("() => !document.getElementById('muted').hidden")
         await pg.screenshot(path=f'test/shots/v13_{name}_05_start.png')
-        r = {'quiet': quiet, 'red': [t_red, red], 'blue': [t_blue, blue], 'off': [t_off, off], 'mute': [t_mute, badge, muted], 'on': [t_on, badge2, on], 'start': [t_start, badge3]}
+        r = {'quiet': quiet, 'none': [t_none, engine], 'red': [t_red, red], 'blue': [t_blue, blue], 'off': [t_off, off], 'mute': [t_mute, badge, muted], 'on': [t_on, badge2, on], 'start': [t_start, badge3]}
         print(name, json.dumps(r, ensure_ascii=False))
-        ok = (red['rms'] > quiet['rms'] * 3 and blue['rms'] > quiet['rms'] * 3 and red['peak'] < 1.0 and t_red and 'Glada Hits' in t_red and t_blue and 'Blå Lounge' in t_blue
-              and off['rms'] < red['rms'] * 0.8 and t_mute and 'Ljud av' in t_mute and badge and muted['rms'] < 0.002 and t_on == 'Ljud på' and not badge2 and on['rms'] > 0
+        ok = (not (t_none or '').startswith('Bilradio:') and red['rms'] > engine['rms'] * 1.05 and red['rms'] < engine['rms'] * 2.2 and red['rms'] > quiet['rms'] * 3 and blue['rms'] > quiet['rms'] * 3 and red['peak'] < 1.0 and t_red and 'Glada Hits' in t_red and t_blue and 'Blå Lounge' in t_blue
+              and off['rms'] < red['rms'] and t_mute and 'Ljud av' in t_mute and badge and muted['rms'] < 0.002 and t_on == 'Ljud på' and not badge2 and on['rms'] > 0
               and t_start and 'avstängt' in t_start and badge3)
         print(name, 'V13', 'ok' if ok else 'FAIL')
         print(name, 'logs', json.dumps(logs[:20], ensure_ascii=False, indent=1))

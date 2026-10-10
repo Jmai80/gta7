@@ -131,7 +131,7 @@ export class AudioFX {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     this.radioBus.gain.cancelScheduledValues(t);
-    this.radioBus.gain.setTargetAtTime(S ? 0.75 : 0, t, S ? 0.05 : 0.04);
+    this.radioBus.gain.setTargetAtTime(S ? 0.28 : 0, t, S ? 0.3 : 0.04); // (v1.4) quietly, under the engine
     if (S) { this.rStep = 0; this.rNext = t + 0.08; }
   }
 

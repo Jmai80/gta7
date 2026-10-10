@@ -4,18 +4,20 @@
 // around while you are inside. `where` says which place you are in: 'tower', 'shop' or 'office'
 // (Bullbilen's bakery office, v0.7), 'salon' (Vera's hair salon on Skolgatan, v1.0) or 'birger'
 // (tant Gun's neighbour's house on Storgatan, Jonte's hideout, v1.2).
-import { TOWER_DOOR, LIVS_DOOR, OFFICE_DOOR, SALON_DOOR, BIRGER } from './config.js';
+import { TOWER_DOOR, LIVS_DOOR, OFFICE_DOOR, SALON_DOOR, BIRGER, NOVA_DOOR } from './config.js';
 import { INT } from './interior.js';
 import { SHOP } from './shop.js';
 import { OFFICE } from './office.js';
 import { SALON } from './salon.js';
 import { HOUSE } from './birger.js';
+import { ROOM as NOVA_ROOM } from './nova.js';
 
 // the places with a door you walk through (the tower has its lift): inside, and where you come out
 export const PLACES = {
   shop: { inside: SHOP, out: { x: LIVS_DOOR.x - 1.1, z: LIVS_DOOR.z - 0.6, h: Math.PI } },     // Hörnlivs → Kungsgatan, facing north
   office: { inside: OFFICE, out: { x: OFFICE_DOOR.x - 1.0, z: OFFICE_DOOR.z + 0.4, h: Math.PI } }, // the bakery office → out by the west wall
   salon: { inside: SALON, out: { x: SALON_DOOR.x + 1.0, z: SALON_DOOR.z + 0.3, h: 0 } },           // Salong Saxen → Skolgatan, facing south (v1.0)
+  nova: { inside: NOVA_ROOM, out: { x: NOVA_DOOR.x, z: NOVA_DOOR.z + 0.6, h: 0 } },                // Nova's room → Skolgatan, facing the street (v1.4)
   birger: { inside: HOUSE, out: { x: BIRGER.door.x, z: BIRGER.door.z + 0.5, h: 0 } },               // Birger's house → his garden path, facing the street (v1.2)
 };
 import { Samuel } from './samuel.js';
@@ -26,7 +28,7 @@ export class Indoors {
   constructor(game) {
     this.game = game;
     this.inside = false;
-    this.where = null;     // 'tower' | 'shop' | 'office' | 'salon' | 'birger'
+    this.where = null;     // 'tower' | 'shop' | 'office' | 'salon' | 'birger' | 'nova'
     this.busy = false;     // fading in or out
     this.timers = [];
     this.samuel = null;

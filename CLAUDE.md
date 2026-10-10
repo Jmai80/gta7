@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 10 oktober 2026, efter version 1.3 (bilradio med en kanal per bilfärg och tydligt besked när ljudet är av; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 10 oktober 2026, efter version 1.4 (sidouppdraget Konsertbiljetten i Novas rum, bilradion av från början och tystare; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -27,13 +27,13 @@ Senast uppdaterad 10 oktober 2026, efter version 1.3 (bilradio med en kanal per 
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.3 innehåller:
+- Version 1.4 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma,
-  - nio sidouppdrag,
+  - tio sidouppdrag (senast Konsertbiljetten i Novas rum),
   - Lasses trimningsbutik,
   - Kims långhopp,
   - Norrholmen med Bullbilens bageri, kvarnen, fyren och badplatsen,
-  - bilradio (en kanal per bilfärg, `radio.js`) och skylten LJUD AV när ljudet är avstängt (M på datorn),
+  - bilradio (en kanal per bilfärg, `radio.js`, av från början) och skylten LJUD AV när ljudet är avstängt (M på datorn),
   - slutskärm och sparade framsteg i `localStorage`.
 
 ## 2. Användaren och arbetssättet (följ alltid)
@@ -59,7 +59,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.3 (bilradio med en kanal per 
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.3 eller senare
+git log --oneline -3                         # överst: v1.4 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
 npm test                                     # ~650 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
@@ -147,11 +147,11 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/island.js` | Norrholmen: kust, vägar, kolonilotter, bageri, kvarn, fyr, båthamn och badplatsen (`BEACH`, `beach()`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
 | `src/mission.js` | `Missions`: uppdragslistan `QUESTS`, sms-erbjudanden, `checkJobs` (markörer som startar jobb), mål-rutan, `updateTargets`, spara och ladda, Lasses butik, `onStunt` (Långhoppet), `activities` (stunthopp, biltvätt) och slutskärmen. |
-| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
+| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `concert.js` (Konsertbiljetten) och `nova.js` (Novas rum), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -222,9 +222,11 @@ Allt som syns i spelet ska använda de nya namnen.
   - Polis-Pia,
   - Vera (Salong Saxen),
   - Jonte,
+  - Nova (Kims lillasyster, 13) och hennes mamma,
   - Birger (grannen, bortrest),
   - Ronny (Jontes kusin).
 - **Nästa naturliga del:** Birger kommer hem från kryssningen "på lördag" (Pia och Gun nämner det), och de övriga åtta cyklarna ska till sina ägare.
+- **Bilradion:** användaren tyckte att midimusiken lät för mycket glassbil/party. Den är av från början sedan v1.4. Användaren tänker ladda ner en mjuk radioslinga att spela i stället – då läggs en ljudfil in (den första i projektet).
 - **Andra idéer användaren kan vilja ha:**
   - västra bron (stängd, `BRIDGES[1]`) som nästa område,
   - fler butiker att handla i,

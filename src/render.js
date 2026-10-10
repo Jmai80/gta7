@@ -8,6 +8,7 @@ import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
 import { OFFICE, safeDoorInto, recipeInto } from './office.js';
 import { PLACES } from './indoors.js';
+import { THINGS, thingInto } from './nova.js';
 import { SEE, phoneOf } from './samuel.js';
 import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
@@ -343,6 +344,16 @@ export class View {
     this.recipe.position.set(OFFICE.recipe.x, OFFICE.recipe.y, OFFICE.recipe.z);
     this.recipe.rotation.y = 0.2;
     g.add(this.recipe);
+    // (v1.4) the six things on Nova's floor: moved about by the tidying job
+    this.things = {};
+    for (const t of THINGS) {
+      const TB = new GeomBuilder();
+      thingInto(TB, t.id);
+      const mesh = new THREE.Mesh(TB.toGeometry(THREE), this.matInterior);
+      mesh.visible = false;
+      g.add(mesh);
+      this.things[t.id] = mesh;
+    }
     // Melker's phone (its screen lights up his face… well, it glows)
     this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
     this.phone.scale.setScalar(1.35);
@@ -411,6 +422,17 @@ export class View {
     const open = game.mission.done.has('kassaskap') || (kj && kj.safeOpen);
     this.safeDoor.rotation.y += ((open ? 1.9 : 0) - this.safeDoor.rotation.y) * Math.min(1, dt * 4);
     this.recipe.visible = !game.mission.done.has('kassaskap') && !(kj && kj.recipe);
+    // Nova's things: on the floor, in your hands, or where they belong (v1.4)
+    const ROOM_Y = INT.y + 0.005;
+    const RT = ind.where === 'nova' ? game.mission.roomThings : null;
+    for (const t of THINGS) {
+      const mesh = this.things[t.id], st = RT && RT.find((q) => q.def === t);
+      mesh.visible = !!st;
+      if (!st) continue;
+      if (st.state === 'held') { mesh.position.set(p.x + Math.sin(p.h) * 0.38, p.y + 0.82, p.z + Math.cos(p.h) * 0.38); mesh.rotation.y = p.h; }
+      else if (st.state === 'placed') { mesh.position.set(t.px, t.py, t.pz); mesh.rotation.y = t.prot; mesh.visible = t.id !== 'luva'; } // (the hoodie is in the wardrobe)
+      else { mesh.position.set(t.fx, ROOM_Y, t.fz); mesh.rotation.y = t.frot; }
+    }
     if (!taken) {
       const k = 0.13 + 0.07 * Math.max(0, Math.sin(this.time * 3.1)) ** 6;
       this.glint.scale.set(k, k, 1);
@@ -883,7 +905,7 @@ export class CameraRig {
       const S = place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35);
       tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
       // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
-      const j = game.mission.active, talking = j && (((j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong')) || (j.id === 'cykelgomman' && j.stage === 'read')) ? 1 : 0;
+      const j = game.mission.active, talking = j && (((j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong')) || (j.id === 'cykelgomman' && j.stage === 'read') || (j.id === 'konsert' && (j.stage === 'talk' || j.stage === 'verdict'))) ? 1 : 0;
       this.talkK = smooth(this.talkK || 0, talking, 3, dt);
       tz += this.talkK * this.shopK * (portrait ? 1.6 : 2.6);
     }

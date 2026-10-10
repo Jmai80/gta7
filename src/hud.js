@@ -8,13 +8,14 @@ import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
 import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
 import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
 import { HOUSE, HOUSE_WALLS, HOUSE_FURN } from './birger.js';
+import { ROOM as NOVA_ROOM, ROOM_WALLS as NOVA_WALLS, ROOM_FURN as NOVA_FURN } from './nova.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -196,6 +197,13 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of HOUSE_WALLS) g.fillRect(X(Ho.x0 + x0), Zs(Ho.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#2c4a6e'; g.fillRect(X(Ho.x0 + 4.9), Zs(Ho.z0 + 9), 1.2 * IN_PX, 0.2 * IN_PX);
+    // Nova's room (v1.4)
+    const No = NOVA_ROOM.room;
+    rect(No.x0, No.z0, No.x1, No.z1, '#76604a');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of NOVA_FURN.slice(0, -1)) g.fillRect(X(No.x0 + x0), Zs(No.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of NOVA_WALLS) g.fillRect(X(No.x0 + x0), Zs(No.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     return c;
   }
 
@@ -261,6 +269,15 @@ export class HUD {
       const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
       for (const s of job.spots()) {
         const [x, z] = P(s.x, s.z);
+        g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.arc(x, z, 3.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+    }
+    if (job && job.id === 'konsert' && job.things && game.indoors.where === 'nova') { // (v1.4) the things on the floor – or where the one you carry goes
+      const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
+      const dots = job.held ? [[job.held.def.sx, job.held.def.sz]] : job.things.filter((t) => t.state === 'floor').map((t) => [t.def.fx, t.def.fz]);
+      for (const [x0, z0] of dots) {
+        const [x, z] = P(x0, z0);
         g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
         g.beginPath(); g.arc(x, z, 3.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
       }
