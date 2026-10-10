@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 10 oktober 2026, efter version 1.2 (huvuduppdragets del 9 Cykelgömman i grannen Birgers hus och sidouppdraget Cyklarna hem; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 10 oktober 2026, efter version 1.3 (bilradio med en kanal per bilfärg och tydligt besked när ljudet är av; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -27,12 +27,13 @@ Senast uppdaterad 10 oktober 2026, efter version 1.2 (huvuduppdragets del 9 Cyke
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.2 innehåller:
+- Version 1.3 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma,
   - nio sidouppdrag,
   - Lasses trimningsbutik,
   - Kims långhopp,
   - Norrholmen med Bullbilens bageri, kvarnen, fyren och badplatsen,
+  - bilradio (en kanal per bilfärg, `radio.js`) och skylten LJUD AV när ljudet är avstängt (M på datorn),
   - slutskärm och sparade framsteg i `localStorage`.
 
 ## 2. Användaren och arbetssättet (följ alltid)
@@ -58,7 +59,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.2 (huvuduppdragets del 9 Cyke
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.2 eller senare
+git log --oneline -3                         # överst: v1.3 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
 npm test                                     # ~650 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
@@ -148,9 +149,9 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/mission.js` | `Missions`: uppdragslistan `QUESTS`, sms-erbjudanden, `checkJobs` (markörer som startar jobb), mål-rutan, `updateTargets`, spara och ladda, Lasses butik, `onStunt` (Långhoppet), `activities` (stunthopp, biltvätt) och slutskärmen. |
 | Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
-| `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud. |
+| `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -198,6 +199,7 @@ Allt som syns i spelet ska använda de nya namnen.
   - avsluta med `mgr.complete(job, …)`, `mgr.fail(job, …)` eller `mgr.quit(job)`,
   - `camFocus` måste nollställas i `cleanup`.
 - **Testa med trafik.** Uppdragstesterna kör ofta `traffic: 0, peds: 0`. Stresstesta datorförare med `new Game({ seed })` på flera frön.
+- **Ljud:** M på tangentbordet stänger av allt ljud och sparas. Säger användaren att ljudet försvunnit: fråga först om skylten LJUD AV syns. Ljudet går inte att höra i sandlådan; `v13.py` mäter spelets utgång med en analysator.
 - **Samtal** öppnas en bildruta efter `talk`-händelsen. I webbläsartester: vänta några bildrutor innan `nextTalk()`.
 
 ## 8. Berättelsen och vad som kan komma

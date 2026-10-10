@@ -7,6 +7,7 @@ import { Input } from './input.js';
 import { AudioFX } from './audio.js';
 import { createLayout } from './layout.js';
 import { CAR_TYPES } from './vehicle.js';
+import { stationFor } from './radio.js';
 import { fmt, mmss } from './rng.js';
 
 const $ = (id) => document.getElementById(id);
@@ -26,7 +27,7 @@ let wakeLock = null;
 const settings = loadSettings();
 
 function loadSettings() {
-  const def = { sound: true, quality: 'auto', fps: false, drive: 'stick' };
+  const def = { sound: true, quality: 'auto', fps: false, drive: 'stick', radio: true };
   try { return { ...def, ...JSON.parse(localStorage.getItem('gta7-settings') || '{}') }; } catch (_) { return def; }
 }
 function saveSettings() {
@@ -250,6 +251,7 @@ function startPlay(skipIntro = false) {
   view.rig.startBlend();
   perf.apply(settings.quality);
   state = 'play';
+  if (!settings.sound) setTimeout(() => hud.toast(`Ljudet är avstängt – ${input.lastKind === 'touch' ? 'tryck på LJUD AV uppe till höger' : 'tryck M'} för att slå på det`, true), 1200);
   hud.hint({ id: 'move', touch: 'Dra med vänster tumme för att gå. Dra på höger sida för att titta runt.', keys: 'Gå med WASD eller piltangenterna. Dra med musen för att titta runt.' });
 }
 
@@ -571,8 +573,23 @@ function setTitleControls(kind) {
     : '<span><kbd>WASD</kbd> gå och kör</span><span><kbd>E</kbd> stjäl / kliv ur</span><span><kbd>Mellanslag</kbd> handbroms</span><span><kbd>U</kbd> uppdrag</span><span><kbd>Esc</kbd> paus</span>';
 }
 
+// (v1.3) sound on/off – from the pause menu, M on the keyboard or the LJUD AV badge – always says so on screen
+function toggleSound(say = true) {
+  settings.sound = !settings.sound;
+  audio.setMuted(!settings.sound);
+  saveSettings(); refreshMenu();
+  if (say && hud) hud.toast(settings.sound ? 'Ljud på' : `Ljud av – ${input && input.lastKind === 'touch' ? 'tryck på LJUD AV' : 'tryck M'} för att slå på igen`, !settings.sound);
+}
+function toggleRadio() {
+  settings.radio = !settings.radio;
+  saveSettings(); refreshMenu();
+  if (hud) hud.toast(settings.radio ? 'Bilradion på' : 'Bilradion av', false);
+}
+
 function refreshMenu() {
   $('mSound').textContent = `Ljud: ${settings.sound ? 'På' : 'Av'}`;
+  $('mRadio').textContent = `Bilradio: ${settings.radio ? 'På' : 'Av'}`;
+  $('muted').hidden = settings.sound;
   $('mDrive').textContent = `Körkontroll: ${settings.drive === 'pedals' ? 'Pedaler' : 'Spak'}`;
   $('mQuality').textContent = `Grafik: ${QUALITY_LABEL[settings.quality]}`;
   $('mFps').textContent = `Visa FPS: ${settings.fps ? 'På' : 'Av'}`;
@@ -589,7 +606,9 @@ function bindUi() {
   $('title').addEventListener('pointerup', (e) => { if (!e.target.closest('button, a') && state === 'title') startPlay(); });
   on('mResume', resume);
   on('mRestart', () => { if (restartArmed) restart(); else armRestart(true); });
-  on('mSound', () => { settings.sound = !settings.sound; audio.setMuted(!settings.sound); saveSettings(); refreshMenu(); });
+  on('mSound', () => toggleSound(false));
+  on('mRadio', () => { settings.radio = !settings.radio; saveSettings(); refreshMenu(); });
+  $('muted').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (!settings.sound) toggleSound(); });
   on('mDrive', () => { settings.drive = settings.drive === 'pedals' ? 'stick' : 'pedals'; game.settings.drive = settings.drive; saveSettings(); refreshMenu(); });
   on('mQuality', () => {
     const order = ['auto', 'saver', 'pretty'];
@@ -617,6 +636,16 @@ function bindUi() {
   });
 }
 
+// (v1.3) the car radio: the station of the car you sit in, its name on screen when it comes on
+let radioCar = null;
+function playRadio() {
+  const p = game.player, car = p.inCar && !game.indoor ? p.car : null;
+  const S = settings.radio ? stationFor(car) : null;
+  if (S && car !== radioCar) hud.toast(`Bilradio: ${S.name}`, false);
+  radioCar = S ? car : null;
+  audio.setRadio(S);
+}
+
 // ---------------------------------------------------------------- loop
 function frame(now) {
   requestAnimationFrame(frame);
@@ -632,7 +661,8 @@ function frame(now) {
     if (inp.pause) { pause(); return; }
     if (inp.log) { openLog(); return; }
     if (inp.answer && hud.smsShown && hud.smsShown.offer) { openOffer(hud.smsShown.offer); return; }
-    if (inp.mute) { settings.sound = !settings.sound; audio.setMuted(!settings.sound); saveSettings(); refreshMenu(); }
+    if (inp.mute) toggleSound();
+    if (inp.radio) toggleRadio();
     inp.camYaw = camYaw;
     inp.touch = input.lastKind === 'touch'; // the street race is kinder to touch drivers
     acc += dt;
@@ -643,6 +673,7 @@ function frame(now) {
     else if (pendingOffer) { const id = pendingOffer; pendingOffer = null; openOffer(id); }
     else if (pendingShop) { pendingShop = false; openShop(); }
     camYaw = view.rig.update(dt, game, inp, view.camera.aspect, game.world);
+    playRadio();
     audio.update(dt, game);
   } else if (state === 'talk') {
     camYaw = view.rig.update(dt, game, TALK_CAM, view.camera.aspect, game.world);

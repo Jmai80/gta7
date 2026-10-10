@@ -320,7 +320,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all twelve are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.2/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.2, Ronny is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.3/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.3, Ronny is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1983,7 +1983,7 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   check(m.done.has('cykelgomman') && g.money - money0 === BIRGER.reward && g.stats.hideoutFound, `main quest part 9 done: ${BIRGER.reward} kr`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Cykelgömman'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.2/.test(d.text)), 'all twelve done: the end card (version 1.2)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.3/.test(d.text)), 'all twelve done: the end card (version 1.3)');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /kylskåp/.test(d.text)), 'tant Gun texts');
   run(g, 10);
   check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem'), 'a while later: Pia offers "Cyklarna hem"');

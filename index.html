@@ -138,6 +138,7 @@ kbd {
   font: 900 clamp(28px, 6.4vmin, 40px)/1 var(--display); color: var(--cash); letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
   text-shadow: -2px -2px 0 #0b0d10, 2px -2px 0 #0b0d10, -2px 2px 0 #0b0d10, 2px 2px 0 #0b0d10, 0 3px 10px rgba(0,0,0,0.5);
 }
+#muted { font: 800 13px/1 var(--display); letter-spacing: 0.1em; color: #1d1f22; background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); pointer-events: auto; cursor: pointer; }
 #stars { font-size: 18px; letter-spacing: 2px; color: rgba(255,255,255,0.0); text-shadow: none; height: 20px; }
 #stars.wanted { color: rgba(255,255,255,0.35); }
 #stars .lit { color: var(--gold); text-shadow: 0 0 10px rgba(255, 207, 51, 0.9); animation: blink 0.5s steps(2) infinite; }
@@ -488,6 +489,7 @@ kbd {
 <link rel="modulepreload" href="src/hud.js">
 <link rel="modulepreload" href="src/input.js">
 <link rel="modulepreload" href="src/audio.js">
+<link rel="modulepreload" href="src/radio.js">
 <script type="module" src="src/main.js"></script>
 </head>
 <body>
@@ -497,7 +499,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 1.2 · Sjuby och Norrholmen</div>
+    <div class="ver">Version 1.3 · Sjuby och Norrholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -523,6 +525,7 @@ kbd {
     <div class="tr">
       <div class="col">
         <div id="money">0 kr</div>
+        <button id="muted" type="button" hidden aria-label="Ljudet är av – slå på">LJUD AV</button>
         <div id="stars"></div>
       </div>
       <button id="quests" type="button" aria-label="Uppdrag"><i></i><b id="qBadge" hidden></b></button>
@@ -561,6 +564,7 @@ kbd {
       <div class="rows">
         <button class="row primary" id="mResume" type="button">FORTSÄTT</button>
         <button class="row" id="mSound" type="button">Ljud: På</button>
+        <button class="row" id="mRadio" type="button">Bilradio: På</button>
         <button class="row" id="mDrive" type="button">Körkontroll: Spak</button>
         <button class="row" id="mQuality" type="button">Grafik: Auto</button>
         <button class="row" id="mFps" type="button">Visa FPS: Av</button>
@@ -569,7 +573,7 @@ kbd {
       </div>
       <div class="help">
         <div><h3>Mobil</h3><p>Vänster tumme: gå och kör</p><p>Spak uppåt: gas, nedåt: broms/back</p><p>Dra på höger sida: titta runt</p></div>
-        <div><h3>Dator</h3><p><kbd>WASD</kbd> gå/kör</p><p><kbd>Shift</kbd> spring</p><p><kbd>E</kbd> stjäl / kliv ur / prata</p><p><kbd>Space</kbd> handbroms · <kbd>H</kbd> tuta</p><p><kbd>U</kbd> uppdrag · <kbd>J</kbd> svara på sms</p></div>
+        <div><h3>Dator</h3><p><kbd>WASD</kbd> gå/kör</p><p><kbd>Shift</kbd> spring</p><p><kbd>E</kbd> stjäl / kliv ur / prata</p><p><kbd>Space</kbd> handbroms · <kbd>H</kbd> tuta</p><p><kbd>U</kbd> uppdrag · <kbd>J</kbd> svara på sms</p><p><kbd>M</kbd> ljud av/på · <kbd>B</kbd> bilradio</p></div>
       </div>
     </div>
   </div>
@@ -618,9 +622,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 1.2 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.3 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad och Jontes cykelgömma hos grannen Birger avslöjad – Ronny och skåpbilen likaså. Det var version 1.2. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad och Jontes cykelgömma hos grannen Birger avslöjad – Ronny och skåpbilen likaså. Det var version 1.3. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

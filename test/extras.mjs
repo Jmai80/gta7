@@ -2,6 +2,8 @@
 import { Game } from '../src/game.js';
 import { CURB_H } from '../src/config.js';
 import { BEACH } from '../src/island.js';
+import { STATIONS, stationFor, degFreq } from '../src/radio.js';
+import { PAINTS } from '../src/vehicle.js';
 const DT = 1 / 60;
 const idle = { moveX: 0, moveY: 0, action: false, camYaw: Math.PI, analog: true };
 let fails = 0;
@@ -70,5 +72,30 @@ function playerCar(g, x, z, h) {
   check(Math.min(xa, xb) > J.x0 && Math.max(xa, xb) < J.x1, `the railings hold (x ${xa.toFixed(2)} and ${xb.toFixed(2)})`);
   walk(6, 0, -1);
   check(p.z < J.z0 - 2 && p.y >= CURB_H - 0.01, 'and back to the sand');
+}
+
+// ---------- (v1.3) the car radio: a station for every car colour, none on a bike ----------
+{
+  console.log('Bilradion');
+  const g = new Game({ seed: 7 });
+  const carPaints = [...new Set(g.vehicles.filter((v) => !v.spec.bike).map((v) => v.paint))];
+  for (const k of ['red', 'blue', 'black', 'white', 'yellow', 'green', 'lightblue', 'silver', 'pizza', 'ronny']) if (!carPaints.includes(k)) carPaints.push(k);
+  check(carPaints.every((k) => PAINTS[k] && STATIONS[k]), `a station of its own for every car colour (${carPaints.length})`);
+  check(new Set(Object.values(STATIONS).map((S) => S.name)).size === Object.keys(STATIONS).length, 'every station has its own name');
+  let ok = true, why = '';
+  for (const [k, S] of Object.entries(STATIONS)) {
+    const n = S.steps;
+    const lens = [...S.melP.map((m) => m.length), S.bassP.length, S.arpP ? S.arpP.length : n];
+    for (const d of ['stab', 'kick', 'snare', 'hat']) if (S[d]) lens.push(S[d].length);
+    if (lens.some((l) => l !== n)) { ok = false; why = `${k}: ${lens.join(',')}`; }
+    for (const c of S.prog) for (const d of [-2, 0, 4, 10]) { const f = degFreq(S, c + d, 1); if (!(f > 40 && f < 4000)) { ok = false; why = `${k}: ${f}`; } }
+  }
+  check(ok, `every part fills its bar, every note is in range ${why}`);
+  check(Math.abs(degFreq(STATIONS.red, 0, 0) - 261.63) < 0.1 && Math.abs(degFreq(STATIONS.red, 7, 0) - 523.25) < 0.1, 'C major starts on middle C, an octave up after seven steps');
+  const red = g.vehicles.find((v) => v.paint === 'red'), blue = g.vehicles.find((v) => v.paint === 'blue');
+  check(stationFor(red) === STATIONS.red && stationFor(blue) === STATIONS.blue && stationFor(red) !== stationFor(blue), `a red car plays ${STATIONS.red.name}, a blue one ${STATIONS.blue.name}`);
+  check(stationFor(g.bike) === null && stationFor(null) === null, 'no radio on a bike (or on foot)');
+  const wreck = g.addVehicle('sedan', 'yellow', 0, 0, 0); wreck.dead = true;
+  check(stationFor(wreck) === null, 'a wreck plays nothing');
 }
 console.log(fails ? `${fails} failed` : 'All extras passed');

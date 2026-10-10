@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.2 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, nio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.3 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, nio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -15,6 +15,8 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 | Gå och köra | Vänster tumme (spak). Uppåt är gas, nedåt broms och back | WASD eller piltangenterna, Shift springer |
 | Stjäla, kliva in och ur, prata | Den gula knappen, KLIV UR | E |
 | Svara på uppdrags-sms | Tryck på sms:et | Klicka eller J |
+| Ljud av och på | Pausmenyn, eller skylten LJUD AV | M |
+| Bilradio av och på | Pausmenyn | B |
 | Nästa replik i ett samtal | Tryck var som helst | Enter, mellanslag eller E |
 | Cykla | Spaken uppåt trampar, BROMS, PLING, KLIV AV | W trampar, S eller mellanslag bromsar, H plingar, E kliver av |
 | Uppdragslistan | Listknappen eller uppdragsrutan | U |
@@ -23,9 +25,9 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 | Titta runt | Dra på höger sida | Dra med musen |
 | Paus | Pausknappen | Esc |
 
-I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
+I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.2
+## Uppdrag i version 1.3
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -98,6 +100,8 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Melker i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde. På badplatsen har folk badkläder: baddräkt eller badbyxor, bara armar och ben och bara fötter.
 - **Cyklarna:** Arnes gröna budcykel med lådan, stänkskärmar, pakethållare, kedjeskydd och krämvita däck, Jontes röda racercykel med böjt styre och två stora hjul med svarta fälgar, och damcyklarna med trådkorg på styret (Veras orange, Lasses gula och Yasmins rosa). Hjulen har runda däck, fälgar och korsade ekrar som stannar innanför fälgen, och framhjulet svänger med styret.
+- **Bilradion:** varje bilfärg har en egen kanal med glad midimusik som spelar när du sitter i bilen, och namnet syns på skärmen. Röd bil: Glada Hits (pop), blå: Blå Lounge (jazz), svart: Natt-FM (syntpop), vit: P2 Barock, gul: Sol-Radio (calypso), grön: Dansbandskanalen, ljusblå: Disco 79, silver: Techno Sjuby, pizzabilen: Radio Napoli (tarantella) och Ronnys bruna skåpbil: Country-Kanalen. Cyklar har ingen radio. Stäng av radion i pausmenyn eller med B.
+- **Ljud av:** när ljudet är avstängt (pausmenyn eller M) står det LJUD AV uppe till höger. Tryck på skylten för att slå på ljudet igen. Startar du spelet med ljudet avstängt säger spelet det.
 - **Röster:** i samtalen pratar alla med en egen pipig "röst", ett litet pladder i talarens tonläge som är ungefär lika långt som repliken och går upp i slutet av en fråga. Repliker i pratbubblor hörs också när personen står nära dig.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
@@ -154,7 +158,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/beach.js` | Badplatsen på Norrholmen: parasoller, solstolar, badhytter, livräddartornet, glasskiosken, bryggan och resten |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |
-| `src/hud.js`, `input.js`, `audio.js` | Gränssnitt, kontroller och ljud |
+| `src/hud.js`, `input.js`, `audio.js`, `radio.js` | Gränssnitt, kontroller, ljud och bilradions kanaler |
 | `test/` | Simuleringstester för Node |
 
 ## Om namnet

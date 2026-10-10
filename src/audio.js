@@ -1,4 +1,5 @@
 // All sound is synthesized with Web Audio – no audio files to download.
+import { degFreq } from './radio.js';
 export class AudioFX {
   constructor() {
     this.ctx = null;
@@ -28,6 +29,12 @@ export class AudioFX {
     this.amb = this.loopNoise('lowpass', 420, 0.5);
     this.amb.gain.gain.value = 0.022;
     this.buildHorn();
+    // (v1.3) the car radio: its own bus through a little "car speaker" filter
+    this.radioBus = ctx.createGain(); this.radioBus.gain.value = 0;
+    const spk = ctx.createBiquadFilter(); spk.type = 'lowpass'; spk.frequency.value = 3600; spk.Q.value = 0.7;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70;
+    this.radioBus.connect(hp); hp.connect(spk); spk.connect(this.master);
+    if (this.station) this.setRadio(this.station, true);
   }
 
   loopNoise(type, freq, q) {
@@ -113,6 +120,78 @@ export class AudioFX {
     }
     // ambience grows a little near busy streets: keep it simple
     this.amb.gain.gain.setTargetAtTime(0.02, t, 0.5);
+    this.radioTick();
+  }
+
+  // ---------------------------------------------------------------- the car radio (v1.3)
+  // a station from radio.js, or null to switch it off; the loop starts from the top on every switch
+  setRadio(S, force = false) {
+    if (S === this.station && !force) return;
+    this.station = S;
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.radioBus.gain.cancelScheduledValues(t);
+    this.radioBus.gain.setTargetAtTime(S ? 0.75 : 0, t, S ? 0.05 : 0.04);
+    if (S) { this.rStep = 0; this.rNext = t + 0.08; }
+  }
+
+  // schedule the next fifth of a second of the station's loop (called every frame)
+  radioTick() {
+    const S = this.station, ctx = this.ctx;
+    if (!S || !ctx || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
+    if (this.rNext < now - 0.25) this.rNext = now + 0.03; // (after a pause: pick up from here)
+    const beat = 60 / S.bpm, step = S.steps === 12 ? beat / 3 : beat / 4;
+    while (this.rNext < now + 0.2) {
+      const k = this.rStep, sw = S.swing ? (k % 2 ? -S.swing : S.swing) : 0;
+      this.radioStep(S, k, this.rNext, step);
+      this.rNext += step * (1 + sw);
+      this.rStep++;
+    }
+  }
+
+  radioStep(S, k, t, step) {
+    const n = S.steps, i = k % n, bar = Math.floor(k / n) % S.prog.length, c = S.prog[bar];
+    const m = S.melP[bar % S.melP.length][i];
+    if (m) this.rNote(degFreq(S, c + m.d, 1), t, m.len * step, S.lead, S.lead === 'sawtooth' ? 0.07 : S.lead === 'square' ? 0.065 : 0.13);
+    const b = S.bassP && S.bassP[i];
+    if (b) this.rNote(degFreq(S, c + b.d, -1), t, b.len * step * 0.9, S.bassWave, S.bassWave === 'triangle' ? 0.22 : 0.08);
+    const a = S.arpP && S.arpP[i];
+    if (a) this.rNote(degFreq(S, c + a.d, 0), t, step * 0.9, 'triangle', 0.06, true);
+    if (S.stab[i] === 'x') for (const d of S.seventh ? [0, 2, 4, 6] : [0, 2, 4]) this.rNote(degFreq(S, c + d, 0), t, step * 1.4, 'square', 0.022, true);
+    if (S.kick[i] === 'x') this.rKick(t);
+    if (S.snare[i] === 'x') this.rNoise(t, 0.12, 'bandpass', 1800, S.soft ? 0.05 : 0.1);
+    if (S.hat[i] === 'x') this.rNoise(t, 0.035, 'highpass', 7000, S.soft ? 0.018 : 0.03);
+  }
+
+  rNote(freq, t, dur, type, vol, pluck = false) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
+    const g = ctx.createGain();
+    const end = t + Math.max(0.06, dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+    if (pluck || this.station && this.station.pluck) g.gain.exponentialRampToValueAtTime(0.0001, end);
+    else { g.gain.setTargetAtTime(vol * 0.6, t + 0.03, 0.08); g.gain.setTargetAtTime(0.0001, end - 0.03, 0.02); }
+    o.connect(g); g.connect(this.radioBus);
+    o.start(t); o.stop(end + 0.1);
+  }
+
+  rKick(t) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g); g.connect(this.radioBus); o.start(t); o.stop(t + 0.2);
+  }
+
+  rNoise(t, dur, type, freq, vol) {
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource(); src.buffer = this.noise;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.radioBus);
+    src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.02);
   }
 
   horn(on) {

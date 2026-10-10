@@ -3,7 +3,7 @@ export class Input {
   constructor(root, opts = {}) {
     this.root = root;
     this.keys = new Set();
-    this.edge = { action: false, pause: false, mute: false, log: false, answer: false };
+    this.edge = { action: false, pause: false, mute: false, log: false, answer: false, radio: false };
     this.held = { handbrake: false, horn: false, gas: false, brake: false, sprint: false, action: false };
     this.stick = { id: null, x0: 0, y0: 0, x: 0, y: 0, active: false };
     this.look = { id: null, x: 0, y: 0 };
@@ -36,6 +36,7 @@ export class Input {
       if (['KeyE', 'KeyF', 'Enter'].includes(e.code)) this.edge.action = true;
       if (['Escape', 'KeyP'].includes(e.code)) this.edge.pause = true;
       if (e.code === 'KeyM') this.edge.mute = true;
+      if (e.code === 'KeyB') this.edge.radio = true;                     // (v1.3) the car radio on/off (B for Bilradio)
       if (e.code === 'KeyU') this.edge.log = true;                       // the quest log (Uppdrag)
       if (e.code === 'KeyJ') this.edge.answer = true;                    // answer the SMS on screen
       if (e.code.startsWith('Key') || e.code.startsWith('Arrow') || e.code === 'Space') this.setKind('keys');
@@ -135,13 +136,13 @@ export class Input {
   read() {
     const k = this.keys;
     const out = {
-      moveX: 0, moveY: 0, analog: false, sprint: false, action: this.edge.action, pause: this.edge.pause, mute: this.edge.mute,
+      moveX: 0, moveY: 0, analog: false, sprint: false, action: this.edge.action, pause: this.edge.pause, mute: this.edge.mute, radio: this.edge.radio,
       log: this.edge.log, answer: this.edge.answer,
       handbrake: this.held.handbrake, horn: this.held.horn, gas: this.held.gas, brake: this.held.brake,
       actionHeld: this.held.action || this.keys.has('KeyE') || this.keys.has('KeyF') || this.keys.has('Enter'),
       throttleAxis: null, steerAxis: null, camDX: this.camDX,
     };
-    this.edge.action = this.edge.pause = this.edge.mute = this.edge.log = this.edge.answer = false;
+    this.edge.action = this.edge.pause = this.edge.mute = this.edge.log = this.edge.answer = this.edge.radio = false;
     this.camDX = 0;
     const kx = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
     const ky = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
