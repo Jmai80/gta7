@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.9 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, sju sidouppdrag, ett huvudäventyr i sju delar, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori och till sist på jakt efter en stulen syltburk och en hemlig bullfabrik.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.9.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, sju sidouppdrag, ett huvudäventyr i sju delar, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori och till sist på jakt efter en stulen syltburk och en hemlig bullfabrik.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.9
+## Uppdrag i version 0.9.1
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -57,7 +57,7 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - När du fått mjölet kommer en Bullbil från bageriet. Tar de dig till fots på vägen, eller blir du fast med bilen, tar de mjölsäcken – då får du hämta en ny hos Majken. Uppdraget misslyckas inte.
   - Lämna allt vid konditoriet. Nästa morgon är det invigning med publik på torget, och Bagar-Bengt dyker upp med en bekännelse. Du får 4 000 kr.
 - **G – Tant Gun (huvuduppdrag, del 6): Syltburken.** Tio sekunder efter invigningen: någon har brutit sig in på konditoriet och tagit syltburken med receptet. En svart bil kör runt i stan (röd pil och gul linje). Kör in i den tills motorn ger upp – uppdragsrutan visar hur mycket motor som är kvar. Föraren springer, du tar syltburken ur bilen (**TA**) och lämnar den på konditoriet. Kommer bilen för långt bort för länge slinker den undan och du får försöka igen. Bengt känner igen bilen: den tillhör direktör Dahlgren, Bullbilens ägare. 2 500 kr.
-- **B – Bagar-Bengt (huvuduppdrag, del 7): Bullfabriken.** Bengt sms:ar: Dahlgrens lastbil går från bageriet. Vänta vid bageriets infart på Norrholmen och följ efter lastbilen när den kör – inte närmare än cirka 10 meter (då ser föraren dig) och inte längre bort än cirka 85 meter (då tappar du den). Uppdragsrutan säger om du ligger lagom. Lastbilen leder till byggtomten på Skolgatan. Smyg in till byggbaracken i hörnet och lyssna – resten får du se själv. 5 000 kr, och huvudäventyret är klart (för den här gången). Nästa: **Bullfesten**, *Kommer snart*.
+- **B – Bagar-Bengt (huvuduppdrag, del 7): Bullfabriken.** Bengt sms:ar: Dahlgrens lastbil går från bageriet. Vänta vid bageriets infart på Norrholmen och följ efter lastbilen när den kör – inte närmare än cirka 10 meter (då ser föraren dig) och inte längre bort än cirka 85 meter (då tappar du den). Uppdragsrutan säger om du ligger lagom. I stan kör lastbilen som den övriga trafiken och väntar på sin tur i korsningarna, så håll avståndet även när den stannar. Lastbilen leder till byggtomten på Skolgatan, där föraren parkerar vid grinden. Smyg in till byggbaracken i hörnet och lyssna – resten får du se själv. 5 000 kr, och huvudäventyret är klart (för den här gången). Nästa: **Bullfesten**, *Kommer snart*.
 - **Y – Yasmin på Hörnlivs (sidouppdrag): Fyrvaktarens kasse.** När norra bron är öppen sms:ar Yasmin, som står i kassan på Hörnlivs på Kungsgatan (butiken under den blå markisen, där spelet börjar). Gå in genom dörren och prata med henne vid kassan. Hon ger dig en kasse till sin gamle vän, fyrvaktaren Ingvar ute vid fyren på Norrholmen.
   - I kassen ligger tolv ägg. Varje hård smäll på vägen (krockar, att ramla av cykeln eller hårda landningar) knäcker några, och uppdragsrutan visar hur många som är hela.
   - Gå fram till Ingvar utanför hans stuga vid fyren. Du får 500 kr plus 50 kr för varje helt ägg, alltså upp till 1 100 kr, och Ingvar har något att berätta om Bullbilens bageri.
@@ -76,7 +76,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 
 ## Övrigt i stan
 
-- **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Det går även folk på trottoarerna.
+- **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Bilar med ett mål (som Dahlgrens lastbil) tar kortaste vägen dit och väntar på sin tur som alla andra. Det går även folk på trottoarerna.
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Samuel i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde.
 - **Röster:** i samtalen pratar alla med en egen pipig "röst", ett litet pladder i talarens tonläge som är ungefär lika långt som repliken och går upp i slutet av en fråga. Repliker i pratbubblor hörs också när personen står nära dig.

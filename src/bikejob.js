@@ -130,6 +130,14 @@ export class Chaser {
     }
   }
 
+  // (v0.9.1) let go of the car without parking it: someone else drives from here (the town's traffic)
+  release() {
+    const g = this.game, car = this.car, i = g.racers.indexOf(this);
+    if (i >= 0) g.racers.splice(i, 1);
+    this.mode = 'done';
+    if (car.racer === this) { car.racer = null; car.driver = null; }
+  }
+
   // the point `Ld` metres further along the route than the van
   lookahead(Ld) {
     const P = this.path, car = this.car;

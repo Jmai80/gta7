@@ -307,7 +307,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all ten are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.9/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 0.9, Dahlgren is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.9\.1/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 0.9.1, Dahlgren is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1457,6 +1457,59 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   const near = tryTail(5), far = tryTail(120);
   check(near && /såg dig/.test(near[1].sub), 'right behind it: the driver sees you (failed)');
   check(far && /tappade/.test(far[1].sub), 'far behind: you lose it (failed)');
+}
+
+// ---------- 24. "Bullfabriken" with the town's traffic about (v0.9.1) ----------
+// The truck used to push into the intersections and swing wide round the corners; with cars about
+// it could get wedged among them for good, and then you could never get to the site.
+{
+  console.log('Bullfabriken: lastbilen i stadstrafiken');
+  const tailInTraffic = (seed, warm, hook) => {
+    const g = new Game({ seed });
+    const m = g.mission;
+    m.restore(livsSave([...UP_TO_OPENING, 'syltburken']));
+    run(g, warm);
+    m.offer('fabriken'); m.accept('fabriken'); run(g, 0.2);
+    const job = m.active;
+    const car = g.addVehicle('sedan', 'blue', FACTORY_START.x, FACTORY_START.z + 6, Math.PI);
+    enterCar(g, car);
+    parkAt(g, FACTORY_START.x, FACTORY_START.z, Math.PI); run(g, 3);
+    const r = { g, job, t: 0, joined: false, turn: false, stop: 0 };
+    let still = 0;
+    while (r.t < 150 && job.stage === 'tail') {
+      const tr = job.truck;
+      car.x = tr.x - Math.sin(tr.h) * 30; car.z = tr.z - Math.cos(tr.h) * 30; car.h = tr.h; car.vx = tr.vx; car.vz = tr.vz;
+      g.step(DT, idle); r.t += DT;
+      if (tr.driver === 'ai' && tr.ai && tr.ai.dest) r.joined = true;
+      if (g.traffic.occ.some((list) => list.some((o) => o.car === tr))) r.turn = true;
+      still = tr.speed < 0.5 ? still + DT : 0;
+      r.stop = Math.max(r.stop, still);
+      if (hook) hook(r, tr);
+    }
+    return r;
+  };
+  const runs = [[5, 4], [17, 9], [29, 14], [41, 19], [108, 27]].map(([seed, warm]) => tailInTraffic(seed, warm));
+  check(runs.every((r) => r.job.stage === 'sneak'), `with traffic: the truck gets to the site every time (${runs.map((r) => r.t.toFixed(0)).join(', ')} s)`);
+  check(runs.every((r) => r.stop < 20), `never stuck for long (longest stop ${Math.max(...runs.map((r) => r.stop)).toFixed(1)} s)`);
+  check(runs.every((r) => r.joined && r.turn), 'off the bridge it joins the traffic and waits its turn at the intersections');
+  const tr = runs[0].job.truck;
+  check(tr.driver === null && tr.parkedSpot && !tr.ai, 'at the gate the driver gets out: parked, the traffic drives round it');
+  // pushed off the streets (put back on the bridge, where there are no lanes): it drives itself, and
+  // joins the traffic again at the end of the bridge; lost its way in town: it drives itself until
+  // it is on a lane again
+  let phase = 0, lost = false;
+  const r2 = tailInTraffic(5, 4, (r, t) => {
+    if (phase === 0 && r.joined && t.z > -60) {
+      phase = 1;
+      t.x = 38.2; t.z = -190; t.h = 0; t.vx = t.vz = t.w = 0;
+      r.g.traffic.replan(t);
+      lost = !!(t.ai && t.ai.lost);
+      r.joined = false;
+    } else if (phase === 1 && r.joined) phase = 2;
+    else if (phase === 2 && t.z > -60) { phase = 3; t.ai.lost = true; r.joined = false; }
+    else if (phase === 3 && r.joined) phase = 4;
+  });
+  check(lost && phase === 4 && r2.job.stage === 'sneak', 'pushed off the streets: it drives itself, joins the traffic again and gets there');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

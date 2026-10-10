@@ -7,7 +7,10 @@ import { WHO, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD } from './config.
 import { ISLE } from './island.js';
 import { Ped } from './peds.js';
 import { Chaser } from './bikejob.js';
+import { landOf } from './route.js';
 
+// (v0.9.1) the town end of the north bridge: here the truck joins the town's traffic
+const BRIDGE_END = { x: 40, z0: -165, z1: -136 };
 const DAHLGREN = { who: 'Direktör Dahlgren', letter: 'D', color: '#5a5f6b' };
 const GUN = { who: 'Tant Gun', letter: 'G', color: '#c58be0' };
 const BENGT = { who: 'Bagar-Bengt', letter: 'B', color: '#d9534f' };
@@ -76,6 +79,7 @@ export class FactoryJob {
     if (this.stage === 'tail') {
       const tr = this.truck;
       if (!tr || tr.removed) { m.fail(this, 'Lastbilen försvann'); return; }
+      this.steerTruck(dt);
       const D = TAIL.dest;
       if (Math.hypot(tr.x - D.x, tr.z - D.z) < 8) { this.arrived(); return; }
       const d = Math.hypot(tr.x - T.x, tr.z - T.z);
@@ -112,9 +116,48 @@ export class FactoryJob {
     g.emit('toast', { text: 'Där kommer Dahlgrens lastbil! Följ efter – på avstånd.', long: true });
   }
 
+  // (v0.9.1) who drives the truck: it drives itself on Norrholmen and across the bridge, and at the
+  // end of the bridge it joins the town's traffic – then it waits its turn at the intersections and
+  // turns tidily like everybody else, instead of pushing in among the cars and getting wedged there
+  // for good (it could, with traffic about). Pushed off the streets somewhere: it drives itself again.
+  steerTruck(dt) {
+    const g = this.game, tr = this.truck, ch = this.chaser;
+    if (ch && ch.mode === 'chase' && tr.racer === ch) {
+      if (Math.abs(tr.x - BRIDGE_END.x) < 6 && tr.z > BRIDGE_END.z0 && tr.z < BRIDGE_END.z1 && Math.cos(tr.h) > 0.8) {
+        ch.release();
+        g.traffic.join(tr, g.layout.nodes.find((q) => q.x === BRIDGE_END.x && q.z === -120).id, 2, TAIL.dest, TAIL.vMax);
+      } else if (landOf(tr.x, tr.z) === 'town' && (this.joinT = (this.joinT || 0) - dt) <= 0) {
+        // in town some other way (driving itself after a push): onto the nearest lane when it is on one
+        this.joinT = 1;
+        if (g.traffic.nearestLane(tr.x, tr.z, tr.h, 6)) {
+          ch.release();
+          tr.ai = { dest: TAIL.dest, cruise: TAIL.vMax, path: null, replans: 0 }; tr.driver = 'ai';
+          g.traffic.replan(tr);
+          tr.steerFade = 30; tr.input.park = false;
+        }
+      }
+    } else if (tr.driver === 'ai' && tr.ai && tr.ai.lost) {
+      g.traffic.release(tr);
+      this.chaser = new Chaser(g, tr, { vMax: TAIL.vMax, burst: 0, hold: 0, polite: true });
+      this.chaser.goal = { x: TAIL.dest.x, z: TAIL.dest.z, vx: 0, vz: 0, ref: null };
+      g.racers.push(this.chaser);
+    }
+  }
+
+  // the truck stops where it is: the driver gets out (and the traffic drives round it)
+  parkTruck() {
+    const g = this.game, tr = this.truck;
+    if (this.chaser && this.chaser.mode !== 'done') this.chaser.retire(false);
+    if (tr && !tr.removed && tr.driver === 'ai') {
+      g.traffic.release(tr);
+      tr.driver = null; tr.parkedSpot = true; tr.coastT = 0;
+      tr.input.throttle = 0; tr.input.steer = 0; tr.input.park = true;
+    }
+  }
+
   failTail(reason) {
     const g = this.game, m = this.mgr, tr = this.truck;
-    if (this.chaser) this.chaser.retire(false);
+    this.parkTruck();
     m.fail(this, reason, [WHO.bengt, reason === 'Föraren såg dig'
       ? 'Han såg dig! Lastbilen vände tillbaka. Den går igen strax – vänta vid infarten igen och håll mer avstånd.'
       : 'Du tappade den! Lastbilen går igen strax – vänta vid bageriets infart och försök igen.']);
@@ -125,8 +168,7 @@ export class FactoryJob {
   arrived() {
     const g = this.game, m = this.mgr;
     this.stage = 'sneak';
-    this.chaser.hold = 999;
-    this.truck.input.throttle = 0; this.truck.input.park = true;
+    this.parkTruck();
     this.dahlgren = spawnPed(g, LOOKS.dahlgren, SITE_OFFICE.x + 0.4, SITE_OFFICE.z + 1.6, 0, 'dahlgren');
     this.people.push(this.dahlgren);
     g.emit('toast', { text: 'Byggtomten?! Lastbilen stannade vid grinden. Smyg in till byggbaracken och lyssna.', long: true });
@@ -177,6 +219,7 @@ export class FactoryJob {
     g.player.frozen = false;
     if (g.camFocus && g.camFocus.owner === 'factory') g.camFocus = null;
     if (this.chaser && this.chaser.mode !== 'done') this.chaser.retire(false);
+    if (this.truck && this.truck.driver === 'ai' && this.truck.ai) this.truck.ai.dest = null;  // given up: just traffic now
     const gone = [...this.people], tr = this.truck, done = this.stage === 'done';
     m.later(done ? 25 : 1, () => {
       for (const q of gone) removePed(g, q);

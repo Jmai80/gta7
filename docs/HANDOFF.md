@@ -1,6 +1,6 @@
 # GTA 7 – överlämning till nästa chatt
 
-Senast uppdaterad: 10 oktober 2026, efter version 0.9 (commit `1f7503b` på `main`).
+Senast uppdaterad: 10 oktober 2026, efter version 0.9.1 (lastbilen i Bullfabriken fastnar inte längre i stadstrafiken).
 Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten.
 
 ---
@@ -11,7 +11,7 @@ Det här dokumentet är skrivet så att en ny Claude-session (eller en människa
 2. Installera three.js lokalt för testerna (finns inte i package.json, används bara av webbläsartesterna): `npm install --no-save three@0.184.0`.
 3. Kör Node-testerna: `npm test` → ska sluta med `All checks passed`, `All extras passed`, `All mission checks passed`.
 4. Starta en lokal server för webbläsartester: `python3 -m http.server 8765 --directory /home/claude/gta7` (servern dör ibland – starta om med `(nohup python3 -m http.server 8765 --directory /home/claude/gta7 > /dev/null 2>&1 &)`).
-5. Webbläsargenomgångar (Playwright, Python, SwiftShader): `python3 test/browser/v09.py phone` (eller `land`, `desk`). Skärmdumpar hamnar i `test/shots/` (gitignorerad).
+5. Webbläsargenomgångar (Playwright, Python, SwiftShader): `python3 test/browser/v09.py phone` (eller `land`, `desk`), och `v091.py` för lastbilen i stadstrafiken. Skärmdumpar hamnar i `test/shots/` (gitignorerad).
 6. Läs README.md (svenska, spelarperspektiv) och den här filen (utvecklarperspektiv).
 
 ## 2. Om användaren och arbetssättet
@@ -70,7 +70,8 @@ GTA 7 ("Grovt Tillgrepp av Automobil") – ett mobilanpassat GTA-skämtspel i we
 - **Samtal:** jobbet sänder `g.emit('talk', { id, pages })`, sidor `{ who, letter, color, text, you?, fx?, last? }`. main.js visar en sida i taget, spelet står still, `talkFx` anropas när en sida med `fx` visas och `talkDone` efter sista sidan. Kameran: sätt `g.camFocus = { x, y, z, yaw, owner, near: true }` och nollställ i `cleanup`.
 - **Ansikte mot ansikte-erbjudande:** `mgr.offer(id, 'talk')` öppnar uppdragskortet direkt (används efter kassaskåpet för "Nyöppningen").
 - **Nästa del syns:** `Missions.nextMain()` + `list()` visar kommande huvuddel som *Kommer snart* och mål-rutan säger "Huvuduppdraget fortsätter snart – X hör av sig om en stund".
-- **Jakt-AI:** `Chaser` i `bikejob.js` – kör efter GPS-grafen med pure pursuit, kurvhastigheter, trafikluckor, backar när den fastnar. `goal` sätts av jobbet; `mode` = `'chase' | 'home' | 'done'`; `retire(back, force)`; `polite: true` = rammar inte spelaren och saktar in bakom spelaren (används för flyende bil och lastbilen man skuggar). Lägg alltid till i `g.racers`.
+- **Jakt-AI:** `Chaser` i `bikejob.js` – kör efter GPS-grafen med pure pursuit, kurvhastigheter, trafikluckor, backar när den fastnar. `goal` sätts av jobbet; `mode` = `'chase' | 'home' | 'done'`; `retire(back, force)`; `release()` (v0.9.1: släpper bilen utan att parkera den, någon annan kör vidare); `polite: true` = rammar inte spelaren och saktar in bakom spelaren (används för flyende bil och lastbilen man skuggar). Lägg alltid till i `g.racers`. **Obs:** en `Chaser` väntar inte på sin tur i korsningarna (trafikens reservationer) och svänger brett, så med trafik kan den låsa sig med bilarna för gott. Det gör inget när spelaren jagas (då kommer man undan), men en bil som spelaren *måste* följa ska köra som trafik i stan – se nästa punkt.
+- **Bilar med mål i trafiken (v0.9.1):** `g.traffic.join(car, into, dir, dest, cruise)` sätter en bil som inte står på ett körfält (lastbilen vid brons slut) på väg in i korsning `into` i riktning `dir` (0 N, 1 E, 2 S, 3 W) och sedan kortaste vägen till `dest`. `ai.dest` gör att `extend()` väljer utfart med `towards()` (Dijkstra över de 16 korsningarna, `distTo`, ingen slump) i stället för `chooseExit`; `dest` följer med vid `replan`. Bilen reserverar korsningar och svänger som all annan trafik. `FactoryJob.steerTruck()` sköter bytet: `Chaser` på ön och bron, trafiken i stan, tillbaka till `Chaser` om bilen tappar vägen (`ai.lost`). Vid målet: `parkTruck()` (förare ut, `parkedSpot`, trafiken kör om).
 - **Människornas stil:** `look.style` (bitmask: long 1, bun 2, beard 4, glasses 8, cap 16, apron 32, baker 64, jacket 128) och `look.accent` (färg för jacka/förkläde/keps). Packas i instansattributet `iPants.w`. `dressUp(look)` ger gående en stil från deras utseende **utan att använda spelets slumptal**.
 - **Determinism:** testerna förutsätter att `g.rng` dras i samma ordning. Nya saker som spawnar folk/bilar vid start ändrar slumpsekvensen och kan bryta gamla tester – spawna lat (vid behov) eller använd egna hash-slumpar (som `dressUp`).
 - **Sparning:** `localStorage['gta7-progress']`, `progress()`/`restore()` i mission.js, `SAVE_VERSION = 2`. Sparar pengar, klara/kända/sedda uppdrag, följt uppdrag, statistik, `upg` (köpta uppgraderingar), `best` (längsta hopp). Pågående jobb sparas inte. `restore` lägger ut följder: flaggan hissad, cykeln vid Guns grind eller vid höghuset (efter `cykelretur`), Ingvar vid fyren, Lås-Leif utanför butiken.
@@ -97,7 +98,7 @@ Huvudäventyret: receptet på **Sjubybullen** som **Arne** (tant Guns avlidne ma
 | verkstad | L Lasse | Lasses trimning | sido | 25 s efter kassaskåpet | Butiken vid första garageporten (`$` på kartan): Turbo 3000, Krockskydd 2500, Melodituta 800 |
 | hopp | K Kim | Långhoppet | sido | 15 s efter första köpet | Stunthopp ≥ 34 m på byggtomten (vanlig sats ≈ 27 m, lång sats ≈ 37 m, turbo hjälper) |
 | syltburken | G Tant Gun | Syltburken | huvud 6 | 10 s efter konditori | Ramma den svarta bilen tills motorn dör, ta burken, Bengt känner igen Dahlgrens bil |
-| fabriken | B Bagar-Bengt | Bullfabriken | huvud 7 | 12 s efter syltburken | Vänta vid bageriets infart, skugga lastbilen (≥ 9 m, ≤ 85 m) till byggtomten, smyg till baracken, Dahlgren avslöjas, Gun/Bengt/Polis-Pia, slutskärm |
+| fabriken | B Bagar-Bengt | Bullfabriken | huvud 7 | 12 s efter syltburken | Vänta vid bageriets infart, skugga lastbilen (≥ 9 m, ≤ 85 m) till byggtomten (i stan som vanlig trafik: Drottninggatan → Skolgatan, ca 48 s), smyg till baracken, Dahlgren avslöjas, Gun/Bengt/Polis-Pia, slutskärm |
 | bullfest | G Tant Gun | Bullfesten | teaser (`soon`) | – | Nästa naturliga del att bygga |
 
 Slutskärmen visas när alla 10 i `MAIN` är klara (`lasse, pizza, race, samuel, overlamning, cykel, kassaskap, konditori, syltburken, fabriken`).
@@ -122,7 +123,7 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 
 ## 7. Tester
 
-- `npm test` = `test/sim.mjs` (fysik, trafik), `test/extras.mjs` (stunthopp, biltvätt), `test/missions.mjs` (alla uppdrag, 25 sektioner; hela `npm test` har ~450 kontroller). Varje nytt uppdrag har fått en egen sektion; följ samma stil (`check(ok, 'beskrivning')`, hjälpare `run`, `walkHere`, `press`, `enterCar`, `parkAt`, `walkTo`, `livsSave(doneList)`, `intoOffice`, `crackSafe`, `jumpFrom`).
+- `npm test` = `test/sim.mjs` (fysik, trafik), `test/extras.mjs` (stunthopp, biltvätt), `test/missions.mjs` (alla uppdrag, 26 sektioner; hela `npm test` har ~452 kontroller). De flesta uppdragstester kör `traffic: 0, peds: 0` – sektion 24 kör Bullfabriken med full trafik på fem frön. Varje nytt uppdrag har fått en egen sektion; följ samma stil (`check(ok, 'beskrivning')`, hjälpare `run`, `walkHere`, `press`, `enterCar`, `parkAt`, `walkTo`, `livsSave(doneList)`, `intoOffice`, `crackSafe`, `jumpFrom`).
 - Webbläsartester i `test/browser/` (Python + Playwright; Chromium finns förinstallerat i molnsandlådan, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). `cdn.py` serverar three.js från `node_modules` eftersom sandlådan saknar CDN-åtkomst. Genomgångar per version: `v02.py` … `v09.py`, `v061.py`; `people.py` (människor på rad), `bike.py`, `isle.py`, `visuals.py`, `perfcmp.py` m.fl. Skripten har hårdkodade sökvägar till `/home/claude/gta7`. Kör alltid `phone` (390×844) och gärna `land` (844×390) och kolla att `logs []` (inga konsolfel).
 - Användbart i sidan: `window.__gta.game` (allt simuleringstillstånd), `window.__gta.view.rig`, `openOffer(id)`, `nextTalk()`, `openShop()`.
 
@@ -139,8 +140,10 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 - Fönster/dörrar på fasader är bara lådor framför fasadens shader-fönster.
 - Samtal öppnas en bildruta efter `talk`-händelsen – i webbläsartester: vänta några frames innan `nextTalk()`.
 - Sandlådans nätverk: CDN, github.io och vissa GitHub-API:er är blockerade; `gh run list` fungerar.
+- **Testa med trafik.** Uppdragstesterna kör utan trafik, så att lastbilen kunde låsa sig i korsningar (4 av 30 körningar) syntes bara i webbläsaren. Stresstesta datorförare på flera frön med `new Game({ seed })` (full trafik och folk) innan något blir ett måste att följa.
+- `traffic.release()` på en bil som tappat vägen (`ai.lost`, `path: null`) kastade förut ett fel när städningen tog bort den (konsolfel och en hoppad bildruta) – nu kollas `path` först.
 
-## 9. Senaste ändringar (v0.6 → v0.9)
+## 9. Senaste ändringar (v0.6 → v0.9.1)
 
 - v0.6: Norrholmen, norra bron, Arnes budcykel (cykel som fordon), Bullbilen-jakt (`Chaser`), GPS över ön.
 - v0.6.1: Hörnlivs inifrån, Yasmin, Fyrvaktarens kasse (ägg), Ingvars stuga.
@@ -148,3 +151,4 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 - v0.8: Nyöppningen (tre ingredienser, invigning), Lasses trimning (pengar → uppgraderingar), Långhoppet.
 - v0.8.1: ny människomodell med valfria delar, stilar för alla, röster i samtalen.
 - v0.9: tydligare nästa steg (direkt erbjudande efter kassaskåpet, "fortsätter snart" i rutan och listan), Syltburken, Bullfabriken, Samuels cykel, Hemleverans, `Chaser.polite`, cooldown innan `startOnAccept`-jobb börjar om.
+- v0.9.1: buggfix – Dahlgrens lastbil kunde fastna för gott i en korsning när det var trafik (oftast där bron når stan), och då gick sista huvuduppdraget inte att klara. Nu kör den som vanlig trafik i stan (`traffic.join`, `ai.dest`), parkerar vid grinden så att trafiken kör om, och har ett test med full trafik. Även: `traffic.release()` tål bilar som tappat vägen.

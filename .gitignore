@@ -4,3 +4,4 @@ test/shots/
 test/play.html
 *.log
 .DS_Store
+__pycache__/

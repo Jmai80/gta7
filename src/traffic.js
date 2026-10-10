@@ -150,13 +150,55 @@ export class Traffic {
     return opts[opts.length - 1][0];
   }
 
+  // (v0.9.1) the exit out of intersection B (driving in direction d) that is the shortest way to
+  // dest – for a car with somewhere to be (Dahlgren's truck). No U-turns, like everybody else;
+  // on a tie straight on first, then right.
+  towards(B, d, dest) {
+    const D = this.distTo(dest);
+    let best = -1, bc = Infinity;
+    for (const e of [d, rightOf(d), leftOf(d)]) {
+      if (B.nbr[e] < 0) continue;
+      const C = this.nodes[B.nbr[e]], ex = C.x - B.x, ez = C.z - B.z, len = Math.hypot(ex, ez);
+      const t = ((dest.x - B.x) * ex + (dest.z - B.z) * ez) / (len * len);
+      const side = Math.abs((dest.x - B.x) * ez - (dest.z - B.z) * ex) / len;
+      const cost = t > 0 && t < 1 && side < 9 ? t * len : len + D[C.id];   // dest on this very street: drive on
+      if (cost < bc - 0.01) { bc = cost; best = e; }
+    }
+    return best >= 0 ? best : this.chooseExit(B, d);
+  }
+
+  // distance along the streets from every intersection to the point p (cached for the last p)
+  distTo(p) {
+    if (this.distP === p) return this.distD;
+    const N = this.nodes, D = N.map(() => Infinity), done = N.map(() => false);
+    let bd = Infinity;
+    for (const A of N) {
+      for (let e = 1; e <= 2; e++) {           // east and south: every street once
+        if (A.nbr[e] < 0) continue;
+        const B = N[A.nbr[e]], ex = B.x - A.x, ez = B.z - A.z, len = Math.hypot(ex, ez);
+        const t = clamp(((p.x - A.x) * ex + (p.z - A.z) * ez) / (len * len), 0, 1);
+        const d = Math.hypot(A.x + ex * t - p.x, A.z + ez * t - p.z);
+        if (d < bd) { bd = d; D.fill(Infinity); D[A.id] = t * len; D[B.id] = (1 - t) * len; }
+      }
+    }
+    for (;;) {
+      let u = -1;
+      for (let i = 0; i < N.length; i++) if (!done[i] && D[i] < Infinity && (u < 0 || D[i] < D[u])) u = i;
+      if (u < 0) break;
+      done[u] = true;
+      for (const v of N[u].nbr) if (v >= 0) D[v] = Math.min(D[v], D[u] + Math.hypot(N[v].x - N[u].x, N[v].z - N[u].z));
+    }
+    this.distP = p; this.distD = D;
+    return D;
+  }
+
   extend(ai) {
     const path = ai.path;
     while (path.end - ai.s < 70) {
-      const A = this.nodes[ai.endNode];
       const d = ai.endDir;
-      const B = this.nodes[A.nbr[d]];
-      const e = this.chooseExit(B, d);
+      const B = ai.into != null ? this.nodes[ai.into] : this.nodes[this.nodes[ai.endNode].nbr[d]];
+      ai.into = null;
+      const e = ai.dest ? this.towards(B, d, ai.dest) : this.chooseExit(B, d);
       const pts = turnPoints(B, d, e);
       path.push(pts[0]);
       const sStop = path.end;
@@ -177,6 +219,7 @@ export class Traffic {
       cruise: prev && prev.cruise ? prev.cruise : this.rng.range(10.5, 13.5), latOff: 0, latTarget: 0,
       blockedT: 0, honkT: this.rng.range(1, 3), stuckT: 0, reverseT: 0, waitT: 0, lostT: 0, lost: false,
       blocker: null, recovering: false, recoverT: 0, replans: prev ? prev.replans || 0 : 0,
+      dest: prev ? prev.dest || null : null,   // (still on its way somewhere after being pushed off its lane)
     };
     this.extend(car.ai);
     car.driver = 'ai';
@@ -187,9 +230,27 @@ export class Traffic {
     }
   }
 
+  // (v0.9.1) a car that is not on a lane – Dahlgren's truck coming off the north bridge – joins the
+  // traffic: straight on to the stop line of intersection `into` (driving in direction dir), and from
+  // there the shortest way to dest. It waits its turn at the intersections like everybody else
+  // (no random draws here: the game's random sequence stays as it was).
+  join(car, into, dir, dest, cruise) {
+    this.release(car);
+    const path = new Path();
+    path.push({ x: car.x, z: car.z });
+    car.ai = {
+      path, s: 0, endNode: into, endDir: dir, into, dest, cruise, latOff: 0, latTarget: 0,
+      blockedT: 0, honkT: 2, stuckT: 0, reverseT: 0, waitT: 0, lostT: 0, lost: false,
+      blocker: null, recovering: false, recoverT: 0, replans: 0,
+    };
+    this.extend(car.ai);
+    car.driver = 'ai'; car.racer = null; car.steerFade = 30; car.parkedSpot = false;
+    car.input.park = false; car.input.handbrake = false;
+  }
+
   release(car) {
     if (!car.ai) return;
-    for (const ev of car.ai.path.events) if (ev.reserved) this.unreserve(ev.node, car);
+    if (car.ai.path) for (const ev of car.ai.path.events) if (ev.reserved) this.unreserve(ev.node, car);
     car.ai = null;
   }
 
@@ -228,7 +289,7 @@ export class Traffic {
     if (prev && prev.path) for (const ev of prev.path.events) if (ev.reserved) this.unreserve(ev.node, car);
     const found = this.nearestLane(car.x, car.z, car.h);
     if (!found) {
-      car.ai = { lost: true, lostT: 0, path: null, cruise: prev ? prev.cruise : 12 };
+      car.ai = { lost: true, lostT: 0, path: null, cruise: prev ? prev.cruise : 12, dest: prev ? prev.dest || null : null };
       car.driver = 'ai';
       return false;
     }

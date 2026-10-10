@@ -530,8 +530,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 0.9! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 0.9! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Kör runt fritt så länge.'));
+      ? `Det var allt i version 0.9.1! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 0.9.1! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
