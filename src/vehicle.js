@@ -33,6 +33,14 @@ export const CAR_TYPES = {
     grip: 15, hbGrip: 7, steerMax: 0.7,
     circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
   },
+  // (v1.2) the stolen bikes going home to their owners: ordinary town bikes with a basket
+  citybike: {
+    key: 'citybike', name: 'Damcykel', len: 1.9, wid: 0.6, height: 1.1,
+    wheelbase: 1.26, track: 0, wheelR: 0.34, wheelZ: [0.66, -0.6],
+    mass: 110, accel: 3.8, maxSpeed: 10.4, brake: 8, revAccel: 1.2, revMax: 1.3,   // flat out about 9.6 m/s (35 km/h)
+    grip: 15, hbGrip: 7, steerMax: 0.72,
+    circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
+  },
 };
 
 // where things are on Arne's bike (models.js builds it, the player sits on the saddle)
@@ -50,6 +58,10 @@ export const PAINTS = {
   pizza: { hex: 0x2e7a46, name: 'grön' },        // Pizzeria Sjuan's delivery car
   bike: { hex: 0x23452f, name: 'grön' },         // Arne's bike
   racer: { hex: 0xc4191b, name: 'röd' },         // the racing bike Jonte leaves behind (v1.0) – not a red CAR for Lasse
+  ronny: { hex: 0x7d6a52, name: 'brun' },        // (v1.2) Ronny's rusty old van
+  cityOrange: { hex: 0xe8833a, name: 'orange' },   // (v1.2) the bikes going home: Vera's,
+  cityYellow: { hex: 0xe2b52a, name: 'gul' },      // Lasse's
+  cityPink: { hex: 0xe86aa0, name: 'rosa' },       // and Yasmin's
 };
 
 const GRAVITY = 16;

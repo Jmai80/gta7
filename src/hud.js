@@ -7,13 +7,14 @@ import { INT, WALLS, FURN } from './interior.js';
 import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
 import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
 import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
+import { HOUSE, HOUSE_WALLS, HOUSE_FURN } from './birger.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -187,6 +188,14 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of SALON_WALLS) g.fillRect(X(Sa.x0 + x0), Zs(Sa.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#9fb7c4'; g.fillRect(X(Sa.x0 + 1.2), Zs(Sa.z0 + 7), 1.2 * IN_PX, 0.2 * IN_PX);
+    // Birger's house (v1.2): parquet in the living room and the bedroom, tiles in the kitchen and the bathroom
+    const Ho = HOUSE.room;
+    for (const [k, col] of [['living', '#6b5641'], ['bedroom', '#655039'], ['kitchen', '#77746f'], ['bath', '#6f7b7d']]) { const r = HOUSE.rooms[k]; rect(r.x0, r.z0, r.x1, r.z1, col); }
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of HOUSE_FURN.slice(0, -1)) g.fillRect(X(Ho.x0 + x0), Zs(Ho.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of HOUSE_WALLS) g.fillRect(X(Ho.x0 + x0), Zs(Ho.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#2c4a6e'; g.fillRect(X(Ho.x0 + 4.9), Zs(Ho.z0 + 9), 1.2 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -247,6 +256,14 @@ export class HUD {
       dot(job.fia.x, job.fia.z, '#e8833a');
       const c = job.current;
       if (c && c.ped) dot(c.ped.x, c.ped.z, c.def.color);
+    }
+    if (job && job.id === 'cykelgomman' && game.indoors.where === 'birger' && job.spots) { // (v1.2) the places left to search in Birger's house
+      const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
+      for (const s of job.spots()) {
+        const [x, z] = P(s.x, s.z);
+        g.fillStyle = '#ffcf33'; g.strokeStyle = '#1d1f22'; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.arc(x, z, 3.2 * u * pulse, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
     }
     if (job && job.id === 'livs' && job.yasmin) { // Yasmin at the till
       const [x, z] = P(job.yasmin.x, job.yasmin.z);

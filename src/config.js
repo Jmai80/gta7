@@ -132,4 +132,22 @@ export const FEST = {
   reward: 3000,
 };
 
+// ---- version 1.2: main quest part 9 "Cykelgömman" (Birger's house) and side quest "Cyklarna hem" ----
+// Birger, tant Gun's neighbour: the red villa east of hers on Storgatan (away on a cruise since May)
+export const BIRGER = {
+  gate: { x: -62.5, z: -46.9, r: 1.6 },                      // the marker on the pavement outside his garden gate
+  pia: { x: -60.6, z: -46.6, h: -Math.PI / 2 },              // Polis-Pia waits there, by the mailbox
+  door: { x: -62.5, z: -52.2, r: 1.1 },                      // his front door (at the top of the steps)
+  van: { x: -56.5, z: -42.5, h: -Math.PI / 2 },              // Ronny's van, at the kerb outside (the westbound lane)
+  flee: 165, fleeT: 8, stopAt: 32,                           // the van: lost this far away for this long; stops at this health
+  reward: 3500,
+};
+// the three bikes that are going home (side quest): where each one stands, whose it is, where they wait
+export const BIKES_HOME = [
+  { id: 'vera', paint: 'cityOrange', bike: { x: -65.2, z: -46.3, h: Math.PI / 2 }, owner: { x: 23.6, z: 33.5, h: 0 }, zone: { x: 22, z: 34.4, r: 2.6 } },
+  { id: 'lasse', paint: 'cityYellow', bike: { x: 25.8, z: 33.6, h: Math.PI / 2 }, owner: { x: 70.4, z: 65.6, h: Math.PI / 2 }, zone: { x: 72, z: 67, r: 2.8 } },
+  { id: 'yasmin', paint: 'cityPink', bike: { x: 68.2, z: 64.6, h: 0 }, owner: { x: -34.1, z: -6.2, h: -Math.PI / 2 }, zone: { x: -35.2, z: -4.6, r: 2.6 } },
+];
+export const BIKE_HOME_PAY = 400, BIKES_HOME_BONUS = 300;
+
 export const SIM_HZ = 60;

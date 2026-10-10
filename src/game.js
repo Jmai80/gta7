@@ -12,7 +12,7 @@ import { PIZZA_CAR } from './config.js';
 import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -141,6 +141,15 @@ export class Game {
     if (!v) return null;
     v.parkedSpot = true;
     this.redBike = v;
+    return v;
+  }
+
+  // (v1.2) a stolen town bike on its way home (paint: whose it is): one of each colour at a time
+  spawnCityBike(paint, x, z, h) {
+    for (const v of [...this.vehicles]) if (v.type === 'citybike' && v.paint === paint) this.removeVehicle(v);
+    const v = this.addVehicle('citybike', paint, x, z, h);
+    if (!v) return null;
+    v.parkedSpot = true;
     return v;
   }
 

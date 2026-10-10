@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.1.2 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, åtta sidouppdrag, ett huvudäventyr i åtta delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – och till sist till Bullfesten på torget, där cykeltjuven Jonte slår till.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.2 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, nio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.1.2
+## Uppdrag i version 1.2
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -62,7 +62,13 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Mitt i festen hoppar cykeltjuven **Jonte** upp på Arnes cykel och cyklar iväg med alla bullarna. Hans egen röda racercykel blir kvar på torget: ta den (den är snabbare än Arnes cykel) eller en bil, och kör efter honom.
   - Jonte cyklar på trottoarerna och över gatorna vid övergångsställena, plingar på folk som står i vägen och väljer vägar bort från dig. Kör ikapp honom och ta tag i luvan (tätt bakom på cykeln), knuffa till honom med bilen – eller hoppas att stadstrafiken hinner före.
   - När han ramlar av sprätter bullarna åt alla håll och Jonte springer. Kliv av och spring ikapp honom – du är snabbare än han till fots. Polis-Pia tar hand om resten. 3 000 kr.
-  - Kommer han för långt bort för länge slinker han undan, men han kan inte låta bli bullarna: gå tillbaka till festen och försök igen. Nästa del: **Cykelgömman**, *Kommer snart*.
+  - Kommer han för långt bort för länge slinker han undan, men han kan inte låta bli bullarna: gå tillbaka till festen och försök igen.
+- **P – Polis-Pia (huvuduppdrag, del 9, inomhus): Cykelgömman.** Femton sekunder efter Bullfesten sms:ar Polis-Pia: båthuset vid hamnen var tomt – Jonte ljög. Men tant Gun hör skrammel från grannhuset om nätterna, och grannen Birger är på kryssning sedan i maj. Möt Pia vid Birgers grind på Storgatan (den röda villan öster om tant Guns, till fots).
+  - Pia får inte gå in utan husrannsakan, men tant Gun har Birgers reservnyckel – hon vattnar hans pelargoner. Gå uppför trappan och in genom ytterdörren.
+  - Huset är fullt av cyklar: i vardagsrummet, i köket, mot väggen i sovrummet och till och med i Birgers säng. Gå fram till möblerna med pilar och tryck **LETA**. Du letar efter två saker: Jontes anteckningsbok och Veras cykelsadel. Det finns sju ställen att leta på, och resten är Birgers (och Jontes) liv.
+  - När båda är hittade tutar det utanför. Gå ut: Ronny, Jontes kusin, kör iväg med en brun skåpbil full av cyklar. Ta en bil och kör in i skåpbilen tills motorn ger upp (uppdragsrutan visar hur mycket motor som är kvar). Gå sedan fram till Ronny, så kommer Pia. 3 500 kr.
+  - Går du ut innan du hittat allt finns uppdraget kvar – nyckeln har du kvar. Kommer skåpbilen för långt bort för länge slinker den undan, men Ronny kommer tillbaka efter resten av cyklarna: gå till grinden igen.
+- **P – Polis-Pia (sidouppdrag): Cyklarna hem.** En stund efter Cykelgömman: tre av cyklarna har ägare som vill ha dem i dag. Pia har ställt ut dem längs vägen – Veras orange cykel vid Birgers grind, Lasses gula vid Salong Saxen och Yasmins rosa vid Lasses verkstad. Uppdraget startar när du följer det. Cykla hem dem i vilken ordning du vill; ägarna väntar utanför Salong Saxen, Lasses Verkstad och Hörnlivs. Veras cykel har ingen sadel – den låg i badkaret – så du får stå upp och trampa. 400 kr per cykel och 300 kr extra när alla tre är hemma.
 - **V – Vera (sidouppdrag, inomhus): Salong Saxen.** En stund efter invigningen sms:ar Vera, som har frisersalongen i bottenvåningen på Skolgatan, bredvid Lås-Leif (orange markis och en randig frisörstolpe vid dörren). Hon har brutit handleden – någon hade snott sadeln från hennes cykel – och tre kunder väntar i soffan. Gå in genom dörren och prata med Vera.
   - Verktygen står på disken vid väggen: **SAX**, **RAKHYVEL** och tre färger (**BLÅ FÄRG**, **ROSA FÄRG**, **BLONDERING**). Ställ dig vid det du vill ha och ta det, gå sedan fram till stolen och **KLIPP**, **RAKA** eller **FÄRGA**.
   - Gör exakt som kunden säger (det står i uppdragsrutan). Det som är klippt är klippt, och rör du något de inte bett om går de därifrån arga – men en fel färg kan man färga över. Varje kund väntar bara 55 sekunder i stolen.
@@ -91,13 +97,14 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Bilar med ett mål (som Dahlgrens lastbil) tar kortaste vägen dit och väntar på sin tur som alla andra. Det går även folk på trottoarerna.
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Melker i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde. På badplatsen har folk badkläder: baddräkt eller badbyxor, bara armar och ben och bara fötter.
-- **Cyklarna:** Arnes gröna budcykel med lådan, stänkskärmar, pakethållare, kedjeskydd och krämvita däck, och Jontes röda racercykel med böjt styre och två stora hjul med svarta fälgar. Hjulen har runda däck, fälgar och korsade ekrar som stannar innanför fälgen, och framhjulet svänger med styret.
+- **Cyklarna:** Arnes gröna budcykel med lådan, stänkskärmar, pakethållare, kedjeskydd och krämvita däck, Jontes röda racercykel med böjt styre och två stora hjul med svarta fälgar, och damcyklarna med trådkorg på styret (Veras orange, Lasses gula och Yasmins rosa). Hjulen har runda däck, fälgar och korsade ekrar som stannar innanför fälgen, och framhjulet svänger med styret.
 - **Röster:** i samtalen pratar alla med en egen pipig "röst", ett litet pladder i talarens tonläge som är ungefär lika långt som repliken och går upp i slutet av en fråga. Repliker i pratbubblor hörs också när personen står nära dig.
 - **Träden:** lövträd med flera lövklumpar, grenar och rotben, björkar med vit näver och granar med lager av hängande grenar. Lövverket rör sig lite i vinden.
 - **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
 - **Lås & nyckel:** Leifs nyckelservice på Skolgatan, med en stor mässingsnyckel över dörren.
 - **Sjuby Konditori:** Arnes gamla kafé på torgets södra sida, med rosa markis och bullar i fönstren.
 - **Salong Saxen:** Veras frisersalong i bottenvåningen på Skolgatan, med schackrutigt golv, två frisörstolar, en disk med verktyg och en soffa för kunderna.
+- **Birgers hus:** tant Guns granne på Storgatan. Inne finns vardagsrum med blommig soffa, bokhylla och pelargoner i fönstret, kök, sovrum och badrum – och åtta stulna cyklar.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten, en biltvätt som lagar bucklor och en brygga i hamnen att promenera ut på.
 - **Norrholmen:** ön norr om stan, ungefär en tredjedel så stor som Sjuby. Där finns en kurvig kustväg runt ön, kolonilotter, Bullbilens bageri med mjölsilor, skåpbilar och en jättebulle på taket, en väderkvarn vars vingar snurrar, en fyr, en badplats och en liten båthamn.
 - **Badplatsen på Norrholmen:** en sandstrand med våt strandkant och skum där vågorna slår in, randiga parasoller med solstolar och badhanddukar, fyra färgglada badhytter, ett livräddartorn med livräddare och livboj, en glasskiosk med en jättestrut på taket, picknickbord, en volleybollplan, ett sandslott, en badflotte, bojar runt badområdet och strandråg och vresrosor längs kanten. Gå in under portalen med skylten NORRHOLMENS BADPLATS, ner längs strandpromenaden och ut på bryggan med hoppsvikten längst ut. Där finns folk som solar, spelar volleyboll, bygger sandslott och sitter och dinglar med benen längst ut på bryggan.
@@ -110,7 +117,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
 - Cykeltjuven Jonte cyklar efter ett eget nät av trottoarer och övergångsställen och planerar hela tiden en ny väg bort från dig. I stan kör Dahlgrens lastbil som den vanliga trafiken.
 - Norrholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över bron och runt ön.
-- Insidorna (höghuset, Hörnlivs, bagerikontoret och Salong Saxen) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
+- Insidorna (höghuset, Hörnlivs, bagerikontoret, Salong Saxen och Birgers hus) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 
@@ -142,6 +149,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Melkers cykel och Hemleverans |
 | `src/fest.js`, `sander.js` | Huvuduppdragets del 8, Bullfesten, och cykeltjuven Jonte på trottoarerna |
 | `src/barber.js`, `salon.js` | Sidouppdraget Salong Saxen och frisersalongens insida |
+| `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/beach.js` | Badplatsen på Norrholmen: parasoller, solstolar, badhytter, livräddartornet, glasskiosken, bryggan och resten |

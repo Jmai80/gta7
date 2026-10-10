@@ -147,8 +147,11 @@ export class View {
   // bike, and (v1.0) the red racing bike Jonte leaves behind at the party
   makeBike() {
     this.bikes = {};
-    for (const [type, opt] of [['bike', {}], ['racebike', { racer: true }]]) {
-      const P = buildBike(opt.racer ? null : this.atlas.uv.konditori, opt), G = P.geo; // (each bike has its own wheel sizes)
+    // (v1.2) the stolen town bikes going home: one model per colour (Vera's has no saddle)
+    const kinds = [['bike', 'bike', {}], ['racebike', 'racebike', { racer: true }]];
+    for (const paint of ['cityOrange', 'cityYellow', 'cityPink']) kinds.push([`citybike:${paint}`, 'citybike', { city: PAINTS[paint].hex, noSaddle: paint === 'cityOrange', paint }]);
+    for (const [key, type, opt] of kinds) {
+      const P = buildBike(opt.racer || opt.city ? null : this.atlas.uv.konditori, opt), G = P.geo; // (each bike has its own wheel sizes)
       const g = new THREE.Group();
       g.rotation.order = 'YXZ';
       const rear = new THREE.Mesh(P.rear, this.matStatic);
@@ -160,17 +163,17 @@ export class View {
       steer.add(new THREE.Mesh(P.steer, this.matStatic), front);
       g.add(new THREE.Mesh(P.frame, this.matStatic), rear, steer);
       // Arne's bike can carry a box full of buns (to the party, and away with Jonte)
-      const buns = opt.racer ? null : new THREE.Mesh(buildBikeBuns(), this.matStatic);
+      const buns = type === 'bike' ? new THREE.Mesh(buildBikeBuns(), this.matStatic) : null;
       if (buns) { buns.visible = false; g.add(buns); }
       g.visible = false;
       this.scene.add(g);
-      this.bikes[type] = { g, rear, front, steer, buns, geo: G };
+      this.bikes[key] = { g, rear, front, steer, buns, geo: G, type, paint: opt.paint || null };
     }
   }
 
   syncBike(game, dt) {
-    for (const [type, B] of Object.entries(this.bikes || {})) {
-      const v = game.vehicles.find((q) => q.type === type && !q.removed);
+    for (const B of Object.values(this.bikes || {})) {
+      const v = game.vehicles.find((q) => q.type === B.type && !q.removed && (!B.paint || q.paint === B.paint));
       B.g.visible = !!v && !this.indoor;
       if (!v) continue;
       // standing on its kickstand, leaning into turns while ridden (by you, or by Jonte), or lying on its side after a fall
@@ -880,7 +883,7 @@ export class CameraRig {
       const S = place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35);
       tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
       // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
-      const j = game.mission.active, talking = j && (j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong') ? 1 : 0;
+      const j = game.mission.active, talking = j && (((j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong')) || (j.id === 'cykelgomman' && j.stage === 'read')) ? 1 : 0;
       this.talkK = smooth(this.talkK || 0, talking, 3, dt);
       tz += this.talkK * this.shopK * (portrait ? 1.6 : 2.6);
     }

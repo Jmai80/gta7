@@ -196,7 +196,7 @@ function wire(g) {
     if (e.car && e.car.spec.bike) { // your bell – or Jonte's, quieter further off (v1.0)
       if (e.on) audio.bell(e.car === g.player.car ? 1 : Math.max(0, 1 - Math.hypot(e.car.x - g.player.x, e.car.z - g.player.z) / 45));
     }
-    else if (g.mission.upgrades.has('tuta')) { if (e.on) audio.melody(); } // Lasse's melody horn
+    else if (!e.other && g.mission.upgrades.has('tuta')) { if (e.on) audio.melody(); } // Lasse's melody horn (yours, not someone else's)
     else audio.horn(e.on);
   });
   g.on('pedHit', (e) => { audio.thud(0.8); if (e.car === g.player.car) g.stats.pedsKnocked++; });
@@ -426,14 +426,14 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250 };
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
+const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -546,6 +546,8 @@ function showEnd(s) {
     ['Bullfabriken', s.factoryFound ? 'Avslöjad!' : '–'],
     ['Salong Saxen', s.salonHappy != null ? `${s.salonHappy} av 3 nöjda` : '–'],
     ['Cykeltjuven Jonte', s.sanderCaught ? 'Fast!' : '–'],
+    ['Cykelgömman', s.hideoutFound ? 'Avslöjad!' : '–'],
+    ['Cyklar hem', s.bikesHome != null ? `${s.bikesHome} av 3` : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

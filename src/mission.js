@@ -27,6 +27,10 @@
 //   V  Vera (Salong Saxen): "Salong Saxen" – side quest indoors: cut, shave and dye for three customers (v1.0)
 //   G  Tant Gun:           "Bullfesten" – main quest, part 8: the party on the square, and Jonte the
 //                          bike thief rides off with Arne's bike and the buns (v1.0)
+//   P  Polis-Pia:          "Cykelgömman" – main quest, part 9: Jonte's hideout in Birger's house next
+//                          door to Gun, then Ronny's van full of bikes (v1.2)
+//   P  Polis-Pia:          "Cyklarna hem" – side quest: ride three of the bikes home to Vera, Lasse
+//                          and Yasmin (v1.2)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -36,6 +40,7 @@ import {
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
   KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START,
   JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST,
+  BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -54,6 +59,8 @@ import { BikeReturnJob, HomeDeliveryJob } from './errands.js';
 import { SalonJob } from './barber.js';
 import { LongJumpJob } from './longjump.js';
 import { FestJob, FestParty } from './fest.js';
+import { HideoutJob, gatePia } from './hideout.js';
+import { BikesHomeJob } from './bikeshome.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -185,14 +192,24 @@ export const QUESTS = [
     reward: `${fmt(FEST.reward)} kr och så många bullar du orkar`, where: 'Torget, framför Sjuby Konditori',
   },
   {
-    // what comes next: shown in the list, not playable yet
-    id: 'cykelgomman', letter: 'P', who: WHO.pia, title: 'Cykelgömman', color: '#3b6fd8', main: true, soon: true, after: 'bullfest',
+    // main quest, part 9 (v1.2): Jonte's hideout is in Birger's house, next door to tant Gun – then Ronny's van
+    id: 'cykelgomman', letter: 'P', who: WHO.pia, title: 'Cykelgömman', color: '#3b6fd8', x: BIRGER.gate.x, z: BIRGER.gate.z, r: BIRGER.gate.r, Job: HideoutJob, main: true,
+    after: 'bullfest', at: 15, needFoot: 'Kliv ur – Polis-Pia väntar vid grinden.',
+    text: 'Polis-Pia här. Gamla båthuset vid hamnen var tomt – Jonte ljög. Men tant Gun ringde: det skramlar i grannhuset om nätterna, och grannen Birger är på kryssning sedan i maj. Möt mig vid Birgers grind på Storgatan.',
+    reward: `${fmt(BIRGER.reward)} kr`, where: 'Birgers villa på Storgatan, granne med tant Gun',
+  },
+  {
+    // side quest (v1.2): three of the bikes go home – ride them to Vera, Lasse and Yasmin
+    id: 'cyklarhem', letter: 'P', who: WHO.pia, title: 'Cyklarna hem', color: '#3b6fd8', x: BIKES_HOME[0].bike.x, z: BIKES_HOME[0].bike.z, r: 2.0, Job: BikesHomeJob,
+    side: true, sms: true, after: 'cykelgomman', at: 20, startOnAccept: true,
+    text: 'Pia igen! Tre av Jontes cyklar har ägare som vill ha dem i dag: Vera, Lasse och Yasmin. Jag har ställt ut dem längs vägen – Veras vid Birgers grind, Lasses vid salongen och Yasmins vid verkstan. Cyklar du hem dem?',
+    reward: `${fmt(3 * BIKE_HOME_PAY + BIKES_HOME_BONUS)} kr`, where: 'Veras cykel vid Birgers grind, Storgatan',
   },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest']; // all eleven → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman']; // all twelve → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -217,6 +234,7 @@ export class Missions {
     this.keepT = 0;
     this.flag = new FlagQuest(this);
     this.party = new FestParty(this); // the bun party on the square (v1.0)
+    this.gatePia = null;            // (v1.2) Polis-Pia waiting at Birger's gate
     this.upgrades = new Set();      // what you have bought at Lasse's (v0.8): 'turbo', 'pansar', 'tuta'
     this.bestJump = 0;              // for Kim's long jump
     this.shopArmed = true;
@@ -340,7 +358,6 @@ export class Missions {
   questLine(id) {
     const q0 = BY_ID[id];
     if (q0 && q0.main && !q0.soon && !this.known.has(id) && !this.done.has(id)) return `${q0.who.replace(/ \(.*\)$/, '')} hör av sig om en stund`;
-    if (id === 'cykelgomman') return 'Fortsättning följer – Jontes gömda cyklar';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -363,6 +380,8 @@ export class Missions {
       case 'hemleverans': return 'Kör ut tre matkassar från Hörnlivs';
       case 'salong': return 'Hjälp Vera med tre kunder på Salong Saxen, Skolgatan';
       case 'bullfest': return 'Gå till Bullfesten på torget';
+      case 'cykelgomman': return 'Möt Polis-Pia vid Birgers grind på Storgatan';
+      case 'cyklarhem': return 'Cykla hem tre cyklar till Vera, Lasse och Yasmin';
     }
     return '';
   }
@@ -429,6 +448,7 @@ export class Missions {
     this.lasseStep();
     this.flag.update(dt);
     this.party.update(dt);
+    gatePia(this);
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
     if (this.active) this.choose = false;
@@ -553,11 +573,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.1.2! Jonte är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.1.2! Jonte är fast och Bullfesten räddad. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.2! Jontes cykelgömma är hittad och Ronny fast. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.2! Jontes cykelgömma är hittad och Ronny fast. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -609,6 +629,8 @@ export class Missions {
       case 'hemleverans': return { text: 'Hämta matkassarna (Y)', sub: 'Utanför Hörnlivs, Kungsgatan' };
       case 'salong': return { text: 'Gå till Salong Saxen (F)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Skolgatan, bredvid Lås-Leif' };
       case 'bullfest': return { text: 'Gå till Bullfesten (G)', sub: this.game.player.inCar ? 'Parkera och gå till torget' : 'Torget, framför Sjuby Konditori' };
+      case 'cykelgomman': return { text: 'Möt Polis-Pia (P)', sub: this.game.player.inCar ? 'Parkera och gå till grinden' : 'Birgers grind på Storgatan, granne med tant Gun' };
+      case 'cyklarhem': return { text: 'Cyklarna hem', sub: 'Veras cykel vid Birgers grind' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }
     return null;

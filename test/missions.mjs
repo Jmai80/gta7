@@ -1,8 +1,9 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
+import { HOUSE, SPOTS as HOUSE_SPOTS } from '../src/birger.js';
 import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
@@ -12,8 +13,10 @@ import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp } from '../src/rng.js';
+import { circleVs } from '../src/collide.js';
 
 const DT = 1 / 60;
+const WHO_PIA = 'Polis-Pia';
 const idle = { moveX: 0, moveY: 0, action: false, handbrake: false, horn: false, camYaw: Math.PI, analog: true };
 let fails = 0;
 const check = (ok, msg) => { console.log((ok ? '  ok   ' : '  FAIL ') + msg); if (!ok) fails++; };
@@ -312,8 +315,12 @@ function startRace(g) {
   g2.mission.done.add('bullfest');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eleven are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.1\.2/.test(d.text) && /Jonte/.test(d.text)), 'the last text: version 1.1.2, Jonte is caught');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while Jonte's hideout is left");
+  g2.mission.done.add('cykelgomman');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all twelve are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.2/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.2, Ronny is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1814,9 +1821,9 @@ function festStart(g) {
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Bullfesten'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /räddad/.test(d.text)), 'tant Gun: the party is saved');
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.1\.2/.test(d.text)), 'all eleven done: the end card (version 1.1.2)');
+  check(!ev.some(([n]) => n === 'endcard'), 'no end card yet: part 9 is left (v1.2)');
   const next = m.list().find((q) => q.id === 'cykelgomman');
-  check(next && next.state === 'soon' && /Jonte/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
+  check(next && (next.state === 'soon' || m.known.has('cykelgomman')), `next in the list: "Cykelgömman" (${next && next.line})`);
   // you walk off: Pia takes Jonte away, the bike goes home, the party winds down
   walkHere(g, -100, -60); run(g, 14);
   check(!g.peds.list.includes(S) && !g.peds.list.includes(P.pia), 'Pia and Jonte are gone');
@@ -1881,6 +1888,176 @@ function festStart(g) {
   g.step(DT, { ...idle, action: true }); run(g, 2);
   const again = g.spawnRedBike(-90, -38, 0);
   check(g.vehicles.filter((v) => v.type === 'racebike').length === 1 && again === g.redBike, 'there is only ever one');
+}
+
+// ---------- 27. main quest, part 9: "Cykelgömman" – Jonte's hideout in Birger's house (v1.2) ----------
+const UP_TO_FEST = [...UP_TO_FACTORY, 'bullfest'];
+function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
+  const g = new Game({ seed, ...opts });
+  g.mission.restore(livsSave(UP_TO_FEST));
+  return g;
+}
+{
+  console.log('Cykelgömman (huvuduppdrag del 9)');
+  const g = hideGame();
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'keys', 'endcard', 'horn']);
+  walkHere(g, -33.4, 4); run(g, 17);
+  check(m.known.has('cykelgomman') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cykelgomman' && /båthuset/.test(d.text) && /Birger/.test(d.text)), 'Polis-Pia texts: the boathouse was empty – Birger next door to tant Gun');
+  const pia = m.gatePia;
+  check(pia && Math.hypot(pia.x - BIRGER.pia.x, pia.z - BIRGER.pia.z) < 0.5 && pia.npc === 'pia', 'Polis-Pia waits by Birger\'s gate');
+  check(Math.abs(BIRGER.gate.x - GUN.x) < 45 && Math.abs(BIRGER.gate.z - GUN.z) < 6, 'the house next door to tant Gun\'s on Storgatan');
+  m.accept('cykelgomman'); run(g, 0.1);
+  check(m.targets.some((t) => t.kind === 'contact' && t.letter === 'P' && t.gps), 'the P marker by the gate, with the GPS');
+  // in a car: Pia wants you on foot
+  const car = g.addVehicle('sedan', 'blue', BIRGER.gate.x - 8, -42.5, Math.PI / 2);
+  enterCar(g, car);
+  parkAt(g, BIRGER.gate.x, BIRGER.gate.z - 0.4, Math.PI / 2); run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /Polis-Pia väntar/.test(d.text)), 'by car: "Kliv ur – Polis-Pia väntar vid grinden"');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, -62.5, -40); run(g, 0.3);
+  walkHere(g, BIRGER.gate.x, BIRGER.gate.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'cykelgomman' && job.stage === 'talk' && g.player.frozen, 'on foot into the P: the talk with Pia');
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelgomman').pop();
+  check(tk && tk[1].pages.some((pg) => /reservnyckel/.test(pg.text)) && tk[1].pages.some((pg) => /husrannsakan/.test(pg.text)), 'no warrant – but Gun has Birger\'s spare key');
+  m.talkDone('cykelgomman'); run(g, 0.3);
+  check(job.stage === 'door' && /Birgers hus/.test(m.objective) && m.targets.some((t) => t.kind === 'zone' && t.gps && Math.hypot(t.x - BIRGER.door.x, t.z - BIRGER.door.z) < 0.1), 'the key – then to the front door (GPS)');
+  walkHere(g, BIRGER.door.x, BIRGER.door.z); run(g, 1.5);
+  check(g.indoor && g.indoors.where === 'birger' && job.stage === 'search', 'in through the front door: Birger\'s house');
+  check(Math.hypot(g.player.x - HOUSE.spawn.x, g.player.z - HOUSE.spawn.z) < 0.5, 'just inside the door');
+  check(m.targets.filter((t) => t.kind === 'item').length === HOUSE_SPOTS.length && job.spots().length === HOUSE_SPOTS.length, `${HOUSE_SPOTS.length} places to search (arrows and the minimap)`);
+  // every spot can be reached on foot from the door (nothing blocks the way)
+  for (const s of HOUSE_SPOTS) {
+    const free = !g.world.query(s.x, s.z, 0.3).some((c) => c.h > g.player.y + 0.3 && circleVs(c, s.x, s.z, 0.3));
+    check(free, `the spot by the ${s.id} is free to stand on`);
+  }
+  // walk out half-way: no failure, Pia keeps the key with you
+  walkHere(g, HOUSE.door.x, HOUSE.door.z);
+  check(m.prompt === 'GÅ UT', 'GÅ UT by the front door');
+  press(g); run(g, 1.5);
+  check(!g.indoor && !m.active && m.isOpen('cykelgomman') && !ev.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'out half-way: the quest stays open, no failure');
+  run(g, 1);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO_PIA && /Nyckeln har du kvar/.test(d.text)), 'Pia: you still have the key');
+  walkHere(g, -62.5, -40); run(g, 4);
+  walkHere(g, BIRGER.gate.x, BIRGER.gate.z); run(g, 1);
+  const job2 = m.active;
+  const tk2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelgomman').pop();
+  check(job2 && job2.stage === 'talk' && tk2[1].pages.length === 1, 'the second time: one line from Pia');
+  m.talkDone('cykelgomman'); run(g, 0.3);
+  walkHere(g, BIRGER.door.x, BIRGER.door.z); run(g, 1.5);
+  // search: first the jokes, then the two things Pia needs
+  const order = ['kyl', 'sang', 'soffa', 'garderob', 'badkar'];
+  for (const id of order) {
+    const s = HOUSE_SPOTS.find((q) => q.id === id);
+    walkHere(g, s.x, s.z);
+    check(m.prompt === 'LETA', `LETA by the ${id}`);
+    press(g); run(g, 1);
+    const r = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelgomman').pop();
+    check(r && r[1].pages[0].text.startsWith(s.text.slice(0, 20)) && g.player.frozen, `searching the ${id}: "${s.text.slice(0, 34)}…"`);
+    m.talkDone('cykelgomman'); run(g, 0.3);
+    if (id === 'soffa') check(job2.found.has('bok') && ev.some(([n, d]) => n === 'keys' && d.item === 'bok'), 'under the sofa cushion: Jonte\'s notebook');
+    if (id !== 'badkar') { walkHere(g, s.x, s.z); check(m.prompt !== 'LETA', `nothing more to find at the ${id}`); }
+  }
+  check(job2.found.has('sadel') && job2.stage === 'honk', 'in the bathtub: Vera\'s saddle – both found');
+  run(g, 1.5);
+  check(ev.some(([n, d]) => n === 'horn' && d.other) && ev.some(([n, d]) => n === 'toast' && /tutar/.test(d.text)) && /Gå ut/.test(m.objective), 'a horn outside: "Gå ut!"');
+  walkHere(g, HOUSE.door.x, HOUSE.door.z); press(g); run(g, 1.5);
+  const van = job2.van;
+  check(!g.indoor && job2.stage === 'chase' && van && van.paint === 'ronny' && van.type === 'van', 'outside: Ronny\'s brown van at the kerb');
+  check(m.targets.some((t) => t.kind === 'racer' && t.car === van && t.gps), 'the red arrow and the GPS on the van');
+  run(g, 4);
+  check(Math.hypot(van.x - BIRGER.van.x, van.z - BIRGER.van.z) > 15 && van.speed > 6, `it drives off (${van.speed.toFixed(1)} m/s)`);
+  check(/Stoppa skåpbilen/.test(m.objective) && /Motorn 100 %/.test(m.sub), `objective: stop the van (${m.sub})`);
+  // ramming it: the engine gives up, Ronny gets out
+  van.damage(70); run(g, 0.3);
+  check(job2.stage === 'stopped' && job2.ronny && van.driver === null, 'rammed enough: the engine dies, Ronny gets out');
+  walkHere(g, job2.ronny.x + 1.6, job2.ronny.z); run(g, 1);
+  check(job2.stage === 'final', 'walk up to him: the talk');
+  const ck = ev.filter(([n, d]) => n === 'talk' && d.id === 'cykelgomman').pop();
+  check(ck && ck[1].pages.some((pg) => pg.who === 'Ronny' && /ger mig/.test(pg.text)) && ck[1].pages.some((pg) => pg.who === 'Polis-Pia' && /kusin/.test(pg.text)) && ck[1].pages.some((pg) => /Elva cyklar/.test(pg.text)), 'Ronny gives up – Jonte\'s cousin – eleven bikes');
+  m.talkFx('cykelgomman', 'pia');
+  check(Math.hypot(m.gatePia.x - job2.ronny.x, m.gatePia.z - job2.ronny.z) < 2.5, 'Polis-Pia is there');
+  const money0 = g.money;
+  m.talkDone('cykelgomman'); run(g, 0.5);
+  check(m.done.has('cykelgomman') && g.money - money0 === BIRGER.reward && g.stats.hideoutFound, `main quest part 9 done: ${BIRGER.reward} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Cykelgömman'), 'HUVUDUPPDRAG KLART');
+  run(g, 15);
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.2/.test(d.text)), 'all twelve done: the end card (version 1.2)');
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /kylskåp/.test(d.text)), 'tant Gun texts');
+  run(g, 10);
+  check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem'), 'a while later: Pia offers "Cyklarna hem"');
+  walkHere(g, 40, 100); run(g, 10);
+  check(!g.peds.list.includes(job2.ronny) && !g.peds.list.includes(pia) && van.removed, 'out of sight: Pia takes Ronny and the van away');
+}
+{
+  console.log('Cykelgömman: skåpbilen kommer undan');
+  const g = hideGame(9);
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'toast']);
+  m.offer('cykelgomman'); m.accept('cykelgomman');
+  m.flags.hideTalked = true; m.flags.hideFound = true; // (as if you had searched the house already)
+  walkHere(g, BIRGER.gate.x, BIRGER.gate.z); run(g, 0.5);
+  const job = m.active;
+  check(job && job.stage === 'chase' && job.van && ev.some(([n, d]) => n === 'toast' && /Ronny är tillbaka/.test(d.text)), 'after a failure: no talk, Ronny\'s van is back at the gate');
+  let t = 0;
+  while (t < 60 && m.active === job) { g.step(DT, idle); t += DT; }
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /undan/.test(d.sub)), `standing still: the van gets away (after ${t.toFixed(0)} s)`);
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO_PIA && /kom undan/.test(d.text)) && m.isOpen('cykelgomman'), 'Pia: he will be back – try again');
+  // with the town's traffic about, the van drives off along the roads on several seeds
+  for (const seed of [7, 13, 21]) {
+    const g2 = hideGame(seed, {});
+    const m2 = g2.mission;
+    m2.offer('cykelgomman'); m2.accept('cykelgomman');
+    m2.flags.hideTalked = true; m2.flags.hideFound = true;
+    walkHere(g2, BIRGER.gate.x, BIRGER.gate.z); run(g2, 0.5);
+    const j = m2.active, v = j.van;
+    let far = 0;
+    for (let k = 0; k < 12; k++) { const p = g2.player; p.x = v.x - Math.sin(v.h) * 25; p.z = v.z - Math.cos(v.h) * 25; run(g2, 1); far = Math.max(far, Math.hypot(v.x - BIRGER.van.x, v.z - BIRGER.van.z)); }
+    check(m2.active === j && far > 60, `seed ${seed}, with traffic: the van gets away down the road (${far.toFixed(0)} m)`);
+  }
+}
+
+// ---------- 28. side quest: "Cyklarna hem" – three bikes to their owners (v1.2) ----------
+{
+  console.log('Cyklarna hem (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave([...UP_TO_FEST, 'cykelgomman']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk']);
+  walkHere(g, -33.4, 4); run(g, 24);
+  check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem' && /Vera/.test(d.text)), 'Polis-Pia texts: three bikes have owners who want them today');
+  m.accept('cyklarhem'); run(g, 1.5);
+  const job = m.active;
+  check(job && job.id === 'cyklarhem' && g.vehicles.filter((v) => v.type === 'citybike').length === 3, 'it starts at once: three town bikes put out along the way');
+  check(BIKES_HOME.every((b) => { const v = job.bikes[b.id]; return v.paint === b.paint && Math.hypot(v.x - b.bike.x, v.z - b.bike.z) < 0.5; }), 'Vera\'s by Birger\'s gate, Lasse\'s by the salon, Yasmin\'s by the garage');
+  check(m.targets.filter((t) => t.kind === 'car').length === 3 && m.targets.filter((t) => t.kind === 'car' && t.gps).length === 1, 'arrows over all three, the GPS to the nearest');
+  check(Object.values(job.owners).every((o) => g.peds.list.includes(o)), 'Vera, Lasse and Yasmin wait outside');
+  // Yasmin's first (any order), then Vera's (no saddle), then Lasse's
+  let paid = g.money;
+  for (const id of ['yasmin', 'vera', 'lasse']) {
+    const E = BIKES_HOME.find((b) => b.id === id), b = job.bikes[id];
+    walkHere(g, b.x - 0.7, b.z); press(g);
+    check(g.player.inCar && g.player.car === b, `on ${id}'s bike`);
+    if (id === 'vera') check(ev.some(([n, d]) => n === 'toast' && /Ingen sadel/.test(d.text)), 'Vera\'s bike has no saddle: you pedal standing up');
+    check(m.targets.some((t) => t.kind === 'zone' && t.gps && t.x === E.zone.x), `the GPS to ${id}`);
+    run(g, 1.5, { ...idle, moveY: 1 });
+    check(b.speed > 3, `you can ride it (${b.speed.toFixed(1)} m/s)`);
+    b.x = E.zone.x; b.z = E.zone.z; b.vx = b.vz = 0; run(g, 1);
+    check(job.stage === 'talk' && !g.player.inCar, `at ${id}'s: off the bike and a talk`);
+    const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'cyklarhem').pop();
+    check(tk && tk[1].pages[0].who === { vera: 'Vera', lasse: 'Lasse', yasmin: 'Yasmin' }[id], `${tk && tk[1].pages[0].who}: "${tk && tk[1].pages[0].text.slice(0, 30)}…"`);
+    m.talkDone('cyklarhem'); run(g, 0.5);
+    check(!job.left.includes(id) && b.locked, `${id}'s bike is home (and stays with its owner)`);
+  }
+  paid = g.money - paid;
+  check(m.done.has('cyklarhem') && paid === 3 * BIKE_HOME_PAY + BIKES_HOME_BONUS, `all three home: ${paid} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Cyklarna hem'), 'SIDOUPPDRAG KLART');
+  run(g, 7);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO_PIA && /Birger/.test(d.text)), 'Pia: Birger comes home on Saturday');
+  walkHere(g, 100, -100); run(g, 10);
+  check(!g.vehicles.some((v) => v.type === 'citybike') && !Object.values(job.owners).some((o) => g.peds.list.includes(o)), 'out of sight: the owners go in with their bikes');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

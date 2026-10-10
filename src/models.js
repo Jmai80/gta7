@@ -568,7 +568,64 @@ function bikeWheel(r, o) {
 }
 
 export function buildBike(signUV, opt = {}) {
-  return opt.racer ? buildRacer() : buildArnes(signUV);
+  return opt.racer ? buildRacer() : opt.city ? buildCity(opt.city, opt) : buildArnes(signUV);
+}
+
+// (v1.2) a town bike – one of the bikes Jonte stole: a step-through frame in the owner's colour,
+// mudguards, a rack, a wire basket on the handlebars, two big wheels. Vera's has lost its saddle.
+export const CITY_GEO = { ...BIKE_GEO, frontR: 0.34, pivot: [0, 0.72, 0.52] };
+function buildCity(FRAME, opt = {}) {
+  const DARK = 0x2d3238, STEEL = 0xb7bcc2;
+  const tube = (B, a, b, r = 0.022, c = FRAME) => B.tube(a, b, r, r, 6, c, M.PAINT);
+  const G = CITY_GEO;
+  const F = new GeomBuilder();
+  const R = [0, G.rearR, G.rearZ], BB = [0, 0.3, -0.06], S = [0, 0.84, -0.27], Hb = [0, 0.66, 0.53], Ht = [0, 0.92, 0.47];
+  for (const sx of [-0.07, 0.07]) { tube(F, [sx, R[1], R[2]], [sx * 0.64, BB[1], BB[2]], 0.015); tube(F, [sx, R[1], R[2]], [sx * 0.5, 0.8, -0.26], 0.014); }
+  tube(F, BB, S); tube(F, BB, Hb, 0.028); tube(F, [0, 0.34, 0.02], [0, 0.8, 0.49], 0.024); tube(F, Hb, Ht, 0.03);
+  tube(F, S, [0, G.saddle[1] - 0.02, G.saddle[2]], 0.014, 0x9aa0a6);                                // seat post
+  if (!opt.noSaddle) {
+    F.box(-0.085, G.saddle[1] - 0.03, G.saddle[2] - 0.13, 0.085, G.saddle[1] + 0.035, G.saddle[2] + 0.12, opt.saddle ?? 0x2a1f18, M.PLAIN, { skipBottom: false });
+    for (const sx of [-0.05, 0.05]) F.cyl(sx, G.saddle[2] - 0.08, G.saddle[1] - 0.08, G.saddle[1] - 0.03, 0.016, 0.016, 8, 0x9aa0a6, M.CHROME, true);
+  }
+  F.hcyl(0, BB[1], BB[2], 0.09, 0.034, 'x', 10, DARK);
+  F.rbox(-0.072, BB[1] - 0.05, (R[2] + BB[2]) / 2, 0.026, 0.1, BB[2] - R[2], 0, DARK, M.PLAIN, Math.atan2(R[1] - BB[1], BB[2] - R[2])); // chain guard
+  F.hcyl(-0.072, BB[1], BB[2], 0.026, 0.09, 'x', 14, DARK);
+  for (const s of [-1, 1]) {
+    const ex = BB[1] + s * 0.08, ez = BB[2] - s * 0.15, x = -s * 0.105, xa = x - s * 0.006, xb = x - s * 0.085;
+    tube(F, [x, BB[1], BB[2]], [x, ex, ez], 0.012, STEEL);
+    F.box(Math.min(xa, xb), ex - 0.014, ez - 0.045, Math.max(xa, xb), ex + 0.014, ez + 0.045, 0x1d1f22, M.PLAIN, { skipBottom: false });
+  }
+  bandX(F, R[1], R[2], G.rearR + 0.022, G.rearR + 0.03, 0.08, FRAME, M.PAINT, -1.85, 0.42, 36);
+  F.box(-0.14, 0.745, -0.84, 0.14, 0.762, -0.4, DARK, M.PLAIN, { skipBottom: false });               // the rack
+  tube(F, [0, 0.755, -0.42], [0, 0.8, -0.26], 0.011, DARK);
+  for (const sx of [-0.11, 0.11]) tube(F, [sx, 0.745, -0.81], [sx * 0.6, R[1] + 0.02, R[2] - 0.01], 0.008, DARK);
+  F.box(-0.045, 0.7, -0.855, 0.045, 0.74, -0.84, 0xd41a14, M.PLAIN, { skipBottom: false });
+  // the steering: fork, mudguard, an upright handlebar, the bell and the wire basket in front
+  const T = new GeomBuilder();
+  const [px, py, pz] = G.pivot, rel = (q) => [q[0] - px, q[1] - py, q[2] - pz];
+  for (const sx of [-0.055, 0.055]) tube(T, rel([sx, 0.66, 0.53]), rel([sx, G.frontR, G.frontZ]), 0.015);
+  T.box(-0.07, 0.64 - py, 0.5 - pz, 0.07, 0.68 - py, 0.56 - pz, FRAME, M.PAINT);
+  bandX(T, G.frontR - py, G.frontZ - pz, G.frontR + 0.022, G.frontR + 0.03, 0.074, FRAME, M.PAINT, -0.7, 1.45, 30);
+  tube(T, rel([0, 0.92, 0.47]), rel([0, 1.05, 0.42]), 0.017, 0x9aa0a6);
+  tube(T, rel([-0.3, 1.05, 0.34]), rel([0.3, 1.05, 0.34]), 0.016, 0x9aa0a6);
+  tube(T, rel([-0.04, 1.05, 0.42]), rel([0.04, 1.05, 0.34]), 0.014, 0x9aa0a6);
+  for (const sx of [-1, 1]) tube(T, rel([sx * 0.3, 1.05, 0.34]), rel([sx * 0.39, 1.045, 0.3]), 0.022, 0x5a3a26);
+  T.cyl(0.21 - px, 0.34 - pz, 1.06 - py, 1.1 - py, 0.032, 0.03, 8, 0xd9dde2, M.CHROME, true);
+  const b0 = [-0.17, 0.82, 0.58], b1 = [0.17, 1.04, 0.9];
+  for (const yy of [b0[1], b0[1] + 0.11, b1[1]]) {
+    tube(T, rel([b0[0], yy, b0[2]]), rel([b1[0], yy, b0[2]]), 0.007, STEEL); tube(T, rel([b0[0], yy, b1[2]]), rel([b1[0], yy, b1[2]]), 0.007, STEEL);
+    tube(T, rel([b0[0], yy, b0[2]]), rel([b0[0], yy, b1[2]]), 0.007, STEEL); tube(T, rel([b1[0], yy, b0[2]]), rel([b1[0], yy, b1[2]]), 0.007, STEEL);
+  }
+  for (const [bx, bz] of [[b0[0], b0[2]], [b1[0], b0[2]], [b0[0], b1[2]], [b1[0], b1[2]], [0, b1[2]], [0, b0[2]]]) tube(T, rel([bx, b0[1], bz]), rel([bx, b1[1], bz]), 0.007, STEEL);
+  T.box(b0[0], b0[1] - 0.006 - py, b0[2] - pz, b1[0], b0[1] + 0.004 - py, b1[2] - pz, STEEL, M.CHROME, { skipBottom: false });
+  for (const sx of [-0.12, 0.12]) tube(T, rel([sx, b0[1], 0.62]), rel([sx * 0.4, G.frontR + 0.02, G.frontZ]), 0.007, DARK);
+  T.hcyl(0, 0.93 - py, 0.92 - pz, 0.05, 0.045, 'z', 8, 0xd9dde2, M.CHROME);                         // the lamp on the basket
+  T.hcyl(0, 0.93 - py, 0.946 - pz, 0.004, 0.036, 'z', 8, 0xfff2d2, M.LIGHT);
+  const wheel = { tyre: 0.026, wall: 0xd9cdb0, rim: 0xc9ccd0, rimDepth: 0.016, hub: 0xb0b5ba, flange: 0.03, spokes: 20, cross: 0.42, spokeR: 0.004, spoke: STEEL };
+  return {
+    geo: G, frame: F.toGeometry(THREE), steer: T.toGeometry(THREE),
+    rear: bikeWheel(G.rearR, { ...wheel, axle: 0.075 }), front: bikeWheel(G.frontR, { ...wheel, axle: 0.065 }),
+  };
 }
 
 // Arne's old delivery bike from Sjuby Konditori: a green step-through frame, mudguards, a rack, a
