@@ -1,7 +1,7 @@
 # GTA 7 – överlämning till nästa chatt
 
 Senast uppdaterad: 10 oktober 2026, efter version 1.1 (tre nya namn: Melker, Jonte och Vera; nya cykelhjul vars ekrar stannar innanför däcket; Norrholmens badplats byggd på nytt).
-Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten.
+Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten. Börja med `CLAUDE.md` i repots rot (den läses in automatiskt av Claude Code och har snabbstarten, reglerna, leveranschecklistan och den öppna buggen); här finns detaljerna.
 
 ---
 
@@ -135,7 +135,7 @@ Förslag på fortsättning som användaren kan vilja ha: "Cykelgömman" (Polis-P
 ## 7. Tester
 
 - `npm test` = `test/sim.mjs` (fysik, trafik), `test/extras.mjs` (stunthopp, biltvätt, badplatsen: sakerna, folket på torra land, gå ut på bryggan och in i räckena), `test/missions.mjs` (alla uppdrag, 28 sektioner; hela `npm test` har ~538 kontroller). De flesta uppdragstester kör `traffic: 0, peds: 0` – sektion 24 kör Bullfabriken med full trafik på fem frön. Varje nytt uppdrag har fått en egen sektion; följ samma stil (`check(ok, 'beskrivning')`, hjälpare `run`, `walkHere`, `press`, `enterCar`, `parkAt`, `walkTo`, `livsSave(doneList)`, `intoOffice`, `crackSafe`, `jumpFrom`, `festGame`, `festStart`). Sektion 25 är Salong Saxen, 26 Bullfesten (och Jontes racercykel).
-- Webbläsartester i `test/browser/` (Python + Playwright; Chromium finns förinstallerat i molnsandlådan, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). `cdn.py` serverar three.js från `node_modules` eftersom sandlådan saknar CDN-åtkomst. Genomgångar per version: `v02.py` … `v11.py`, `v061.py`, `v091.py`; `people.py` (människor på rad), `bike.py`, `isle.py`, `visuals.py`, `perfcmp.py` m.fl. Skripten har hårdkodade sökvägar till `/home/claude/gta7`. Kör alltid `phone` (390×844) och gärna `land` (844×390) och kolla att `logs []` (inga konsolfel).
+- Webbläsartester i `test/browser/` (Python + Playwright; Chromium finns förinstallerat i molnsandlådan, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). `cdn.py` serverar three.js från `node_modules` eftersom sandlådan saknar CDN-åtkomst. Genomgångar per version: `v02.py` … `v11.py`, `v061.py`, `v091.py`; `people.py` (människor på rad), `bike.py`, `isle.py`, `visuals.py`, `perfcmp.py` m.fl. Kör skripten från repots rot (skärmdumparna hamnar i `test/shots/`). `cdn.py` hittar `node_modules` relativt sin egen plats, och `GTA7_CHROME=<sökväg>` låter Playwright starta en annan Chrome (se CLAUDE.md, avsnitt 3). Kör alltid `phone` (390×844) och gärna `land` (844×390) och kolla att `logs []` (inga konsolfel).
 - Användbart i sidan: `window.__gta.game` (allt simuleringstillstånd), `window.__gta.view.rig`, `openOffer(id)`, `nextTalk()`, `openShop()`.
 
 ## 8. Fallgropar vi gått på
