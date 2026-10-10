@@ -286,6 +286,7 @@ kbd {
 .btn.mid { width: 70px; height: 70px; font-size: 14px; }
 .btn.small { width: 56px; height: 56px; font-size: 12px; }
 #bAction { background: var(--gold); color: #17130a; border-color: rgba(0,0,0,0.25); grid-column: 2; grid-row: 2; }
+#bAction.long { font-size: 13px; letter-spacing: 0.03em; line-height: 1.05; padding: 0 6px; }
 #bHand { grid-column: 2; grid-row: 2; }
 #bHorn { grid-column: 1; grid-row: 2; }
 #bExit { grid-column: 2; grid-row: 1; }
@@ -390,7 +391,8 @@ kbd {
   .panel .rows .primary { grid-column: 1 / -1; }
   .panel .row { padding: 10px 12px; }
   .panel .help { display: none; }
-  #endcard .panel dl { grid-template-columns: 1fr auto 1fr auto; }
+  #endcard .panel dl { grid-template-columns: 1fr auto 1fr auto; gap: 3px 14px; font-size: 13px; margin: 2px 0 4px; }
+  #endcard .panel > .note:last-child { display: none; }
   #log .note { display: none; }
   .panel .rows.two { display: flex; }
   .qlist { display: grid; grid-template-columns: 1fr 1fr; }
@@ -465,6 +467,10 @@ kbd {
 <link rel="modulepreload" href="src/jar.js">
 <link rel="modulepreload" href="src/factory.js">
 <link rel="modulepreload" href="src/errands.js">
+<link rel="modulepreload" href="src/salon.js">
+<link rel="modulepreload" href="src/barber.js">
+<link rel="modulepreload" href="src/fest.js">
+<link rel="modulepreload" href="src/sander.js">
 <link rel="modulepreload" href="src/indoors.js">
 <link rel="modulepreload" href="src/interior.js">
 <link rel="modulepreload" href="src/trees.js">
@@ -486,7 +492,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 0.9.1 · Sjuby och Norrholmen</div>
+    <div class="ver">Version 1.0 · Sjuby och Norrholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -607,9 +613,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 0.9.1 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.0 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Syltburken är tillbaka, Dahlgrens bullfabrik är stoppad och Bullbilarna kör ut riktiga Sjubybullar från Sjuby Konditori. Det var version 0.9.1. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, cykeltjuven Sander är fast och Bullfesten räddad – Arnes cykel är tillbaka. Det var version 1.0. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

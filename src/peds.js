@@ -92,7 +92,15 @@ export class Ped {
     this.r = 0.3;
     this.sayT = 0;
     this.fleeFrom = null;
+    this.fleeSpeed = 5.2;
     this.idleT = game.rng.range(8, 30);
+  }
+
+  // (v1.0) walk along a few points (into a hair salon's chair, out of the door…), then stand there
+  goto(points, speed = 1.3, faceH = null) {
+    this.route = points.map(([x, z]) => ({ x, z })); this.ri = 0;
+    this.gotoSpeed = speed; this.faceH = faceH; this.arrived = false;
+    this.state = 'goto'; this.stateT = 0;
   }
 
   setLoop(L, t, dir) {
@@ -127,7 +135,7 @@ export class Ped {
     const g = this.game, b = this.body;
     this.stateT += dt;
     this.sayT -= dt;
-    if (this.state === 'lounge') { // on a sofa (Samuel): someone else poses the body
+    if (this.state === 'lounge' || this.state === 'ride') { // on a sofa (Samuel), on a bike (Sander): someone else poses the body
       b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
       return;
     }
@@ -158,6 +166,15 @@ export class Ped {
       case 'idle':
         if (this.stateT > (this.idleFor || 3)) { this.state = 'walk'; this.idleT = g.rng.range(10, 35); if (g.rng.chance(0.3)) this.dir = -this.dir; }
         break;
+      case 'goto': {
+        const R = this.route, q = R && R[this.ri];
+        if (!q) { this.state = 'stand'; this.arrived = true; if (this.faceH != null) this.standH = this.faceH; break; }
+        const dx = q.x - this.x, dz = q.z - this.z, d = Math.hypot(dx, dz);
+        if (d < 0.18) { this.ri++; break; }
+        const v = Math.min(this.gotoSpeed, d * 4);
+        tvx = (dx / d) * v; tvz = (dz / d) * v;
+        break;
+      }
       case 'stand':
         // a customer waiting for a pizza: faces the street and waves when the pizza car comes
         if (this.standH != null) this.h = smoothAngle(this.h, this.standH, 5, dt);
@@ -169,7 +186,7 @@ export class Ped {
         let dx = this.x - f.x, dz = this.z - f.z;
         const d = Math.hypot(dx, dz) || 1;
         dx /= d; dz /= d;
-        tvx = dx * 5.2; tvz = dz * 5.2;
+        tvx = dx * this.fleeSpeed; tvz = dz * this.fleeSpeed;
         if (this.stateT > this.fleeFor) {
           this.state = 'walk'; this.stateT = 0;
           this.pickNearestLoop();
@@ -275,7 +292,7 @@ export class Peds {
     const list = this.list;
     // dodge danger: fast cars heading at us
     for (const p of list) {
-      if (p.state === 'down' || p.state === 'getup' || p.state === 'dodge' || p.state === 'lounge') continue;
+      if (p.state === 'down' || p.state === 'getup' || p.state === 'dodge' || p.state === 'lounge' || p.state === 'ride') continue;
       for (const v of g.vehicles) {
         const sp = v.speed;
         if (sp < 6.5 || v.y > 1.5) continue;
@@ -297,10 +314,10 @@ export class Peds {
     // ped-ped separation
     for (let i = 0; i < list.length; i++) {
       const a = list[i];
-      if (a.state === 'down') continue;
+      if (a.state === 'down' || a.state === 'ride') continue;
       for (let j = i + 1; j < list.length; j++) {
         const b = list[j];
-        if (b.state === 'down') continue;
+        if (b.state === 'down' || b.state === 'ride') continue;
         const dx = a.x - b.x, dz = a.z - b.z;
         const d2 = dx * dx + dz * dz;
         if (d2 < 0.36 && d2 > 1e-6) {
@@ -316,6 +333,7 @@ export class Peds {
 
   carContact(p) {
     const g = this.game;
+    if (p.state === 'ride') return; // on a bike: the bike does the colliding
     for (const v of g.vehicles) {
       if (Math.abs(v.y - p.y) > 1.6) continue;
       const dx0 = p.x - v.x, dz0 = p.z - v.z;

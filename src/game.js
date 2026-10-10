@@ -12,7 +12,7 @@ import { PIZZA_CAR } from './config.js';
 import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14, bike: 2 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -63,7 +63,7 @@ export class Game {
     if (this.count(type) >= CAPACITY[type]) return null;
     const v = new Vehicle(type, paint, x, z, h);
     v.y = this.world.groundHeight(x, z);
-    v.driverLook = type === 'bike' ? null : makeLook(this.rng); // (no draw for the bike: the traffic stays as it was)
+    v.driverLook = CAR_TYPES[type].bike ? null : makeLook(this.rng); // (no draw for a bike: the traffic stays as it was)
     this.vehicles.push(v);
     return v;
   }
@@ -131,6 +131,16 @@ export class Game {
     v.parkedSpot = true;
     v.locked = !!locked;
     this.bike = v;
+    return v;
+  }
+
+  // (v1.0) the red racing bike Sander leaves behind at the party: there is only ever one
+  spawnRedBike(x, z, h) {
+    if (this.redBike && !this.redBike.removed) this.removeVehicle(this.redBike);
+    const v = this.addVehicle('racebike', 'racer', x, z, h);
+    if (!v) return null;
+    v.parkedSpot = true;
+    this.redBike = v;
     return v;
   }
 
@@ -221,7 +231,7 @@ export class Game {
     v.damage(dmg);
     if (isPlayer && imp > 3.5) this.stats.crashes++;
     if (!secondary || isPlayer) {
-      this.emit('crash', { x: x ?? v.x, z: z ?? v.z, impact: imp, player: isPlayer || (other && this.player.car === other), car: v });
+      this.emit('crash', { x: x ?? v.x, z: z ?? v.z, impact: imp, player: isPlayer || (other && this.player.car === other), car: v, other: other || null });
     }
     // AI drivers complain when the player hits them
     if (other && this.player.car === other && v.driver === 'ai' && imp > 3) {

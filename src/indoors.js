@@ -2,16 +2,18 @@
 // (interior.js, shop.js) are built out at sea: going in is a fade to black (and a lift ride in the
 // tower), and the town is hidden while you are in there. Samuel lives up in the tower; he is only
 // around while you are inside. `where` says which place you are in: 'tower', 'shop' or 'office'
-// (Bullbilen's bakery office, v0.7).
-import { TOWER_DOOR, LIVS_DOOR, OFFICE_DOOR } from './config.js';
+// (Bullbilen's bakery office, v0.7) or 'salon' (Fia's hair salon on Skolgatan, v1.0).
+import { TOWER_DOOR, LIVS_DOOR, OFFICE_DOOR, SALON_DOOR } from './config.js';
 import { INT } from './interior.js';
 import { SHOP } from './shop.js';
 import { OFFICE } from './office.js';
+import { SALON } from './salon.js';
 
 // the places with a door you walk through (the tower has its lift): inside, and where you come out
 export const PLACES = {
   shop: { inside: SHOP, out: { x: LIVS_DOOR.x - 1.1, z: LIVS_DOOR.z - 0.6, h: Math.PI } },     // Hörnlivs → Kungsgatan, facing north
   office: { inside: OFFICE, out: { x: OFFICE_DOOR.x - 1.0, z: OFFICE_DOOR.z + 0.4, h: Math.PI } }, // the bakery office → out by the west wall
+  salon: { inside: SALON, out: { x: SALON_DOOR.x + 1.0, z: SALON_DOOR.z + 0.3, h: 0 } },           // Salong Saxen → Skolgatan, facing south (v1.0)
 };
 import { Samuel } from './samuel.js';
 

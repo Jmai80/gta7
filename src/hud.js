@@ -6,13 +6,14 @@ import { PAINTS } from './vehicle.js';
 import { INT, WALLS, FURN } from './interior.js';
 import { SHOP, SHOP_WALLS, SHOP_FURN } from './shop.js';
 import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
+import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
 import { SEE } from './samuel.js';
 import { ISLE } from './island.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -178,6 +179,14 @@ export class HUD {
     for (const [x0, z0, x1, z1] of OFFICE_FURN.slice(0, -1)) g.fillRect(X(O.x0 + x0), Zs(O.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of OFFICE_WALLS) g.fillRect(X(O.x0 + x0), Zs(O.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    // Salong Saxen (v1.0): the chequered floor, the chairs, the counter with the tools, the sofa
+    const Sa = SALON.room;
+    rect(Sa.x0, Sa.z0, Sa.x1, Sa.z1, '#7a7472');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of SALON_FURN.slice(0, -1)) g.fillRect(X(Sa.x0 + x0), Zs(Sa.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of SALON_WALLS) g.fillRect(X(Sa.x0 + x0), Zs(Sa.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#9fb7c4'; g.fillRect(X(Sa.x0 + 1.2), Zs(Sa.z0 + 7), 1.2 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -232,6 +241,12 @@ export class HUD {
         g.fillStyle = '#ff3b2f'; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u;
         g.beginPath(); g.arc(x, z, 4.6 * u, 0, Math.PI * 2); g.fill(); g.stroke();
       }
+    }
+    if (job && job.id === 'salong' && job.fia) { // Salong Saxen (v1.0): Fia on her stool, whoever is in the chair
+      const dot = (x0, z0, c) => { const [x, z] = P(x0, z0); g.fillStyle = c; g.strokeStyle = '#ffffff'; g.lineWidth = 1.5 * u; g.beginPath(); g.arc(x, z, 4.4 * u, 0, Math.PI * 2); g.fill(); g.stroke(); };
+      dot(job.fia.x, job.fia.z, '#e8833a');
+      const c = job.current;
+      if (c && c.ped) dot(c.ped.x, c.ped.z, c.def.color);
     }
     if (job && job.id === 'livs' && job.yasmin) { // Yasmin at the till
       const [x, z] = P(job.yasmin.x, job.yasmin.z);
@@ -516,8 +531,11 @@ export class HUD {
       this.actionLabel = label;
       this.el.bAction.textContent = label;
       this.el.bAction.hidden = !label;
+      this.el.bAction.classList.toggle('long', label.length > 7); // (BLONDERING, RAKHYVEL… in the hair salon)
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar' };
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Samuels nycklar',
+        SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
+        KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

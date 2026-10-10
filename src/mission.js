@@ -24,6 +24,9 @@
 //   N  Lås-Leif:           "Samuels nya nycklar" – side quest after the eggs: new keys out to Samuel (v0.7)
 //   Y  Yasmin (Hörnlivs):  "Fyrvaktarens kasse" – side quest once the north bridge is open: take a
 //                          bag of groceries (and twelve eggs) from the shop to the lighthouse (v0.6.1)
+//   F  Fia (Salong Saxen): "Salong Saxen" – side quest indoors: cut, shave and dye for three customers (v1.0)
+//   G  Tant Gun:           "Bullfesten" – main quest, part 8: the party on the square, and Sander the
+//                          bike thief rides off with Arne's bike and the buns (v1.0)
 // The pizza job, the race, Samuel's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -32,7 +35,7 @@ import {
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
   KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD,
-  JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY,
+  JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -48,6 +51,8 @@ import { ITEMS, applyUpgrades, clearUpgrades } from './upgrades.js';
 import { JarJob } from './jar.js';
 import { FactoryJob } from './factory.js';
 import { BikeReturnJob, HomeDeliveryJob } from './errands.js';
+import { SalonJob } from './barber.js';
+import { FestJob, FestParty } from './fest.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -163,14 +168,28 @@ export const QUESTS = [
     reward: `${fmt(FACTORY_REWARD)} kr`, where: 'Bageriets infart på Norrholmen – sedan efter lastbilen',
   },
   {
-    // what comes after the main adventure: shown in the list, not playable yet
-    id: 'bullfest', letter: 'G', who: WHO.gun, title: 'Bullfesten', color: '#c58be0', main: true, soon: true, after: 'fabriken',
+    // side quest (v1.0), indoors: Fia's hair salon on Skolgatan – three customers, scissors, razor and dye
+    id: 'salong', letter: 'F', who: WHO.fia, title: 'Salong Saxen', color: '#e8833a', x: SALON_DOOR.x, z: SALON_DOOR.z, r: SALON_DOOR.r, Job: SalonJob,
+    side: true, sms: true, after: 'konditori', at: 30, needFoot: 'Kliv ur – in i salongen går man till fots.',
+    text: 'Hej, det är Fia på Salong Saxen på Skolgatan! Jag har brutit handleden och har tre kunder bokade i dag. Kan du hålla i saxen åt mig? Jag säger hur man gör.',
+    reward: `upp till ${fmt(SALON_PAY.base + 3 * (SALON_PAY.happy + SALON_PAY.tip))} kr`, where: 'Salong Saxen, Skolgatan (bredvid Lås-Leif)',
+  },
+  {
+    // main quest, part 8 (v1.0): the bun party on the square – and Sander the bike thief
+    id: 'bullfest', letter: 'G', who: WHO.gun, title: 'Bullfesten', color: '#c58be0', x: FEST.mark.x, z: FEST.mark.z, r: FEST.mark.r, Job: FestJob, main: true,
+    after: 'fabriken', at: 15, needFoot: 'Kliv ur – festen är till fots.',
+    text: 'Bullfesten är i dag, lilla vän! Hela Sjuby samlas på torget, och Arnes gamla cykel får köra ut bullarna. Kom och fira – det är din fest också.',
+    reward: `${fmt(FEST.reward)} kr och så många bullar du orkar`, where: 'Torget, framför Sjuby Konditori',
+  },
+  {
+    // what comes next: shown in the list, not playable yet
+    id: 'cykelgomman', letter: 'P', who: WHO.pia, title: 'Cykelgömman', color: '#3b6fd8', main: true, soon: true, after: 'bullfest',
   },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken']; // all ten → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest']; // all eleven → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -194,6 +213,7 @@ export class Missions {
     this.washT = 0; this.inWash = false;
     this.keepT = 0;
     this.flag = new FlagQuest(this);
+    this.party = new FestParty(this); // the bun party on the square (v1.0)
     this.upgrades = new Set();      // what you have bought at Lasse's (v0.8): 'turbo', 'pansar', 'tuta'
     this.bestJump = 0;              // for Kim's long jump
     this.shopArmed = true;
@@ -317,7 +337,7 @@ export class Missions {
   questLine(id) {
     const q0 = BY_ID[id];
     if (q0 && q0.main && !q0.soon && !this.known.has(id) && !this.done.has(id)) return `${q0.who.replace(/ \(.*\)$/, '')} hör av sig om en stund`;
-    if (id === 'bullfest') return 'Fortsättning följer – hela Sjuby ska fira';
+    if (id === 'cykelgomman') return 'Fortsättning följer – Sanders gömda cyklar';
     if (this.done.has(id)) return 'Klart';
     if (this.active && this.active.id === id) return this.objective || 'Pågår';
     switch (id) {
@@ -338,6 +358,8 @@ export class Missions {
       case 'fabriken': return 'Följ Dahlgrens lastbil från bageriet';
       case 'cykelretur': return 'Cykla tillbaka cykeln till Samuel vid höghuset';
       case 'hemleverans': return 'Kör ut tre matkassar från Hörnlivs';
+      case 'salong': return 'Hjälp Fia med tre kunder på Salong Saxen, Skolgatan';
+      case 'bullfest': return 'Gå till Bullfesten på torget';
     }
     return '';
   }
@@ -403,6 +425,7 @@ export class Missions {
     else this.checkJobs(dt);
     this.lasseStep();
     this.flag.update(dt);
+    this.party.update(dt);
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
     if (this.active) this.choose = false;
@@ -527,11 +550,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 0.9.1! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 0.9.1! Dahlgren är fast och Bullbilarna kör ut riktiga Sjubybullar. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.0! Sander är fast och Bullfesten räddad. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.0! Sander är fast och Bullfesten räddad. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -581,6 +604,8 @@ export class Missions {
       case 'fabriken': return { text: 'Bullfabriken', sub: 'Bageriets infart på Norrholmen' };
       case 'cykelretur': return { text: 'Samuels cykel', sub: 'Vid tant Guns grind' };
       case 'hemleverans': return { text: 'Hämta matkassarna (Y)', sub: 'Utanför Hörnlivs, Kungsgatan' };
+      case 'salong': return { text: 'Gå till Salong Saxen (F)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Skolgatan, bredvid Lås-Leif' };
+      case 'bullfest': return { text: 'Gå till Bullfesten (G)', sub: this.game.player.inCar ? 'Parkera och gå till torget' : 'Torget, framför Sjuby Konditori' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }
     return null;

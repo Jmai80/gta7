@@ -507,8 +507,10 @@ export function buildHumanGeometry() {
 // wheels (each around its hub) and the steering (fork + handlebar, around the head tube).
 // Local axes: +z forward, y up. Sizes in metres; the rear hub is at z = -0.6, the front one at 0.66.
 export const BIKE = BIKE_GEO;
-export function buildBike(signUV) {
-  const FRAME = 0x23452f, CREAMBOX = 0xf1e3c4, BROWN = 0x7a4a26;
+// (v1.0) { racer: true }: the red racing bike Sander leaves behind – same wheels and saddle, no cargo box
+export function buildBike(signUV, opt = {}) {
+  const racer = !!opt.racer;
+  const FRAME = racer ? 0xc4191b : 0x23452f, CREAMBOX = 0xf1e3c4, BROWN = 0x7a4a26;
   const tube = (B, a, b, r = 0.024, c = FRAME) => B.tube(a, b, r, r, 6, c, M.PAINT);
   // frame
   const F = new GeomBuilder();
@@ -516,11 +518,19 @@ export function buildBike(signUV) {
   for (const sx of [-0.05, 0.05]) { tube(F, [sx, R[1], R[2]], [sx * 0.6, BB[1], BB[2]], 0.018); tube(F, [sx, R[1], R[2]], [sx * 0.5, 0.82, -0.26], 0.016); }
   tube(F, BB, S); tube(F, BB, Hb, 0.03); tube(F, [0, 0.66, -0.2], [0, 0.82, 0.46], 0.026); tube(F, Hb, Ht, 0.032);
   tube(F, S, [0, BIKE.saddle[1] - 0.02, BIKE.saddle[2]], 0.015, 0x9aa0a6);                         // seat post
-  F.box(-0.08, BIKE.saddle[1] - 0.03, BIKE.saddle[2] - 0.14, 0.08, BIKE.saddle[1] + 0.03, BIKE.saddle[2] + 0.12, 0x3b2a1e, M.PLAIN, { skipBottom: false });
-  F.box(-0.15, 0.7, -0.84, 0.15, 0.72, -0.4, 0x2d3238, M.PLAIN, { skipBottom: false });             // rear rack
-  tube(F, [0, 0.71, -0.42], [0, 0.82, -0.26], 0.012, 0x2d3238);
+  F.box(racer ? -0.06 : -0.08, BIKE.saddle[1] - 0.03, BIKE.saddle[2] - 0.14, racer ? 0.06 : 0.08, BIKE.saddle[1] + 0.03, BIKE.saddle[2] + 0.12, racer ? 0x1d1f22 : 0x3b2a1e, M.PLAIN, { skipBottom: false });
   F.box(-0.04, BB[1] - 0.06, BB[2] - 0.08, 0.04, BB[1] + 0.06, BB[2] + 0.08, 0x2d3238);             // chain case
   F.box(-0.035, 0.26, -0.62, 0.035, 0.36, BB[2] - 0.02, 0x1d1f22);
+  if (racer) {
+    // white stripes on the tubes, a bottle in its cage, a chainring
+    tube(F, [0, 0.38, 0.08], [0, 0.428, 0.164], 0.034, 0xf2efe6);
+    tube(F, [0, 0.692, -0.207], [0, 0.737, -0.224], 0.03, 0xf2efe6);
+    F.cyl(0, 0.13, 0.42, 0.6, 0.032, 0.032, 8, 0x3a8ad8, M.PLAIN, true);
+    F.hcyl(0.05, BB[1], BB[2], 0.012, 0.11, 'x', 12, 0x9aa0a6, M.CHROME);
+    return finishBike(F, opt, true);
+  }
+  F.box(-0.15, 0.7, -0.84, 0.15, 0.72, -0.4, 0x2d3238, M.PLAIN, { skipBottom: false });             // rear rack
+  tube(F, [0, 0.71, -0.42], [0, 0.82, -0.26], 0.012, 0x2d3238);
   // the cargo box on its rack over the front wheel
   const bx0 = -0.29, bx1 = 0.29, by0 = 0.56, by1 = 0.92, bz0 = 0.5, bz1 = 1.04;
   F.box(bx0, by0, bz0, bx1, by1, bz1, CREAMBOX, M.BOARDS, { skipBottom: false });
@@ -536,11 +546,18 @@ export function buildBike(signUV) {
     decal(F, [bx0 - 0.004, 0.74, (bz0 + bz1) / 2], [-1, 0, 0], 0.46, 0.21, WHITE, M.SIGN, uv);
     decal(F, [0, 0.74, bz1 + 0.004], [0, 0, 1], 0.46, 0.21, WHITE, M.SIGN, uv);
   }
+  return finishBike(F, opt, false);
+}
+
+// the wheels and the steering of a bike (Arne's: upright handlebar and a bell; the racer: drop bars)
+function finishBike(F, opt, racer) {
+  const tube = (B, a, b, r = 0.024, c = racer ? 0xc4191b : 0x23452f) => B.tube(a, b, r, r, 6, c, M.PAINT);
   // wheels: tyre, a lighter disc for the spokes, the hub
   const wheel = (r) => {
     const W = new GeomBuilder();
-    W.hcyl(0, 0, 0, 0.05, r, 'x', 16, TIRE);
-    W.hcyl(0, 0, 0, 0.056, r - 0.05, 'x', 16, 0xb7bcc2, M.CHROME);
+    const tw = racer ? 0.03 : 0.05;
+    W.hcyl(0, 0, 0, tw, r, 'x', 16, TIRE);
+    W.hcyl(0, 0, 0, tw + 0.006, r - (racer ? 0.035 : 0.05), 'x', 16, racer ? 0x2a2b2f : 0xb7bcc2, M.CHROME);
     W.hcyl(0, 0, 0, 0.12, 0.045, 'x', 8, 0x6f7479, M.CHROME);
     for (let i = 0; i < 4; i++) W.rbox(0, 0, 0, 0.064, (r - 0.05) * 2, 0.014, 0, 0x5d6268, 0, (i / 4) * Math.PI); // spokes you can see turn
     return W.toGeometry(THREE);
@@ -550,10 +567,21 @@ export function buildBike(signUV) {
   const [px, py, pz] = BIKE.pivot, rel = (q) => [q[0] - px, q[1] - py, q[2] - pz];
   for (const sx of [-0.055, 0.055]) tube(T, rel([sx, 0.62, 0.5]), rel([sx, BIKE.frontR, BIKE.frontZ]), 0.016);
   tube(T, rel([0, 0.92, 0.44]), rel([0, 1.04, 0.4]), 0.018, 0x9aa0a6);
-  tube(T, rel([-0.31, 1.04, 0.33]), rel([0.31, 1.04, 0.33]), 0.016, 0x9aa0a6);
-  tube(T, rel([-0.04, 1.04, 0.4]), rel([0.04, 1.04, 0.33]), 0.014, 0x9aa0a6);
-  for (const sx of [-1, 1]) tube(T, rel([sx * 0.31, 1.04, 0.33]), rel([sx * 0.4, 1.035, 0.3]), 0.022, 0x1d1f22);
-  T.cyl(0.22 - px, 0.33 - pz, 1.05 - py, 1.09 - py, 0.032, 0.03, 8, 0xd9dde2, M.CHROME, true); // the bell
+  if (racer) {
+    // drop handlebars: across, then forward and curling down, with black tape
+    tube(T, rel([-0.2, 1.0, 0.42]), rel([0.2, 1.0, 0.42]), 0.016, 0x1d1f22);
+    tube(T, rel([0, 1.04, 0.4]), rel([0, 1.0, 0.42]), 0.016, 0x9aa0a6);
+    for (const sx of [-1, 1]) {
+      tube(T, rel([sx * 0.2, 1.0, 0.42]), rel([sx * 0.21, 0.98, 0.52]), 0.016, 0x1d1f22);
+      tube(T, rel([sx * 0.21, 0.98, 0.52]), rel([sx * 0.21, 0.86, 0.52]), 0.016, 0x1d1f22);
+      tube(T, rel([sx * 0.21, 0.86, 0.52]), rel([sx * 0.21, 0.84, 0.44]), 0.016, 0x1d1f22);
+    }
+  } else {
+    tube(T, rel([-0.31, 1.04, 0.33]), rel([0.31, 1.04, 0.33]), 0.016, 0x9aa0a6);
+    tube(T, rel([-0.04, 1.04, 0.4]), rel([0.04, 1.04, 0.33]), 0.014, 0x9aa0a6);
+    for (const sx of [-1, 1]) tube(T, rel([sx * 0.31, 1.04, 0.33]), rel([sx * 0.4, 1.035, 0.3]), 0.022, 0x1d1f22);
+    T.cyl(0.22 - px, 0.33 - pz, 1.05 - py, 1.09 - py, 0.032, 0.03, 8, 0xd9dde2, M.CHROME, true); // the bell
+  }
   return { frame: F.toGeometry(THREE), rear: wheel(BIKE.rearR), front: wheel(BIKE.frontR), steer: T.toGeometry(THREE) };
 }
 
@@ -576,6 +604,108 @@ export function buildKeys() {
   B.box(0.1, 0, -0.022, 0.13, 0.008, 0.022, 0xd8b45a, M.CHROME, { skipBottom: false });
   B.box(-0.03, 0, 0.03, 0.0, 0.008, 0.12, 0xc9ccd0, M.CHROME, { skipBottom: false });
   B.box(-0.06, 0, -0.1, -0.01, 0.022, -0.035, 0xd2342c, M.PLAIN, { skipBottom: false });
+  return B.toGeometry(THREE);
+}
+
+// ------------------------------------------------------------------ the bun party (v1.0)
+// A Sjubybulle: a round knot of dough, a darker swirl on top and a few grains of pearl sugar
+function bunInto(B, x, y, z, s = 1, k = 0) {
+  const tone = [0xb5722e, 0xa9692a, 0xbd7b34][k % 3];
+  B.cyl(x, z, y, y + 0.035 * s, 0.062 * s, 0.056 * s, 8, tone, M.PLAIN);
+  B.cyl(x, z, y + 0.035 * s, y + 0.058 * s, 0.056 * s, 0.026 * s, 8, 0x9a5a22, M.PLAIN, true);
+  for (let i = 0; i < 3; i++) {
+    const a = k * 1.7 + i * 2.1, r = 0.028 * s;
+    B.box(x + Math.cos(a) * r - 0.007, y + 0.05 * s, z + Math.sin(a) * r - 0.007, x + Math.cos(a) * r + 0.007, y + 0.062 * s, z + Math.sin(a) * r + 0.007, 0xf6f3ea);
+  }
+}
+
+// a string of little flags that sags between two points, the flags hanging under it (both faces)
+function buntingInto(B, a, b, sag, cols) {
+  const n = Math.max(4, Math.round(Math.hypot(b[0] - a[0], b[2] - a[2]) / 0.45));
+  const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - sag * 4 * t * (1 - t), a[2] + (b[2] - a[2]) * t];
+  const dx = b[0] - a[0], dz = b[2] - a[2], l = Math.hypot(dx, dz) || 1, ux = dx / l, uz = dz / l, nx = -uz, nz = ux;
+  for (let i = 0; i < n; i++) {
+    const p0 = at(i / n), p1 = at((i + 1) / n);
+    B.tube(p0, p1, 0.008, 0.008, 4, 0x2a2b2f, M.PLAIN);
+    if (i === 0) continue;
+    const c = at(i / n), w = 0.15, c0 = cols[i % cols.length];
+    const l0 = [c[0] - ux * w, c[1], c[2] - uz * w], r0 = [c[0] + ux * w, c[1], c[2] + uz * w], tip = [c[0], c[1] - 0.34, c[2]];
+    B.tri(l0, r0, tip, c0, M.PLAIN, undefined, undefined, undefined, [nx, 0, nz]);
+    B.tri(r0, l0, tip, c0, M.PLAIN, undefined, undefined, undefined, [-nx, 0, -nz]);
+  }
+}
+
+// the party on the square in front of Sjuby Konditori: the long table with a tablecloth (BULLFESTEN
+// on its front), plates of buns, a bun wreath, coffee, balloons and flags strung to the trees.
+// World coordinates; render.js shows it while the party is up.
+export function buildFest(T, groundY, bannerUV) {
+  const B = new GeomBuilder();
+  const y0 = groundY, top = y0 + 0.76;
+  const PINK = 0xe58fa8, CLOTH = 0xf6f3ea;
+  // the trestle table under a white cloth with a pink hem
+  for (const x of [T.x0 + 0.2, (T.x0 + T.x1) / 2, T.x1 - 0.2]) for (const z of [T.z0 + 0.12, T.z1 - 0.12]) B.box(x - 0.03, y0, z - 0.03, x + 0.03, top, z + 0.03, 0x8a6440);
+  B.box(T.x0 - 0.06, top, T.z0 - 0.06, T.x1 + 0.06, top + 0.03, T.z1 + 0.06, CLOTH, M.PLAIN, { skipBottom: false });
+  B.box(T.x0 - 0.07, top - 0.45, T.z0 - 0.07, T.x1 + 0.07, top + 0.03, T.z0 - 0.05, CLOTH);            // the cloth hangs down in front…
+  B.box(T.x0 - 0.07, top - 0.45, T.z1 + 0.05, T.x1 + 0.07, top + 0.03, T.z1 + 0.07, CLOTH);            // … and behind
+  B.box(T.x0 - 0.075, top - 0.45, T.z0 - 0.075, T.x1 + 0.075, top - 0.37, T.z0 - 0.065, PINK);
+  B.box(T.x0 - 0.075, top - 0.45, T.z1 + 0.065, T.x1 + 0.075, top - 0.37, T.z1 + 0.075, PINK);
+  for (const x of [T.x0 - 0.07, T.x1 + 0.05]) B.box(x, top - 0.45, T.z0 - 0.05, x + 0.02, top + 0.03, T.z1 + 0.05, CLOTH);
+  if (bannerUV) {
+    const [u0, v0, u1, v1] = bannerUV, uv = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]];
+    decal(B, [(T.x0 + T.x1) / 2, top - 0.17, T.z0 - 0.08], [0, 0, -1], 3.4, 0.34, WHITE, M.SIGN, uv);
+  }
+  // plates of buns along the table, a bun wreath on a stand in the middle, coffee pots and cups
+  const zc = (T.z0 + T.z1) / 2, mid = (T.x0 + T.x1) / 2;
+  let k = 0;
+  for (let i = 0; i < 6; i++) {
+    const x = T.x0 + 0.65 + i * ((T.x1 - T.x0 - 1.3) / 5);
+    if (Math.abs(x - mid) < 0.5) continue;
+    B.cyl(x, zc, top + 0.03, top + 0.045, 0.2, 0.21, 12, 0xffffff, M.PLAIN, true);
+    bunInto(B, x, top + 0.045, zc, 1, k++);
+    for (let j = 0; j < 6; j++) bunInto(B, x + Math.cos(j * 1.047) * 0.115, top + 0.045, zc + Math.sin(j * 1.047) * 0.115, 0.92, k++);
+  }
+  B.cyl(mid, zc, top + 0.03, top + 0.16, 0.05, 0.05, 8, 0xd9dde2, M.CHROME);
+  B.cyl(mid, zc, top + 0.16, top + 0.175, 0.3, 0.3, 14, 0xffffff, M.PLAIN, true);
+  for (let j = 0; j < 11; j++) bunInto(B, mid + Math.cos(j * 0.571) * 0.21, top + 0.175, zc + Math.sin(j * 0.571) * 0.21, 1.05, k++);
+  for (const x of [T.x0 + 1.25, T.x1 - 1.25]) {
+    B.cyl(x, zc - 0.28, top + 0.03, top + 0.25, 0.075, 0.065, 10, 0xd9dde2, M.CHROME);
+    B.cyl(x, zc - 0.28, top + 0.25, top + 0.29, 0.065, 0.02, 10, 0x2a2b2f, M.PLAIN, true);
+    B.tube([x + 0.06, top + 0.12, zc - 0.28], [x + 0.14, top + 0.2, zc - 0.28], 0.012, 0.008, 5, 0xd9dde2, M.CHROME);
+    for (const dx of [-0.35, 0.3, 0.6]) B.cyl(x + dx, zc + 0.25, top + 0.03, top + 0.09, 0.035, 0.04, 8, 0xffffff, M.PLAIN, true);
+  }
+  // balloons at the two front corners
+  const balloon = (x, z, h, c) => {
+    B.tube([x, top + 0.03, z], [x, h - 0.2, z], 0.004, 0.004, 3, 0xdddddd, M.PLAIN);
+    B.ico(x, h, z, 0.2, 1.18, c, M.PLAIN, x * 3 + z);
+  };
+  for (const [x, s] of [[T.x0, -1], [T.x1, 1]]) {
+    balloon(x + s * 0.02, T.z0 + 0.05, y0 + 2.3, PINK);
+    balloon(x + s * 0.18, T.z0 + 0.2, y0 + 2.05, 0xe5b923);
+    balloon(x - s * 0.1, T.z0 + 0.25, y0 + 2.5, 0x86acd1);
+  }
+  // flags from the konditori's awning out to the two trees, and across the square between them,
+  // with a BULLFESTEN banner hanging from the middle of that one (high enough to walk under)
+  const cols = [PINK, 0xf6ead2, 0xe5b923, 0x86acd1];
+  const awW = [-11.4, y0 + 2.72, 17.6], awE = [-0.6, y0 + 2.72, 17.6], trW = [-11, y0 + 3.2, 5], trE = [6, y0 + 3.2, 4];
+  buntingInto(B, awW, trW, 0.45, cols);
+  buntingInto(B, awE, trE, 0.45, cols);
+  buntingInto(B, trW, trE, 0.3, cols);
+  if (bannerUV) {
+    const [u0, v0, u1, v1] = bannerUV, uv = [[u0, v0], [u0, v1], [u1, v1], [u1, v0]];
+    const cx = (trW[0] + trE[0]) / 2, cz = (trW[2] + trE[2]) / 2, yb = y0 + 3.2 - 0.3 - 0.62;
+    B.box(cx - 2.05, yb - 0.4, cz - 0.02, cx + 2.05, yb + 0.4, cz + 0.02, PINK);
+    decal(B, [cx, yb, cz - 0.025], [0, 0, -1], 3.9, 0.7, WHITE, M.SIGN, uv);
+    decal(B, [cx, yb, cz + 0.025], [0, 0, 1], 3.9, 0.7, WHITE, M.SIGN, uv);
+    for (const sx of [-1, 1]) B.tube([cx + sx * 2.0, yb + 0.4, cz], [cx + sx * 2.2, yb + 0.66, cz], 0.006, 0.006, 3, 0x2a2b2f, M.PLAIN);
+  }
+  return B.toGeometry(THREE);
+}
+
+// buns heaped in the cargo box of Arne's bike (bike-local: the box is x ±0.29, y up to 0.92, z 0.5–1.04)
+export function buildBikeBuns() {
+  const B = new GeomBuilder();
+  let k = 0;
+  for (const [x, z, y] of [[-0.17, 0.62, 0.88], [0, 0.62, 0.89], [0.17, 0.62, 0.88], [-0.17, 0.78, 0.9], [0, 0.78, 0.92], [0.17, 0.78, 0.9], [-0.17, 0.93, 0.88], [0, 0.93, 0.89], [0.17, 0.93, 0.88], [-0.08, 0.7, 0.95], [0.09, 0.86, 0.96]]) bunInto(B, x, y, z, 1.25, k++);
   return B.toGeometry(THREE);
 }
 

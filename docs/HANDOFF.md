@@ -1,6 +1,6 @@
 # GTA 7 – överlämning till nästa chatt
 
-Senast uppdaterad: 10 oktober 2026, efter version 0.9.1 (lastbilen i Bullfabriken fastnar inte längre i stadstrafiken).
+Senast uppdaterad: 10 oktober 2026, efter version 1.0 (sidouppdraget Salong Saxen inomhus och huvuduppdragets del 8, Bullfesten med cykeltjuven Sander).
 Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten.
 
 ---
@@ -11,7 +11,7 @@ Det här dokumentet är skrivet så att en ny Claude-session (eller en människa
 2. Installera three.js lokalt för testerna (finns inte i package.json, används bara av webbläsartesterna): `npm install --no-save three@0.184.0`.
 3. Kör Node-testerna: `npm test` → ska sluta med `All checks passed`, `All extras passed`, `All mission checks passed`.
 4. Starta en lokal server för webbläsartester: `python3 -m http.server 8765 --directory /home/claude/gta7` (servern dör ibland – starta om med `(nohup python3 -m http.server 8765 --directory /home/claude/gta7 > /dev/null 2>&1 &)`).
-5. Webbläsargenomgångar (Playwright, Python, SwiftShader): `python3 test/browser/v09.py phone` (eller `land`, `desk`), och `v091.py` för lastbilen i stadstrafiken. Skärmdumpar hamnar i `test/shots/` (gitignorerad).
+5. Webbläsargenomgångar (Playwright, Python, SwiftShader): `python3 test/browser/v09.py phone` (eller `land`, `desk`), `v091.py` för lastbilen i stadstrafiken och `v10.py` för Salong Saxen och Bullfesten. Skärmdumpar hamnar i `test/shots/` (gitignorerad).
 6. Läs README.md (svenska, spelarperspektiv) och den här filen (utvecklarperspektiv).
 
 ## 2. Om användaren och arbetssättet
@@ -45,32 +45,35 @@ GTA 7 ("Grovt Tillgrepp av Automobil") – ett mobilanpassat GTA-skämtspel i we
 | `island.js` | Norrholmen: kust, vägar (`ROADS.loop/spine`), kolonilotter, bageri med gård, kvarn, fyr, Ingvars stuga, kontorets fönster/dörr |
 | `collide.js` | Uniform kollisionsgrid (min −440, storlek 700 m, cell 8), `groundHeight` (golv → ramper → väg 0 → land CURB_H 0.15 → vatten −3), `raycast` |
 | `game.js` | `Game`: fordon, trafik, folk, spelare, `step()`, `onCrash`, `spawnBike`, norra brons grind, `racers` (datorförare) |
-| `vehicle.js` | Fordonsfysik (sedan, van, bike). `boost/top/armor` för Lasses uppgraderingar |
+| `vehicle.js` | Fordonsfysik (sedan, van, bike, `racebike` = Sanders röda racercykel, v1.0). `boost/top/armor` för Lasses uppgraderingar. Kod som gäller cyklar ska fråga `spec.bike`, inte `type === 'bike'` |
 | `traffic.js`, `peds.js`, `player.js`, `input.js` | Trafik-AI, fotgängare (`Ped`, `makeLook`, `dressUp`, `STYLE_BITS`), spelaren (gå, köra, cykla, kliv ur), input |
 | `route.js` | `routePoints(G, ax, az, bx, bz)` – kortaste väg på GPS-grafen (stad + bro + ö) |
 | `mission.js` | `Missions`: uppdragslista `QUESTS`, timeline (sms-erbjudanden), `checkJobs` (markörer startar jobb), spara/ladda, mål-rutan, kartmål, Lasses butik, Kims långhopp, slutskärm |
-| `indoors.js` + `interior.js` + `shop.js` + `office.js` | Interiörer byggda ute till havs (x≈200, z≈200…240) som visas i stället för stan: höghusets plan 7 (`INT`), Hörnlivs (`SHOP`), bagerikontoret (`OFFICE`). `Indoors.enter(done, where)` med `where` = `'tower' | 'shop' | 'office'`, `PLACES`-tabell för dörrar/utgångar, prompt `HISS` / `GÅ UT` |
-| Uppdragsfiler | `pizza.js`, `race.js`/`racer.js`, `flag.js`, `samuel.js`, `handover.js`, `bikejob.js` (inkl. återanvändbar `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `upgrades.js`, `jar.js`, `factory.js`, `errands.js` |
+| `indoors.js` + `interior.js` + `shop.js` + `office.js` + `salon.js` | Interiörer byggda ute till havs (x≈200, z≈200…240) som visas i stället för stan: höghusets plan 7 (`INT`), Hörnlivs (`SHOP`), bagerikontoret (`OFFICE`), Salong Saxen (`SALON`, v1.0). `Indoors.enter(done, where)` med `where` = `'tower' | 'shop' | 'office' | 'salon'`, `PLACES`-tabell för dörrar/utgångar, prompt `HISS` / `GÅ UT`. En ny interiör: layout + `…Into(B)` i egen fil, in i `interiorLayout/interiorInto`, `PLACES`, minikartans planritning i hud.js (`IN_ALL` + ritning) |
+| Uppdragsfiler | `pizza.js`, `race.js`/`racer.js`, `flag.js`, `samuel.js`, `handover.js`, `bikejob.js` (inkl. återanvändbar `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `upgrades.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` (Salong Saxen), `fest.js` (Bullfesten: `FestParty` + `FestJob`), `sander.js` (`Rider` + trottoarnätet) |
 
 ### Rendering (three.js)
 | Fil | Ansvar |
 |---|---|
-| `render.js` | `View`: scen, instansierade bilar/människor, markörer, pilar, kamerariggen `CameraRig` (inkl. `camFocus` med `near`-läge för samtal, inomhuskamera som lutar mot rummets mitt via `PLACES`), interiörens rörliga delar (Samuels dörr, nycklar, Yasmins kasse, kassaskåpsdörren, receptet) |
+| `render.js` | `View`: scen, instansierade bilar/människor, markörer, pilar, kamerariggen `CameraRig` (inkl. `camFocus` med `near`-läge för samtal, inomhuskamera som lutar mot rummets mitt via `PLACES`), interiörens rörliga delar (Samuels dörr, nycklar, Yasmins kasse, kassaskåpsdörren, receptet), cyklarna (`this.bikes` per typ, med bullar i Arnes låda när `bike.buns`), festen på torget (`this.fest`, syns när `game.festUp`), `bunBurst(x, z)` |
 | `shaders.js` | En `ShaderMaterial` för allt (`worldMaterial(U, kind)`), materialkoder per vertex, människornas ben/poser i vertexshadern |
 | `worldmesh.js` | Slår ihop layoutens prims till chunk-meshar (80 m) + interiörmesh |
-| `models.js` | Bilar, cykel, **människomodellen** `buildHumanGeometry()` + `STYLE`-bitar, nycklar, telefon, flagga |
-| `textures.js` | Skuggkarta (bakas vid start, 1024×2048 över x −160..160, z −480..160), skyltatlas 1024×2048 (varnar `sign atlas full` i konsolen om den tar slut) |
+| `models.js` | Bilar, cyklar (`buildBike(signUV, { racer })`), **människomodellen** `buildHumanGeometry()` + `STYLE`-bitar, nycklar, telefon, flagga, `buildFest()` (långbordet, bullar, flaggspel, ballonger, BULLFESTEN-banderoller), `buildBikeBuns()` |
+| `textures.js` | Skuggkarta (bakas vid start, 1024×2048 över x −160..160, z −480..160), skyltatlas 1024×2048 (varnar `sign atlas full` i konsolen om den tar slut). Skyltar som bara används av rörliga modeller läggs direkt i `makeSignAtlas` (`bullbil`, `pizzatak`, Arnes `konditori`-låda, `festbanner`). Obs: Arnes låda heter också `konditori` och skriver över fasadskylten – därför står det "sedan 1952" på båda |
 | `hud.js` | Minikarta (inkl. inomhusplanritning för alla interiörer), GPS-linje, blips, sms, toasts, hints, knappetiketter |
-| `audio.js` | Allt ljud: motor, tuta, cykelklocka, `melody()` (Lasses melodituta), `voice(pitch, text, vol)` (samtalsröster), `talkOpen()` |
+| `audio.js` | Allt ljud: motor, tuta, cykelklocka, `melody()` (Lasses melodituta), `voice(pitch, text, vol)` (samtalsröster), `talkOpen()`, `bell(k)` (k = lägre på avstånd), `salon(kind)` (pick, cut, shave, dye, happy, angry) |
 | `trees.js`, `geom.js` | Träd, `GeomBuilder` |
 
 ### Viktiga mönster
 - **Jobb-API** (en aktiv åt gången, `mgr.active`): `start()`, `update(dt)`, `targets(T)`, `cleanup()`, valfritt `interact()`, `prompt`, `talkFx(fx)`, `talkDone()`, `onEnterCar(e)`, `onExitCar(e)`, `onCrash(e)`, `onBikeFall(e)`, `titleCard` (false = ingen startbanner). Avsluta med `mgr.complete(job, {title, sub, amount})`, `mgr.fail(job, reason, [WHO.x, sms])` eller `mgr.quit(job, sms)`.
 - **Uppdragsfält i `QUESTS`:** `after` (kedja), `at` (sekunder efter `after` klarats, eller från start), `due(m)` (egen tidpunkt), `ready(m)` (extra villkor), `side`, `main`, `soon` (teaser i listan, ej spelbar), `sms` (sidouppdrag som erbjuds via sms), `anytime` (sms även mitt i ett annat jobb), `bridge` (kräver öppen norra bro), `startOnAccept` (jobbet startar direkt när man följer uppdraget, ingen markör), `needFoot` / `needCar`, `Job`, `x/z/r` (startmarkör).
-- **Samtal:** jobbet sänder `g.emit('talk', { id, pages })`, sidor `{ who, letter, color, text, you?, fx?, last? }`. main.js visar en sida i taget, spelet står still, `talkFx` anropas när en sida med `fx` visas och `talkDone` efter sista sidan. Kameran: sätt `g.camFocus = { x, y, z, yaw, owner, near: true }` och nollställ i `cleanup`.
+- **Samtal:** jobbet sänder `g.emit('talk', { id, pages })`, sidor `{ who, letter, color, text, you?, fx?, last? }`. main.js visar en sida i taget, spelet står still, `talkFx` anropas när en sida med `fx` visas och `talkDone` efter sista sidan. Kameran: sätt `g.camFocus = { x, y, z, yaw, owner, near: true }` och nollställ i `cleanup`. `yaw` är kamerans blickriktning (kameran står bakom punkten); i stående mobilläge ryms bara ±1,8 m i sidled, så rama in en eller två personer åt gången. Bullfesten byter bild per replik med `fx: 'cam:<namn>'` (`SHOTS` i fest.js). Nya röster: `VOICES`/`NPC_VOICE` i main.js.
+- **Folk som går någonstans (v1.0):** `ped.goto([[x, z], …], speed, faceH)` → läget `'goto'`, sedan `'stand'` och `ped.arrived = true`. Nollställ `arrived` innan du väntar på nästa `goto` (annars "kommer de fram" direkt). Sittande: läget `'lounge'` + `body.pose = 5`, cyklande: `'ride'` + `pose = 6` (någon annan ställer kroppen, som `Rider.pose()`). `MAX_HUMANS` i render.js är 64.
 - **Ansikte mot ansikte-erbjudande:** `mgr.offer(id, 'talk')` öppnar uppdragskortet direkt (används efter kassaskåpet för "Nyöppningen").
 - **Nästa del syns:** `Missions.nextMain()` + `list()` visar kommande huvuddel som *Kommer snart* och mål-rutan säger "Huvuduppdraget fortsätter snart – X hör av sig om en stund".
 - **Jakt-AI:** `Chaser` i `bikejob.js` – kör efter GPS-grafen med pure pursuit, kurvhastigheter, trafikluckor, backar när den fastnar. `goal` sätts av jobbet; `mode` = `'chase' | 'home' | 'done'`; `retire(back, force)`; `release()` (v0.9.1: släpper bilen utan att parkera den, någon annan kör vidare); `polite: true` = rammar inte spelaren och saktar in bakom spelaren (används för flyende bil och lastbilen man skuggar). Lägg alltid till i `g.racers`. **Obs:** en `Chaser` väntar inte på sin tur i korsningarna (trafikens reservationer) och svänger brett, så med trafik kan den låsa sig med bilarna för gott. Det gör inget när spelaren jagas (då kommer man undan), men en bil som spelaren *måste* följa ska köra som trafik i stan – se nästa punkt.
+- **Cyklisten Sander (v1.0):** `Rider` i sander.js styr en cykel (`driver = 'racer'`, `locked` så att ingen kan hoppa på) med en person i läget `'ride'`. Den kör på `pavementGraph(layout)` – hörnen på kvarterens trottoarslingor (`layout.loops`), sidorna och övergångsställena mellan kvarteren – planerar en ny väg bort från spelaren med Dijkstra, saktar in i hörn, backar när den fastnar, plingar (`horn`-händelse med `car: bike`) på folk som då hoppar undan, och retas. Jobbet anropar `rider.pose(dt)` efter fysiken och `rider.fall(vx, vz)` när han åker av.
+- **Festen på torget (v1.0):** `FestParty` (mission.party) sätts upp när `bullfest` är känt och spelaren inte ser torget, och plockas ner när uppdraget är klart och torget är utom synhåll: folk, Polis-Pia, Sander, Arnes cykel med bullar vid bordet, den röda racercykeln, `g.festUp` (render.js ritar festen), bordets kolliderare (`fest: true` i layout.js, `h` 0 ↔ `hUp`) och tant Gun (`flag.pinned` + `hush`, egna festrepliker i `flag.interact`).
 - **Bilar med mål i trafiken (v0.9.1):** `g.traffic.join(car, into, dir, dest, cruise)` sätter en bil som inte står på ett körfält (lastbilen vid brons slut) på väg in i korsning `into` i riktning `dir` (0 N, 1 E, 2 S, 3 W) och sedan kortaste vägen till `dest`. `ai.dest` gör att `extend()` väljer utfart med `towards()` (Dijkstra över de 16 korsningarna, `distTo`, ingen slump) i stället för `chooseExit`; `dest` följer med vid `replan`. Bilen reserverar korsningar och svänger som all annan trafik. `FactoryJob.steerTruck()` sköter bytet: `Chaser` på ön och bron, trafiken i stan, tillbaka till `Chaser` om bilen tappar vägen (`ai.lost`). Vid målet: `parkTruck()` (förare ut, `parkedSpot`, trafiken kör om).
 - **Människornas stil:** `look.style` (bitmask: long 1, bun 2, beard 4, glasses 8, cap 16, apron 32, baker 64, jacket 128) och `look.accent` (färg för jacka/förkläde/keps). Packas i instansattributet `iPants.w`. `dressUp(look)` ger gående en stil från deras utseende **utan att använda spelets slumptal**.
 - **Determinism:** testerna förutsätter att `g.rng` dras i samma ordning. Nya saker som spawnar folk/bilar vid start ändrar slumpsekvensen och kan bryta gamla tester – spawna lat (vid behov) eller använd egna hash-slumpar (som `dressUp`).
@@ -99,19 +102,22 @@ Huvudäventyret: receptet på **Sjubybullen** som **Arne** (tant Guns avlidne ma
 | hopp | K Kim | Långhoppet | sido | 15 s efter första köpet | Stunthopp ≥ 34 m på byggtomten (vanlig sats ≈ 27 m, lång sats ≈ 37 m, turbo hjälper) |
 | syltburken | G Tant Gun | Syltburken | huvud 6 | 10 s efter konditori | Ramma den svarta bilen tills motorn dör, ta burken, Bengt känner igen Dahlgrens bil |
 | fabriken | B Bagar-Bengt | Bullfabriken | huvud 7 | 12 s efter syltburken | Vänta vid bageriets infart, skugga lastbilen (≥ 9 m, ≤ 85 m) till byggtomten (i stan som vanlig trafik: Drottninggatan → Skolgatan, ca 48 s), smyg till baracken, Dahlgren avslöjas, Gun/Bengt/Polis-Pia, slutskärm |
-| bullfest | G Tant Gun | Bullfesten | teaser (`soon`) | – | Nästa naturliga del att bygga |
+| salong | F Fia (Salong Saxen) | Salong Saxen | sido, inomhus | 30 s efter konditori | Frisersalongen på Skolgatan: verktyg vid disken (sax, rakhyvel, tre färger), tre kunder (Kim: kort + blått, Bengt: raka, rör inte håret, Lasse: blont, skägget stannar), 55 s tålamod var, 2 av 3 nöjda räcker, upp till 1 200 kr |
+| bullfest | G Tant Gun | Bullfesten | huvud 8 | 15 s efter fabriken | Festen på torget, Sander snor Arnes cykel med bullarna, ta hans röda racercykel (eller en bil), ta tag i luvan / knuffa till honom (eller trafiken), spring ikapp honom till fots, Polis-Pia, slutskärm. För långt bort för länge: han kommer undan, försök igen (kortare samtal) |
+| cykelgomman | P Polis-Pia | Cykelgömman | teaser (`soon`) | – | Nästa naturliga del att bygga: Sanders elva stulna cyklar i gamla båthuset vid hamnen, Fias cykelsadel |
 
-Slutskärmen visas när alla 10 i `MAIN` är klara (`lasse, pizza, race, samuel, overlamning, cykel, kassaskap, konditori, syltburken, fabriken`).
+Slutskärmen visas när alla 11 i `MAIN` är klara (`lasse, pizza, race, samuel, overlamning, cykel, kassaskap, konditori, syltburken, fabriken, bullfest`). Den som redan sett slutskärmen i 0.9 får den igen efter Bullfesten.
 
-Personer och utseenden (look-konstanter finns i respektive uppdragsfil): tant Gun (lila kofta, glasögon, knut; förklädd: keps + mörk jacka), Samuel (keps, huvtröja), Yasmin (långt hår, blått förkläde), fyrvaktaren Ingvar (skägg, kaptensmössa), Lås-Leif (mustasch, glasögon, läderförkläde), Bagar-Bengt (bagarmössa, skägg, förkläde), Mjölnar-Majken (knut, förkläde), direktör Dahlgren (glasögon, mörk kavaj), Polis-Pia (keps). Spelaren: blå tröja, mörk jacka.
+Personer och utseenden (look-konstanter finns i respektive uppdragsfil): tant Gun (lila kofta, glasögon, knut; förklädd: keps + mörk jacka), Samuel (keps, huvtröja), Yasmin (långt hår, blått förkläde), fyrvaktaren Ingvar (skägg, kaptensmössa), Lås-Leif (mustasch, glasögon, läderförkläde), Bagar-Bengt (bagarmössa, skägg, förkläde), Mjölnar-Majken (knut, förkläde), direktör Dahlgren (glasögon, mörk kavaj), Polis-Pia (knut, keps, blå uniform), Fia (rött hår i knut, glasögon, orange förkläde över svart), cykeltjuven Sander (blont långt hår under en mörkröd mössa, mörkröd luvtröja, gul T-shirt). Kunderna i salongen är Kim, Bagar-Bengt och Lasse (med eget hår/skägg som ändras när du klipper, rakar och färgar). Spelaren: blå tröja, mörk jacka.
 
-Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest på torget, Bullbilarna i konditoriets färger, kanske ett race eller en leveransstafett), västra bron (stängd, `BRIDGES[1]`) som nästa område, fler butiker att lägga pengar i, kläder för spelaren.
+Förslag på fortsättning som användaren kan vilja ha: "Cykelgömman" (Polis-Pia: Sanders elva cyklar i gamla båthuset vid hamnen, lämna tillbaka dem till ägarna – Fia vill ha sin sadel), västra bron (stängd, `BRIDGES[1]`) som nästa område, fler butiker att lägga pengar i, kläder eller frisyr för spelaren (Salong Saxen finns redan).
 
 ## 6. Platser (världskoordinater: +x öst, +z syd, y upp; heading h: framåt = (sin h, cos h))
 
 - Vägar i stan: x och z = −120, −40, 40, 120 (Västra Ringvägen, **Kungsgatan** x=−40, **Drottninggatan** x=40, Östra Ringvägen; Hamngatan z=−120, **Storgatan** z=−40, **Skolgatan** z=40, Södra Ringvägen). Kvarter = `blockRange(i)`, centrum-kvarteret B(1,1) x/z −32..32.
 - Start: (−33.4, 4) på Kungsgatans trottoar, utanför **Hörnlivs** (dörr `LIVS_DOOR` (−32.9, −4.5)).
-- Torget med fontän i centrum; **Sjuby Konditori** på torgets södra sida (`KONDITORI_DOOR` (−6, 19), markör (−6, 17.4)); **Leifs nyckelservice** på samma hus södra fasad mot Skolgatan (`LEIF` (4, 32.5)).
+- Torget med fontän i centrum; **Sjuby Konditori** på torgets södra sida (`KONDITORI_DOOR` (−6, 19), markör (−6, 17.4)); **Leifs nyckelservice** på samma hus södra fasad mot Skolgatan (`LEIF` (4, 32.5)), och **Salong Saxen** längre österut på samma fasad (`SALON_DOOR` (22, 32.6), markis x 17.6–26.4).
+- **Bullfesten** (`FEST` i config.js): markör (−6, 8.4) norr om långbordet (x −9.6..−2.4, z 11.6..12.5) framför konditoriet, Arnes cykel (−0.8, 12.2), den röda racercykeln (−2.6, 6.6), Sanders väg ut österut längs z 12.6 till Drottninggatans trottoar. Flaggspelen hänger från konditoriets markis till ekarna (−11, 5) och (6, 4).
 - **Höghuset** vid torget (`TOWER_DOOR` (19, −6.2)), Samuel väntar på sin cykel vid (20.2, −3.6).
 - **Tant Guns villa** Storgatan (`GUN` (−100.2, −50.7), grind `GUN_GATE` (−97.5, −46.8), cykeln `GUN_BIKE`).
 - **Lasses Verkstad** kvarter B(2,2), leveranszon (72, 67), butik `LASSE_SHOP` (76.6, 58.1). **Macken** (58, 2). Biltvätt `CARWASH`.
@@ -119,11 +125,11 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 - **Byggtomten** B(0,2) x −112..−48, z 48..112: grind mot Skolgatan x −77..−63, stunthopp (kicker z 57–66), baracker/containrar (−62..−52, 103..106) med skylten DAHLGREN AB, `SITE_OFFICE` (−57, 100.8).
 - **Norra bron** x=40 från z −125 till −230, grind z −178 (öppen när `cykel` är känd).
 - **Norrholmen** (`ISLE` i island.js): kustväg (loop) + mittväg (spine x=40), kolonilotter (lott 7, cykeln (7.5, −304.4)), **bageriet** x 58..102, z −334..−310 med gård norr om (x 50..108, z −310..−270, grind på x=50 vid z −292..−283), kontorets sidodörr `OFFICE_DOOR` (56.7, −322) och upplyst fönster på västra väggen, mjölsilor, **kvarnen** (−5, −360) med Majken vid (−2.6, −354.8), **fyren** (113, −386) och Ingvars stuga (`INGVAR` (102, −386.3)), badplats, båthamn. Lastbilsjaktens start `FACTORY_START` (42.6, −279).
-- Interiörer ute till havs: `INDOOR` (200, 200): höghuset lokalt 0..16 × 0..11, Hörnlivs lokalt (28..37, 26..33), kontoret lokalt (0..9, 26..33). Golvplattan täcker lokalt −40..55 × −40..50.
+- Interiörer ute till havs: `INDOOR` (200, 200): höghuset lokalt 0..16 × 0..11, Hörnlivs lokalt (28..37, 26..33), kontoret lokalt (0..9, 26..33), Salong Saxen lokalt (28..38, 4..11). Golvplattan täcker lokalt −40..55 × −40..50.
 
 ## 7. Tester
 
-- `npm test` = `test/sim.mjs` (fysik, trafik), `test/extras.mjs` (stunthopp, biltvätt), `test/missions.mjs` (alla uppdrag, 26 sektioner; hela `npm test` har ~452 kontroller). De flesta uppdragstester kör `traffic: 0, peds: 0` – sektion 24 kör Bullfabriken med full trafik på fem frön. Varje nytt uppdrag har fått en egen sektion; följ samma stil (`check(ok, 'beskrivning')`, hjälpare `run`, `walkHere`, `press`, `enterCar`, `parkAt`, `walkTo`, `livsSave(doneList)`, `intoOffice`, `crackSafe`, `jumpFrom`).
+- `npm test` = `test/sim.mjs` (fysik, trafik), `test/extras.mjs` (stunthopp, biltvätt), `test/missions.mjs` (alla uppdrag, 28 sektioner; hela `npm test` har ~533 kontroller). De flesta uppdragstester kör `traffic: 0, peds: 0` – sektion 24 kör Bullfabriken med full trafik på fem frön. Varje nytt uppdrag har fått en egen sektion; följ samma stil (`check(ok, 'beskrivning')`, hjälpare `run`, `walkHere`, `press`, `enterCar`, `parkAt`, `walkTo`, `livsSave(doneList)`, `intoOffice`, `crackSafe`, `jumpFrom`, `festGame`, `festStart`). Sektion 25 är Salong Saxen, 26 Bullfesten (och Sanders racercykel).
 - Webbläsartester i `test/browser/` (Python + Playwright; Chromium finns förinstallerat i molnsandlådan, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). `cdn.py` serverar three.js från `node_modules` eftersom sandlådan saknar CDN-åtkomst. Genomgångar per version: `v02.py` … `v09.py`, `v061.py`; `people.py` (människor på rad), `bike.py`, `isle.py`, `visuals.py`, `perfcmp.py` m.fl. Skripten har hårdkodade sökvägar till `/home/claude/gta7`. Kör alltid `phone` (390×844) och gärna `land` (844×390) och kolla att `logs []` (inga konsolfel).
 - Användbart i sidan: `window.__gta.game` (allt simuleringstillstånd), `window.__gta.view.rig`, `openOffer(id)`, `nextTalk()`, `openShop()`.
 
@@ -142,8 +148,11 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 - Sandlådans nätverk: CDN, github.io och vissa GitHub-API:er är blockerade; `gh run list` fungerar.
 - **Testa med trafik.** Uppdragstesterna kör utan trafik, så att lastbilen kunde låsa sig i korsningar (4 av 30 körningar) syntes bara i webbläsaren. Stresstesta datorförare på flera frön med `new Game({ seed })` (full trafik och folk) innan något blir ett måste att följa.
 - `traffic.release()` på en bil som tappat vägen (`ai.lost`, `path: null`) kastade förut ett fel när städningen tog bort den (konsolfel och en hoppad bildruta) – nu kollas `path` först.
+- `ped.arrived` blir kvar `true` efter en `goto`: kunderna i salongen försvann på stället när de skulle gå, tills `leave()` nollställde den.
+- Placera inte folk med fasta förskjutningar bredvid spelaren i stan – de kan hamna inne i en vägg (Polis-Pia gjorde det). Välj en ledig plats (`world.query` + `circleVs`, som `exitCar` och Pias plats i fest.js).
+- Tant Guns hejdå-replik från bryggan ("Norra bron, lilla vän. Glöm inte!") kom även på festen och vid konditoriet i ett laddat spel – den kräver nu att cykeluppdraget inte är klart och att hon inte är `pinned`/`konditori`.
 
-## 9. Senaste ändringar (v0.6 → v0.9.1)
+## 9. Senaste ändringar (v0.6 → v1.0)
 
 - v0.6: Norrholmen, norra bron, Arnes budcykel (cykel som fordon), Bullbilen-jakt (`Chaser`), GPS över ön.
 - v0.6.1: Hörnlivs inifrån, Yasmin, Fyrvaktarens kasse (ägg), Ingvars stuga.
@@ -152,3 +161,4 @@ Förslag på fortsättning som användaren kan vilja ha: "Bullfesten" (stor fest
 - v0.8.1: ny människomodell med valfria delar, stilar för alla, röster i samtalen.
 - v0.9: tydligare nästa steg (direkt erbjudande efter kassaskåpet, "fortsätter snart" i rutan och listan), Syltburken, Bullfabriken, Samuels cykel, Hemleverans, `Chaser.polite`, cooldown innan `startOnAccept`-jobb börjar om.
 - v0.9.1: buggfix – Dahlgrens lastbil kunde fastna för gott i en korsning när det var trafik (oftast där bron når stan), och då gick sista huvuduppdraget inte att klara. Nu kör den som vanlig trafik i stan (`traffic.join`, `ai.dest`), parkerar vid grinden så att trafiken kör om, och har ett test med full trafik. Även: `traffic.release()` tål bilar som tappat vägen.
+- v1.0: sidouppdraget Salong Saxen (inomhus, Fias frisersalong på Skolgatan: klippa, raka, färga), huvuduppdragets del 8 Bullfesten (festen på torget, cykeltjuven Sander, röda racercykeln `racebike`, `Rider` på trottoarnätet, Polis-Pia), teasern Cykelgömman, `ped.goto`, festdekorationer och bullar i Arnes låda, nya röster och salongsljud, två nya rader på slutskärmen.

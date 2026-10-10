@@ -278,6 +278,7 @@ export function makeSignAtlas(signs) {
   const all = {
     ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 }, pizzatak: { kind: 'pizzatak', w: 2.6, h: 0.8 },
     konditori: { lines: ['SJUBY', 'Konditori · sedan 1952'], bg: '#f1e3c4', fg: '#7a4a26', border: '#7a4a26', w: 2.2, h: 1.0 }, // Arne's bike
+    festbanner: { lines: ['BULLFESTEN'], bg: '#e58fa8', fg: '#ffffff', border: '#f6ead2', font: 0.62, w: 3.9, h: 0.7 }, // the bun party (v1.0)
   };
   // identical signs (both faces of a flag, the two MACKEN boards…) share one slot
   const byKey = new Map();

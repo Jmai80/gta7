@@ -1,7 +1,9 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST } from '../src/config.js';
+import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
+import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
@@ -306,8 +308,12 @@ function startRace(g) {
   g2.mission.done.add('fabriken');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all ten are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 0\.9\.1/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 0.9.1, Dahlgren is caught');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the bun party is left');
+  g2.mission.done.add('bullfest');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eleven are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.0/.test(d.text) && /Sander/.test(d.text)), 'the last text: version 1.0, Sander is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1435,9 +1441,10 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
   m.talkDone('fabriken'); run(g, 0.5);
   check(m.done.has('fabriken') && g.money - money0 === FACTORY_REWARD, `the main adventure done, ${FACTORY_REWARD} kr`);
   run(g, 16);
-  check(ev.some(([n]) => n === 'endcard'), 'the end card');
-  const soon = m.list().find((q) => q.id === 'bullfest');
-  check(soon && soon.state === 'soon', 'next in the list: "Bullfesten", coming soon');
+  check(!ev.some(([n]) => n === 'endcard'), 'no end card yet: the adventure goes on (v1.0)');
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'bullfest' && d.from === 'Tant Gun (Storgatan)'), 'tant Gun texts: the bun party on the square');
+  const fest = m.list().find((q) => q.id === 'bullfest');
+  check(fest && fest.state === 'new' && fest.main, 'next in the list: "Bullfesten", main quest part 8');
   // too close, too far
   const tryTail = (back) => {
     const gg = new Game({ seed: 7, traffic: 0, peds: 0 });
@@ -1510,6 +1517,295 @@ const UP_TO_OPENING = [...UP_TO_SAFE, 'konditori'];
     else if (phase === 3 && r.joined) phase = 4;
   });
   check(lost && phase === 4 && r2.job.stage === 'sneak', 'pushed off the streets: it drives itself, joins the traffic again and gets there');
+}
+
+// ---------- 25. side quest (indoors): "Salong Saxen" (v1.0) ----------
+{
+  console.log('Salong Saxen (sidouppdrag, inomhus)');
+  const g0 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g0.mission.restore(livsSave(UP_TO_SAFE));
+  const ev0 = record(g0, ['sms']);
+  run(g0, 40);
+  check(!ev0.some(([n, d]) => n === 'sms' && d.offer === 'salong'), 'not before the konditori has opened');
+
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_OPENING));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'salon', 'indoor']);
+  run(g, 25);
+  check(!m.known.has('salong'), 'not right away');
+  run(g, 6);
+  const offer = ev.find(([n, d]) => n === 'sms' && d.offer === 'salong');
+  check(offer && offer[1].from === 'Fia (Salong Saxen)' && /Skolgatan/.test(offer[1].text), 'Fia at Salong Saxen texts: three customers, a broken wrist');
+  check(m.info('salong').side && m.list().find((q) => q.id === 'salong').side, 'it is a side quest');
+  m.accept('salong');
+  // in a car at the door: in you go on foot
+  const car = g.addVehicle('sedan', 'blue', SALON_DOOR.x - 6, SALON_DOOR.z + 3, Math.PI / 2);
+  enterCar(g, car);
+  parkAt(g, SALON_DOOR.x, SALON_DOOR.z + 0.4, Math.PI / 2); run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /till fots/.test(d.text)), 'by car: "in you go on foot", nothing starts');
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, SALON_DOOR.x + 3, SALON_DOOR.z + 2); run(g, 0.3);
+  walkHere(g, SALON_DOOR.x, SALON_DOOR.z); run(g, 1.4);
+  const job = m.active;
+  check(job && job.id === 'salong' && g.indoors.inside && g.indoors.where === 'salon', 'through the door: inside the salon');
+  check(m.prompt !== 'GÅ UT', 'a step inside the door (not straight out again)');
+  check(job.fia && job.queue.length === 3 && job.queue.every((c) => c.ped.state === 'lounge'), 'Fia on her stool, three customers on the sofa');
+  walkHere(g, SALON.talk.x - 1.2, SALON.talk.z);
+  check(m.prompt === 'PRATA', 'PRATA by Fia');
+  press(g);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
+  check(job.stage === 'talk' && tk && tk[1].pages.some((pg) => /Sander/.test(pg.text)), 'Fia explains – and a bike thief called Sander took her saddle');
+  m.talkDone('salong'); run(g, 0.5);
+  check(job.stage === 'work', 'to work');
+  const waitChair = () => { for (let t = 0; t < 20 && !(job.current && job.current.state === 'chair'); t += 0.1) run(g, 0.1); return job.current; };
+  const use = (id) => {
+    const T = SALON_TOOLS[id];
+    walkHere(g, T.x, T.z);
+    const p1 = m.prompt; press(g);
+    walkHere(g, SALON.work.x + 0.15, SALON.work.z + 1.0);
+    const p2 = m.prompt; press(g); run(g, 1.2);
+    return [p1, p2];
+  };
+  // Kim: short and blue
+  const kim = waitChair();
+  check(kim && kim.def.id === 'kim' && ev.some(([n, d]) => n === 'say' && /Kort och blått/.test(d.text)), 'Kim sits down: "short and blue, please"');
+  const [p1, p2] = use('sax');
+  check(p1 === 'SAX' && p2 === 'KLIPP' && !(kim.ped.body.look.style & 1) && ev.some(([n, d]) => n === 'salon' && d.kind === 'cut'), 'the scissors (SAX) at the counter, KLIPP at the chair: the long hair is gone');
+  use('rosa');
+  check(kim.state === 'chair' && ev.some(([n, d]) => n === 'say' && /Rosa\?!.*blått/.test(d.text)), 'the wrong colour: "pink?! I said blue" – but a colour can be dyed over');
+  use('bla');
+  check(kim.happy === true && kim.state === 'leave' && kim.ped.body.look.hair === 0x2f6fe0, 'blue: a happy customer');
+  run(g, 0.5);
+  check(g.peds.list.includes(kim.ped), 'and walks out of the door (not gone on the spot)');
+  // Bengt: the beard off, the hair stays – you cut it anyway
+  const bengt = waitChair();
+  check(bengt && bengt.def.id === 'bengt' && kim.state === 'gone', 'Kim has left, Bengt sits down');
+  use('sax');
+  check(bengt.happy === false && ev.some(([n, d]) => n === 'say' && /MITT HÅR/.test(d.text)) && ev.some(([n, d]) => n === 'salon' && d.kind === 'angry'), 'the hair he said not to touch: off he goes, angry');
+  // Lasse: blond, and the beard stays
+  const lasse = waitChair();
+  check(lasse && lasse.def.id === 'lasse', 'Lasse is the last one');
+  use('sax');
+  check(lasse.state === 'chair' && ev.some(([n, d]) => n === 'toast' && /redan kort hår/.test(d.text)), 'scissors on short hair: nothing to cut, no harm done');
+  use('blond');
+  check(lasse.happy === true, 'blond: happy');
+  run(g, 3.5);
+  const vk = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
+  check(job.stage === 'verdict' && /Två av tre/.test(vk[1].pages[0].text), 'two out of three: Fia is pleased');
+  const money0 = g.money;
+  m.talkDone('salong'); run(g, 0.5);
+  const paid = g.money - money0;
+  check(m.done.has('salong') && paid >= SALON_PAY.base + 2 * SALON_PAY.happy && paid <= SALON_PAY.base + 2 * (SALON_PAY.happy + SALON_PAY.tip), `side quest done: ${paid} kr with the tips`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Salong Saxen') && g.stats.salonHappy === 2, 'SIDOUPPDRAG KLART, two happy customers in the stats');
+  run(g, 9);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Sander/.test(d.text)), 'Fia texts afterwards: keep an eye out for Sander');
+  walkHere(g, SALON.door.x, SALON.door.z);
+  check(m.prompt === 'GÅ UT', 'GÅ UT by the door');
+  press(g); run(g, 1.2);
+  check(!g.indoors.inside && Math.hypot(g.player.x - SALON_DOOR.x, g.player.z - SALON_DOOR.z) < 2.5, 'out on Skolgatan again');
+  run(g, 2);
+  check(!g.peds.list.includes(job.fia), 'the salon is empty again');
+}
+{
+  console.log('Salong Saxen: otåliga och arga kunder, försök igen');
+  const g = new Game({ seed: 11, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_OPENING));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk']);
+  m.offer('salong'); m.accept('salong');
+  walkHere(g, SALON_DOOR.x, SALON_DOOR.z); run(g, 1.4);
+  let job = m.active;
+  walkHere(g, SALON.talk.x - 1.2, SALON.talk.z); press(g);
+  m.talkDone('salong'); run(g, 0.5);
+  for (let t = 0; t < 20 && !(job.current && job.current.state === 'chair'); t += 0.1) run(g, 0.1);
+  const kim = job.current;
+  run(g, SALON_PAY.patience + 1);
+  check(kim.happy === false && ev.some(([n, d]) => n === 'say' && /inte hela dagen/.test(d.text)), 'wait too long: the customer gets up and goes');
+  for (let t = 0; t < 20 && !(job.current && job.current.state === 'chair'); t += 0.1) run(g, 0.1);
+  const T = (id) => SALON_TOOLS[id];
+  walkHere(g, T('bla').x, T('bla').z); press(g);
+  walkHere(g, SALON.work.x + 0.15, SALON.work.z + 1.0); press(g); run(g, 1.2);
+  check(job.queue[1].happy === false && ev.some(([n, d]) => n === 'say' && /Vem bad om färg/.test(d.text)), 'dye on someone who did not ask for it: angry');
+  for (let t = 0; t < 20 && !(job.current && job.current.state === 'chair'); t += 0.1) run(g, 0.1);
+  walkHere(g, T('rak').x, T('rak').z); press(g);
+  walkHere(g, SALON.work.x + 0.15, SALON.work.z + 1.0); press(g); run(g, 1.2);
+  check(job.queue[2].happy === false && ev.some(([n, d]) => n === 'say' && /Mitt skägg/.test(d.text)), 'the beard that was to stay: angry');
+  run(g, 3.5);
+  const vk = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
+  check(job.stage === 'verdict' && /Ingen nöjd kund/.test(vk[1].pages[0].text), 'no happy customer at all');
+  m.talkDone('salong'); run(g, 0.5);
+  check(!m.done.has('salong') && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail'), 'failed – but the quest stays open');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Kom tillbaka/.test(d.text)), 'Fia: come back and try three new customers');
+  walkHere(g, SALON.door.x, SALON.door.z); press(g); run(g, 1.2);
+  check(!g.indoors.inside && !g.peds.list.includes(job.fia), 'out you go, and the salon empties');
+  // again: the short version from Fia, and walking out half way is no failure
+  walkHere(g, SALON_DOOR.x + 2, SALON_DOOR.z + 3); run(g, 7);
+  walkHere(g, SALON_DOOR.x, SALON_DOOR.z); run(g, 1.4);
+  job = m.active;
+  check(job && job.id === 'salong' && g.indoors.inside, 'back in: three new customers');
+  walkHere(g, SALON.talk.x - 1.2, SALON.talk.z); press(g);
+  const tk2 = ev.filter(([n, d]) => n === 'talk' && d.id === 'salong').pop();
+  check(tk2 && tk2[1].pages.length === 2 && /Nya kunder/.test(tk2[1].pages[0].text), 'Fia keeps it short the second time');
+  m.talkDone('salong'); run(g, 0.5);
+  const fails0 = ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length;
+  walkHere(g, SALON.door.x, SALON.door.z); press(g); run(g, 1.6);
+  check(!m.active && ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length === fails0, 'walking out half way: no failure, the quest waits');
+  run(g, 1);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Fia (Salong Saxen)' && /Kunderna gick hem/.test(d.text)), 'Fia texts: the customers went home');
+}
+
+// ---------- 26. main quest, part 8: "Bullfesten" – Sander the bike thief (v1.0) ----------
+const UP_TO_FACTORY = [...UP_TO_OPENING, 'syltburken', 'fabriken', 'cykelretur'];
+function festGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
+  const g = new Game({ seed, ...opts });
+  g.mission.restore(livsSave(UP_TO_FACTORY));
+  return g;
+}
+// into the party: the talk up to Sander on the bike, then after him
+function festStart(g) {
+  const m = g.mission;
+  walkHere(g, FEST.mark.x, FEST.mark.z); run(g, 1.6);
+  const job = m.active;
+  m.talkFx('bullfest', 'steal');
+  m.talkDone('bullfest'); run(g, 0.2);
+  return job;
+}
+{
+  console.log('Bullfesten (huvuduppdrag del 8)');
+  const g = festGame();
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'caught', 'buns', 'horn', 'endcard']);
+  // standing by the square: the party is set up out of sight
+  walkHere(g, -33.4, 4); run(g, 16);
+  check(m.known.has('bullfest') && ev.some(([n, d]) => n === 'sms' && d.offer === 'bullfest'), 'tant Gun texts: the bun party on the square');
+  check(!m.party.up, 'not set up while you stand by the square');
+  walkHere(g, -100, -60); run(g, 0.5);
+  const P = m.party, gun = m.flag.gun;
+  const table = g.layout.colliders.find((c) => c.fest);
+  check(P.up && P.sander && P.pia && P.people.length >= 10, 'out of sight: the party is up – people, Polis-Pia, and Sander in the crowd');
+  check(g.bike && Math.hypot(g.bike.x - FEST.bike.x, g.bike.z - FEST.bike.z) < 0.5 && g.bike.buns && g.redBike && g.redBike.type === 'racebike', 'Arne\'s bike with a box of buns by the table, a red racing bike by the square');
+  check(table.h > 0.5 && Math.hypot(gun.x - FEST.table.x0, gun.z - FEST.table.z1) < 3 && m.flag.pinned, 'the long table is up, tant Gun behind it');
+  // Gun at the party: a party line (not the old "the north bridge, don't forget")
+  walkHere(g, gun.x, gun.z + 1.4);
+  check(m.prompt === 'PRATA', 'PRATA by tant Gun');
+  press(g);
+  const gunSay = ev.filter(([n, d]) => n === 'say' && d.who === gun).pop();
+  check(gunSay && /festen|bordet/.test(gunSay[1].text), `she says something about the party ("${gunSay && gunSay[1].text}")`);
+  m.accept('bullfest');
+  const job = festStart(g);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
+  check(tk && tk[1].pages.length === 9 && tk[1].pages.some((pg) => pg.who === 'Sander' && pg.fx === 'steal') && tk[1].pages.some((pg) => /cykeltjuv/.test(pg.text)), 'the party talk: Gun, Bengt, Samuel, Polis-Pia warns about a bike thief – and Sander');
+  const S = P.sander, bike = g.bike;
+  check(job.stage === 'chase' && S.state === 'ride' && bike.driver === 'racer' && bike.locked, 'Sander is off on Arne\'s bike (locked: no getting on while he rides it)');
+  check(ev.some(([n, d]) => n === 'horn' && d.car === bike), 'with a ring of the bell');
+  run(g, 4);
+  const away = Math.hypot(bike.x - FEST.bike.x, bike.z - FEST.bike.z);
+  check(away > 18 && Math.abs(S.x - bike.x) < 1 && Math.abs(S.z - bike.z) < 1, `he rides off – ${away.toFixed(0)} m in 4 s – sitting on the saddle`);
+  check(m.targets.some((t) => t.kind === 'racer' && t.car === bike && t.gps), 'the red arrow and the GPS on him');
+  check(/Ta fast Sander/.test(m.objective), 'objective: catch Sander');
+  // onto the red racer, and after him (close behind: you grab his hood)
+  const red = g.redBike;
+  walkHere(g, red.x - 0.6, red.z); press(g);
+  check(g.player.inCar && g.player.car === red, 'you take his red racing bike');
+  const pv = (g.player.car.spec.maxSpeed);
+  check(pv > CAR_TYPES.bike.maxSpeed, 'faster than Arne\'s old bike');
+  let t = 0;
+  while (t < 10 && job.stage === 'chase') {
+    const back = t < 2 ? 6 : 1.0;
+    red.x = bike.x - Math.sin(bike.h) * back; red.z = bike.z - Math.cos(bike.h) * back; red.h = bike.h; red.vx = bike.vx; red.vz = bike.vz;
+    g.step(DT, idle); t += DT;
+  }
+  check(job.stage === 'run' && g.stats.sanderHow === 'grab' && S.state === 'down', 'right behind him: you grab his hood, he tumbles off');
+  check(bike.fallen && !bike.buns && ev.some(([n]) => n === 'buns'), 'the bike falls over, the buns go everywhere');
+  check(m.targets.some((t2) => t2.kind === 'contact' && t2.ref === S && t2.gps), 'now he is on foot: the GPS on him');
+  // off the bike and after him: you are quicker on foot
+  g.step(DT, { ...idle, action: true }); run(g, 0.3);
+  t = 0;
+  while (t < 15 && job.stage === 'run') {
+    const p = g.player, dx = S.x - p.x, dz = S.z - p.z, d = Math.hypot(dx, dz) || 1, y = Math.PI, ux = dx / d, uz = dz / d;
+    g.step(DT, { ...idle, moveX: -ux * Math.cos(y) + uz * Math.sin(y), moveY: ux * Math.sin(y) + uz * Math.cos(y), camYaw: y }); t += DT;
+  }
+  check(job.stage === 'caught', `caught on foot after ${t.toFixed(1)} s`);
+  run(g, 1);
+  const ck = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
+  check(ck && ck[1].pages.some((pg) => pg.who === 'Sander' && /ger mig/.test(pg.text)) && ck[1].pages.some((pg) => pg.who === 'Polis-Pia' && /Var är de andra/.test(pg.text)) && ck[1].pages.some((pg) => /båthuset/.test(pg.text)), 'he gives up – Polis-Pia asks where the other bikes are (the old boathouse)');
+  m.talkFx('bullfest', 'pia');
+  check(Math.hypot(P.pia.x - S.x, P.pia.z - S.z) < 3, 'Polis-Pia is there');
+  const money0 = g.money;
+  m.talkDone('bullfest'); run(g, 0.5);
+  check(m.done.has('bullfest') && g.money - money0 === FEST.reward && g.stats.sanderCaught, `main quest part 8 done: ${FEST.reward} kr`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Bullfesten'), 'HUVUDUPPDRAG KLART');
+  run(g, 15);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /räddad/.test(d.text)), 'tant Gun: the party is saved');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.0/.test(d.text)), 'all eleven done: the end card (version 1.0)');
+  const next = m.list().find((q) => q.id === 'cykelgomman');
+  check(next && next.state === 'soon' && /Sander/.test(next.line), 'next in the list: "Cykelgömman", coming soon');
+  // you walk off: Pia takes Sander away, the bike goes home, the party winds down
+  walkHere(g, -100, -60); run(g, 14);
+  check(!g.peds.list.includes(S) && !g.peds.list.includes(P.pia), 'Pia and Sander are gone');
+  check(Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 3 && !g.bike.fallen, 'Arne\'s bike is back by the tower');
+  check(!P.up && table.h === 0 && !m.flag.pinned, 'the party is over: the table is gone, Gun goes home');
+}
+{
+  console.log('Bullfesten: han kommer undan, bilen, trafiken');
+  // standing still: Sander gets away; back at the party he tries again
+  const g = festGame(9);
+  const m = g.mission;
+  const ev = record(g, ['sms', 'banner', 'talk', 'toast']);
+  m.offer('bullfest'); m.accept('bullfest');
+  walkHere(g, -100, -60); run(g, 0.5);
+  let job = festStart(g);
+  let t = 0;
+  while (t < 60 && m.active === job) { g.step(DT, idle); t += DT; }
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /undan/.test(d.sub)), `just watching: he gets away (after ${t.toFixed(0)} s)`);
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Polis-Pia' && /festen/.test(d.text)), 'Polis-Pia: he has been seen by the square again');
+  walkHere(g, -100, -60); run(g, 4);
+  check(g.bike && Math.hypot(g.bike.x - FEST.bike.x, g.bike.z - FEST.bike.z) < 0.5 && m.party.sander && Math.hypot(m.party.sander.x - 0.9, m.party.sander.z - 13.9) < 1, 'out of sight: Sander and the bike are back at the party');
+  run(g, 4);
+  job = festStart(g);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'bullfest').pop();
+  check(job.stage === 'chase' && tk[1].pages.length === 3 && /tillbaka/.test(tk[1].pages[0].text), 'the second time: a short talk – and he is off again');
+  // in a car: a bump knocks him off
+  const car = g.addVehicle('sedan', 'blue', -10, 4, Math.PI / 2);
+  enterCar(g, car);
+  t = 0;
+  const bike = g.bike;
+  while (t < 10 && job.stage === 'chase') {
+    car.x = bike.x - Math.sin(bike.h) * 2.2; car.z = bike.z - Math.cos(bike.h) * 2.2; car.h = bike.h; car.vx = bike.vx; car.vz = bike.vz;
+    g.step(DT, idle); t += DT;
+  }
+  check(job.stage === 'run' && g.stats.sanderHow === 'bump', 'in a car: a bump and he is off the bike');
+  run(g, 0.3);
+  check(ev.some(([n, d]) => n === 'toast' && /Kliv ur och ta fast honom/.test(d.text)) || Math.hypot(m.party.sander.x - car.x, m.party.sander.z - car.z) > 6, 'out of the car to catch him');
+
+  // the town's traffic can knock him off too
+  const g2 = festGame(13);
+  const m2 = g2.mission;
+  m2.offer('bullfest'); m2.accept('bullfest');
+  walkHere(g2, -100, -60); run(g2, 0.5);
+  const job2 = festStart(g2);
+  run(g2, 2);
+  const van = g2.addVehicle('van', 'white', g2.bike.x + 3, g2.bike.z, 0);
+  g2.onCrash(g2.bike, 5, van, g2.bike.x, g2.bike.z);
+  check(job2.stage === 'run' && g2.stats.sanderHow === 'traffic', 'a car hits him: off he comes');
+}
+{
+  console.log('Sanders röda racercykel');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g.mission.restore(livsSave(['lasse']));
+  g.mission.lasse = 'steal';
+  const red = g.spawnRedBike(-90, -42.5, Math.PI / 2);
+  check(red && red.type === 'racebike' && red.spec.bike && !red.isRed, 'a bike (red, but not a red CAR for Lasse)');
+  walkHere(g, red.x - 0.6, red.z); press(g);
+  check(g.player.inCar && g.player.car === red && g.mission.lasse === 'steal', 'you can ride it – Lasse\'s job does not count it');
+  run(g, 6, { ...idle, moveY: 1, camYaw: Math.PI / 2 });
+  check(red.speed > 9.5 && red.speed < 12.5, `flat out about 11 m/s (${red.speed.toFixed(1)} m/s)`);
+  g.step(DT, { ...idle, action: true }); run(g, 2);
+  const again = g.spawnRedBike(-90, -38, 0);
+  check(g.vehicles.filter((v) => v.type === 'racebike').length === 1 && again === g.redBike, 'there is only ever one');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 0.9.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, sju sidouppdrag, ett huvudäventyr i sju delar, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori och till sist på jakt efter en stulen syltburk och en hemlig bullfabrik.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.0 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, åtta sidouppdrag, ett huvudäventyr i åtta delar, en trimningsbutik och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Samuel på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – och till sist till Bullfesten på torget, där cykeltjuven Sander slår till.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -25,7 +25,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 0.9.1
+## Uppdrag i version 1.0
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -57,7 +57,16 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - När du fått mjölet kommer en Bullbil från bageriet. Tar de dig till fots på vägen, eller blir du fast med bilen, tar de mjölsäcken – då får du hämta en ny hos Majken. Uppdraget misslyckas inte.
   - Lämna allt vid konditoriet. Nästa morgon är det invigning med publik på torget, och Bagar-Bengt dyker upp med en bekännelse. Du får 4 000 kr.
 - **G – Tant Gun (huvuduppdrag, del 6): Syltburken.** Tio sekunder efter invigningen: någon har brutit sig in på konditoriet och tagit syltburken med receptet. En svart bil kör runt i stan (röd pil och gul linje). Kör in i den tills motorn ger upp – uppdragsrutan visar hur mycket motor som är kvar. Föraren springer, du tar syltburken ur bilen (**TA**) och lämnar den på konditoriet. Kommer bilen för långt bort för länge slinker den undan och du får försöka igen. Bengt känner igen bilen: den tillhör direktör Dahlgren, Bullbilens ägare. 2 500 kr.
-- **B – Bagar-Bengt (huvuduppdrag, del 7): Bullfabriken.** Bengt sms:ar: Dahlgrens lastbil går från bageriet. Vänta vid bageriets infart på Norrholmen och följ efter lastbilen när den kör – inte närmare än cirka 10 meter (då ser föraren dig) och inte längre bort än cirka 85 meter (då tappar du den). Uppdragsrutan säger om du ligger lagom. I stan kör lastbilen som den övriga trafiken och väntar på sin tur i korsningarna, så håll avståndet även när den stannar. Lastbilen leder till byggtomten på Skolgatan, där föraren parkerar vid grinden. Smyg in till byggbaracken i hörnet och lyssna – resten får du se själv. 5 000 kr, och huvudäventyret är klart (för den här gången). Nästa: **Bullfesten**, *Kommer snart*.
+- **B – Bagar-Bengt (huvuduppdrag, del 7): Bullfabriken.** Bengt sms:ar: Dahlgrens lastbil går från bageriet. Vänta vid bageriets infart på Norrholmen och följ efter lastbilen när den kör – inte närmare än cirka 10 meter (då ser föraren dig) och inte längre bort än cirka 85 meter (då tappar du den). Uppdragsrutan säger om du ligger lagom. I stan kör lastbilen som den övriga trafiken och väntar på sin tur i korsningarna, så håll avståndet även när den stannar. Lastbilen leder till byggtomten på Skolgatan, där föraren parkerar vid grinden. Smyg in till byggbaracken i hörnet och lyssna – resten får du se själv. 5 000 kr, och en stund senare bjuder tant Gun in till Bullfesten.
+- **G – Tant Gun (huvuduppdrag, del 8): Bullfesten.** Strax efter bullfabriken sms:ar tant Gun: hela Sjuby firar på torget, med ett långbord fullt av Sjubybullar framför konditoriet, flaggspel och ballonger – och Arnes gamla cykel med lådan full av bullar. Gå till festen (till fots).
+  - Mitt i festen hoppar cykeltjuven **Sander** upp på Arnes cykel och cyklar iväg med alla bullarna. Hans egen röda racercykel blir kvar på torget: ta den (den är snabbare än Arnes cykel) eller en bil, och kör efter honom.
+  - Sander cyklar på trottoarerna och över gatorna vid övergångsställena, plingar på folk som står i vägen och väljer vägar bort från dig. Kör ikapp honom och ta tag i luvan (tätt bakom på cykeln), knuffa till honom med bilen – eller hoppas att stadstrafiken hinner före.
+  - När han ramlar av sprätter bullarna åt alla håll och Sander springer. Kliv av och spring ikapp honom – du är snabbare än han till fots. Polis-Pia tar hand om resten. 3 000 kr.
+  - Kommer han för långt bort för länge slinker han undan, men han kan inte låta bli bullarna: gå tillbaka till festen och försök igen. Nästa del: **Cykelgömman**, *Kommer snart*.
+- **F – Fia (sidouppdrag, inomhus): Salong Saxen.** En stund efter invigningen sms:ar Fia, som har frisersalongen i bottenvåningen på Skolgatan, bredvid Lås-Leif (orange markis och en randig frisörstolpe vid dörren). Hon har brutit handleden – någon hade snott sadeln från hennes cykel – och tre kunder väntar i soffan. Gå in genom dörren och prata med Fia.
+  - Verktygen står på disken vid väggen: **SAX**, **RAKHYVEL** och tre färger (**BLÅ FÄRG**, **ROSA FÄRG**, **BLONDERING**). Ställ dig vid det du vill ha och ta det, gå sedan fram till stolen och **KLIPP**, **RAKA** eller **FÄRGA**.
+  - Gör exakt som kunden säger (det står i uppdragsrutan). Det som är klippt är klippt, och rör du något de inte bett om går de därifrån arga – men en fel färg kan man färga över. Varje kund väntar bara 55 sekunder i stolen.
+  - Två nöjda kunder av tre räcker: 300 kr plus 200 kr per nöjd kund och dricks om du är snabb, upp till 1 200 kr. Annars får du försöka igen med tre nya kunder.
 - **Y – Yasmin på Hörnlivs (sidouppdrag): Fyrvaktarens kasse.** När norra bron är öppen sms:ar Yasmin, som står i kassan på Hörnlivs på Kungsgatan (butiken under den blå markisen, där spelet börjar). Gå in genom dörren och prata med henne vid kassan. Hon ger dig en kasse till sin gamle vän, fyrvaktaren Ingvar ute vid fyren på Norrholmen.
   - I kassen ligger tolv ägg. Varje hård smäll på vägen (krockar, att ramla av cykeln eller hårda landningar) knäcker några, och uppdragsrutan visar hur många som är hela.
   - Gå fram till Ingvar utanför hans stuga vid fyren. Du får 500 kr plus 50 kr för varje helt ägg, alltså upp till 1 100 kr, och Ingvar har något att berätta om Bullbilens bageri.
@@ -84,6 +93,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Hörnlivs:** butiken på Kungsgatan har en dörr och en insida med kassa, kylar och fulla hyllor.
 - **Lås & nyckel:** Leifs nyckelservice på Skolgatan, med en stor mässingsnyckel över dörren.
 - **Sjuby Konditori:** Arnes gamla kafé på torgets södra sida, med rosa markis och bullar i fönstren.
+- **Salong Saxen:** Fias frisersalong i bottenvåningen på Skolgatan, med schackrutigt golv, två frisörstolar, en disk med verktyg och en soffa för kunderna.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten, en biltvätt som lagar bucklor och en brygga i hamnen att promenera ut på.
 - **Norrholmen:** ön norr om stan, ungefär en tredjedel så stor som Sjuby. Där finns en kurvig kustväg runt ön, kolonilotter, Bullbilens bageri med mjölsilor, skåpbilar och en jättebulle på taket, en väderkvarn vars vingar snurrar, en fyr, en badplats och en liten båthamn.
 - **HUD:** minikarta med GPS och uppdragsbokstäver (inomhus visar den en planritning med Samuel och nycklarna), SMS från uppdragsgivarna, fartmätare och bilens skick.
@@ -93,8 +103,9 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - three.js 0.184 (WebGL2) laddas från jsDelivr. Det finns inget byggsteg, bara vanliga ES-moduler.
 - Allt genereras av kod: inga bilder, 3D-modeller eller ljudfiler. Ljudet syntetiseras med Web Audio.
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
+- Cykeltjuven Sander cyklar efter ett eget nät av trottoarer och övergångsställen och planerar hela tiden en ny väg bort från dig. I stan kör Dahlgrens lastbil som den vanliga trafiken.
 - Norrholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över bron och runt ön.
-- Insidorna (höghuset, Hörnlivs och bagerikontoret) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
+- Insidorna (höghuset, Hörnlivs, bagerikontoret och Salong Saxen) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
 
@@ -124,6 +135,8 @@ python3 -m http.server 8000    # eller: npx serve .
 | `docs/HANDOFF.md` | Utvecklaröverlämning: arkitektur, alla uppdrag, platser, tester och fallgropar |
 | `test/browser/` | Webbläsargenomgångar (Playwright) för varje version |
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Samuels cykel och Hemleverans |
+| `src/fest.js`, `sander.js` | Huvuduppdragets del 8, Bullfesten, och cykeltjuven Sander på trottoarerna |
+| `src/barber.js`, `salon.js` | Sidouppdraget Salong Saxen och frisersalongens insida |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Samuel och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |

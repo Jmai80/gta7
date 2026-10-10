@@ -25,6 +25,14 @@ export const CAR_TYPES = {
     grip: 15, hbGrip: 7, steerMax: 0.72,
     circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
   },
+  // the red racing bike (v1.0) that Sander the bike thief leaves behind at the party: light and fast
+  racebike: {
+    key: 'racebike', name: 'Röd racercykel', len: 1.9, wid: 0.5, height: 1.05,
+    wheelbase: 1.26, track: 0, wheelR: 0.34, wheelZ: [0.66, -0.6],
+    mass: 95, accel: 4.6, maxSpeed: 11.6, brake: 8.5, revAccel: 1.2, revMax: 1.3,   // flat out about 11 m/s (40 km/h)
+    grip: 15, hbGrip: 7, steerMax: 0.7,
+    circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
+  },
 };
 
 // where things are on Arne's bike (models.js builds it, the player sits on the saddle)
@@ -41,6 +49,7 @@ export const PAINTS = {
   lightblue: { hex: 0x86acd1, name: 'ljusblå' },
   pizza: { hex: 0x2e7a46, name: 'grön' },        // Pizzeria Sjuan's delivery car
   bike: { hex: 0x23452f, name: 'grön' },         // Arne's bike
+  racer: { hex: 0xc4191b, name: 'röd' },         // the racing bike Sander leaves behind (v1.0) – not a red CAR for Lasse
 };
 
 const GRAVITY = 16;

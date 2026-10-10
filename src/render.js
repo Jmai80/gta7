@@ -3,7 +3,7 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, BIKE } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, BIKE } from './models.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
 import { OFFICE, safeDoorInto, recipeInto } from './office.js';
@@ -12,11 +12,11 @@ import { SEE, phoneOf } from './samuel.js';
 import { GeomBuilder } from './geom.js';
 import { CAPACITY } from './game.js';
 import { PAINTS } from './vehicle.js';
-import { SUN, CARWASH } from './config.js';
+import { SUN, CARWASH, FEST, CURB_H } from './config.js';
 import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 
-const MAX_HUMANS = 48;
+const MAX_HUMANS = 64; // (v1.0: the bun party on the square and the hair salon bring a few more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
 const tmpV = new THREE.Vector3();
 
@@ -126,6 +126,11 @@ export class View {
     this.makeIndoor();
     this.makeGate(layout);
     this.makeBike();
+    // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
+    this.fest = new THREE.Mesh(buildFest(FEST.table, CURB_H, this.atlas.uv.festbanner), this.matStatic);
+    this.fest.visible = false;
+    this.scene.add(this.fest);
+    this.bunBurstT = 0;
 
     this.rig = new CameraRig(this.camera);
     this.quality = quality;
@@ -133,38 +138,46 @@ export class View {
     this.resize();
   }
 
-  // Arne's delivery bike: one bike in moving parts – frame and box, wheels, steering (models.js)
+  // the bikes, each in moving parts – frame (and box), wheels, steering (models.js): Arne's delivery
+  // bike, and (v1.0) the red racing bike Sander leaves behind at the party
   makeBike() {
-    const P = buildBike(this.atlas.uv.konditori);
-    const g = new THREE.Group();
-    g.rotation.order = 'YXZ';
-    const rear = new THREE.Mesh(P.rear, this.matStatic);
-    rear.position.set(0, BIKE.rearR, BIKE.rearZ);
-    const steer = new THREE.Group();
-    steer.position.set(BIKE.pivot[0], BIKE.pivot[1], BIKE.pivot[2]);
-    const front = new THREE.Mesh(P.front, this.matStatic);
-    front.position.set(0, BIKE.frontR - BIKE.pivot[1], BIKE.frontZ - BIKE.pivot[2]);
-    steer.add(new THREE.Mesh(P.steer, this.matStatic), front);
-    g.add(new THREE.Mesh(P.frame, this.matStatic), rear, steer);
-    g.visible = false;
-    this.scene.add(g);
-    this.bike = { g, rear, front, steer };
+    this.bikes = {};
+    for (const [type, opt] of [['bike', {}], ['racebike', { racer: true }]]) {
+      const P = buildBike(opt.racer ? null : this.atlas.uv.konditori, opt);
+      const g = new THREE.Group();
+      g.rotation.order = 'YXZ';
+      const rear = new THREE.Mesh(P.rear, this.matStatic);
+      rear.position.set(0, BIKE.rearR, BIKE.rearZ);
+      const steer = new THREE.Group();
+      steer.position.set(BIKE.pivot[0], BIKE.pivot[1], BIKE.pivot[2]);
+      const front = new THREE.Mesh(P.front, this.matStatic);
+      front.position.set(0, BIKE.frontR - BIKE.pivot[1], BIKE.frontZ - BIKE.pivot[2]);
+      steer.add(new THREE.Mesh(P.steer, this.matStatic), front);
+      g.add(new THREE.Mesh(P.frame, this.matStatic), rear, steer);
+      // Arne's bike can carry a box full of buns (to the party, and away with Sander)
+      const buns = opt.racer ? null : new THREE.Mesh(buildBikeBuns(), this.matStatic);
+      if (buns) { buns.visible = false; g.add(buns); }
+      g.visible = false;
+      this.scene.add(g);
+      this.bikes[type] = { g, rear, front, steer, buns };
+    }
   }
 
   syncBike(game, dt) {
-    const B = this.bike;
-    if (!B) return;
-    const v = game.vehicles.find((q) => q.type === 'bike' && !q.removed);
-    B.g.visible = !!v && !this.indoor;
-    if (!v) return;
-    // standing on its kickstand, leaning into turns while ridden, or lying on its side after a fall
-    const roll = v.fallen ? 1.42 : v.driver === 'player' ? v.lean || 0 : 0.12;
-    v.bikeRoll = smooth(v.bikeRoll ?? roll, roll, v.fallen ? 9 : 10, dt);
-    B.g.position.set(v.x, v.visY ?? v.y, v.z);
-    B.g.rotation.set(0, v.h, v.bikeRoll);
-    B.rear.rotation.x = v.spin;
-    B.front.rotation.x = v.spin * (BIKE.rearR / BIKE.frontR);
-    B.steer.rotation.y = -v.steer;
+    for (const [type, B] of Object.entries(this.bikes || {})) {
+      const v = game.vehicles.find((q) => q.type === type && !q.removed);
+      B.g.visible = !!v && !this.indoor;
+      if (!v) continue;
+      // standing on its kickstand, leaning into turns while ridden (by you, or by Sander), or lying on its side after a fall
+      const roll = v.fallen ? 1.42 : v.driver === 'player' || v.driver === 'racer' ? v.lean || 0 : 0.12;
+      v.bikeRoll = smooth(v.bikeRoll ?? roll, roll, v.fallen ? 9 : 10, dt);
+      B.g.position.set(v.x, v.visY ?? v.y, v.z);
+      B.g.rotation.set(0, v.h, v.bikeRoll);
+      B.rear.rotation.x = v.spin;
+      B.front.rotation.x = v.spin * (BIKE.rearR / BIKE.frontR);
+      B.steer.rotation.y = -v.steer;
+      if (B.buns) B.buns.visible = !!v.buns;
+    }
   }
 
   // the gate on the north bridge: two red-and-white halves that swing open toward Norrholmen,
@@ -483,6 +496,7 @@ export class View {
     this.syncMarkers(game);
     this.syncFx(game, dt);
     this.syncIndoor(game, dt);
+    this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -this.time * 0.45;  // the windmill on Norrholmen
     if (this.gateW && game.gateN) {
@@ -710,6 +724,14 @@ export class View {
     }
   }
 
+  // (v1.0) buns flying out of the box when Sander comes off Arne's bike
+  bunBurst(x, z) {
+    for (let i = 0; i < 16; i++) {
+      const a = Math.random() * Math.PI * 2, s = 1.2 + Math.random() * 2.6, k = 0.85 + Math.random() * 0.25;
+      this.particles.emit(x + Math.cos(a) * 0.2, 1.0, z + Math.sin(a) * 0.2, Math.cos(a) * s, 2.4 + Math.random() * 2.4, Math.sin(a) * s, 0.2, 1.3 + Math.random() * 0.5, 0.72 * k, 0.45 * k, 0.19 * k, 1.0, 0, true);
+    }
+  }
+
   dust(x, y, z, n) {
     for (let i = 0; i < n; i++) this.particles.emit(x + (Math.random() - 0.5) * 2, y + 0.2, z + (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 3, 0.6 + Math.random(), (Math.random() - 0.5) * 3, 0.9, 1.2, 0.62, 0.52, 0.4, 0.45, 2.2);
   }
@@ -851,7 +873,7 @@ export class CameraRig {
       const S = place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35);
       tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
       // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
-      const j = game.mission.active, talking = j && j.stage === 'talk' && (j.id === 'livs' || j.id === 'kassaskap') ? 1 : 0;
+      const j = game.mission.active, talking = j && (j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong') ? 1 : 0;
       this.talkK = smooth(this.talkK || 0, talking, 3, dt);
       tz += this.talkK * this.shopK * (portrait ? 1.6 : 2.6);
     }

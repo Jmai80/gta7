@@ -46,7 +46,7 @@ export class FlagQuest {
     const hidden = (x, z) => { const d = Math.hypot(x - p.x, z - p.z); return d > 70 || (d > 35 && !g.visible(x, z)); };
     const due = m.done.has('samuel') && m.known.has('overlamning') && !m.done.has('overlamning');
     const busy = m.active && m.active.id === 'overlamning';
-    if (busy) return;
+    if (busy || this.pinned) return; // (pinned: at the bun party on the square, v1.0)
     if (due && !gun.away && hidden(gun.x, gun.z) && hidden(PIER_BENCH.x, PIER_BENCH.z)) this.toPier();
     else if (!due && gun.away && hidden(gun.x, gun.z) && hidden(GUN.x, GUN.z)) this.toHome();
   }
@@ -107,7 +107,7 @@ export class FlagQuest {
       this.said.hello = true;
       this.say(m.done.has('overlamning') ? 'Lilla vän! Hjälper du mig med flaggan också?' : 'Hallå där! Kan du hjälpa en gammal tant?'); // (she knows you after the pier)
     }
-    if (away && !gun.disguised && !this.said.bye && dGun > 7 && m.done.has('overlamning')) { this.said.bye = true; this.say('Norra bron, lilla vän. Glöm inte!'); }
+    if (away && !gun.disguised && !gun.konditori && !this.pinned && !this.said.bye && dGun > 7 && m.done.has('overlamning') && !m.done.has('cykel')) { this.said.bye = true; this.say('Norra bron, lilla vän. Glöm inte!'); }
     if (away && !gun.disguised && dGun < 12) gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z); // she keeps an eye on you
     if (!away && dGun > 8 && !this.pulling) gun.standH = 0;
     // hoisting: hold the action button at the pole
@@ -138,7 +138,13 @@ export class FlagQuest {
     if (this.prompt !== 'PRATA') return false;
     const m = this.mgr, p = this.game.player, gun = this.gun;
     gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z);
-    if (gun.konditori) this.say('Välkommen in, lilla vän! Bullarna är nygräddade.'); // outside the konditori, after the opening
+    if (this.pinned) { // (v1.0) at the bun party on the square
+      const busy = m.active && m.active.id === 'bullfest';
+      const lines = m.done.has('bullfest') ? ['Tack, lilla vän! Ta en bulle till.', 'Arne hade varit så stolt i dag.', 'Bengt bakar faktiskt riktigt goda bullar nu.']
+        : busy ? ['Efter honom! Arnes cykel – och alla bullarna!'] : ['Där är du ju! Kom fram till bordet, festen ska börja.'];
+      this.partyTalk = ((this.partyTalk ?? -1) + 1) % lines.length;
+      this.say(lines[this.partyTalk]);
+    } else if (gun.konditori) this.say('Välkommen in, lilla vän! Bullarna är nygräddade.'); // outside the konditori, after the opening
     else if (gun.away) { // on the pier, after the handover
       this.pierTalk = ((this.pierTalk ?? -1) + 1) % PIER_LINES.length;
       this.say(PIER_LINES[this.pierTalk]);

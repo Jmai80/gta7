@@ -295,14 +295,25 @@ export class AudioFX {
     this.burst(0.05, 6500, 0.18, 'highpass', 0.02);
   }
 
-  // the bike's bell: pling-pling
-  bell() {
-    if (!this.ctx) return;
+  // the bike's bell: pling-pling (k: quieter when it is someone else's bike further off)
+  bell(k = 1) {
+    if (!this.ctx || k < 0.05) return;
     for (const at of [0, 0.16]) {
-      this.tone(2350, 0.32, 'sine', 0.07, at);
-      this.tone(3520, 0.22, 'sine', 0.03, at);
-      this.tone(5870, 0.08, 'triangle', 0.012, at);
+      this.tone(2350, 0.32, 'sine', 0.07 * k, at);
+      this.tone(3520, 0.22, 'sine', 0.03 * k, at);
+      this.tone(5870, 0.08, 'triangle', 0.012 * k, at);
     }
+  }
+
+  // ---- Salong Saxen (v1.0): picking up a tool, the scissors, the razor, the dye, and what the customer thinks
+  salon(kind) {
+    if (!this.ctx) return;
+    if (kind === 'pick') { this.burst(0.09, 3800, 0.05, 'highpass'); this.tone(1900, 0.05, 'triangle', 0.03, 0.01); }
+    else if (kind === 'cut') for (let i = 0; i < 4; i++) { this.burst(0.16, 5200, 0.045, 'highpass', i * 0.19); this.tone(3100, 0.03, 'triangle', 0.025, i * 0.19 + 0.01); }
+    else if (kind === 'shave') { this.tone(118, 0.75, 'sawtooth', 0.035, 0, 124); this.tone(236, 0.75, 'square', 0.012, 0); this.burst(0.03, 2600, 0.7, 'bandpass'); }
+    else if (kind === 'dye') { for (let i = 0; i < 3; i++) this.tone(520 - i * 70, 0.12, 'sine', 0.045, i * 0.14, 300 - i * 40); this.burst(0.04, 1800, 0.3, 'lowpass', 0.05); }
+    else if (kind === 'happy') { this.tone(1046.5, 0.14, 'triangle', 0.07); this.tone(1568, 0.3, 'triangle', 0.06, 0.12); }
+    else if (kind === 'angry') { this.tone(196, 0.32, 'sawtooth', 0.05, 0, 147); this.tone(185, 0.38, 'square', 0.025, 0.08, 139); }
   }
 
   // spotted! a sharp sting

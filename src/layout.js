@@ -3,7 +3,7 @@
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
   ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
-  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR,
+  blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR, SALON_DOOR, FEST,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
@@ -652,6 +652,32 @@ export function createLayout(seed = 7) {
       P({ t: 'cyl', x: dx + 2.25, z: fz + 0.95, y0: CURB_H + 2.0, y1: CURB_H + 2.2, r: 0.16, n: 10, c: 0xd8b45a, m: M.CHROME, cap: true });
       box(dx + 2.2, CURB_H + 1.55, fz + 0.95, dx + 2.4, CURB_H + 1.62, fz + 1.0, 0xd8b45a, M.CHROME);
     }
+    // Salong Saxen (v1.0): Fia's hair salon on Skolgatan – a glass door, two lit windows, an orange
+    // awning, a sign and a striped barber's pole
+    {
+      const fz = b.z1 - 1, dx = SALON_DOOR.x;
+      box(dx - 0.7, CURB_H, fz, dx + 0.7, CURB_H + 2.4, fz + 0.06, 0x2b2e35);
+      box(dx - 0.58, CURB_H, fz + 0.06, dx + 0.58, CURB_H + 2.26, fz + 0.085, 0x9fb7c4, M.GLASS);
+      box(dx - 0.42, CURB_H + 0.95, fz + 0.085, dx - 0.36, CURB_H + 1.35, fz + 0.13, 0xc9ccd0, M.CHROME);
+      box(dx - 0.3, CURB_H + 1.6, fz + 0.086, dx + 0.3, CURB_H + 1.86, fz + 0.09, 0xffffff); // ÖPPET card
+      box(dx - 0.26, CURB_H + 1.64, fz + 0.09, dx + 0.26, CURB_H + 1.82, fz + 0.093, 0xe8833a);
+      for (const wx of [dx - 2.7, dx + 2.7]) {
+        box(wx - 1.5, CURB_H + 0.7, fz + 0.02, wx + 1.5, CURB_H + 2.3, fz + 0.07, 0xffe2cc, M.LIGHT);
+        box(wx - 1.6, CURB_H + 0.62, fz, wx + 1.6, CURB_H + 0.7, fz + 0.12, 0xf1eee7);
+      }
+      box(dx - 4.4, CURB_H + 2.9, fz, dx + 4.4, CURB_H + 3.05, fz + 1.2, 0xe8833a);          // the awning
+      box(dx - 4.4, CURB_H + 2.7, fz + 1.18, dx + 4.4, CURB_H + 2.9, fz + 1.24, 0xf4efe4);
+      sign('salong', { lines: ['SALONG SAXEN', 'Frisör · Fia'], bg: '#2b2e35', fg: '#f6d9b8', border: '#e8833a', font: 0.5 }, dx, CURB_H + 3.6, fz + 0.07, 3.8, 0.85, 0);
+      // the barber's pole by the door: white with a red and a blue band, a little ball on top
+      const px = dx + 1.25, pz = fz + 0.3;
+      P({ t: 'cyl', x: px, z: pz, y0: CURB_H + 1.3, y1: CURB_H + 2.3, r: 0.1, n: 10, c: 0xf2efe6, cap: true });
+      for (let k = 0; k < 4; k++) P({ t: 'cyl', x: px, z: pz, y0: CURB_H + 1.36 + k * 0.24, y1: CURB_H + 1.44 + k * 0.24, r: 0.104, n: 10, c: k % 2 ? 0x2c62a8 : 0xd2342c });
+      P({ t: 'cyl', x: px, z: pz, y0: CURB_H + 2.3, y1: CURB_H + 2.42, r: 0.06, r1: 0.03, n: 8, c: 0xd8b45a, m: M.CHROME, cap: true });
+      box(px - 0.03, CURB_H + 1.7, fz, px + 0.03, CURB_H + 1.76, pz, 0x2a2b2f);
+      poly([[dx - 1, fz], [dx + 1, fz], [dx + 1, fz + 1.2], [dx - 1, fz + 1.2]], 0x3a3f46, M.PAVING, OVERLAY_H + 0.006);
+    }
+    // the bun party's long table (v1.0): its collider is only up while the party is (render.js draws it)
+    colliders.push({ t: 'box', x0: FEST.table.x0, z0: FEST.table.z0, x1: FEST.table.x1, z1: FEST.table.z1, h: 0, hUp: CURB_H + 0.8, fest: true });
     // square with fountain
     const fx = b.cx - 3, fz = b.cz - 4;
     poly(ngon(fx, fz, 4.6, 16), COL.stone, M.STONE, CURB_H + 0.55);
