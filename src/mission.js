@@ -36,6 +36,8 @@
 //   T  Livräddar-Tove:     "Badhyttsgåtan" – side quest on the beach: a logic puzzle with four huts (v1.5)
 //   P  Polis-Pia:          "Cyklarna hem" – side quest: ride three of the bikes home to Vera, Lasse
 //                          and Yasmin (v1.2)
+//   I  Kyrkoherde Inga:    "Kyrkkaffet" – side quest: Gun's Sunday buns on Arne's bike out to the chapel on
+//                          Söderholmen, the church bell, and the psalm on the organ (v1.10)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -43,6 +45,7 @@ import { Rides } from './rides.js';
 import { Secrets } from './secrets.js';
 import { ViewJob, EbbeJob, CoasterJob, southWorld, coasterStuck, UTSIKT, EBBE, MASEN } from './tivolijobs.js';
 import { CO_STUCK_T } from './southisle.js';
+import { ChurchJob, churchWorld, KYRK, KYRK_MAX } from './kyrkkaffe.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -259,6 +262,13 @@ export const QUESTS = [
     text: 'Rut här, jag äger Tivoli Lyckoland. Måsen har stannat mitt i liftbacken med åtta åkare – drivremmen har gått av! Lasse på Verkstan har en ny. Kom till Måsens station, fort!',
     reward: `upp till ${fmt(MASEN.base + MASEN.perSec * MASEN.time)} kr`, where: 'Måsens station på Tivoli Lyckoland, Söderholmen',
   },
+  {
+    // side quest (v1.10) from Söderholmens kapell: Gun's Sunday buns out on Arne's bike, the bell, and the psalm on the organ
+    id: 'kyrkkaffe', letter: 'I', who: WHO.inga, title: 'Kyrkkaffet', color: '#6b4fa0', x: KYRK.mark.x, z: KYRK.mark.z, r: KYRK.mark.r, Job: ChurchJob,
+    side: true, sms: true, after: 'bullfest', at: 45, needFoot: 'Kliv ur bilen – Gun står i trädgården.',
+    text: 'Kyrkoherde Inga här, i Söderholmens kapell. Gun skulle cykla hit med söndagsbullarna till kyrkkaffet, men hon har fått ryggskott – och kantorn ligger hemma med feber. Kan du hämta bullarna hos Gun på Storgatan och cykla ut dem till kapellet? Resten löser vi här.',
+    reward: `upp till ${fmt(KYRK_MAX)} kr`, where: 'Tant Guns trädgård på Storgatan – sedan kapellet på Söderholmen',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
@@ -342,6 +352,9 @@ export class Missions {
   nextMain() { return QUESTS.find((q) => q.main && !q.soon && q.after && this.done.has(q.after) && !this.known.has(q.id) && !this.done.has(q.id)) || null; }
 
   allDone() { return MAIN.every((id) => this.done.has(id)); }
+
+  // (v1.10) could this quest be offered now: its turn has come and you have not heard of it yet
+  canOffer(id) { const q = BY_ID[id]; return !!q && !q.soon && !this.known.has(id) && !this.done.has(id) && (!q.after || this.done.has(q.after)); }
 
   // ---------------------------------------------------------------- the quest log
   // a contact offers a quest: by SMS (tap it to answer) or face to face (the card opens at once)
@@ -446,6 +459,7 @@ export class Missions {
       case 'utsikten': return 'Möt Bagar-Bengt vid valvet till Tivoli Lyckoland';
       case 'ebbe': return 'Möt Hanna vid biljettkiosken på Tivoli Lyckoland';
       case 'masen': return 'Möt Tivoli-Rut vid Måsens station på tivolit';
+      case 'kyrkkaffe': return 'Hämta söndagsbullarna hos tant Gun och cykla ut dem till kapellet';
     }
     return '';
   }
@@ -517,6 +531,7 @@ export class Missions {
     homecomingWorld(this);
     beachPeople(this);
     southWorld(this);
+    churchWorld(this);                // (v1.10) Arne's bike waits by Gun's gate for the church buns
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
@@ -647,8 +662,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.9! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.9! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.10! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.10! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -706,6 +721,7 @@ export class Missions {
       case 'hytter': return { text: 'Gå till Tove (T)', sub: this.game.player.z < -229 ? 'Livräddartornet på badplatsen' : 'Över norra bron till Norrholmens badplats' };
       case 'konsert': return { text: 'Gå till Nova (N)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Den blå porten bakom Macken, Skolgatan' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
+      case 'kyrkkaffe': return { text: 'Gå till tant Gun (I)', sub: this.game.player.inCar ? 'Parkera och gå in i hennes trädgård' : 'Trädgården på Storgatan – söndagsbullarna' };
     }
     return null;
   }

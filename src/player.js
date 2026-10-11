@@ -37,6 +37,7 @@ export class Player {
       case 'enter': this.entering(dt); break;
       case 'down': this.downStep(dt); break;
       case 'ride': break;                       // (v1.6) in the Ferris wheel: rides.js moves you
+      case 'sit': break;                        // (v1.10) on the organ bench in the chapel: indoors.js put you there
     }
     this.near = this.state === 'foot' ? this.findCar() : null;
     const b = this.body;
@@ -65,8 +66,8 @@ export class Player {
       b.h = car.h; b.pose = 5; b.roll = 0; b.lean = 0; b.lie = 0; b.headYaw = 0; b.headPitch = 0.05;
       b.legAmp = 0; b.armAmp = 0;
       b.visible = true;
-    } else if (this.state === 'ride') {
-      // (v1.6) sitting on the bench of a gondola (this.rideHip: the height of the seat)
+    } else if (this.state === 'ride' || this.state === 'sit') {
+      // (v1.6) sitting on the bench of a gondola (this.rideHip: the height of the seat) – or (v1.10) on the organ bench
       b.x = this.x; b.z = this.z; b.y = this.rideHip - 0.92 * this.look.height; b.h = this.h;
       b.pose = 5; b.roll = 0; b.lean = 0; b.lie = 0; b.headYaw = 0; b.headPitch = 0.05; b.legAmp = 0; b.armAmp = 0;
       b.visible = true;
@@ -303,7 +304,7 @@ export class Player {
 
   // after vehicles moved: get pushed (or run over) by cars
   postPhysics() {
-    if (this.state === 'car' || this.state === 'enter' || this.state === 'ride') return;
+    if (this.state === 'car' || this.state === 'enter' || this.state === 'ride' || this.state === 'sit') return;
     const g = this.game;
     for (const v of g.vehicles) {
       if (Math.abs(v.y - this.y) > 1.6) continue;

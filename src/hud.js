@@ -606,7 +606,8 @@ export class HUD {
       this.el.keyhint.hidden = !label;
       const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', 'GÅ IN': 'Gå in i kapellet', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
-        'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
+        'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret',
+        'BÄR IN': 'Bär in bullarna i kapellet', RINGA: 'Ring i kyrkklockan', SPELA: 'Sätt dig vid orgeln' }; // (v1.10)
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

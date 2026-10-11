@@ -15,12 +15,14 @@ import { WHEEL_FARE } from '../src/rides.js';
 import { UTSIKT, EBBE, MASEN } from '../src/tivolijobs.js';
 import { CO_STUCK_T } from '../src/southisle.js';
 import { SECRETS, SECRET_COUNT, monsterRise, DUCKS, duckAt } from '../src/secrets.js';
-import { CHAPEL, CHAPEL_DOOR, PEWS } from '../src/chapel.js';
+import { CHAPEL, CHAPEL_DOOR, PEWS, CHAPEL_KAFFE } from '../src/chapel.js';
+import { KYRK, KYRK_MAX, kyrkPay, GUESTS } from '../src/kyrkkaffe.js';
+import { Organ, ORGAN, PSALM, VERSES } from '../src/organ.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
-import { clamp, wrapAngle } from '../src/rng.js';
+import { clamp, wrapAngle, fmt } from '../src/rng.js';
 import { circleVs } from '../src/collide.js';
 
 const DT = 1 / 60;
@@ -336,7 +338,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all fourteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.9/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.9, Dahlgren\'s photos are gone');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.10/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.10, Dahlgren\'s photos are gone');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2539,7 +2541,7 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   m.talkDone('utsikten'); run(g, 1);
   check(m.done.has('utsikten') && g.money - money0 === UTSIKT.reward && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Utsikten'), `main quest part 11 done: ${UTSIKT.reward} kr`);
   run(g, 16);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.9/.test(d.text)), 'all fourteen done: the end card (version 1.9)');
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.10/.test(d.text)), 'all fourteen done: the end card (version 1.10)');
 
   // he gets away when you only walk
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
@@ -2791,6 +2793,244 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   m.active = { id: 'x', prompt: null }; p.x = CHAPEL_DOOR.x; p.z = CHAPEL_DOOR.z; ind.update(0);
   check(ind.prompt !== 'GÅ IN', 'no GÅ IN while a job is running');
   m.active = null;
+}
+
+// ---------- 38. side quest "Kyrkkaffet" (v1.10): Gun's buns on Arne's bike, the bell and the organ ----------
+{
+  console.log('Kyrkkaffet (sidouppdrag i kapellet): orgeln');
+  // the organ on its own (organ.js): Inga's verses, a wrong key, the replay, waiting, getting up, the finale
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const ev = record(g, ['organ']);
+  const O = new Organ(g);
+  const host = { verses: [], wrongs: 0, fin: 0, done: 0, organVerse(i) { this.verses.push(i); }, organWrong() { this.wrongs++; }, organFinale() { this.fin++; }, organDone() { this.done++; } };
+  const tick = (sec) => { for (let i = 0; i < Math.round(sec * 60); i++) O.update(DT); };
+  check(PSALM.length === 15 && PSALM.every((k) => k >= 0 && k < 5) && VERSES.length === 3 && VERSES.every(([a, b]) => a < b && b <= PSALM.length), 'the psalm: fifteen notes on five keys, in three verses');
+  check(O.press(2) === 'off', 'not sitting at it: the keys do nothing');
+  O.begin('psalm', host);
+  check(O.phase === 'intro' && O.press(2) === 'wait', 'sitting down: Inga first – a key now is not your turn');
+  tick(ORGAN.intro + 0.05);
+  check(O.phase === 'demo', '  she sings the first verse');
+  tick(3);
+  const demo = ev.filter(([, d]) => d.kind === 'demo').map(([, d]) => d.k);
+  check(O.phase === 'turn' && JSON.stringify(demo) === JSON.stringify(PSALM.slice(0, 4)), `  the keys light up one by one (${demo.join(' ')}), then it is your turn`);
+  check(O.press(PSALM[0]) === 'ok' && O.pos === 1, 'the right key: the next note');
+  check(O.press((PSALM[1] + 2) % 5) === 'wrong' && O.mistakes === 1 && host.wrongs === 1 && O.phase === 'wrong' && ev.some(([, d]) => d.kind === 'wrong'), 'a wrong key: a sour note (and a mistake)');
+  tick(ORGAN.wrong + 0.05);
+  check(O.phase === 'demo' && O.verse === 0, '  she sings the same verse again');
+  tick(3);
+  for (const k of PSALM.slice(0, 4)) O.press(k);
+  check(O.phase === 'good' && host.verses.join() === '0', 'played back right: "Fint!"');
+  tick(ORGAN.good + 0.05);
+  check(O.phase === 'demo' && O.verse === 1 && O.notes.length === 8, '  verse two: the whole first line, eight notes');
+  tick(5);
+  check(O.phase === 'turn', '  your turn');
+  tick(ORGAN.wait + 0.1);
+  check(O.phase === 'demo' && O.mistakes === 1, `no key for ${ORGAN.wait} s: she sings it again (no mistake counted)`);
+  O.stop();
+  check(!O.open && O.verse === 1 && O.press(2) === 'off', 'SLUTA: up from the bench, still on verse two');
+  O.begin('psalm', host);
+  tick(ORGAN.intro + 5);
+  for (const k of PSALM.slice(0, 8)) O.press(k);
+  tick(ORGAN.good + 5);
+  for (const k of PSALM.slice(8)) O.press(k);
+  check(O.phase === 'good' && host.verses.join() === '0,1,2', 'back at it: verse two, then verse three (the second line)');
+  tick(ORGAN.good + 0.05);
+  check(O.phase === 'final' && host.fin === 1, 'then the whole chapel sings it through');
+  tick(12);
+  const fin = ev.filter(([, d]) => d.kind === 'final').map(([, d]) => d.k);
+  check(O.phase === 'done' && host.done === 1 && JSON.stringify(fin) === JSON.stringify(PSALM), `  all ${fin.length} notes, and done`);
+  const F = new Organ(g); F.begin('free');
+  check(F.press(0) === 'free' && F.press(4) === 'free' && F.played === 2 && F.phase === 'free', 'free play: every key just plays');
+}
+{
+  console.log('Kyrkkaffet (sidouppdrag i kapellet): hela vägen');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, p = g.player, ind = g.indoors, R = CHAPEL.room, K = CHAPEL_KAFFE;
+  m.restore(livsSave(UP_TO_FEST));
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'offer', 'say', 'organ', 'churchBell', 'buns']);
+  check(g.bike && Math.hypot(g.bike.x - BIKE_RETURN.x, g.bike.z - BIKE_RETURN.z) < 3, "Arne's bike lives with Melker by the tower");
+  run(g, 42);
+  check(!m.known.has('kyrkkaffe'), 'no word from Inga yet');
+  run(g, 6);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'kyrkkaffe') || [])[1];
+  check(sms && sms.from === 'Kyrkoherde Inga' && /ryggskott/.test(sms.text) && /kantorn/.test(sms.text), `about 45 s after Bullfesten: Inga texts ("${sms && sms.text.slice(0, 44)}…")`);
+  check(m.quest('kyrkkaffe').reward === `upp till ${fmt(KYRK_MAX)} kr` && KYRK_MAX === 1600, `  reward: ${m.quest('kyrkkaffe').reward}`);
+  run(g, 1);
+  check(Math.hypot(g.bike.x - GUN_BIKE.x, g.bike.z - GUN_BIKE.z) < 0.5, "  Arne's bike is waiting by Gun's gate (moved there out of sight)");
+  m.accept('kyrkkaffe'); run(g, 0.3);
+  check(m.tracked === 'kyrkkaffe' && /Gun/.test(m.objective), `following it: "${m.objective}"`);
+  check(!reachable(g, { x: -97.5, z: -45.5 }, [KYRK.mark], { x0: -106, z0: -56, x1: -90, z1: -43 }).length, "the I is in Gun's garden – you can walk there through the gap in the hedge");
+  // on the bike: get off first
+  walkHere(g, g.bike.x - 1.0, g.bike.z + 0.5); press(g);
+  const bike = g.bike;
+  check(p.inCar && p.car === bike, '  (on Arne\'s bike)');
+  bike.x = KYRK.mark.x + 0.3; bike.z = KYRK.mark.z; bike.vx = bike.vz = 0; run(g, 0.4);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /Kliv av cykeln – Gun/.test(d.text)), 'riding into her garden: "Kliv av cykeln – Gun står i trädgården."');
+  press(g); run(g, 0.6);
+  check(m.active && m.active.id === 'kyrkkaffe' && m.active.stage === 'gun' && p.frozen, 'off the bike: Gun talks to you');
+  run(g, 1);
+  const t1 = lastTalk(ev, 'kyrkkaffe');
+  check(t1 && t1.pages.length === 5 && t1.pages.some((q) => /Arnes gamla cykel/.test(q.text) && /Melker/.test(q.text)) && t1.pages.some((q) => q.fx === 'buns'), '  Gun: ryggskott – the buns are in the box on Arne\'s bike (she borrowed it back from Melker)');
+  for (const pg of t1.pages) if (pg.fx) m.talkFx('kyrkkaffe', pg.fx);
+  check(bike.buns && m.active.buns === KYRK.buns && g.bike === bike, `  ${m.active.buns} buns in the box (the bike you came on)`);
+  m.talkDone('kyrkkaffe'); run(g, 0.3);
+  check(m.active.stage === 'ride' && !p.frozen && m.objective === 'Kliv på Arnes cykel', `then: "${m.objective}" · ${m.sub}`);
+  check(m.targets.some((t) => t.kind === 'car' && t.car === bike && t.gps), '  the arrow and the GPS point at the bike');
+  // a fall: six buns go flying
+  walkHere(g, bike.x - 1.0, bike.z + 0.4); press(g);
+  check(p.car === bike && m.objective === 'Cykla bullarna till kapellet' && /södra bron/.test(m.sub), `on it: "${m.objective}" · ${m.sub}`);
+  p.fallOff(); run(g, 0.3);
+  check(m.active.buns === 18 && ev.some(([n]) => n === 'buns') && ev.some(([n, d]) => n === 'toast' && /6 bullar for i backen\. 18 kvar/.test(d.text)), 'thrown off: six buns fly ("Aj! 6 bullar for i backen. 18 kvar i lådan.")');
+  run(g, 1.6);
+  walkHere(g, bike.x - 0.9, bike.z + 0.3); press(g);
+  check(p.car === bike && bike.buns, '  back on, the box still full');
+  // the whole way: from her gate, east along Storgatan, south on Kungsgatan over the bridge, to the chapel
+  const t0 = g.time;
+  const left = driveTo2(g, bike, CHAPEL_DOOR.x, CHAPEL_DOOR.z - 4, 150, 8.5);
+  check(left < 3 && m.active.buns === 18, `rode it all the way to the chapel in ${(g.time - t0).toFixed(0)} s (${left.toFixed(1)} m short of the spot)`);
+  check(m.objective === 'Kliv av vid kapellet' && m.targets.some((t) => t.kind === 'zone' && Math.hypot(t.x - CHAPEL_DOOR.x, t.z - CHAPEL_DOOR.z) < 0.1), `  "${m.objective}" – the yellow ring at the tower door`);
+  press(g); run(g, 0.5);
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'BÄR IN', 'BÄR IN at the tower door (GÅ IN while the job runs: no)');
+  // not without the bike close by
+  const bx = bike.x, bz = bike.z;
+  bike.x = CHAPEL_DOOR.x - 30; run(g, 0.1);
+  check(m.prompt !== 'BÄR IN' && m.objective === 'Kliv på Arnes cykel', '  (the bike far away: no BÄR IN – the buns are in its box)');
+  bike.x = bx; bike.z = bz; run(g, 0.1);
+  press(g); run(g, 1.6);
+  check(g.indoor && ind.where === 'chapel' && m.active.stage === 'welcome' && !bike.buns, 'in through the door with the buns');
+  const inga = ind.priest;
+  check(inga && Math.hypot(inga.x - K.hello.x, inga.z - K.hello.z) < 0.2, '  Inga is waiting by the coffee table');
+  const t2 = lastTalk(ev, 'kyrkkaffe');
+  check(t2 && t2 !== t1 && /^Arton bullar/.test(t2.pages[1].text) && t2.pages[1].fx === 'table', `  "${t2 && t2.pages[1].text.slice(0, 42)}…"`);
+  m.talkFx('kyrkkaffe', 'table');
+  check(ind.chapelBuns === 18, '  18 buns on the coffee table');
+  m.talkDone('kyrkkaffe'); run(g, 0.3);
+  check(m.active.stage === 'bell' && m.objective === 'Ring i kyrkklockan', `then: "${m.objective}" · ${m.sub}`);
+  walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1);
+  check(m.prompt !== 'GÅ UT', '  (no GÅ UT now – the church coffee is about to start)');
+  const Bd = CHAPEL.bounds;
+  check(!reachable(g, CHAPEL.spawn, [{ x: K.rope.x + 0.25, z: K.rope.z + 0.5 }, { x: K.organ.x, z: K.organ.z }, { x: R.x0 + 6.5, z: R.z0 + 2.65 }], Bd).length, 'you can walk to the bell rope and up to the organ (past the coffee table and the altar rail)');
+  walkHere(g, K.rope.x + 0.25, K.rope.z + 0.5); run(g, 0.1);
+  check(m.prompt === 'RINGA', 'RINGA by the rope');
+  press(g); press(g);
+  check(m.active.rings === 1 && ev.filter(([n]) => n === 'churchBell').length === 1, '  one pull – pressing again right away does nothing');
+  run(g, 1.0); press(g); run(g, 1.0); press(g); run(g, 0.2);
+  check(m.active.rings === 3 && ev.filter(([n]) => n === 'churchBell').length === 3 && m.active.stage === 'guests', 'three rings: the guests come');
+  let t = 0; while (m.active.stage === 'guests' && t++ < 60 * 30) g.step(DT, idle);
+  const guests = m.active.guests;
+  check(guests.length === 4 && guests.every((G) => G.seated && G.ped.state === 'lounge'), `  they walk in and sit down (${(t / 60).toFixed(1)} s): ${guests.map((G) => G.def.npc.slice(7)).join(', ')}`);
+  check(guests.every((G) => PEWS.some(([x0, z0, x1, z1]) => G.ped.x > R.x0 + x0 && G.ped.x < R.x0 + x1 && G.ped.z > R.z0 + z0 && G.ped.z < R.z0 + z1)) && GUESTS.find((q) => q.npc === 'church-gun').row === 5 && GUESTS.find((q) => q.npc === 'church-ingvar').row === 0, '  in the pews – Gun at the front, Ingvar at the very back');
+  check(ev.some(([n, d]) => n === 'say' && d.who && d.who.npc === 'church-gun' && /Ryggskott/.test(d.text)) && !ev.some(([n, d]) => n === 'say' && d.who && d.who.npc === 'church-ingvar'), '  Gun says hello; Ingvar says nothing');
+  check(ind.chapelFolk.length === 8 && m.active.stage === 'announce' && Math.hypot(inga.x - CHAPEL.priest.x, inga.z - CHAPEL.priest.z) < 0.3, '  Inga is back at the altar and speaks to everyone');
+  run(g, 1);
+  m.talkDone('kyrkkaffe'); run(g, 0.3);
+  check(m.active.stage === 'organ' && m.objective === 'Spela psalmen på orgeln', `then: "${m.objective}" · ${m.sub}`);
+  walkPath(g, [[R.x0 + 4, R.z0 + 10.4], [R.x0 + 4, R.z0 + 11.6], [K.organ.x, K.organ.z]], () => m.prompt === 'SPELA', 30);
+  check(m.prompt === 'SPELA', '  walked up through the gap in the rail: SPELA at the organ');
+  run(g, 1.5);
+  check(Math.hypot(inga.x - K.cantor.x, inga.z - K.cantor.z) < 0.3, '  Inga has come over to sing');
+  press(g);
+  const O = ind.organ;
+  check(p.state === 'sit' && p.frozen && O.open && O.mode === 'psalm' && Math.abs(p.x - K.seat.x) < 0.01 && g.camFocus && g.camFocus.owner === 'organ', 'SPELA: on the organ bench, the keys come up');
+  let wrong = 0;
+  const playUntil = (cond, wrongAt) => {
+    for (let k = 0; k < 60 * 90 && O.open && !cond(); k++) {
+      if (O.phase === 'turn') {
+        const want = O.notes[O.pos];
+        if (wrongAt && wrongAt(O)) { O.press((want + 1) % 5); wrong++; } else O.press(want);
+      }
+      g.step(DT, idle);
+    }
+  };
+  playUntil(() => O.verse === 1 && O.phase === 'turn', (q) => q.verse === 0 && q.pos === 2 && wrong === 0);
+  check(O.mistakes === 1 && ev.some(([n, d]) => n === 'say' && d.who === inga && /Lyssna en gång till|Nästan|psalmbok|Lugnt/.test(d.text)), 'verse one (one wrong key on the way – Inga sings it again)');
+  ind.organStop(); run(g, 0.2);
+  check(p.state === 'foot' && !p.frozen && !O.open && m.active.stage === 'organ' && !g.camFocus, 'SLUTA: up from the bench (still the quest – sit down again to go on)');
+  walkHere(g, K.organ.x, K.organ.z); run(g, 0.1); press(g);
+  check(O.open && O.verse === 1 && m.active.stage === 'playing', '  SPELA again: verse two');
+  playUntil(() => O.phase === 'final');
+  check(O.phase === 'final' && ev.filter(([n, d]) => n === 'say' && /♪/.test(d.text)).length >= 8, 'all three verses: the whole chapel sings (♪ over everyone)');
+  playUntil(() => !O.open);
+  check(m.active.stage === 'finale' && p.state === 'foot' && ev.some(([n, d]) => n === 'say' && d.who && d.who.npc === 'church-ingvar' && d.text === 'Amen.'), '  the last note: up from the bench – and Ingvar says "Amen."');
+  run(g, 3.6);
+  const t3 = lastTalk(ev, 'kyrkkaffe');
+  const gun = m.active.guest('church-gun');
+  check(Math.hypot(gun.x - (R.x0 + 4.95), gun.z - (R.z0 + 11.68)) < 0.4 && Math.hypot(p.x - (R.x0 + 3.05), p.z - (R.z0 + 11.72)) < 0.4 && Math.hypot(inga.x - CHAPEL.priest.x, inga.z - CHAPEL.priest.z) < 0.4, '  Gun has come up front: the three of you in front of the altar');
+  const pay = kyrkPay(18, 1);
+  check(t3 && t3.pages.some((q) => q.who === 'Tant Gun' && /Beethoven/.test(q.text)) && t3.pages.some((q) => /1972/.test(q.text)) && /Ett par toner/.test(t3.pages[4].text) && t3.pages[4].text.includes(`${fmt(pay)} kronor`), '  it was Beethoven – Arne\'s wish for the wedding in 1972');
+  const money0 = g.money;
+  m.talkDone('kyrkkaffe'); run(g, 0.5);
+  check(m.done.has('kyrkkaffe') && !m.active && g.money - money0 === pay && pay === 700 + 18 * 25 + 250, `done: ${g.money - money0} kr (700 + 18 buns × 25 + 300 − 50 for the wrong key)`);
+  check(g.stats.churchBuns === 18 && g.stats.psalmWrong === 1, '  stats for the end card: 18 buns, one wrong key');
+  run(g, 31);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /ängel/.test(d.text)), '  and later Gun texts: "…du spelade som en ängel…"');
+  check(Math.hypot(g.bike.x - (BIKE_RETURN.x - 1.4), g.bike.z - (BIKE_RETURN.z + 0.4)) < 0.5, "  Arne's bike has gone back to Melker by the tower (out of sight)");
+  // afterwards: the organ is yours, the bell rings, and out the door
+  walkHere(g, K.organ.x, K.organ.z); run(g, 0.1);
+  check(m.prompt === 'SPELA', 'afterwards: SPELA at the organ any time');
+  press(g);
+  check(O.open && O.mode === 'free' && O.press(3) === 'free', '  free play');
+  ind.organStop(); run(g, 0.2);
+  walkHere(g, K.rope.x + 0.25, K.rope.z + 0.5); run(g, 0.1);
+  check(m.prompt === 'RINGA', '  and the bell rope');
+  press(g);
+  check(ev.filter(([n]) => n === 'churchBell').length === 4 && g.stats.bells === 1, '  DONG');
+  walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 1.2);
+  check(m.prompt === 'GÅ UT', 'GÅ UT by the door again');
+  press(g); run(g, 1.4);
+  check(!g.indoor && !guests.some((G) => g.peds.list.includes(G.ped)) && ind.chapelBuns === 0, '  out: the guests and the buns stay behind');
+  const saved = m.progress();
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  check(g2.mission.restore(saved) && g2.mission.done.has('kyrkkaffe') && g2.stats.churchBuns === 18, 'saved and loaded: done, with its stats');
+}
+{
+  console.log('Kyrkkaffet: smulor, och en ny sats');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, p = g.player;
+  m.restore({ ...livsSave(UP_TO_FEST), known: [...UP_TO_FEST.filter((d) => d !== 'red'), 'kyrkkaffe'] });
+  const ev = record(g, ['sms', 'talk', 'banner', 'toast']);
+  run(g, 1);
+  walkHere(g, -97.5, -45.8);
+  walkPath(g, [[-97.5, -48.6], [KYRK.mark.x, KYRK.mark.z]], () => m.active, 10);
+  check(m.active && m.active.id === 'kyrkkaffe' && Math.hypot(g.bike.x - GUN_BIKE.x, g.bike.z - GUN_BIKE.z) < 0.5, 'walking in through the gap: it starts (and the bike was put by her gate)');
+  run(g, 1);
+  m.talkFx('kyrkkaffe', 'buns'); m.talkDone('kyrkkaffe');
+  const bike = g.bike;
+  for (let i = 0; i < 4; i++) {
+    walkHere(g, bike.x - 1.0, bike.z + 0.4); press(g);
+    if (p.car !== bike) break;
+    p.fallOff(); run(g, 1.6);
+  }
+  check(!m.active && m.isOpen('kyrkkaffe') && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /smulor/.test(d.sub)) && !bike.buns, 'four falls: all the buns are crumbs – failed, the quest stays open');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /ny sats/.test(d.text)), '  Gun: "…jag bakar en ny sats…"');
+  // try again: Gun keeps it short
+  walkHere(g, -97.5, -44); run(g, 7);
+  walkPath(g, [[-97.5, -48.6], [KYRK.mark.x, KYRK.mark.z]], () => m.active, 10);
+  run(g, 1);
+  const t = lastTalk(ev, 'kyrkkaffe');
+  check(m.active && t && t.pages.length === 2 && /ny sats/.test(t.pages[0].text), 'back to her garden: a new batch, a short talk');
+}
+{
+  console.log('Kyrkkaffet: Inga frågar själv');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, ind = g.indoors;
+  m.restore(livsSave(UP_TO_FEST));
+  const ev = record(g, ['talk', 'offer']);
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); press(g); run(g, 1.2);
+  walkHere(g, CHAPEL.talk.x, CHAPEL.talk.z - 1.2); run(g, 0.1);
+  press(g);
+  const t1 = lastTalk(ev, 'inga');
+  check(t1 && t1.pages.some((q) => /ryggskott/.test(q.text)) && !m.known.has('kyrkkaffe'), 'in the chapel before her text: Inga asks you herself');
+  m.talkDone('inga'); run(g, 0.1);
+  check(m.known.has('kyrkkaffe') && ev.some(([n, d]) => n === 'offer' && d.id === 'kyrkkaffe'), '  and the quest card opens');
+  m.accept('kyrkkaffe'); run(g, 0.5);
+  press(g);
+  const t2 = lastTalk(ev, 'inga');
+  check(t2 !== t1 && t2.pages.length === 1 && /Kyrkkaffet väntar/.test(t2.pages[0].text), `talk to her again: "${t2 && t2.pages[0].text.slice(0, 40)}…"`);
+  m.talkDone('inga'); run(g, 0.1);
+  check(m.prompt !== 'SPELA' && (() => { g.player.x = CHAPEL_KAFFE.organ.x; g.player.z = CHAPEL_KAFFE.organ.z; ind.update(0); return ind.prompt !== 'SPELA'; })(), '  (the organ is the cantor\'s until you have played the psalm)');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

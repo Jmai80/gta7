@@ -4,7 +4,8 @@
 import { GUN, PIER_BENCH, CURB_H } from './config.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 
-const LOOK = { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1, style: ST.bun | ST.glasses | ST.jacket, accent: 0x7a5a9a }; // a lilac cardigan
+export const GUN_LOOK = { shirt: 0xb48fd0, pants: 0x3d3550, skin: 0xf2d0b5, hair: 0xdedad2, height: 0.92, bulk: 1.1, style: ST.bun | ST.glasses | ST.jacket, accent: 0x7a5a9a }; // a lilac cardigan
+const LOOK = GUN_LOOK; // (v1.10: exported for the church coffee in the chapel)
 // main quest, part 2: the figure on the pier bench, in a dark coat with a hat pulled down
 const COAT = { ...LOOK, shirt: 0x343846, pants: 0x23252b, hair: 0x1c1d22, style: ST.cap | ST.jacket, accent: 0x25272d }; // coat and hat pulled down
 const PIER_LINES = ['Norra bron, kom ihåg.', 'Akta dig för Bullbilen.', 'Ät bullen nu, innan den kallnar.', 'Inte ett ord till Melker!'];
@@ -138,6 +139,10 @@ export class FlagQuest {
     if (this.prompt !== 'PRATA') return false;
     const m = this.mgr, p = this.game.player, gun = this.gun;
     gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z);
+    if (m.active && m.active.id === 'kyrkkaffe') { // (v1.10) the church buns are on their way
+      this.say(m.active.stage === 'ride' ? 'Bullarna kallnar, lilla vän! Kapellet ligger på Söderholmen.' : 'Hälsa Inga!');
+      return true;
+    }
     if (this.pinned) { // (v1.0) at the bun party on the square
       const busy = m.active && m.active.id === 'bullfest';
       const lines = m.done.has('bullfest') ? ['Tack, lilla vän! Ta en bulle till.', 'Arne hade varit så stolt i dag.', 'Bengt bakar faktiskt riktigt goda bullar nu.']

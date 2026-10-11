@@ -1,5 +1,6 @@
 // Boot, main loop and glue between simulation, view, HUD, input and audio.
 import { SECRET_COUNT } from './secrets.js';
+import { KEYS as ORGAN_KEYS, VERSES } from './organ.js';
 import { Vector3 } from './three.js';
 import { Game } from './game.js';
 import { View } from './render.js';
@@ -177,9 +178,9 @@ function wire(g) {
   g.on('wanted', (e) => { hud.stars(e.stars); if (e.stars) audio.wanted(); });
   g.on('say', (e) => {
     hud.say(e.who, e.text);
-    // the people in the story speak up (quietly, and only when they are close to you)
+    // the people in the story speak up (quietly, and only when they are close to you – not while they sing)
     const w = e.who;
-    if (w && w.npc && w.body && Math.hypot(w.x - g.player.x, w.z - g.player.z) < 16) audio.voice(npcVoice(w), e.text, 0.045);
+    if (w && w.npc && w.body && !/^♪/.test(e.text) && Math.hypot(w.x - g.player.x, w.z - g.player.z) < 16) audio.voice(npcVoice(w), e.text, 0.045);
   });
   g.on('honk', (e) => {
     const d = Math.hypot(e.car.x - view.camera.position.x, e.car.z - view.camera.position.z);
@@ -209,7 +210,9 @@ function wire(g) {
   g.on('land', (e) => { if (e.impact > 2.5) { audio.thud(Math.min(1, e.impact / 9)); view.rig.shake = Math.min(0.8, e.impact * 0.05); } });
   g.on('wash', (e) => { view.washing = e.on; audio.washing(e.on); });
   g.on('salon', (e) => audio.salon(e.kind));       // Salong Saxen (v1.0): snip, buzz, dye, happy or not
-  g.on('buns', (e) => view.bunBurst(e.x, e.z));    // Jonte comes off Arne's bike (v1.0)
+  g.on('buns', (e) => view.bunBurst(e.x, e.z));    // Jonte comes off Arne's bike (v1.0) – or you, with the church buns (v1.10)
+  g.on('organ', (e) => { if (e.kind === 'wrong') { audio.organWrong(e.k); buzz([40, 30, 40]); } else audio.organ(e.k, e.len, e.kind === 'demo' ? 0.075 : 0.09); }); // (v1.10) the chapel organ
+  g.on('churchBell', () => { audio.churchBell(); buzz(25); });
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -438,7 +441,7 @@ function voiceOf(who) {
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
+const NPC_VOICE = { inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -556,6 +559,7 @@ function showEnd(s) {
     ['Konsertbiljetten', s.concert != null ? `${s.concert} s över` : '–'],
     ['Spidern hem', s.spiderCond != null ? `${s.spiderCond} % hel` : '–'],
     ['Badhyttsgåtan', s.hutTries != null ? `${s.hutTries} försök` : '–'],
+    ['Kyrkkaffet', s.churchBuns != null ? `${s.churchBuns} bullar · ${s.psalmWrong ? `${s.psalmWrong} fel` : 'felfri psalm'}` : '–'],
     ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],
   ];
   const grid = $('endStats');
@@ -569,6 +573,52 @@ function showEnd(s) {
   state = 'end';
   input.releaseAll();
   audio.horn(false);
+}
+
+// ---------------------------------------------------------------- the organ (v1.10)
+// Five keys at the bottom of the screen while you sit at the chapel organ. The organ itself (organ.js)
+// lives in the simulation: it lights its keys and says whose turn it is; this only draws that and
+// passes your taps on.
+let organShown = false, organDraw = '';
+const ORGAN_TITLE = { intro: 'LYSSNA PÅ INGA', demo: 'LYSSNA…', turn: 'DIN TUR!', good: 'FINT!', wrong: 'OJ – FEL TON', final: 'HELA KAPELLET SJUNGER', done: 'AMEN!', free: 'SPELA FRITT' };
+function organKey(k) {
+  if (state !== 'play' || !game || !game.indoors.organ.open) return;
+  const r = game.indoors.organ.press(k);
+  if (r === 'ok' || r === 'verse' || r === 'free') buzz(12);
+}
+function organStop() { if (state === 'play' && game) game.indoors.organStop(); }
+function syncOrgan() {
+  const O = game && game.indoors.organ;
+  const show = !!(O && O.open && state === 'play');
+  if (show !== organShown) {
+    organShown = show;
+    $('organ').hidden = !show;
+    $('game').classList.toggle('organing', show);
+    organDraw = '';
+  }
+  if (!show) return;
+  const free = O.mode === 'free';
+  const n = free ? 0 : O.notes.length, done = O.phase === 'turn' ? O.pos : O.phase === 'good' || O.phase === 'final' || O.phase === 'done' ? n : 0;
+  const key = `${O.phase}|${O.verse}|${done}|${O.lit}|${O.litKind}|${input.lastKind}`;
+  if (key === organDraw) return;
+  organDraw = key;
+  $('ogKick').textContent = free ? 'ORGELN · SÖDERHOLMENS KAPELL' : O.phase === 'final' || O.phase === 'done' ? 'PSALMEN · ALLA VERSERNA' : `PSALMEN · VERS ${Math.min(VERSES.length, O.verse + 1)} AV ${VERSES.length}`;
+  $('ogTitle').textContent = ORGAN_TITLE[O.phase] || '';
+  const touch = input.lastKind === 'touch';
+  $('ogHint').textContent = free ? (touch ? 'Spela vad du vill!' : 'Spela vad du vill – tangenterna 1–5. Backsteg: sluta.')
+    : O.phase === 'turn' ? (touch ? 'Tryck på tangenterna i samma ordning som Inga sjöng.' : 'Samma ordning som Inga sjöng – tangenterna 1–5 eller musen.')
+      : O.phase === 'wrong' ? 'Inga sjunger versen en gång till.' : O.phase === 'final' ? '♪ ♫ ♪' : 'Titta vilka tangenter som lyser.';
+  const dots = $('ogDots');
+  if (dots.childElementCount !== n) { dots.innerHTML = ''; for (let i = 0; i < n; i++) dots.append(document.createElement('i')); }
+  for (let i = 0; i < n; i++) dots.children[i].className = i < done ? 'on' : '';
+  const keys = $('ogKeys').children;
+  for (let i = 0; i < keys.length; i++) {
+    const el = keys[i];
+    el.classList.toggle('lit', O.lit === i && O.litKind !== 'wrong');
+    el.classList.toggle('wrong', O.lit === i && O.litKind === 'wrong');
+    el.classList.toggle('mine', O.lit === i && (O.litKind === 'play' || O.litKind === 'final'));
+  }
+  $('organ').classList.toggle('turn', O.phase === 'turn' || free);
 }
 
 // ---------------------------------------------------------------- UI
@@ -635,11 +685,26 @@ function bindUi() {
   on('ofWait', () => answerOffer(false));
   on('logClose', closeLog);
   $('talk').addEventListener('click', (e) => { e.preventDefault(); nextTalk(); }); // anywhere on the screen (the button too)
+  // (v1.10) the organ's keys: on the press, not the click, so a quick tune keeps up
+  ORGAN_KEYS.forEach((name, k) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'og-key'; b.dataset.k = k;
+    b.setAttribute('aria-label', `Tangent ${name}`);
+    b.innerHTML = `<i></i><span>${name}</span><small>${k + 1}</small>`;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); organKey(k); });
+    $('ogKeys').append(b);
+  });
+  on('ogStop', organStop);
   window.addEventListener('keydown', (e) => {
     if (state === 'offer' && e.code === 'Escape') { e.preventDefault(); answerOffer(false); }
     if (state === 'shop' && e.code === 'Escape') { e.preventDefault(); closeShop(); }
     else if (state === 'log' && (e.code === 'Escape' || e.code === 'KeyU')) { e.preventDefault(); closeLog(); }
     else if (state === 'talk' && !e.repeat && ['Enter', 'NumpadEnter', 'Space', 'KeyE', 'KeyF', 'KeyJ', 'ArrowRight'].includes(e.code)) { e.preventDefault(); nextTalk(); }
+    else if (organShown && state === 'play' && !e.repeat) {
+      const d = /^(?:Digit|Numpad)([1-5])$/.exec(e.code);
+      if (d) { e.preventDefault(); organKey(+d[1] - 1); }
+      else if (e.code === 'Backspace') { e.preventDefault(); organStop(); }
+    }
   });
 }
 
@@ -703,6 +768,7 @@ function frame(now) {
     const st = settings.fps ? view.stats : null;
     hud.update(simDt, game, view, camYaw, st ? `${perf.fps} fps · ${view.dpr.toFixed(2)}x · ${st.calls} dc · ${(st.tris / 1000).toFixed(0)}k tri` : null);
   }
+  syncOrgan();
   view.render();
 }
 const tmpDir = new Vector3();
@@ -711,6 +777,7 @@ const tmpDir = new Vector3();
 window.__gta = {
   get game() { return game; }, get view() { return view; }, get state() { return state; }, get perf() { return perf; },
   start: () => startPlay(), pause, resume, restart, openLog, openOffer, nextTalk, openShop, buyItem, closeShop, get hud() { return hud; }, get talk() { return talk; },
+  organKey, organStop,
 };
 
 const start = (data) => boot(data || {}).catch((e) => console.error(e));

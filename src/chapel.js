@@ -29,6 +29,16 @@ export const PEWS = [];  // [x0, z0, x1, z1] local, both blocks of every row
 for (let i = 0; i < ROWS; i++) { const z0 = ROW_Z0 + i * ROW_STEP; PEWS.push([0.5, z0, 3.3, z0 + PEW_D], [4.7, z0, 7.5, z0 + PEW_D]); }
 const rowZ = (i) => ROW_Z0 + i * ROW_STEP;
 
+// (v1.10) a seat in a pew (row 0 is the back row, by the door; row 5 the front, by the altar rail) at
+// local x, and the way there from the door: down the aisle, then in between this row and the next
+export function pewSeat(row, x) {
+  const z0 = rowZ(row), gap = z0 + PEW_D + (ROW_STEP - PEW_D) / 2;
+  return {
+    x: X + x, z: Z + z0 + 0.32, y: Y + 0.5, h: 0,
+    path: [[X + 4, Z + 0.7], [X + 4, Z + gap], [X + x, Z + gap]],
+  };
+}
+
 export const CHAPEL = {
   spawn: { x: X + 4, z: Z + 0.9, h: 0 },                // a step inside the door, facing the altar
   door: { x: X + 4, z: Z + 0.45, r: 0.7 },              // stand here and press GÅ UT
@@ -44,6 +54,19 @@ export const CHAPEL = {
   room: { x0: X, x1: X + 8, z0: Z, z1: Z + 14 },
   bounds: { x0: X - 0.5, x1: X + 8.5, z0: Z - 0.5, z1: Z + 14.5 },
   y: Y,
+};
+
+// (v1.10) church coffee ("Kyrkkaffet"): the coffee table along the north wall east of the door, the
+// bell rope just inside the door (west side), and the organ bench in front of the organ's keys
+export const CHAPEL_KAFFE = {
+  table: { x: X + 6.32, y: Y + 0.765, z: Z + 0.44 },        // the middle of the coffee table: the tray of buns goes here
+  rope: { x: X + 3.0, z: Z + 0.42, r: 0.95 },               // the bell rope hangs here; stand close and press RINGA
+  hello: { x: X + 5.15, z: Z + 1.45 },                      // Inga waits by the table when you carry the buns in
+  organ: { x: X + 2.12, z: Z + 11.95, r: 0.8 },             // stand here, at the end of the organ bench, and press SPELA
+  seat: { x: X + 0.95, z: Z + 11.92, y: Y + 0.47, h: 0 },   // on the bench, facing the keys (hips at y)
+  up: { x: X + 2.12, z: Z + 11.95, h: Math.PI / 2 },        // where you stand when you get up
+  cantor: { x: X + 2.55, z: Z + 12.62, h: -Math.PI / 2 },   // Inga stands here by the organ and sings first
+  ropeTop: 3.15, ropeLow: 0.95,                              // the rope's ends (local y), and its red-and-white grip
 };
 
 const WALL = 0xf4f0e6;
@@ -65,11 +88,13 @@ export const CHAPEL_FURN = [
   [0.85, 1.25, 1.55, 1.95, 0.95],  // the baptismal font
   [6.15, 1.5, 6.85, 2.2, 1.0],     // the candle stand
   [0.15, 12.5, 1.7, 13.85, 2.4],   // the organ
-  [3.4, -0.2, 4.6, 0, WH],         // the door (shut behind you)
+  [4.95, 0.1, 7.75, 0.75, 0.77],   // (v1.10) the coffee table by the door
+  [0.3, 11.76, 1.6, 12.1, 0.47],   // (v1.10) the organ bench
+  [3.4, -0.2, 4.6, 0, WH],         // the door (shut behind you) – keep it last (the minimap leaves it out)
 ];
 
 const SIGNS = {
-  altarpiece: { def: { lines: ['FRID', 'VARE MED ER'], bg: '#24365e', fg: '#f2d27a', font: 0.46, border: '#d9b23a' }, x: 4, y: 1.85, z: 13.988, rot: Math.PI, w: 1.7, h: 1.0 },
+  altarpiece: { def: { lines: ['FRID', 'VARE MED ER'], bg: '#24365e', fg: '#f2d27a', font: 0.46, border: '#d9b23a' }, x: 4, y: 1.85, z: 13.958, rot: Math.PI, w: 1.7, h: 1.0 }, // (v1.10: in front of its frame, which hid it)
   psalms: { def: { lines: ['PSALM', '12  ·  287', '649'], bg: '#3b2a1e', fg: '#f4efe4', font: 0.36, border: '#d9b23a' }, x: 7.988, y: 1.7, z: 3.0, rot: -Math.PI / 2, w: 0.8, h: 0.9 },
   welcome: { def: { lines: ['SÖDERHOLMENS', 'KAPELL', '1890'], bg: '#f4efe4', fg: '#24365e', font: 0.34, border: '#24365e' }, x: 0.012, y: 1.7, z: 2.6, rot: Math.PI / 2, w: 0.9, h: 0.8 },
 };
@@ -209,4 +234,57 @@ export function chapelInto(B) {
     cyl(x, z, 0.8, 0.84, 0.03, 0xf4f1ec, PLAIN, 0.03, 6);
     if (k % 4 !== 3) B.ico(X + x, Y + 0.88, Z + z, 0.015, 1.6, 0xffd36a, LIGHT);
   }
+
+  // ---- (v1.10) the coffee table for church coffee, along the north wall east of the door: a white
+  // cloth, the big coffee urn with its tap, a coffee pot, cups on saucers, a sugar bowl and flowers.
+  // (The tray of buns is drawn by render.js once you have carried them in.)
+  for (const [x, z] of [[5.0, 0.15], [7.65, 0.15], [5.0, 0.65], [7.65, 0.65]]) bx(x, 0, z, x + 0.06, 0.72, z + 0.06, DARK, PARQUET);
+  bx(4.95, 0.72, 0.1, 7.75, 0.755, 0.75, WOOD, PARQUET);
+  bx(4.92, 0.755, 0.07, 7.78, 0.765, 0.78, CLOTH, FABRIC, { skipBottom: false });
+  bx(4.92, 0.56, 0.77, 7.78, 0.765, 0.78, CLOTH, FABRIC);                      // the cloth hangs down in front
+  for (const x of [4.92, 7.77]) bx(x, 0.56, 0.07, x + 0.01, 0.765, 0.78, CLOTH, FABRIC);
+  bx(4.92, 0.56, 0.775, 7.78, 0.58, 0.785, 0x9c2a2a, FABRIC);                  // a red border along the hem
+  const TOP = 0.765;
+  cyl(7.36, 0.4, TOP, TOP + 0.03, 0.16, 0x9aa0a6, CHROME, 0.16, 12);           // the coffee urn: foot, body, lid, knob
+  cyl(7.36, 0.4, TOP + 0.03, TOP + 0.5, 0.15, 0xc9ccd0, CHROME, 0.14, 12);
+  cyl(7.36, 0.4, TOP + 0.5, TOP + 0.54, 0.15, 0x9aa0a6, CHROME, 0.08, 12);
+  cyl(7.36, 0.4, TOP + 0.54, TOP + 0.58, 0.03, 0x2a2b2f, PLAIN, 0.03, 6);
+  bx(7.33, TOP + 0.08, 0.53, 7.39, TOP + 0.12, 0.6, 0x2a2b2f, PLAIN);          // its tap, facing the room
+  for (const sx of [-1, 1]) bx(7.36 + sx * 0.15, TOP + 0.36, 0.37, 7.36 + sx * 0.19, TOP + 0.4, 0.43, 0x2a2b2f, PLAIN);
+  cyl(5.52, 0.36, TOP, TOP + 0.2, 0.075, 0x2f5f8a, PLAIN, 0.06, 10);            // a blue enamel coffee pot with a spout
+  cyl(5.52, 0.36, TOP + 0.2, TOP + 0.24, 0.06, 0x24476a, PLAIN, 0.02, 10);
+  B.tube([X + 5.59, Y + TOP + 0.1, Z + 0.36], [X + 5.68, Y + TOP + 0.2, Z + 0.36], 0.014, 0.01, 5, 0x2f5f8a, PLAIN);
+  bx(5.42, TOP + 0.05, 0.345, 5.45, TOP + 0.18, 0.375, 0x24476a, PLAIN);
+  for (let i = 0; i < 6; i++) {                                                 // cups on saucers, in two rows
+    const x = 6.84 + (i % 3) * 0.17, z = 0.26 + Math.floor(i / 3) * 0.32;
+    cyl(x, z, TOP, TOP + 0.01, 0.065, 0xf4f1ec, PLAIN, 0.065, 10);
+    cyl(x, z, TOP + 0.01, TOP + 0.075, 0.035, 0xf4f1ec, PLAIN, 0.045, 10);
+    cyl(x, z, TOP + 0.07, TOP + 0.075, 0.04, 0x3a2416, PLAIN, 0.04, 10);
+  }
+  cyl(5.85, 0.6, TOP, TOP + 0.07, 0.05, 0xf4f1ec, PLAIN, 0.06, 10);             // the sugar bowl
+  for (let i = 0; i < 4; i++) B.box(X + 5.82 + (i % 2) * 0.03, Y + TOP + 0.07, Z + 0.58 + (i >> 1) * 0.03, X + 5.84 + (i % 2) * 0.03, Y + TOP + 0.085, Z + 0.6 + (i >> 1) * 0.03, 0xffffff, PLAIN);
+  cyl(5.18, 0.24, TOP, TOP + 0.14, 0.04, 0xbfe0ea, IGLASS, 0.05, 8);           // a little vase of flowers
+  for (let k = 0; k < 5; k++) { const a = k * 1.25; B.ico(X + 5.18 + Math.cos(a) * 0.05, Y + TOP + 0.2, Z + 0.24 + Math.sin(a) * 0.05, 0.035, 1, [0xf2c21b, 0xe85d9a, 0xf2efe6][k % 3], PLAIN); }
+  B.ico(X + 5.18, Y + TOP + 0.16, Z + 0.24, 0.06, 0.7, 0x3f7a3a, PLAIN);
+
+  // ---- (v1.10) the bell rope comes down through a hole in a beam above the door's west side
+  bx(2.8, 3.02, -0.02, 3.2, 3.16, 0.62, DARK, PARQUET);
+  bx(2.97, 3.0, 0.39, 3.03, 3.02, 0.45, 0x1d1f22, PLAIN);
+
+  // ---- (v1.10) the organ bench, and a music rack with a sheet of music above the keys
+  bx(0.3, 0.42, 11.76, 1.6, 0.47, 12.1, DARK, PARQUET, { skipBottom: false });
+  for (const x of [0.3, 1.53]) bx(x, 0, 11.79, x + 0.07, 0.42, 12.07, DARK, PARQUET);
+  bx(0.37, 0.1, 11.9, 1.53, 0.14, 11.96, DARK, PARQUET);
+  bx(0.55, 1.0, 12.52, 1.32, 1.3, 12.56, DARK, PARQUET);
+  bx(0.62, 1.04, 12.5, 1.25, 1.27, 12.52, 0xf6f3ea, PLAIN);
+  for (let k = 0; k < 4; k++) bx(0.66, 1.08 + k * 0.05, 12.495, 1.21, 1.085 + k * 0.05, 12.5, 0x2a2b2f, PLAIN);
+}
+
+// (v1.10) the bell rope, local to where it hangs (y from the floor): a thin rope and a red-and-white
+// woollen grip ("sally") at the bottom. render.js moves it down and up when you ring.
+export function ropeInto(B) {
+  const top = CHAPEL_KAFFE.ropeTop, low = CHAPEL_KAFFE.ropeLow;
+  B.box(-0.012, low, -0.012, 0.012, top + 0.4, 0.012, 0xc8b48a, PLAIN);
+  for (let k = 0; k < 6; k++) B.cyl(0, 0, low + 0.2 + k * 0.07, low + 0.27 + k * 0.07, 0.04, 0.04, 8, k % 2 ? 0xf4f1ec : 0xb3262b, FABRIC, true);
+  B.cyl(0, 0, low - 0.05, low + 0.02, 0.02, 0.035, 6, 0xc8b48a, PLAIN, true);
 }

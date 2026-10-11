@@ -3,7 +3,8 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, buildBunTray } from './models.js';
+import { CHAPEL, CHAPEL_KAFFE, ropeInto } from './chapel.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
 import { OFFICE, safeDoorInto, recipeInto } from './office.js';
@@ -418,6 +419,19 @@ export class View {
       g.add(mesh);
       this.things[t.id] = mesh;
     }
+    // (v1.10) the chapel: the tray of buns on the coffee table (row by row), and the bell rope
+    const BT = buildBunTray(), K = CHAPEL_KAFFE;
+    this.bunTray = new THREE.Group();
+    this.bunTray.position.set(K.table.x, K.table.y, K.table.z);
+    this.bunTray.add(new THREE.Mesh(BT.tray, this.matInterior));
+    this.bunRows = BT.rows.map((geo) => { const r = new THREE.Mesh(geo, this.matInterior); this.bunTray.add(r); return r; });
+    this.bunTray.visible = false;
+    g.add(this.bunTray);
+    const RopeB = new GeomBuilder();
+    ropeInto(RopeB);
+    this.rope = new THREE.Mesh(RopeB.toGeometry(THREE), this.matInterior);
+    this.rope.position.set(K.rope.x, CHAPEL.y, K.rope.z);
+    g.add(this.rope);
     // Melker's phone (its screen lights up his face… well, it glows)
     this.phone = new THREE.Mesh(buildPhone(), this.matStatic);
     this.phone.scale.setScalar(1.35);
@@ -486,6 +500,12 @@ export class View {
     const open = game.mission.done.has('kassaskap') || (kj && kj.safeOpen);
     this.safeDoor.rotation.y += ((open ? 1.9 : 0) - this.safeDoor.rotation.y) * Math.min(1, dt * 4);
     this.recipe.visible = !game.mission.done.has('kassaskap') && !(kj && kj.recipe);
+    // (v1.10) the chapel: buns on the coffee table once you have carried them in; the rope dips when you ring
+    const nb = ind.where === 'chapel' ? ind.chapelBuns : 0;
+    this.bunTray.visible = nb > 0;
+    for (let i = 0; i < this.bunRows.length; i++) this.bunRows[i].visible = nb > i * 6;
+    const rt = game.time - ind.ropeAt;
+    this.rope.position.y = CHAPEL.y - (rt >= 0 && rt < 1.3 ? 0.36 * (rt < 0.22 ? rt / 0.22 : Math.max(0, 1 - (rt - 0.22) / 1.0)) : 0);
     // Nova's things: on the floor, in your hands, or where they belong (v1.4)
     const ROOM_Y = INT.y + 0.005;
     const RT = ind.where === 'nova' ? game.mission.roomThings : null;

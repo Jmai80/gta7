@@ -978,6 +978,21 @@ export function buildFest(T, groundY, bannerUV) {
 }
 
 // buns heaped in the cargo box of Arne's bike (bike-local: the box is x ±0.29, y up to 0.92, z 0.5–1.04)
+// (v1.10) church coffee in the chapel: a tray on the coffee table, and the 24 buns on it in four rows of
+// six (row i shows while there are more than 6·i buns). Local to the middle of the tray, y = the table top.
+export function buildBunTray() {
+  const T = new GeomBuilder();
+  T.box(-0.34, 0, -0.22, 0.34, 0.012, 0.22, 0xc9ccd0, M.CHROME, { skipBottom: false });
+  for (const [x0, z0, x1, z1] of [[-0.34, -0.22, 0.34, -0.205], [-0.34, 0.205, 0.34, 0.22], [-0.34, -0.22, -0.325, 0.22], [0.325, -0.22, 0.34, 0.22]]) T.box(x0, 0, z0, x1, 0.03, z1, 0xb7bbc0, M.CHROME);
+  const rows = [];
+  for (let r = 0; r < 4; r++) {
+    const B = new GeomBuilder();
+    for (let c = 0; c < 6; c++) bunInto(B, -0.25 + c * 0.1, 0.012, -0.135 + r * 0.09, 0.78, r * 6 + c);
+    rows.push(B.toGeometry(THREE));
+  }
+  return { tray: T.toGeometry(THREE), rows };
+}
+
 export function buildBikeBuns() {
   const B = new GeomBuilder();
   let k = 0;

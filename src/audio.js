@@ -398,6 +398,70 @@ export class AudioFX {
     }
   }
 
+  // ---- (v1.10) Söderholmens kapell: the organ and the church bell
+  // an organ pipe: a few soft "ranks" an octave apart (8', 4', 2' and a quint), a slow swell, a puff of
+  // wind at the start (the "chiff"), and a little echo off the stone walls. Keys 0–4 = C4 D4 E4 F4 G4
+  organ(k, len = 0.5, vol = 0.085) {
+    if (!this.ctx) return;
+    const f0 = [261.63, 293.66, 329.63, 349.23, 392.0][k];
+    if (!f0) return;
+    const ctx = this.ctx, t = ctx.currentTime, dur = Math.max(0.25, len);
+    const out = ctx.createGain();
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(vol, t + 0.045);
+    out.gain.setTargetAtTime(vol * 0.82, t + 0.05, 0.25);
+    out.gain.setTargetAtTime(0.0001, t + dur, 0.09);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.5;
+    out.connect(lp); lp.connect(this.master);
+    if (!this.hall) { // a shared echo for the chapel: a short feedback delay, quiet
+      const d = ctx.createDelay(1); d.delayTime.value = 0.13;
+      const fb = ctx.createGain(); fb.gain.value = 0.33;
+      const wet = ctx.createGain(); wet.gain.value = 0.32;
+      const dl = ctx.createBiquadFilter(); dl.type = 'lowpass'; dl.frequency.value = 1700;
+      d.connect(dl); dl.connect(fb); fb.connect(d); dl.connect(wet); wet.connect(this.master);
+      this.hall = d;
+    }
+    lp.connect(this.hall);
+    for (const [m, a, type] of [[1, 1, 'sine'], [2, 0.42, 'sine'], [3, 0.12, 'sine'], [4, 0.2, 'triangle'], [0.5, 0.3, 'sine']]) {
+      for (const det of m === 1 ? [-1.5, 1.5] : [0]) {
+        const o = ctx.createOscillator(); o.type = type;
+        o.frequency.setValueAtTime(f0 * m, t); o.detune.value = det;
+        const g = ctx.createGain(); g.gain.value = a * (m === 1 ? 0.5 : 1);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + dur + 0.6);
+      }
+    }
+    this.burst(vol * 0.35, f0 * 6, 0.05, 'bandpass');
+  }
+
+  // a wrong key: a sour cluster with a wheeze, like a pipe with a hiccup
+  organWrong(k = 2) {
+    if (!this.ctx) return;
+    const f = [261.63, 293.66, 329.63, 349.23, 392.0][k] || 300;
+    this.tone(f * 1.06, 0.55, 'sawtooth', 0.035);
+    this.tone(f * 0.94, 0.55, 'sawtooth', 0.035);
+    this.tone(f * 0.5, 0.6, 'square', 0.02, 0.02, f * 0.42);
+    this.burst(0.07, 700, 0.45, 'bandpass', 0.03);
+  }
+
+  // the church bell in the tower: a strike and a long hum of out-of-tune partials (the "hum", the
+  // prime, the minor third, the fifth, the octave above) dying away at different rates
+  churchBell(k = 1) {
+    if (!this.ctx) return;
+    const ctx = this.ctx, t = ctx.currentTime, base = 174.6;
+    for (const [m, a, d] of [[0.5, 0.5, 5.5], [1, 0.75, 4.2], [1.19, 0.38, 3.0], [1.5, 0.22, 2.4], [2, 0.42, 2.2], [2.52, 0.16, 1.5], [3.01, 0.12, 1.1], [4.2, 0.07, 0.7]]) {
+      const o = ctx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(base * m, t);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.11 * a * k, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(this.master);
+      o.start(t); o.stop(t + d + 0.05);
+    }
+    this.burst(0.12 * k, 2400, 0.06, 'bandpass');
+  }
+
   // ---- Salong Saxen (v1.0): picking up a tool, the scissors, the razor, the dye, and what the customer thinks
   salon(kind) {
     if (!this.ctx) return;
