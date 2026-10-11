@@ -530,7 +530,7 @@ export class View {
     this.U.uTime.value = this.time;
     this.syncCars(game, dt);
     this.syncBike(game, dt);
-    if (!this.indoor) this.tivoli.update(game.time, this.camera.position); // (before the riders are drawn)
+    if (!this.indoor) this.tivoli.update(game.time, game.coasterT ?? game.time, this.camera.position); // (before the riders are drawn)
     this.syncHumans(game, dt);
     this.syncMarkers(game);
     this.syncFx(game, dt);

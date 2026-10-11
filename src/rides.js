@@ -36,26 +36,26 @@ export class Rides {
     if (this.stage === 'ride') {
       this.seat();
       const a = wheelAngle(g.time) + (this.k / WHEEL.n) * Math.PI * 2;
-      if (!this.top && Math.cos(a) < -0.98) { this.top = true; g.emit('toast', { text: 'Vilken utsikt! Där ligger hela Sjuby – och Norrholmen längst bort.' }); }
+      if (!this.top && Math.cos(a) < -0.98 && !(m.active && m.active.freeRide)) { this.top = true; g.emit('toast', { text: 'Vilken utsikt! Där ligger hela Sjuby – och Norrholmen längst bort.' }); }
       if (g.time - this.t0 >= WHEEL.period) this.leave();
       return;
     }
-    if (!m.active && p.state === 'foot' && !p.frozen && Math.hypot(p.x - WHEEL.board.x, p.z - WHEEL.board.z) < 1.5) this.prompt = 'ÅK HJULET';
+    if ((!m.active || m.active.allowRide) && p.state === 'foot' && !p.frozen && Math.hypot(p.x - WHEEL.board.x, p.z - WHEEL.board.z) < 1.5) this.prompt = 'ÅK HJULET';
   }
 
   interact() {
     if (this.prompt !== 'ÅK HJULET') return false;
     const g = this.game, p = g.player;
-    if (g.money < WHEEL_FARE) { g.emit('toast', { text: `Ett varv kostar ${WHEEL_FARE} kr – du har inte råd.` }); return true; }
-    g.money -= WHEEL_FARE;
-    g.emit('money', { delta: -WHEEL_FARE, total: g.money });
+    const free = !!(this.mgr.active && this.mgr.active.freeRide);  // (v1.7: Bengt pays in "Utsikten")
+    if (!free && g.money < WHEEL_FARE) { g.emit('toast', { text: `Ett varv kostar ${WHEEL_FARE} kr – du har inte råd.` }); return true; }
+    if (!free) { g.money -= WHEEL_FARE; g.emit('money', { delta: -WHEEL_FARE, total: g.money }); }
     // the next gondola down that has nobody in it (every fourth carries two people already)
     let next = nextGondola(g.time);
     while (next.k % 4 === 2) next = nextGondola(next.at + 0.01);
     this.k = next.k; this.at = next.at;
     this.stage = 'wait'; this.prompt = null;
     p.frozen = true; p.vx = p.vz = 0; p.h = Math.PI;
-    g.emit('toast', { text: `−${WHEEL_FARE} kr. Gondolen kommer!` });
+    g.emit('toast', { text: free ? 'Bengts biljett. Gondolen kommer!' : `−${WHEEL_FARE} kr. Gondolen kommer!` });
     return true;
   }
 
@@ -83,7 +83,7 @@ export class Rides {
     p.state = 'foot'; p.stateT = 0; p.frozen = false;
     p.x = WHEEL.exit.x; p.z = WHEEL.exit.z; p.y = g.world.groundHeight(p.x, p.z); p.h = 0;
     g.emit('ride', { on: false });
-    g.emit('toast', { text: 'Tack för åkturen! Välkommen åter till Lyckoland.' });
+    if (!(this.mgr.active && this.mgr.active.freeRide)) g.emit('toast', { text: 'Tack för åkturen! Välkommen åter till Lyckoland.' });
     g.emit('progress', {});
   }
 }

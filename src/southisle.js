@@ -146,6 +146,8 @@ const CO_TABLE = (() => {
   return out;
 })();
 export const CO_PERIOD = CO_TABLE.length * 0.05;
+// (v1.7) where the train stands when Måsen has stopped: high up the lift hill, just below the crest
+export const CO_STUCK_T = CO_TABLE.findIndex((s) => s >= 64) * 0.05;
 export function coasterFront(t) {
   const f = (((t % CO_PERIOD) + CO_PERIOD) % CO_PERIOD) / 0.05, i = Math.floor(f), u = f - i;
   const a = CO_TABLE[i], b = i + 1 < CO_TABLE.length ? CO_TABLE[i + 1] : CO_TABLE[0] + CO_LEN;

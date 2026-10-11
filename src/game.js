@@ -25,6 +25,7 @@ export class Game {
     this.settings = opts.settings || { drive: 'stick' };
     this.listeners = {};
     this.time = 0;
+    this.coasterT = 0;
     this.money = 0;
     this.stats = {
       carsStolen: 0, carsJacked: 0, crashes: 0, pedsKnocked: 0, maxSpeed: 0, driven: 0, honks: 0, stuntJumps: 0, bestJump: 0,
@@ -209,6 +210,7 @@ export class Game {
 
   step(dt, input) {
     this.time += dt;
+    this.coasterT += dt;                   // (v1.7) Måsen's own clock: it stands still while it is broken (mission.js)
     this.input = input; // missions read held buttons (hoisting a flag)
     const p = this.player;
     p.update(dt, input);

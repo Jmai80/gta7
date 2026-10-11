@@ -186,7 +186,7 @@ export function buildTivoli(material) {
   const T = {
     group, rotor, carousel,
     get bodies() { return near ? all : []; },
-    update(t, cam) {
+    update(t, ct, cam) {   // t: the game's clock; ct: Måsen's own (it stops when it breaks down, v1.7)
       near = Math.hypot(cam.x - SOUTH.center.x, cam.z - SOUTH.center.z) < 330;
       group.visible = near;
       if (!near) return;
@@ -196,7 +196,7 @@ export function buildTivoli(material) {
       const ca = carouselAngle(t);
       carousel.rotation.y = ca;
       const cars = [];
-      for (let i = 0; i < COASTER.cars; i++) { const c = coasterCar(i, t); cars.push(c); train.set(i, c.x, c.y, c.z, c.h, c.pitch); }
+      for (let i = 0; i < COASTER.cars; i++) { const c = coasterCar(i, ct); cars.push(c); train.set(i, c.x, c.y, c.z, c.h, c.pitch); }
       train.commit();
       const bc = [];
       for (let i = 0; i < 6; i++) { const b = bumperCar(i, t); bc.push(b); bumpers.set(i, b.x, CURB_H + 0.1, b.z, b.h); }

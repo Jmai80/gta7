@@ -21,6 +21,7 @@ SHOTS = {
   'west':     ((-30.0, 9.0, 205.0), (-70.0, 2.0, 240.0), 58),   # the houses and the chapel
   'south':    ((0.0, 7.0, 302.0), (0.0, 3.0, 270.0), 58),       # the south cliffs from the sea
   'town':     ((-20.0, 12.0, 205.0), (-40.0, 4.0, 120.0), 58),  # back to the town
+  'stuck':    ((34.0, 2.2, 239.5), (56.0, 10.5, 245.0), 62),    # Måsen up the lift hill (v1.7: pass the time 'stuck')
 }
 async def frames(pg, n):
     await pg.evaluate('''n => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); })''', n)
@@ -42,8 +43,10 @@ async def main():
         await frames(pg, 3)
         await pg.evaluate('''() => { const g = window.__gta.game, p = g.player; p.x = 8; p.z = 199; p.y = g.world.groundHeight(p.x, p.z); }''')
         await frames(pg, 3)
-        if len(sys.argv) > 3:
-            await pg.evaluate('t => { const g = window.__gta.game; g.time = t; }', float(sys.argv[3]))
+        if len(sys.argv) > 3 and sys.argv[3] == 'stuck':
+            await pg.evaluate("import('./src/southisle.js').then((s) => { const g = window.__gta.game; g.coasterT = s.CO_STUCK_T; g.mission.known.add('masen'); })")
+        elif len(sys.argv) > 3:
+            await pg.evaluate('t => { const g = window.__gta.game; g.time = t; g.coasterT = t; }', float(sys.argv[3]))
         await frames(pg, 3)
         await pg.evaluate('window.__gta.pause()')
         await pg.add_style_tag(content='#pausemenu, #hud { display: none !important; }')

@@ -12,11 +12,13 @@ import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
 import { SOUTH, WHEEL, CAROUSEL, COASTER, CO_LEN, CO_PERIOD, onSouth, inTivoli, gondolaPivot, nextGondola, coasterH, coasterCar, southRoadDist } from '../src/southisle.js';
 import { WHEEL_FARE } from '../src/rides.js';
+import { UTSIKT, EBBE, MASEN } from '../src/tivolijobs.js';
+import { CO_STUCK_T } from '../src/southisle.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
-import { clamp } from '../src/rng.js';
+import { clamp, wrapAngle } from '../src/rng.js';
 import { circleVs } from '../src/collide.js';
 
 const DT = 1 / 60;
@@ -327,8 +329,12 @@ function startRace(g) {
   g2.mission.done.add('birger');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all thirteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.6/.test(d.text) && /Birger/.test(d.text)), 'the last text: version 1.6, Birger is home');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while Dahlgren has the photos');
+  g2.mission.done.add('utsikten');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all fourteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.7/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.7, Dahlgren\'s photos are gone');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2241,7 +2247,7 @@ function driveTo(g, car, x, z, h) { car.x = x; car.z = z; car.h = h ?? car.h; ca
   check(m.done.has('birger') && g.money - money0 === HOMECOMING.reward + HOMECOMING.perHealth * cond, `main quest part 10 done: ${g.money - money0} kr (${cond} % of the paint left)`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Birger kommer hem'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.6/.test(d.text)), 'all thirteen done: the end card (version 1.6)');
+  check(!ev.some(([n]) => n === 'endcard') && m.list().some((q) => q.id === 'utsikten'), 'no end card yet: part 11 comes next (v1.7)');
   // afterwards: borrow it whenever – it goes back to its stall when you leave it somewhere
   const S2 = HOMECOMING.spot;
   check(enterCar(g, sp), 'you can drive the Spider afterwards');
@@ -2442,6 +2448,223 @@ function driveTo(g, car, x, z, h) { car.x = x; car.z = z; car.h = h ?? car.h; ca
   for (let t = 0; t < CO_PERIOD; t += 0.1) { const a = coasterCar(0, t), b = coasterCar(0, t + 0.1); vMax = Math.max(vMax, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / 0.1); }
   check(CO_PERIOD > 40 && CO_PERIOD < 90 && Math.hypot(c0.x - c1.x, c0.z - c1.z) < 0.01 && vMax > 10 && vMax < 20, `a round takes ${CO_PERIOD.toFixed(0)} s, a pause in the station, top speed ${(vMax * 3.6).toFixed(0)} km/h`);
   check(inTivoli(CAROUSEL.x, CAROUSEL.z) && inTivoli(WHEEL.x, WHEEL.z) && inTivoli(COASTER.x1 + COASTER.r, (COASTER.zN + COASTER.zS) / 2), 'the rides are inside the fence');
+}
+
+// ---------- 33–35. Three quests at Tivoli Lyckoland (v1.7) ----------
+// drive a car along the GPS route to (x, z) and stop there
+function driveTo2(g, car, x, z, maxSec = 60, cruise = 13) {
+  const path = routePoints(g.layout.gps, car.x, car.z, x, z);
+  let wi = 1;
+  for (let i = 0; i < 60 * maxSec && wi < path.length; i++) {
+    if (Math.hypot(x - car.x, z - car.z) < 2.2) break;
+    if (Math.hypot(x - car.x, z - car.z) < 14) wi = path.length - 1;          // (close: straight for it)
+    const [tx, tz] = path[wi], last = wi === path.length - 1;
+    if (Math.hypot(tx - car.x, tz - car.z) < (last ? 1.5 : 3)) { wi++; continue; }
+    const sn = Math.sin(car.h), cs = Math.cos(car.h), dx = tx - car.x, dz = tz - car.z;
+    const lr = -dx * cs + dz * sn, lf = dx * sn + dz * cs;
+    if (lf < 0 && !last && Math.hypot(dx, dz) < 8) { wi++; continue; }   // (passed it by: on to the next)
+    const st = clamp(Math.atan2(lr, Math.max(lf, 0.5)) * 1.6, -1, 1);
+    // slow down before a corner (and to a stop at the end)
+    const nx = path[wi + 1], turn = nx ? Math.abs(wrapAngle(Math.atan2(nx[0] - tx, nx[1] - tz) - Math.atan2(dx, dz))) : 0;
+    const want = last ? Math.min(cruise, Math.hypot(dx, dz) * 0.8 + 1) : turn > 0.4 ? Math.min(cruise, 5 + Math.hypot(dx, dz) * 0.45) : cruise;
+    g.step(DT, { ...idle, throttleAxis: car.speed < want ? 0.8 : -0.4, steerAxis: st });
+  }
+  for (let i = 0; i < 180 && car.speed > 0.5; i++) g.step(DT, { ...idle, throttleAxis: -1 });
+  run(g, 0.2);
+  return Math.hypot(car.x - x, car.z - z);
+}
+// on foot toward (x, z) – or toward a moving ped – at full run (analog, all the way out)
+function runToward(g, getXZ, sec, until) {
+  for (let i = 0; i < 60 * sec; i++) {
+    const p = g.player, [x, z] = getXZ();
+    g.step(DT, { ...idle, camYaw: Math.atan2(x - p.x, z - p.z), moveY: 1 });
+    if (until && until()) return true;
+  }
+  return false;
+}
+// along a few points at a calm walk
+function walkPath(g, pts, until, maxSec = 60) {
+  let i = 0;
+  for (let k = 0; k < 60 * maxSec; k++) {
+    const p = g.player, [x, z] = pts[Math.min(i, pts.length - 1)];
+    if (Math.hypot(x - p.x, z - p.z) < 0.6) { if (i < pts.length - 1) i++; else { g.step(DT, idle); if (until && until()) return true; continue; } }
+    g.step(DT, { ...idle, camYaw: Math.atan2(x - p.x, z - p.z), moveY: 0.55 });
+    if (until && until()) return true;
+  }
+  return false;
+}
+const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d.id === id).pop(); return t ? t[1] : null; };
+{
+  console.log('Utsikten (huvuduppdrag del 11)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore({ ...livsSave([...UP_TO_HIDEOUT, 'birger']), money: 50 });
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'endcard', 'money']);
+  run(g, 30);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'utsikten' && d.from === 'Bagar-Bengt'), 'Bengt texts: Dahlgren sells his photos at the tivoli');
+  m.accept('utsikten');
+  walkHere(g, -40, 175); run(g, 1);
+  check(m.south && m.south.bengt && m.south.dahl && m.south.buyer, 'Bengt by the arch, Dahlgren and the buyer by the picnic tables');
+  const blocked = reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, [UTSIKT.mark, { x: UTSIKT.dahl.x - 1.6, z: UTSIKT.dahl.z }, { x: WHEEL.board.x, z: WHEEL.board.z }], { x0: -112, z0: 182, x1: 112, z1: 290 });
+  check(!blocked.length, 'you can walk to Bengt, the wheel and Dahlgren');
+  walkHere(g, UTSIKT.mark.x, UTSIKT.mark.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'utsikten' && lastTalk(ev, 'utsikten') && /pariserhjulet/.test(lastTalk(ev, 'utsikten').pages.at(-1).text), 'Bengt: "Uppifrån! Från pariserhjulet ser man hela tivolit"');
+  m.talkDone('utsikten'); run(g, 0.2);
+  check(job.stage === 'wheel', 'off to the Ferris wheel');
+  walkHere(g, WHEEL.board.x, WHEEL.board.z);
+  check(m.prompt === 'ÅK HJULET', 'ÅK HJULET on the platform');
+  press(g);
+  const p = g.player;
+  for (let i = 0; i < 60 * 6 && p.state !== 'ride'; i++) g.step(DT, idle);
+  check(p.state === 'ride' && g.money === 50, 'into a gondola – Bengt paid');
+  let n = 0;
+  while (!lastTalk(ev, 'utsikten').pages.some((pg) => /Dahlgren\. Nu har jag dig/.test(pg.text)) && n++ < 60 * 40) g.step(DT, idle);
+  check(job.stage === 'spot' && p.rideHip > WHEEL.hubY + WHEEL.r - 3, `spotted from the top (${p.rideHip.toFixed(1)} m up)`);
+  check(Math.abs(wrapA(p.rideYaw - Math.atan2(UTSIKT.dahl.x - p.x, UTSIKT.dahl.z - p.z))) < 0.05, 'the view turns his way');
+  m.talkDone('utsikten');
+  for (let i = 0; i < 60 * 40 && p.state === 'ride'; i++) g.step(DT, idle);
+  run(g, 0.2);
+  check(job.stage === 'approach' && p.state === 'foot', 'down again: now to Dahlgren');
+  const D = m.south.dahl;
+  runToward(g, () => [D.x, D.z], 20, () => job.stage === 'chase');
+  check(job.stage === 'chase' && D.state === 'goto', `he sees you at ${UTSIKT.notice} m and runs`);
+  const caught = runToward(g, () => [D.x, D.z], 40, () => job.stage === 'caught');
+  check(caught, `caught him at a run (by ${D.x.toFixed(0)}, ${D.z.toFixed(0)})`);
+  run(g, 1);
+  check(/Raderade/.test(lastTalk(ev, 'utsikten').pages.map((pg) => pg.text).join(' ')), 'the photos deleted');
+  const money0 = g.money;
+  m.talkDone('utsikten'); run(g, 1);
+  check(m.done.has('utsikten') && g.money - money0 === UTSIKT.reward && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Utsikten'), `main quest part 11 done: ${UTSIKT.reward} kr`);
+  run(g, 16);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.7/.test(d.text)), 'all fourteen done: the end card (version 1.7)');
+
+  // he gets away when you only walk
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m2 = g2.mission;
+  m2.restore({ ...livsSave([...UP_TO_HIDEOUT, 'birger']), money: 50 });
+  const ev2 = record(g2, ['banner', 'sms', 'talk']);
+  run(g2, 30); m2.accept('utsikten');
+  walkHere(g2, -40, 175); run(g2, 1);
+  walkHere(g2, UTSIKT.mark.x, UTSIKT.mark.z); run(g2, 1);
+  m2.talkDone('utsikten'); run(g2, 0.2);
+  m2.active.stage = 'approach'; m2.active.spotted = true; m2.flags.utsiktSpotted = true;  // (straight to him)
+  walkHere(g2, UTSIKT.dahl.x - 8.5, UTSIKT.dahl.z + 1); run(g2, 0.3);
+  check(m2.active && m2.active.stage === 'chase', 'the chase again');
+  const Dg = m2.south.dahl, t0 = g2.time;
+  for (let i = 0; i < 60 * 70 && m2.active; i++) g2.step(DT, idle);
+  check(Math.hypot(Dg.x - UTSIKT.route.at(-1)[0], Dg.z - UTSIKT.route.at(-1)[1]) < 1, `his whole way out is clear: the car park after ${(g2.time - t0).toFixed(0)} s`);
+  check(!m2.active && ev2.some(([nn, d]) => nn === 'banner' && d.sub === 'Dahlgren kom undan') && m2.isOpen('utsikten'), 'walk and he gets to the car park: "Dahlgren kom undan" – the quest stays open');
+  walkHere(g2, 40, 150); run(g2, 3); walkHere(g2, -40, 175); run(g2, 2);
+  check(m2.south.dahl && Math.hypot(m2.south.dahl.x - UTSIKT.dahl.x, m2.south.dahl.z - UTSIKT.dahl.z) < 1, 'out of sight he is back at the picnic tables');
+  walkHere(g2, 30, 190); run(g2, 4);
+  walkHere(g2, UTSIKT.mark.x, UTSIKT.mark.z); run(g2, 1);
+  const tv = lastTalk(ev2, 'utsikten');
+  check(m2.active && tv.pages.length === 1, 'try again: a short word from Bengt…');
+  m2.talkDone('utsikten'); run(g2, 0.2);
+  check(m2.active.stage === 'approach', '…and straight to Dahlgren (no new ride)');
+}
+{
+  console.log('Var är Ebbe? (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore({ ...livsSave(['red', 'lasse']), money: 0 });
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk']);
+  run(g, 75);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'ebbe' && d.from === 'Hanna (Ebbes mamma)'), 'Hanna texts: Ebbe is lost at the tivoli');
+  m.accept('ebbe');
+  walkHere(g, -40, 175); run(g, 1);
+  const S = m.south;
+  check(S.hanna && S.ebbe && S.ebbe.state === 'lounge' && S.pelle && S.kalle && S.maja, 'Hanna, the three who saw him, and Ebbe on his bench');
+  const spots = [EBBE.mark, ...EBBE.wit.map((w) => ({ x: w.x + Math.sin(w.h) * 1.3, z: w.z + Math.cos(w.h) * 1.3 })), { x: EBBE.ebbe.x, z: EBBE.ebbe.z - 1.6 }];
+  check(!reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, spots, { x0: -112, z0: 182, x1: 112, z1: 290 }).length, 'you can walk up to all of them');
+  walkHere(g, EBBE.mark.x, EBBE.mark.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'ebbe' && lastTalk(ev, 'ebbe').pages.length === 4, 'Hanna by the ticket booth');
+  m.talkDone('ebbe'); run(g, 0.2);
+  for (const [i, w] of EBBE.wit.entries()) {
+    check(job.stage === 'ask' && m.objective === `Fråga ${w.name}`, `ask ${w.name}`);
+    walkHere(g, w.x + Math.sin(w.h) * 1.3, w.z + Math.cos(w.h) * 1.3); run(g, 0.1);
+    check(m.prompt === 'PRATA', `  PRATA by ${w.name}`);
+    press(g);
+    const t = lastTalk(ev, 'ebbe');
+    check(t.pages[0].who === w.name, `  "${t.pages[0].text.slice(0, 50)}…"`);
+    m.talkDone('ebbe'); run(g, 0.2);
+    if (i === 0) {
+      // walk away and come back: the clues are kept
+      walkHere(g, -40, 0); run(g, 1);
+      check(!m.active && m.isOpen('ebbe'), 'walking off the island: no failure');
+      run(g, 3); walkHere(g, -40, 175); run(g, 1);
+      walkHere(g, EBBE.mark.x, EBBE.mark.z); run(g, 1);
+      check(m.active && m.active.asked === 1 && lastTalk(ev, 'ebbe').pages.length === 1, 'back with Hanna: on with the next clue');
+      m.talkDone('ebbe'); run(g, 0.2);
+    }
+  }
+  const job2 = m.active;
+  check(job2.stage === 'find', 'he went toward the Ferris wheel');
+  walkHere(g, EBBE.ebbe.x, EBBE.ebbe.z - 1.5); run(g, 0.1);
+  check(m.prompt === 'PRATA', 'Ebbe on the bench by the wheel');
+  press(g);
+  check(/för liten/.test(lastTalk(ev, 'ebbe').pages[0].text), '"Jag fick inte åka Måsen. Jag är för liten."');
+  m.talkDone('ebbe'); run(g, 0.2);
+  check(job2.stage === 'lead', 'he comes with you');
+  const ok = walkPath(g, [[46, 212.6], [30, 212.3], [20.6, 212.2]], () => job2.stage === 'final', 60);
+  run(g, 0.5);
+  check(ok && job2.stage === 'final', `walked back to Hanna with Ebbe at your heels`);
+  m.talkDone('ebbe'); run(g, 0.5);
+  check(m.done.has('ebbe') && g.money === EBBE.pay, `side quest done: ${EBBE.pay} kr`);
+}
+{
+  console.log('Måsen har fastnat (sidouppdrag)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore({ ...livsSave(['red', 'lasse']), money: 0 });
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk']);
+  check(Math.abs(g.coasterT - g.time) < 1e-9, 'Måsen runs at first');
+  run(g, 155);
+  check(ev.some(([n, d]) => n === 'sms' && d.offer === 'masen' && d.from === 'Tivoli-Rut'), 'Tivoli-Rut texts: Måsen is stuck');
+  run(g, 2);
+  const c0 = coasterCar(0, g.coasterT);
+  check(g.coasterT === CO_STUCK_T && coasterH(coasterCar(0, g.coasterT).x - COASTER.x0) > 10 && c0.pitch > 0.1, `stuck high up the lift hill (${(c0.y).toFixed(1)} m, nose up)`);
+  m.accept('masen');
+  walkHere(g, -40, 175); run(g, 1);
+  check(m.south.rut, 'Rut at the station');
+  check(!reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, [MASEN.mark], { x0: -112, z0: 182, x1: 112, z1: 290 }).length, 'you can walk up to her');
+  walkHere(g, MASEN.mark.x, MASEN.mark.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'masen' && lastTalk(ev, 'masen').pages.length === 5, 'Rut: the drive belt is gone, Lasse has a new one');
+  const van = m.rutVan;
+  check(van && Math.hypot(van.x - MASEN.van.x, van.z - MASEN.van.z) < 0.5, 'her white van in the car park');
+  m.talkDone('masen'); run(g, 0.2);
+  check(job.stage === 'drive', `${MASEN.time} seconds`);
+  walkHere(g, van.x - 2, van.z);
+  check(enterCar(g, van), 'into the van');
+  const t0 = g.time;
+  const d1 = driveTo2(g, van, MASEN.lasse.x, MASEN.lasse.z, 80);
+  run(g, 0.3);
+  check(job.stage === 'back' && m.masenLasse, `Lasse in his gate on Drottninggatan (${d1.toFixed(1)} m) after ${(g.time - t0).toFixed(0)} s: the belt`);
+  const d2 = driveTo2(g, van, MASEN.back.x, MASEN.back.z, 80);
+  run(g, 0.3);
+  check(job.stage === 'carry' && job.left > 0, `back at the arch (${d2.toFixed(1)} m) with ${Math.ceil(job.left)} s to spare`);
+  g.player.exitCar(); run(g, 1);
+  walkHere(g, MASEN.mark.x, MASEN.mark.z); run(g, 0.1);
+  check(m.prompt === 'GE REMMEN', 'GE REMMEN by Rut');
+  press(g);
+  m.talkFx('masen', 'go');
+  m.talkDone('masen'); run(g, 1);
+  const ct = g.coasterT; run(g, 2);
+  check(m.done.has('masen') && g.money === job.amount && job.amount === MASEN.base + MASEN.perSec * Math.ceil(job.left), `side quest done: ${job.amount} kr`);
+  check(g.coasterT > ct + 1.9, 'and Måsen runs again');
+  // too slow
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m2 = g2.mission;
+  m2.restore({ ...livsSave(['red', 'lasse']), money: 0 });
+  const ev2 = record(g2, ['banner']);
+  run(g2, 160); m2.accept('masen');
+  walkHere(g2, -40, 175); run(g2, 1);
+  walkHere(g2, MASEN.mark.x, MASEN.mark.z); run(g2, 1);
+  m2.talkDone('masen'); run(g2, MASEN.time + 1);
+  check(!m2.active && ev2.some(([n, d]) => n === 'banner' && d.sub === 'Åkarna fick vänta för länge') && m2.isOpen('masen') && g2.coasterT === CO_STUCK_T, 'too slow: failed, and Måsen is still stuck');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

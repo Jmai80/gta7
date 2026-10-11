@@ -40,6 +40,8 @@
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
 import { Rides } from './rides.js';
+import { ViewJob, EbbeJob, CoasterJob, southWorld, coasterStuck, UTSIKT, EBBE, MASEN } from './tivolijobs.js';
+import { CO_STUCK_T } from './southisle.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -235,11 +237,32 @@ export const QUESTS = [
     text: 'Pia igen! Tre av Jontes cyklar har ägare som vill ha dem i dag: Vera, Lasse och Yasmin. Jag har ställt ut dem längs vägen – Veras vid Birgers grind, Lasses vid salongen och Yasmins vid verkstan. Cyklar du hem dem?',
     reward: `${fmt(3 * BIKE_HOME_PAY + BIKES_HOME_BONUS)} kr`, where: 'Veras cykel vid Birgers grind, Storgatan',
   },
+  {
+    // main quest, part 11 (v1.7) at Tivoli Lyckoland: Dahlgren sells his photos of the recipe – spot him from the Ferris wheel
+    id: 'utsikten', letter: 'B', who: WHO.bengt, title: 'Utsikten', color: '#d9534f', x: UTSIKT.mark.x, z: UTSIKT.mark.z, r: UTSIKT.mark.r, Job: ViewJob, main: true,
+    after: 'birger', at: 25, needFoot: 'Kliv ur – Bengt väntar vid tivolits valv.',
+    text: 'Bengt här. Dahlgren fotade Arnes recept, minns du? Nu säljer han bilderna! Han ska träffa en köpare på Tivoli Lyckoland på Söderholmen i dag. Mig känner han igen på långt håll. Möt mig vid tivolits valv.',
+    reward: `${fmt(UTSIKT.reward)} kr`, where: 'Valvet till Tivoli Lyckoland, Söderholmen',
+  },
+  {
+    // side quest (v1.7) at the tivoli: a lost five-year-old – ask around, find him, walk him back
+    id: 'ebbe', letter: 'H', who: WHO.hanna, title: 'Var är Ebbe?', color: '#2fb3a8', x: EBBE.mark.x, z: EBBE.mark.z, r: EBBE.mark.r, Job: EbbeJob,
+    side: true, sms: true, after: 'lasse', at: 70, needFoot: 'Kliv ur – Hanna står vid biljettkiosken inne på tivolit.',
+    text: 'Hej, Hanna här – Kim gav mig ditt nummer. Min son Ebbe, fem år, försvann i trängseln på Tivoli Lyckoland! Gul tröja och grön keps. Kan du hjälpa mig leta? Jag står vid biljettkiosken.',
+    reward: `${fmt(EBBE.pay)} kr`, where: 'Biljettkiosken på Tivoli Lyckoland, Söderholmen',
+  },
+  {
+    // side quest (v1.7): the roller coaster is stuck – fetch a new drive belt from Lasse in town, against the clock
+    id: 'masen', letter: 'R', who: WHO.rut, title: 'Måsen har fastnat', color: '#e85d9a', x: MASEN.mark.x, z: MASEN.mark.z, r: MASEN.mark.r, Job: CoasterJob,
+    side: true, sms: true, after: 'lasse', at: 150, needFoot: 'Kliv ur – Rut står vid Måsens station inne på tivolit.',
+    text: 'Rut här, jag äger Tivoli Lyckoland. Måsen har stannat mitt i liftbacken med åtta åkare – drivremmen har gått av! Lasse på Verkstan har en ny. Kom till Måsens station, fort!',
+    reward: `upp till ${fmt(MASEN.base + MASEN.perSec * MASEN.time)} kr`, where: 'Måsens station på Tivoli Lyckoland, Söderholmen',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger']; // all thirteen → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten']; // all fourteen → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -418,6 +441,9 @@ export class Missions {
       case 'konsert': return 'Hjälp Nova att städa – porten bakom Macken, Skolgatan';
       case 'birger': return 'Möt Birger på kajen vid bryggan i hamnen';
       case 'hytter': return 'Lös badhyttsgåtan på Norrholmens badplats';
+      case 'utsikten': return 'Möt Bagar-Bengt vid valvet till Tivoli Lyckoland';
+      case 'ebbe': return 'Möt Hanna vid biljettkiosken på Tivoli Lyckoland';
+      case 'masen': return 'Möt Tivoli-Rut vid Måsens station på tivolit';
     }
     return '';
   }
@@ -488,6 +514,8 @@ export class Missions {
     gatePia(this);
     homecomingWorld(this);
     beachPeople(this);
+    southWorld(this);
+    if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
     if (this.active) this.choose = false;
@@ -613,11 +641,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.6! Birger är hemma, Spidern står på parkeringen och tivolit på Söderholmen har öppet. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.6! Birger är hemma, Spidern står på parkeringen och tivolit på Söderholmen har öppet. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.7! Dahlgrens bilder på receptet är raderade, och på Söderholmen snurrar tivolit vidare. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.7! Dahlgrens bilder på receptet är raderade, och på Söderholmen snurrar tivolit vidare. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 

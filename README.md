@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.6 är småstaden Sjuby, ön Norrholmen på andra sidan norra bron och ön Söderholmen med Tivoli Lyckoland på andra sidan södra bron, med tre uppdragsgivare, elva sidouppdrag, ett huvudäventyr i tio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, och till sist ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.7 är småstaden Sjuby, ön Norrholmen på andra sidan norra bron och ön Söderholmen med Tivoli Lyckoland på andra sidan södra bron, med tre uppdragsgivare, tretton sidouppdrag, ett huvudäventyr i elva delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil – och till sist upp i pariserhjulet på tivolit, där du spanar efter direktör Dahlgren, som försöker sälja bilder av receptet.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -27,7 +27,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.6
+## Uppdrag i version 1.7
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -75,6 +75,16 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Birger sitter bredvid dig (bilen är öppen, så ni syns båda). Först vill han se stan: Hörnlivs på Kungsgatan, Salong Saxen på Skolgatan och Macken på Drottninggatan. Han pratar vid varje ställe. Sedan hem till hans grind på Storgatan.
   - Kör snällt: uppdragsrutan visar hur hel lacken är. Under 40 % tröttnar Birger och går hem, och du får försöka igen. 2 500 kr plus 25 kr per procent hel lack, upp till 5 000 kr.
   - Efteråt är Spidern din att låna. Den står på parkeringen mittemot Birgers hus (raden närmast Kungsgatan, längst norrut). Lämnar du den någonstans står den där igen nästa gång du kommer dit, och kvaddar du den finns det en ny.
+- **B – Bagar-Bengt (huvuduppdrag, del 11): Utsikten.** En stund efter att Birger kommit hem sms:ar Bengt: Dahlgren fotade Arnes recept (han sa det själv i byggbaracken) och ska nu sälja bilderna till en köpare på Tivoli Lyckoland. Möt Bengt utanför tivolits valv på Söderholmen (till fots).
+  - Det är fullt med folk och Dahlgren har förklätt sig. Bengt har köpt en biljett till pariserhjulet: gå upp på plattformen och tryck **ÅK HJULET**. Högst upp ser du honom – kameran vrider sig mot honom.
+  - När du kommit ner: gå fram till Dahlgren vid picknickborden längst österut. På nio meters håll ser han dig och springer: bakom berg-och-dalbanan längs staketet, förbi radiobilarna, ut genom valvet och mot parkeringen. Spring ikapp honom (dra spaken hela vägen ut, eller håll Shift på datorn) – du är lite snabbare. Du kan också genskjuta honom.
+  - Hinner han till parkeringen kommer han undan, men han kommer tillbaka till tivolit: prata med Bengt igen, så slipper du åka hjulet en gång till. 4 000 kr.
+- **H – Hanna (sidouppdrag): Var är Ebbe?** En stund efter Lasses första uppdrag sms:ar Hanna: hennes son Ebbe, fem år, gul tröja och grön keps, har tappat bort sig på tivolit. Hon står vid biljettkiosken.
+  - Fråga tre personer i tur och ordning – Popcorn-Pelle vid popcornkiosken, Karusell-Kalle vid karusellen och Maja vid Måsens station. Var och en vet vart Ebbe gick sedan.
+  - Ebbe sitter på en bänk vid pariserhjulet. Prata med honom, så följer han efter dig. Gå lugnt tillbaka till Hanna – springer du ifrån honom ropar han "Vänta på mig!", och tappar han bort dig går han tillbaka till bänken. 900 kr.
+- **R – Tivoli-Rut (sidouppdrag, på tid): Måsen har fastnat.** En stund senare står berg-och-dalbanan Måsen stilla högt upp i liftbacken med åtta åkare, och Rut som äger tivolit sms:ar. Gå till henne vid Måsens station.
+  - Drivremmen har gått av, och Lasse har en ny. Du har två minuter: ta en bil (Ruts vita skåpbil står på parkeringen), kör till Lasse som väntar vid verkstadens grind på Drottninggatan, och tillbaka till tivolits valv. Spring sedan in med remmen till Rut.
+  - Måsen startar igen och åkarna störtar ner. 700 kr plus 8 kr för varje sekund som är kvar. Hinner du inte får du försöka igen – åkarna sitter kvar.
 - **T – Livräddar-Tove (sidouppdrag, pussel): Badhyttsgåtan.** När norra bron är öppen sms:ar Tove, livräddaren på Norrholmens badplats. Fyra ungar – Alva, Bosse, Cleo och Dante – har glömt vilken av de fyra badhytterna de hyr.
   - Prata med Tove vid livräddartornet, och sedan med ungarna på stranden: var och en minns en sak. Ungarnas bokstäver blir gråa när du har hört dem.
   - Sätt rätt namnskylt på varje hytt: ställ dig vid hyttdörren och tryck **SKYLT** för att bläddra mellan namnen. Namn som sitter på en annan hytt hoppas över. Bokstaven ovanför hytten visar vem den är skyltad för.
@@ -175,6 +185,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
+| `src/tivolijobs.js` | Uppdragen på tivolit: Utsikten (huvuduppdragets del 11), Var är Ebbe? och Måsen har fastnat |
 | `src/southisle.js`, `tivoli.js`, `rides.js` | Söderholmen och Tivoli Lyckoland, tivolits åkattraktioner som rör sig och åkturen i pariserhjulet |
 | `src/beach.js` | Badplatsen på Norrholmen: parasoller, solstolar, badhytter, livräddartornet, glasskiosken, bryggan och resten |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |
