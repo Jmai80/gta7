@@ -19,13 +19,7 @@ Senast uppdaterad 11 oktober 2026, efter version 1.9 (Söderholmens kapell går 
 
 5. Sessionen fortsätter även om du stänger fliken. Du kan följa den från mobilen under Code-fliken i Claude-appen.
 
-**Lokalt på din MacBook (Claude-appen, Code-fliken, eller `claude` i Terminal):**
-
-1. En gång: installera verktygen i Terminal: `xcode-select --install` (git), sedan [Homebrew](https://brew.sh) och `brew install node python gh`, och logga in på GitHub med `gh auth login`.
-2. En gång: hämta repot: `cd ~ && git clone https://github.com/Jmai80/gta7.git`.
-3. Öppna mappen `~/gta7` i Claude-appen (Code-fliken → välj mapp) eller kör `cd ~/gta7 && claude` i Terminal. CLAUDE.md läses in automatiskt.
-4. Skriv samma sorts uppgift som ovan. Claude jobbar då direkt i din mapp och pushar till `main`; första gången frågar den om lov att köra kommandon.
-5. Detaljerna för testerna lokalt (Playwright, Chromium, skärmdumpsarket) står i HANDOFF avsnitt 1b.
+**I Claude-appen på Macen (eller mobilen):** Code-fliken i appen startar samma sorts molnsession som claude.ai/code, med samma GitHub-koppling. Välj repot **Jmai80/gta7** och miljön **Default**, och skriv uppgiften som ovan. Inget behöver installeras på datorn, och Claude pushar till `main` som vanligt.
 
 ---
 

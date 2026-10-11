@@ -5,4 +5,3 @@ test/play.html
 *.log
 .DS_Store
 __pycache__/
-.venv/
