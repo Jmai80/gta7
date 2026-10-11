@@ -647,14 +647,14 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.8! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.8! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.9! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.9! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
   // the dialogue overlay (main.js) reports back to the running job
   talkFx(id, fx) { if (this.active && this.active.id === id && this.active.talkFx) this.active.talkFx(fx); }
-  talkDone(id) { if (this.active && this.active.id === id && this.active.talkDone) this.active.talkDone(); }
+  talkDone(id) { this.game.indoors.talkDone(id); if (this.active && this.active.id === id && this.active.talkDone) this.active.talkDone(); }
 
   // the objective box when no job is running: the followed quest, or a nudge to pick one
   followObjective() {

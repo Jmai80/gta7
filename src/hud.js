@@ -9,6 +9,7 @@ import { OFFICE, OFFICE_WALLS, OFFICE_FURN } from './office.js';
 import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
 import { HOUSE, HOUSE_WALLS, HOUSE_FURN } from './birger.js';
 import { ROOM as NOVA_ROOM, ROOM_WALLS as NOVA_WALLS, ROOM_FURN as NOVA_FURN } from './nova.js';
+import { CHAPEL, CHAPEL_WALLS, CHAPEL_FURN } from './chapel.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
@@ -16,7 +17,7 @@ import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -231,6 +232,15 @@ export class HUD {
     for (const [x0, z0, x1, z1] of NOVA_FURN.slice(0, -1)) g.fillRect(X(No.x0 + x0), Zs(No.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of NOVA_WALLS) g.fillRect(X(No.x0 + x0), Zs(No.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    // Söderholmens kapell (v1.9): stone floor, the red runner up the aisle, pews and altar
+    const Ch = CHAPEL.room;
+    rect(Ch.x0, Ch.z0, Ch.x1, Ch.z1, '#7d776d');
+    rect(Ch.x0 + 3.5, Ch.z0 + 0.6, Ch.x0 + 4.5, Ch.z0 + 12.3, '#7a2a2a');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of CHAPEL_FURN.slice(0, -1)) g.fillRect(X(Ch.x0 + x0), Zs(Ch.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of CHAPEL_WALLS) g.fillRect(X(Ch.x0 + x0), Zs(Ch.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#5b4636'; g.fillRect(X(Ch.x0 + 3.4), Zs(Ch.z0 - 0.2), 1.2 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -594,7 +604,7 @@ export class HUD {
       this.el.bAction.hidden = !label;
       this.el.bAction.classList.toggle('long', label.length > 7); // (BLONDERING, RAKHYVEL… in the hair salon)
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', 'GÅ IN': 'Gå in i kapellet', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
         'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';

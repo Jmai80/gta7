@@ -15,6 +15,7 @@ import { WHEEL_FARE } from '../src/rides.js';
 import { UTSIKT, EBBE, MASEN } from '../src/tivolijobs.js';
 import { CO_STUCK_T } from '../src/southisle.js';
 import { SECRETS, SECRET_COUNT, monsterRise, DUCKS, duckAt } from '../src/secrets.js';
+import { CHAPEL, CHAPEL_DOOR, PEWS } from '../src/chapel.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
@@ -335,7 +336,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all fourteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.8/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.8, Dahlgren\'s photos are gone');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.9/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.9, Dahlgren\'s photos are gone');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2538,7 +2539,7 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   m.talkDone('utsikten'); run(g, 1);
   check(m.done.has('utsikten') && g.money - money0 === UTSIKT.reward && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Utsikten'), `main quest part 11 done: ${UTSIKT.reward} kr`);
   run(g, 16);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.8/.test(d.text)), 'all fourteen done: the end card (version 1.8)');
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.9/.test(d.text)), 'all fourteen done: the end card (version 1.9)');
 
   // he gets away when you only walk
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
@@ -2739,6 +2740,57 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   walkHere(g2, S.phone.x, S.phone.z); run(g2, 0.1); press(g2);
   const ev2 = lastTalk(record(g2, ['talk']), 'secret-phone');
   void ev2;
+}
+
+// ---------- 37. Söderholmens kapell from the inside (v1.9) ----------
+{
+  console.log('Kapellet');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, p = g.player, ind = g.indoors;
+  m.restore({ ...livsSave(['red', 'lasse', 'cykel']), money: 0 });
+  const ev = record(g, ['talk', 'toast', 'indoor']);
+  // the tower door: you can walk there from the bridge landing
+  check(!reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, [CHAPEL_DOOR], { x0: -125, z0: 182, x1: 124, z1: 290 }).length, 'you can walk up to the chapel door');
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'GÅ IN', 'GÅ IN at the tower door');
+  walkHere(g, CHAPEL_DOOR.x + 4, CHAPEL_DOOR.z - 3); run(g, 0.1);
+  check(m.prompt !== 'GÅ IN', '  (not a few steps away)');
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); press(g); run(g, 1.2);
+  check(g.indoor && ind.where === 'chapel' && Math.hypot(p.x - CHAPEL.spawn.x, p.z - CHAPEL.spawn.z) < 0.3, 'in: just inside the door, facing the altar');
+  check(ev.some(([n, d]) => n === 'toast' && /kapell/.test(d.text)), `  "${(ev.find(([n, d]) => n === 'toast' && /kapell/.test(d.text)) || [0, { text: '' }])[1].text}"`);
+  const inga = ind.priest;
+  check(inga && g.peds.list.includes(inga) && Math.hypot(inga.x - CHAPEL.priest.x, inga.z - CHAPEL.priest.z) < 0.1 && Math.abs(wrapAngle(inga.h - Math.PI)) < 0.01, 'kyrkoherde Inga stands in front of the altar, facing the pews');
+  const sitters = ind.chapelFolk.slice(1);
+  check(sitters.length === 3 && sitters.every((q) => q.state === 'lounge' && PEWS.some(([x0, z0, x1, z1]) => q.x > CHAPEL.room.x0 + x0 && q.x < CHAPEL.room.x0 + x1 && q.z > CHAPEL.room.z0 + z0 && q.z < CHAPEL.room.z0 + z1)), 'three people sitting in the pews');
+  check(PEWS.length === 12 && PEWS.every(([x0, , x1]) => x1 <= 3.3 || x0 >= 4.7), 'six rows of pews with an aisle between them');
+  // walk it: up the aisle, into the pews, through the gap in the rail to the altar
+  const R = CHAPEL.room, Bd = CHAPEL.bounds;
+  const spots = [{ x: R.x0 + 4, z: R.z0 + 10.5 }, { x: R.x0 + 2, z: R.z0 + 3.0 + 1.25 * 3 + 0.55 + 0.35 }, { x: R.x0 + 6.5, z: R.z0 + 2.65 }, { x: R.x0 + 4, z: R.z0 + 12.0 }, { x: R.x0 + 5.6, z: R.z0 + 12.0 }];
+  check(!reachable(g, CHAPEL.spawn, spots, Bd).length, 'you can walk up the aisle, in between the pews and up to the altar');
+  check(reachable(g, CHAPEL.spawn, [{ x: R.x0 + 4, z: R.z0 - 1.5 }], { x0: Bd.x0, z0: Bd.z0 - 2, x1: Bd.x1, z1: Bd.z1 }).length === 1, '  but not out through the walls');
+  // walk up the aisle for real and talk to her
+  walkHere(g, CHAPEL.spawn.x, CHAPEL.spawn.z);
+  let t = 0; while (m.prompt !== 'PRATA' && t++ < 60 * 12) g.step(DT, { ...idle, moveY: 1, camYaw: 0 });
+  check(m.prompt === 'PRATA' && p.z > R.z0 + 9.5, `walked up the aisle: PRATA by Inga (${(t / 60).toFixed(1)} s)`);
+  press(g);
+  const t1 = lastTalk(ev, 'inga');
+  check(t1 && t1.pages[0].who === 'Kyrkoherde Inga' && t1.pages.some((pg) => /Arne/.test(pg.text) && /1972/.test(pg.text)), `Inga: "${t1 && t1.pages[0].text.slice(0, 50)}…" – and Arne and Gun married here`);
+  check(Math.abs(wrapAngle(inga.h - Math.atan2(p.x - inga.x, p.z - inga.z))) < 0.05, '  she turns to you');
+  m.talkDone('inga'); run(g, 0.3);
+  check(Math.abs(wrapAngle(inga.h - Math.PI)) < 0.01 && !g.camFocus, '  and back to the pews afterwards');
+  press(g);
+  const t2 = lastTalk(ev, 'inga');
+  check(t2 !== t1 && t2.pages.length === 1, `again: "${t2 && t2.pages[0].text.slice(0, 50)}…"`);
+  m.talkDone('inga'); run(g, 0.3);
+  // out again
+  walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', 'GÅ UT by the door');
+  press(g); run(g, 1.2);
+  check(!g.indoor && Math.hypot(p.x - CHAPEL_DOOR.x, p.z - CHAPEL_DOOR.z) < 1.2 && !g.peds.list.includes(inga) && !ind.chapelFolk.length, 'out on the gravel path; the people inside are gone');
+  // not while a job is running
+  m.active = { id: 'x', prompt: null }; p.x = CHAPEL_DOOR.x; p.z = CHAPEL_DOOR.z; ind.update(0);
+  check(ind.prompt !== 'GÅ IN', 'no GÅ IN while a job is running');
+  m.active = null;
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

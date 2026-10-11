@@ -431,7 +431,7 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270, Birger: 125, 'Livräddar-Tove': 300, Alva: 380, Bosse: 340, Cleo: 390, Dante: 330, 'Direktör Dahlgren': 105, Köparen: 240, Hanna: 300, Ebbe: 420, 'Popcorn-Pelle': 170, 'Karusell-Kalle': 140, 'Maja vid Måsen': 330, 'Tivoli-Rut': 260 };
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270, Birger: 125, 'Livräddar-Tove': 300, Alva: 380, Bosse: 340, Cleo: 390, Dante: 330, 'Direktör Dahlgren': 105, Köparen: 240, Hanna: 300, Ebbe: 420, 'Popcorn-Pelle': 170, 'Karusell-Kalle': 140, 'Maja vid Måsen': 330, 'Tivoli-Rut': 260, 'Kyrkoherde Inga': 235 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;

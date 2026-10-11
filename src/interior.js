@@ -16,6 +16,7 @@ import { officeLayout, officeInto } from './office.js';
 import { salonLayout, salonInto } from './salon.js';
 import { birgerLayout, birgerInto } from './birger.js';
 import { novaLayout, novaInto } from './nova.js';
+import { chapelLayout, chapelInto } from './chapel.js';
 
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
@@ -110,7 +111,11 @@ export function interiorLayout() {
   colliders.push(...nova.colliders);
   Object.assign(signs, nova.signs);
   signPrims.push(...nova.signPrims);
-  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor], signs, signPrims };
+  const chapel = chapelLayout(); // Söderholmens kapell (v1.9)
+  colliders.push(...chapel.colliders);
+  Object.assign(signs, chapel.signs);
+  signPrims.push(...chapel.signPrims);
+  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor], signs, signPrims };
 }
 
 // ------------------------------------------------------------------ geometry
@@ -247,6 +252,7 @@ export function interiorInto(B) {
   salonInto(B); // Salong Saxen
   birgerInto(B); // Birger's house (v1.2)
   novaInto(B); // Nova's room (v1.4)
+  chapelInto(B); // Söderholmens kapell (v1.9)
 }
 
 // door panel for Melker's front door, hinge at the origin, closed along +x (render.js turns it)
