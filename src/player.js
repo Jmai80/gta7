@@ -41,7 +41,16 @@ export class Player {
     this.near = this.state === 'foot' ? this.findCar() : null;
     const b = this.body;
     const bike = this.state === 'car' && this.car && this.car.spec.bike ? this.car : null;
-    if (bike) {
+    if (bike && bike.spec.skate) {
+      // (v1.8) standing on the skateboard, a little sideways, pushing off with one foot while you speed up
+      b.x = bike.x; b.z = bike.z; b.y = (bike.visY ?? bike.y) + 0.12;
+      b.h = bike.h + 0.55; b.pose = 0; b.roll = (bike.lean || 0) * 0.8; b.lean = 0.12; b.lie = 0;
+      const push = bike.input.throttle > 0.05 && !bike.air && bike.fwdSpeed < bike.spec.maxSpeed * 0.85;
+      if (push) b.phase += dt * 7;
+      b.legAmp += ((push ? 0.55 : 0) - b.legAmp) * Math.min(1, dt * 8);
+      b.armAmp = 0.15 + b.legAmp * 0.3;
+      b.visible = true;
+    } else if (bike) {
       // on the saddle, pedalling while you push on, leaning into the turns with the bike
       const G = BIKE_GEO, sn = Math.sin(bike.h), cs = Math.cos(bike.h);
       b.x = bike.x + sn * G.saddle[2]; b.z = bike.z + cs * G.saddle[2];
@@ -211,7 +220,11 @@ export class Player {
       car.lean = (car.lean || 0) + (clamp(-car.accLat * 0.05, -0.42, 0.42) - (car.lean || 0)) * Math.min(1, dt * 6);
     }
     car.input.park = this.locked;
-    if (input.horn !== this.hornOn) {
+    if (car.spec.skate) {
+      // (v1.8) no bell on a skateboard: the button makes it jump (an ollie)
+      if (input.horn && !this.hornOn && !car.air) { car.air = true; car.vy = 4.3; car.y += 0.02; car.airTime = 0; car.airDist = 0; g.emit('ollie', { car }); g.stats.ollies = (g.stats.ollies || 0) + 1; }
+      this.hornOn = !!input.horn;
+    } else if (input.horn !== this.hornOn) {
       this.hornOn = !!input.horn;
       g.emit('horn', { on: this.hornOn, car });
       if (this.hornOn) { g.peds.honkedAt(car); g.stats.honks++; }

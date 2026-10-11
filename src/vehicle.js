@@ -50,6 +50,15 @@ export const CAR_TYPES = {
     grip: 15, hbGrip: 7, steerMax: 0.72,
     circles: [-0.45, 0.45], radius: 0.3, bike: true, noDamage: true,
   },
+  // (v1.8) the skateboard someone left on the football pitch – an Easter egg: push off, roll, jump (the
+  // horn button makes an ollie). It counts as a bike for the controls and never gets dented
+  skate: {
+    key: 'skate', name: 'Skateboard', len: 0.85, wid: 0.24, height: 0.14,
+    wheelbase: 0.52, track: 0, wheelR: 0.035, wheelZ: [0.26, -0.26],
+    mass: 60, accel: 3.2, maxSpeed: 8.6, brake: 5.5, revAccel: 0.6, revMax: 0.6,   // flat out about 8 m/s (29 km/h)
+    grip: 13, hbGrip: 6, steerMax: 0.55,
+    circles: [0], radius: 0.32, bike: true, skate: true, noDamage: true,
+  },
 };
 
 // where things are on Arne's bike (models.js builds it, the player sits on the saddle)
@@ -72,6 +81,7 @@ export const PAINTS = {
   cityOrange: { hex: 0xe8833a, name: 'orange' },   // (v1.2) the bikes going home: Vera's,
   cityYellow: { hex: 0xe2b52a, name: 'gul' },      // Lasse's
   cityPink: { hex: 0xe86aa0, name: 'rosa' },       // and Yasmin's
+  skate: { hex: 0x2fb3a8, name: 'turkos' },        // (v1.8) the skateboard
 };
 
 const GRAVITY = 16;

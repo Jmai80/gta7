@@ -14,6 +14,7 @@ import { SOUTH, WHEEL, CAROUSEL, COASTER, CO_LEN, CO_PERIOD, onSouth, inTivoli, 
 import { WHEEL_FARE } from '../src/rides.js';
 import { UTSIKT, EBBE, MASEN } from '../src/tivolijobs.js';
 import { CO_STUCK_T } from '../src/southisle.js';
+import { SECRETS, SECRET_COUNT, monsterRise } from '../src/secrets.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
@@ -334,7 +335,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all fourteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.7/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.7, Dahlgren\'s photos are gone');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.8/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.8, Dahlgren\'s photos are gone');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2537,7 +2538,7 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   m.talkDone('utsikten'); run(g, 1);
   check(m.done.has('utsikten') && g.money - money0 === UTSIKT.reward && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Utsikten'), `main quest part 11 done: ${UTSIKT.reward} kr`);
   run(g, 16);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.7/.test(d.text)), 'all fourteen done: the end card (version 1.7)');
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.8/.test(d.text)), 'all fourteen done: the end card (version 1.8)');
 
   // he gets away when you only walk
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
@@ -2665,6 +2666,73 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   walkHere(g2, MASEN.mark.x, MASEN.mark.z); run(g2, 1);
   m2.talkDone('masen'); run(g2, MASEN.time + 1);
   check(!m2.active && ev2.some(([n, d]) => n === 'banner' && d.sub === 'Åkarna fick vänta för länge') && m2.isOpen('masen') && g2.coasterT === CO_STUCK_T, 'too slow: failed, and Måsen is still stuck');
+}
+
+// ---------- 36. The Easter eggs (v1.8) ----------
+{
+  console.log('Hemligheterna (påskägg)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, p = g.player;
+  m.restore({ ...livsSave(['red', 'lasse', 'cykel']), money: 0 });
+  const ev = record(g, ['banner', 'toast', 'talk', 'ring', 'secret', 'ollie']);
+  const S = Object.fromEntries(SECRETS.map((q) => [q.id, q]));
+  check(SECRET_COUNT === 8, `${SECRET_COUNT} secrets`);
+  // you can walk up to every one of them (from a street, the bridge landings)
+  const town = SECRETS.filter((q) => ['skate', 'phone', 'ducks', 'heart', 'monster'].includes(q.id));
+  check(!reachable(g, { x: -33.4, z: 4 }, town.map((q) => ({ x: q.x, z: q.z })), { x0: -146, z0: -172, x1: 146, z1: 146 }).length, 'in town: the pitch, the phone box, the pond, the stump, the end of the pier');
+  check(!reachable(g, { x: ISLE.landing.x, z: ISLE.landing.z - 3 }, [S.goldbun, S.gnome], { x0: -55, z0: -405, x1: 147, z1: -229 }).length, 'on Norrholmen: the golden bun among the spruces, the gnome');
+  check(!reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, [S.bottle], { x0: -125, z0: 182, x1: 124, z1: 290 }).length, 'on Söderholmen: the bottle on the cliffs');
+  // the skateboard: lies on the pitch, ride it, jump
+  walkHere(g, -27.5, 150); run(g, 1);
+  const sk = g.skate;
+  check(sk && Math.hypot(sk.x - S.skate.x, sk.z - S.skate.z) < 0.1, 'a skateboard on the football pitch');
+  walkHere(g, S.skate.x - 0.5, S.skate.z - 1.5);
+  check(p.near === sk, 'ÅKA by it');
+  press(g); run(g, 0.5);
+  check(p.inCar && p.car === sk && g.stats.secrets.includes('skate') && ev.some(([n, d]) => n === 'banner' && d.title === 'HEMLIGHET!' && /1 av 8/.test(d.sub)), 'on it: HEMLIGHET! 1 av 8');
+  run(g, 4, { ...idle, throttleAxis: 1 });
+  check(sk.speed > 6.5 && sk.speed < 9, `pushing off: ${(sk.speed * 3.6).toFixed(0)} km/h`);
+  g.step(DT, { ...idle, throttleAxis: 1, horn: true });
+  let top = 0; for (let i = 0; i < 60; i++) { g.step(DT, { ...idle, throttleAxis: 1 }); top = Math.max(top, sk.y - g.world.groundHeight(sk.x, sk.z)); }
+  check(top > 0.3 && !sk.air && ev.some(([n]) => n === 'ollie'), `HOPPA: an ollie ${(top * 100).toFixed(0)} cm up, and down again`);
+  check(sk.health === 100, 'a skateboard does not get dented');
+  run(g, 2, { ...idle, handbrake: true });
+  g.step(DT, { ...idle, action: true }); run(g, 1);
+  check(p.state === 'foot' && !p.inCar && sk.speed < 0.5, 'brake, and off again');
+  // things to look at
+  for (const id of ['ducks', 'heart', 'goldbun', 'gnome', 'bottle']) {
+    const q = S[id];
+    walkHere(g, q.x, q.z); run(g, 0.1);
+    check(m.prompt === 'UNDERSÖK', `UNDERSÖK by ${q.name}`);
+    press(g); run(g, 2);
+    check(g.stats.secrets.includes(id) && ev.some(([n, d]) => n === 'toast' && d.text === q.text), `  ${q.name}: "${q.text.slice(0, 46)}…"`);
+    walkHere(g, q.x, q.z); run(g, 0.1);
+    check(m.prompt !== 'UNDERSÖK', '  (found: no prompt any more)');
+  }
+  // the phone box rings when you come near; the voice gives a riddle
+  walkHere(g, S.phone.x + 22, S.phone.z); run(g, 3);
+  check(ev.some(([n]) => n === 'ring'), 'the phone box rings as you come along the quay');
+  walkHere(g, S.phone.x, S.phone.z); run(g, 0.1);
+  check(m.prompt === 'SVARA', 'SVARA');
+  press(g);
+  const call = lastTalk(ev, 'secret-phone');
+  check(call && call.pages.some((pg) => /8 hemligheter/.test(pg.text)) && /Sitt längst ut på bryggan/.test(call.pages.at(-1).text), `a riddle for one not found yet: "${call && call.pages.at(-1).text.slice(15, 60)}…"`);
+  m.talkDone('secret-phone'); run(g, 1);
+  check(g.stats.secrets.includes('phone') && g.stats.secrets.length === 7, '7 of 8');
+  const rings = ev.filter(([n]) => n === 'ring').length; run(g, 20);
+  check(ev.filter(([n]) => n === 'ring').length === rings && m.prompt !== 'SVARA', 'then quiet for a while');
+  // the sea monster: at the end of the pier, wait
+  walkHere(g, S.monster.x, S.monster.z);
+  let waited = 0; while (!g.stats.secrets.includes('monster') && waited++ < 60 * 80) g.step(DT, idle);
+  check(g.stats.secrets.includes('monster') && monsterRise(g.time) > 0.5, `at the end of the pier: Sjubyodjuret rises (after ${(waited / 60).toFixed(0)} s)`);
+  check(ev.some(([n, d]) => n === 'banner' && /8 av 8/.test(d.sub)), 'all eight: 8 av 8');
+  // kept in the save
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(m.progress());
+  check(g2.stats.secrets.length === 8, 'kept in the save');
+  walkHere(g2, S.phone.x, S.phone.z); run(g2, 0.1); press(g2);
+  const ev2 = lastTalk(record(g2, ['talk']), 'secret-phone');
+  void ev2;
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

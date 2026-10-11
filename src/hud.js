@@ -572,22 +572,22 @@ export class HUD {
       this.el.objSub.hidden = !sub;
     }
     // context controls
-    const mode = car ? (car.spec.bike ? 'bike' : 'car') : 'foot';
+    const mode = car ? (car.spec.skate ? 'skate' : car.spec.bike ? 'bike' : 'car') : 'foot';
     if (mode !== this.mode) {
       this.mode = mode;
       this.root.classList.toggle('in-car', mode !== 'foot');
-      this.root.classList.toggle('on-bike', mode === 'bike');
-      const bike = mode === 'bike';
+      this.root.classList.toggle('on-bike', mode === 'bike' || mode === 'skate');
+      const bike = mode === 'bike' || mode === 'skate', skate = !!(car && car.spec.skate);
       this.el.bExit.innerHTML = bike ? 'KLIV<br>AV' : 'KLIV<br>UR';
       this.el.bHand.innerHTML = bike ? 'BROMS' : 'HAND-<br>BROMS';
-      this.el.bHorn.textContent = bike ? 'PLING' : 'TUTA';
-      this.el.bGas.textContent = bike ? 'TRAMPA' : 'GAS';
+      this.el.bHorn.textContent = skate ? 'HOPPA' : bike ? 'PLING' : 'TUTA';   // (v1.8: an ollie on the skateboard)
+      this.el.bGas.textContent = skate ? 'SPARKA' : bike ? 'TRAMPA' : 'GAS';
       this.el.condWrap.hidden = bike; // a bike does not get dented
     }
     let label = '';
     const prompt = game.missionActive ? game.mission.prompt : null;
     if (!car && prompt) label = prompt;
-    else if (!car && p.near) label = p.near.spec.bike ? 'CYKLA' : p.near.driver ? 'STJÄL' : 'KLIV IN';
+    else if (!car && p.near) label = p.near.spec.skate ? 'ÅKA' : p.near.spec.bike ? 'CYKLA' : p.near.driver ? 'STJÄL' : 'KLIV IN';
     if (label !== this.actionLabel) {
       this.actionLabel = label;
       this.el.bAction.textContent = label;
@@ -596,7 +596,7 @@ export class HUD {
       this.el.keyhint.hidden = !label;
       const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
-        KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
+        'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

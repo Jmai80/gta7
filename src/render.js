@@ -18,6 +18,7 @@ import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 import { makeBody } from './peds.js';
 import { buildTivoli } from './tivoli.js';
+import { MONSTER, monsterRise } from './secrets.js';
 
 const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
@@ -178,9 +179,47 @@ export class View {
       this.scene.add(g);
       this.bikes[key] = { g, rear, front, steer, buns, geo: G, type, paint: opt.paint || null };
     }
+    // (v1.8) the skateboard: a turquoise deck with kicked-up ends, trucks and four yellow wheels
+    const S = new GeomBuilder(), dy = 0.1;
+    S.box(-0.125, dy, -0.36, 0.125, dy + 0.028, 0.36, 0x2fb3a8, M.PAINT, { skipBottom: false });
+    for (const s of [-1, 1]) S.rbox(0, dy + 0.05, s * 0.43, 0.25, 0.028, 0.16, 0, 0x2fb3a8, M.PAINT, -s * 0.45);
+    S.box(-0.115, dy + 0.028, -0.34, 0.115, dy + 0.031, 0.34, 0x1d1f22);            // grip tape
+    for (const z of [-0.24, 0.24]) {
+      S.box(-0.09, 0.05, z - 0.025, 0.09, dy, z + 0.025, 0xb8bcc0, M.CHROME);
+      for (const x of [-0.1, 0.1]) S.hcyl(x, 0.035, z, 0.04, 0.035, 'x', 8, 0xf2c21b);
+    }
+    this.skateMesh = new THREE.Mesh(S.toGeometry(THREE), this.matStatic);
+    this.skateMesh.rotation.order = 'YXZ';
+    this.skateMesh.visible = false;
+    this.scene.add(this.skateMesh);
+    // (v1.8) Sjubyodjuret: three green humps and a head on a long neck, out in the harbour
+    const Mn = new GeomBuilder(), GREEN = 0x2f5d3a, BELLY = 0x6b8f5a;
+    for (const [z, r] of [[3.4, 1.05], [0.6, 1.25], [-2.3, 0.95], [-4.6, 0.55]]) { Mn.ico(0, 0, z, r, 0.85, GREEN, 0, Math.round(z * 10) + 50); Mn.ico(0.15, -0.25, z, r * 0.8, 0.6, BELLY, 0, Math.round(z * 7) + 9); }
+    Mn.tube([0, 0.2, 5.0], [0, 2.6, 6.6], 0.42, 0.3, 8, GREEN);
+    Mn.ico(0, 2.85, 7.0, 0.55, 0.75, GREEN, 0, 77);
+    Mn.ico(0, 2.7, 7.55, 0.32, 0.6, BELLY, 0, 78);
+    for (const s of [-1, 1]) { Mn.ico(s * 0.32, 3.05, 7.25, 0.09, 1, 0xfff4c0, 0, 80); Mn.ico(s * 0.35, 3.07, 7.32, 0.045, 1, 0x1d1f22, 0, 81); }
+    for (let k = 0; k < 5; k++) Mn.rbox(0, 0.95 + (k === 2 ? 0.1 : 0), 3.4 - k * 1.6, 0.06, 0.35, 0.3, 0, 0x7a2f2a, 0, 0.3);
+    this.monster = new THREE.Mesh(Mn.toGeometry(THREE), this.matStatic);
+    this.monster.position.set(MONSTER.x, -4, MONSTER.z);
+    this.monster.rotation.y = 0.7;
+    this.monster.scale.setScalar(1.5);
+    this.monster.visible = false;
+    this.scene.add(this.monster);
   }
 
   syncBike(game, dt) {
+    // (v1.8) the skateboard, tipping into the turns while you ride it
+    const sk = game.skate && !game.skate.removed ? game.skate : null;
+    this.skateMesh.visible = !!sk && !this.indoor;
+    if (sk) {
+      this.skateMesh.position.set(sk.x, sk.visY ?? sk.y, sk.z);
+      this.skateMesh.rotation.set(sk.air ? -0.12 : 0, sk.h, (sk.lean || 0) * 0.5);
+    }
+    // (v1.8) the sea monster rises out of the harbour now and then
+    const up = monsterRise(game.time);
+    this.monster.visible = up > 0.01 && !this.indoor;
+    if (this.monster.visible) { this.monster.position.y = -4.0 + up * 3.6 + Math.sin(game.time * 1.3) * 0.08; this.monster.rotation.y = 0.7 + Math.sin(game.time * 0.2) * 0.1; }
     for (const B of Object.values(this.bikes || {})) {
       const v = game.vehicles.find((q) => q.type === B.type && !q.removed && (!B.paint || q.paint === B.paint));
       B.g.visible = !!v && !this.indoor;

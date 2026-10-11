@@ -375,6 +375,20 @@ export class AudioFX {
   }
 
   // the bike's bell: pling-pling (k: quieter when it is someone else's bike further off)
+  // (v1.8) an old phone ringing (the phone box on the quay), quieter further off
+  phoneRing(k = 1) {
+    if (!this.ctx || k < 0.05) return;
+    for (let i = 0; i < 10; i++) { const at = i * 0.05; this.tone(440, 0.04, 'square', 0.035 * k, at); this.tone(480, 0.04, 'square', 0.03 * k, at + 0.025); }
+    for (let i = 0; i < 10; i++) { const at = 0.62 + i * 0.05; this.tone(440, 0.04, 'square', 0.035 * k, at); this.tone(480, 0.04, 'square', 0.03 * k, at + 0.025); }
+  }
+
+  // (v1.8) the skateboard's wheels slap the ground (an ollie, and landing it)
+  clack(k = 1) {
+    if (!this.ctx) return;
+    this.burst(0.18 * k, 1800, 0.06, 'bandpass');
+    this.tone(160, 0.08, 'triangle', 0.08 * k);
+  }
+
   bell(k = 1) {
     if (!this.ctx || k < 0.05) return;
     for (const at of [0, 0.16]) {

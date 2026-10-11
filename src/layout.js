@@ -10,6 +10,7 @@ import { treeCasters } from './trees.js';
 import { interiorLayout } from './interior.js';
 import { islandInto, onIsle, ISLE, BEACH } from './island.js';
 import { southInto, onSouth, SOUTH, SOUTH_ROADS } from './southisle.js';
+import { secretsInto } from './secrets.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
@@ -1109,6 +1110,8 @@ export function createLayout(seed = 7) {
     R, M, COL, casters, footprints, parked, zones, loops, blocks, ramps, floorsSouth,
   });
   inside.floors.push(...floorsSouth);
+  // (v1.8) the Easter eggs' props (secrets.js): the phone box, the ducks, the stump, the golden bun …
+  secretsInto({ P, box, solid, sign, colCircle, colBox, casters, M });
 
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,

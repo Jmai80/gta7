@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.7 är småstaden Sjuby, ön Norrholmen på andra sidan norra bron och ön Söderholmen med Tivoli Lyckoland på andra sidan södra bron, med tre uppdragsgivare, tretton sidouppdrag, ett huvudäventyr i elva delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil – och till sist upp i pariserhjulet på tivolit, där du spanar efter direktör Dahlgren, som försöker sälja bilder av receptet.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.8 är småstaden Sjuby, ön Norrholmen på andra sidan norra bron och ön Söderholmen med Tivoli Lyckoland på andra sidan södra bron, med tre uppdragsgivare, tretton sidouppdrag, ett huvudäventyr i elva delar, åtta gömda hemligheter (bland annat en skateboard), en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil – och till sist upp i pariserhjulet på tivolit, där du spanar efter direktör Dahlgren, som försöker sälja bilder av receptet.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -27,7 +27,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.7
+## Uppdrag i version 1.8
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -116,6 +116,14 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
 
 Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbläsaren. **Börja om** i pausmenyn raderar dem, men först efter att du tryckt två gånger.
 
+## Hemligheter (påskägg, v1.8)
+
+Åtta saker är gömda i Sjuby och på öarna. De är inga uppdrag: du hittar dem genom att leta (eller genom att lyssna på telefonen). När du hittar en visas **HEMLIGHET!** och hur många du har, och de sparas. Slutskärmen visar hur många du hittat. Vad de betyder får vi kanske veta senare.
+
+- **Skateboarden** ligger på fotbollsplanen. Ställ dig vid den och tryck **ÅKA**. Spaken uppåt (eller W) sparkar fart, **HOPPA** (H på datorn) gör en ollie, **BROMS** bromsar. Den står kvar där du lämnar den.
+- **Telefonkiosken** på kajpromenaden i hamnen ringer när du kommer nära. Tryck **SVARA**: en mystisk röst ger en ledtråd till en hemlighet du inte hittat än. Den ringer igen en stund senare.
+- De andra sex får du hitta själv. Telefonen hjälper dig. Står du nära en av dem visas **UNDERSÖK**.
+
 ## Övrigt i stan
 
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Bilar med ett mål (som Dahlgrens lastbil) tar kortaste vägen dit och väntar på sin tur som alla andra. Det går även folk på trottoarerna.
@@ -185,6 +193,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
+| `src/secrets.js` | Hemligheterna (påskäggen) och var de ligger. Skateboarden är fordonstypen `skate` i vehicle.js |
 | `src/tivolijobs.js` | Uppdragen på tivolit: Utsikten (huvuduppdragets del 11), Var är Ebbe? och Måsen har fastnat |
 | `src/southisle.js`, `tivoli.js`, `rides.js` | Söderholmen och Tivoli Lyckoland, tivolits åkattraktioner som rör sig och åkturen i pariserhjulet |
 | `src/beach.js` | Badplatsen på Norrholmen: parasoller, solstolar, badhytter, livräddartornet, glasskiosken, bryggan och resten |

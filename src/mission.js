@@ -40,6 +40,7 @@
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
 import { Rides } from './rides.js';
+import { Secrets } from './secrets.js';
 import { ViewJob, EbbeJob, CoasterJob, southWorld, coasterStuck, UTSIKT, EBBE, MASEN } from './tivolijobs.js';
 import { CO_STUCK_T } from './southisle.js';
 import {
@@ -288,6 +289,7 @@ export class Missions {
     this.flag = new FlagQuest(this);
     this.party = new FestParty(this); // the bun party on the square (v1.0)
     this.rides = new Rides(this);     // the Ferris wheel at Tivoli Lyckoland (v1.6)
+    this.secrets = new Secrets(this); // (v1.8) the Easter eggs
     this.gatePia = null;            // (v1.2) Polis-Pia waiting at Birger's gate
     this.birger = null;             // (v1.5) Birger (on the quay, then home)
     this.beachFolk = null;          // (v1.5) Tove and the four kids on the beach
@@ -307,7 +309,7 @@ export class Missions {
   get bridgeOpen() { return this.known.has('cykel') || this.done.has('cykel'); }
   get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
   // the action button's label: the lift, something the running job wants (take the keys), or tant Gun
-  get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt || this.rides.prompt; }
+  get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt || this.rides.prompt || this.secrets.prompt; }
 
   // ---------------------------------------------------------------- helpers
   later(delay, fn, owner = null) { this.queue.push({ at: this.game.time + delay, fn, owner }); }
@@ -523,6 +525,7 @@ export class Missions {
     this.buildTargets();
     this.activities(dt);
     this.rides.update(dt);
+    this.secrets.update(dt);
     if ((this.keepT -= dt) <= 0) { this.keepT = 2; this.keepPizzaCar(); }
   }
 
@@ -644,8 +647,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.7! Dahlgrens bilder på receptet är raderade, och på Söderholmen snurrar tivolit vidare. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.7! Dahlgrens bilder på receptet är raderade, och på Söderholmen snurrar tivolit vidare. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.8! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.8! Dahlgrens bilder på receptet är raderade. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -743,7 +746,9 @@ export class Missions {
     const g = this.game;
     applyUpgrades(car, this.upgrades);
     if (car.spec.bike) { // the bike is not a car to steal
-      if (!this.flags.bikeHint) {
+      if (car.spec.skate) {
+        if (!this.flags.skateHint) { this.flags.skateHint = true; this.later(0.6, () => g.emit('hint', { id: 'skatecontrols', touch: 'Dra spaken uppåt för att sparka fart. HOPPA gör en ollie, BROMS bromsar.', keys: 'W sparka · S eller mellanslag bromsa · A/D styr · H hoppa · E kliv av' })); }
+      } else if (!this.flags.bikeHint) {
         this.flags.bikeHint = true;
         this.later(0.6, () => g.emit('hint', { id: 'bikecontrols', touch: 'Dra spaken uppåt för att trampa. BROMS bromsar – och PLING plingar.', keys: 'W trampa · S eller mellanslag bromsa · A/D styr · H plinga · E kliv av' }));
       }
@@ -986,7 +991,7 @@ export class Missions {
   interact() {
     if (this.game.indoors.interact()) return true;
     if (this.active && this.active.interact && this.active.interact()) return true;
-    return this.flag.interact() || this.rides.interact();
+    return this.flag.interact() || this.rides.interact() || this.secrets.interact();
   }
 }
 

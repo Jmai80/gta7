@@ -203,6 +203,20 @@ const PAINTERS = {
     fitText(g, d.lines[0], w * 0.84, h * 0.3); g.fillText(d.lines[0], x + w / 2, y + h * 0.38);
     if (d.lines[1]) { fitText(g, d.lines[1], w * 0.84, h * 0.2, 700); g.fillText(d.lines[1], x + w / 2, y + h * 0.68); }
   },
+  // (v1.8) "A + G 1971" carved in an old oak stump in the park: bark, a heart cut in, the letters
+  carving(g, d, x, y, w, h) {
+    g.fillStyle = '#5d4330'; g.fillRect(x, y, w, h);
+    g.strokeStyle = 'rgba(30,20,12,0.45)'; g.lineWidth = Math.max(1, w * 0.02);
+    for (let i = 0; i < 7; i++) { g.beginPath(); g.moveTo(x + (i + 0.5) * w / 7, y); g.lineTo(x + (i + 0.3) * w / 7, y + h); g.stroke(); }
+    const cx = x + w / 2, cy = y + h * 0.5, s = w * 0.42;
+    g.fillStyle = '#c49a6a';
+    g.beginPath(); g.moveTo(cx, cy + s * 0.75);
+    g.bezierCurveTo(cx - s * 1.2, cy - s * 0.1, cx - s * 0.55, cy - s * 0.95, cx, cy - s * 0.35);
+    g.bezierCurveTo(cx + s * 0.55, cy - s * 0.95, cx + s * 1.2, cy - s * 0.1, cx, cy + s * 0.75); g.fill();
+    g.fillStyle = '#3a2618'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'A + G', s * 1.1, h * 0.2); g.fillText('A + G', cx, cy - s * 0.05);
+    fitText(g, '1971', s * 0.8, h * 0.13, 700); g.fillText('1971', cx, cy + s * 0.32);
+  },
   // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
   lyckoland(g, d, x, y, w, h) {
     g.fillStyle = '#1d2f6b'; g.fillRect(x, y, w, h);

@@ -205,6 +205,7 @@ kbd {
 }
 #banner.show { animation: banner 3.6s ease both; }
 #banner.fail .b-title { color: var(--alert); }
+#banner.secret .b-title { color: #ffcf33; }
 #banner.start .b-title { color: var(--paper); font-size: clamp(36px, 9vmin, 64px); }
 #banner .b-title {
   font: 900 clamp(44px, 12vmin, 92px)/0.9 var(--display); color: var(--gold); letter-spacing: 0.02em;
@@ -498,6 +499,7 @@ kbd {
 <link rel="modulepreload" href="src/tivoli.js">
 <link rel="modulepreload" href="src/rides.js">
 <link rel="modulepreload" href="src/tivolijobs.js">
+<link rel="modulepreload" href="src/secrets.js">
 <script type="module" src="src/main.js"></script>
 </head>
 <body>
@@ -507,7 +509,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 1.7 · Sjuby, Norrholmen och Söderholmen</div>
+    <div class="ver">Version 1.8 · Sjuby, Norrholmen och Söderholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -630,9 +632,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 1.7 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.8 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma från kryssningen med Sjuby Spider, och på tivolit på Söderholmen tog du Dahlgren och raderade hans bilder av receptet. Det var version 1.7. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma från kryssningen med Sjuby Spider, och på tivolit på Söderholmen tog du Dahlgren och raderade hans bilder av receptet. Och någonstans i Sjuby ringer en telefon. Det var version 1.8. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

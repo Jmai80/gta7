@@ -12,7 +12,7 @@ import { PIZZA_CAR } from './config.js';
 import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3, spider: 1 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3, spider: 1, skate: 1 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -152,6 +152,16 @@ export class Game {
     const v = this.addVehicle('citybike', paint, x, z, h);
     if (!v) return null;
     v.parkedSpot = true;
+    return v;
+  }
+
+  // (v1.8) the skateboard (an Easter egg): there is only ever one
+  spawnSkate(x, z, h) {
+    if (this.skate && !this.skate.removed) this.removeVehicle(this.skate);
+    const v = this.addVehicle('skate', 'skate', x, z, h);
+    if (!v) return null;
+    v.parkedSpot = true;
+    this.skate = v;
     return v;
   }
 

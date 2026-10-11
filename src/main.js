@@ -1,4 +1,5 @@
 // Boot, main loop and glue between simulation, view, HUD, input and audio.
+import { SECRET_COUNT } from './secrets.js';
 import { Vector3 } from './three.js';
 import { Game } from './game.js';
 import { View } from './render.js';
@@ -200,6 +201,8 @@ function wire(g) {
     else if (!e.other && g.mission.upgrades.has('tuta')) { if (e.on) audio.melody(); } // Lasse's melody horn (yours, not someone else's)
     else audio.horn(e.on);
   });
+  g.on('ring', (e) => audio.phoneRing(Math.max(0, 1 - Math.hypot(e.x - g.player.x, e.z - g.player.z) / 32)));
+  g.on('ollie', () => audio.clack(1));
   g.on('pedHit', (e) => { audio.thud(0.8); if (e.car === g.player.car) g.stats.pedsKnocked++; });
   g.on('playerHit', () => { audio.thud(1); view.rig.shake = 0.6; buzz(40); });
   g.on('stunt', (e) => { audio.stunt(); hud.banner('STUNTHOPP!', `${e.dist} meter i luften`, e.amount); });
@@ -553,6 +556,7 @@ function showEnd(s) {
     ['Konsertbiljetten', s.concert != null ? `${s.concert} s över` : '–'],
     ['Spidern hem', s.spiderCond != null ? `${s.spiderCond} % hel` : '–'],
     ['Badhyttsgåtan', s.hutTries != null ? `${s.hutTries} försök` : '–'],
+    ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

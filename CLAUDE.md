@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 11 oktober 2026, efter version 1.7 (tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten och sidouppdragen Var är Ebbe? och Måsen har fastnat). Version 1.6 gav ön Söderholmen med Tivoli Lyckoland. Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. Den senaste buggfixen (1.4.1) gällde en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 11 oktober 2026, efter version 1.8 (åtta hemligheter/påskägg, bland annat en skateboard och en telefonkiosk som ringer). Version 1.7 gav tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten och sidouppdragen Var är Ebbe? och Måsen har fastnat. Version 1.6 gav ön Söderholmen med Tivoli Lyckoland. Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. Den senaste buggfixen (1.4.1) gällde en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -27,10 +27,11 @@ Senast uppdaterad 11 oktober 2026, efter version 1.7 (tre uppdrag på Söderholm
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.7 innehåller:
+- Version 1.8 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma, del 10 där Birger kommer hem och del 11 Utsikten på tivolit (v1.7),
   - **Sjuby Spider -62**, en exklusiv öppen bil (`spider`) som finns att låna efter del 10,
   - tretton sidouppdrag (senast Var är Ebbe? och Måsen har fastnat på tivolit, v1.7),
+  - åtta hemligheter (påskägg, v1.8, `secrets.js`): skateboarden man kan åka på, telefonkiosken som ringer, gummiankorna, hjärtat i stubben, den gyllene bullen, trädgårdstomten, flaskposten och Sjubyodjuret,
   - Lasses trimningsbutik,
   - Kims långhopp,
   - Norrholmen med Bullbilens bageri, kvarnen, fyren och badplatsen,
@@ -147,6 +148,7 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/config.js` | Konstanter och platser (dörrar, markörer, belöningar), `WHO` (uppdragsgivarnas namn) och `JUMP_GOAL`/`JUMP_REWARD`/`JUMP_START`. |
 | `src/layout.js` | Hela stan som data: `prims` som byggs till meshar, `colliders`, `casters` (bakade skuggor), `signs`, `ramps`, `parked`, `zones`, `floors` och GPS-grafen. Exporterar `createLayout(seed)` och materialkoderna `M`. |
 | `src/island.js` | Norrholmen: kust, vägar, kolonilotter, bageri, kvarn, fyr, båthamn och badplatsen (`BEACH`, `beach()`). |
+| `src/secrets.js` | (v1.8) Hemligheterna: platser, texter, telefonens ledtrådar, rekvisitan (`secretsInto`) och sjöodjurets rörelse. Skateboarden är fordonstypen `skate` i vehicle.js. |
 | `src/tivolijobs.js` | (v1.7) Uppdragen på tivolit: Utsikten (`ViewJob`), Var är Ebbe? (`EbbeJob`), Måsen har fastnat (`CoasterJob`) och `southWorld`, som sätter ut personerna medan du korsar södra bron. |
 | `src/southisle.js`, `tivoli.js`, `rides.js` | (v1.6) Söderholmen och Tivoli Lyckoland som data (`SOUTH`, `onSouth`, `WHEEL`, `COASTER` …, och de rörliga delarnas rörelse som funktioner av `game.time`), de rörliga delarnas grafik (`buildTivoli`) och åkturen i pariserhjulet (`Rides`, spelarläget `'ride'`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
@@ -155,7 +157,7 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan, `v16.py` för Söderholmen och pariserhjulet, `v17.py` för uppdragen på tivolit) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan, `v16.py` för Söderholmen och pariserhjulet, `v17.py` för uppdragen på tivolit, `v18.py` för hemligheterna) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -237,6 +239,7 @@ Allt som syns i spelet ska använda de nya namnen.
   - på tivolit (v1.7): Tivoli-Rut (ägaren), Hanna och sonen Ebbe (5), Popcorn-Pelle, Karusell-Kalle och Maja vid Måsen.
 - **Nästa naturliga del:** Birger har bjudit på kaffe och vill höra hela historien om cyklarna; de övriga åtta cyklarna ska till sina ägare; Spidern kunde få en egen trimning hos Lasse.
 - **Bilradion:** användaren tyckte att midimusiken lät för mycket glassbil/party. Den är av från början sedan v1.4. Användaren tänker ladda ner en mjuk radioslinga att spela i stället – då läggs en ljudfil in (den första i projektet).
+- **Hemligheterna (v1.8)** är påskägg tills vidare men är tänkta att kunna knytas till berättelsen: flaskposten ("titta under fyrens trappa /I. 1974" – Ingvar?), rösten i telefonkiosken, den gyllene bullen, Dahlgrens tomte, "A + G 1971" (Arne och Gun).
 - **Tivolit** kan få mer att göra: åka berg-och-dalbanan eller radiobilarna, ett lyckohjul att snurra.
 - **Andra idéer användaren kan vilja ha:**
   - västra bron (stängd, `BRIDGES[1]`) som nästa område,
