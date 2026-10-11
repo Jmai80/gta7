@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 10 oktober 2026, efter version 1.4 (sidouppdraget Konsertbiljetten i Novas rum, bilradion av från början och tystare; den senaste buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 11 oktober 2026, efter version 1.4.1 (buggfix: en cykel spärrade badrumsdörren i Birgers hus i Cykelgömman, se HANDOFF avsnitt 9; den förra buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -27,7 +27,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.4 (sidouppdraget Konsertbilje
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.4 innehåller:
+- Version 1.4.1 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma,
   - tio sidouppdrag (senast Konsertbiljetten i Novas rum),
   - Lasses trimningsbutik,
@@ -59,7 +59,7 @@ Senast uppdaterad 10 oktober 2026, efter version 1.4 (sidouppdraget Konsertbilje
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.4 eller senare
+git log --oneline -3                         # överst: v1.4.1 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
 npm test                                     # ~650 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
@@ -198,6 +198,7 @@ Allt som syns i spelet ska använda de nya namnen.
   - frivilliga krokar: `interact`, `prompt`, `onExitCar`, `onCrash`, `talkFx`, `talkDone`,
   - avsluta med `mgr.complete(job, …)`, `mgr.fail(job, …)` eller `mgr.quit(job)`,
   - `camFocus` måste nollställas i `cleanup`.
+- **Testa att man kan gå dit.** Teleportera inte bara spelaren till varje ställe i en ny interiör: kör `reachable()` i missions.mjs (flood fill från dörren). I v1.4 spärrade en cykel badrumsdörren i Birgers hus och testerna märkte det inte.
 - **Testa med trafik.** Uppdragstesterna kör ofta `traffic: 0, peds: 0`. Stresstesta datorförare med `new Game({ seed })` på flera frön.
 - **Ljud:** M på tangentbordet stänger av allt ljud och sparas. Säger användaren att ljudet försvunnit: fråga först om skylten LJUD AV syns. Ljudet går inte att höra i sandlådan; `v13.py` mäter spelets utgång med en analysator.
 - **Samtal** öppnas en bildruta efter `talk`-händelsen. I webbläsartester: vänta några bildrutor innan `nextTalk()`.

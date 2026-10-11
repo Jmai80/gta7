@@ -321,7 +321,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all twelve are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.4/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.4, Ronny is caught');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.4\.1/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.4.1, Ronny is caught');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -1891,6 +1891,29 @@ function festStart(g) {
   check(g.vehicles.filter((v) => v.type === 'racebike').length === 1 && again === g.redBike, 'there is only ever one');
 }
 
+
+// (v1.4.1) can you WALK from the door to (x, z)? A flood fill over a 10 cm grid of places where the
+// player fits (radius r) – the old checks only teleported you to each spot, so a bike blocking a
+// doorway went unnoticed.
+function reachable(g, from, targets, bounds, r = 0.32) {
+  const cs = 0.1, nx = Math.ceil((bounds.x1 - bounds.x0) / cs), nz = Math.ceil((bounds.z1 - bounds.z0) / cs);
+  const y = g.world.groundHeight(from.x, from.z);
+  const fits = (x, z) => !g.world.query(x, z, r).some((c) => c.h > y + 0.3 && circleVs(c, x, z, r));
+  const idx = (i, k) => k * nx + i, seen = new Uint8Array(nx * nz), q = [];
+  const ci = (x) => Math.floor((x - bounds.x0) / cs), ck = (z) => Math.floor((z - bounds.z0) / cs);
+  const s = idx(ci(from.x), ck(from.z)); seen[s] = 1; q.push(s);
+  while (q.length) {
+    const c = q.pop(), i = c % nx, k = (c - i) / nx;
+    for (const [di, dk] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const a = i + di, b = k + dk;
+      if (a < 0 || b < 0 || a >= nx || b >= nz || seen[idx(a, b)]) continue;
+      seen[idx(a, b)] = 2;
+      if (fits(bounds.x0 + (a + 0.5) * cs, bounds.z0 + (b + 0.5) * cs)) { seen[idx(a, b)] = 1; q.push(idx(a, b)); }
+    }
+  }
+  return targets.filter((t) => { for (let di = -2; di <= 2; di++) for (let dk = -2; dk <= 2; dk++) if (seen[idx(ci(t.x) + di, ck(t.z) + dk)] === 1) return false; return true; });
+}
+
 // ---------- 27. main quest, part 9: "Cykelgömman" – Jonte's hideout in Birger's house (v1.2) ----------
 const UP_TO_FEST = [...UP_TO_FACTORY, 'bullfest'];
 function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
@@ -1933,6 +1956,9 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
     const free = !g.world.query(s.x, s.z, 0.3).some((c) => c.h > g.player.y + 0.3 && circleVs(c, s.x, s.z, 0.3));
     check(free, `the spot by the ${s.id} is free to stand on`);
   }
+  // (v1.4.1) every place to search can be reached on foot from the front door – nothing blocks a doorway
+  const stuck = reachable(g, HOUSE.spawn, HOUSE_SPOTS, HOUSE.bounds);
+  check(!stuck.length, `you can walk from the front door to every place to search${stuck.length ? ' – NOT to: ' + stuck.map((s) => s.id).join(', ') : ''}`);
   // walk out half-way: no failure, Pia keeps the key with you
   walkHere(g, HOUSE.door.x, HOUSE.door.z);
   check(m.prompt === 'GÅ UT', 'GÅ UT by the front door');
@@ -1984,7 +2010,7 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   check(m.done.has('cykelgomman') && g.money - money0 === BIRGER.reward && g.stats.hideoutFound, `main quest part 9 done: ${BIRGER.reward} kr`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Cykelgömman'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.4/.test(d.text)), 'all twelve done: the end card (version 1.4)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.4\.1/.test(d.text)), 'all twelve done: the end card (version 1.4.1)');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /kylskåp/.test(d.text)), 'tant Gun texts');
   run(g, 10);
   check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem'), 'a while later: Pia offers "Cyklarna hem"');
@@ -2098,6 +2124,9 @@ function tidyOne(g, t) {
     const ok = [[t.fx, t.fz], [t.sx, t.sz]].every(([x, z]) => !g.world.query(x, z, 0.3).some((c) => c.h > g.player.y + 0.3 && circleVs(c, x, z, 0.3)));
     check(ok, `the ${t.id}: reachable on the floor and where it goes`);
   }
+  // (v1.4.1) and you can walk to all of them from the door
+  const stuckN = reachable(g, NOVA_ROOM.spawn, NOVA_THINGS.flatMap((t) => [{ id: t.id, x: t.fx, z: t.fz }, { id: t.id + ' (plats)', x: t.sx, z: t.sz }]), NOVA_ROOM.bounds);
+  check(!stuckN.length, `you can walk from the door to every thing and every place${stuckN.length ? ' – NOT to: ' + stuckN.map((s) => s.id).join(', ') : ''}`);
   // the hoodie first: the ticket is in its pocket
   const luva = NOVA_THINGS.find((t) => t.id === 'luva');
   walkHere(g, luva.fx, luva.fz);

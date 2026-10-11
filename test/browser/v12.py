@@ -75,9 +75,24 @@ async def main(name, w, h, mobile):
         print(name, 'inside', json.dumps(inside, ensure_ascii=False))
         spots = await pg.evaluate("import('./src/birger.js').then((b) => b.SPOTS.map((s) => ({ id: s.id, x: s.x, z: s.z })))")
         sp = {s['id']: s for s in spots}
+        # (v1.4.1) walk to the bathtub for real, from the front door: through the kitchen and the bathroom door
+        WALK = '''async (pts) => { const G = window.__gta, g = G.game, p = g.player;
+          for (const [x, z] of pts) { p.autoWalk = { x, z, speed: 2.4 };
+            for (let i = 0; i < 360 && p.autoWalk; i++) { g.step(1 / 60, { moveX: 0, moveY: 0, camYaw: G.view.rig.yaw }); G.view.rig.update(1 / 60, g, { camDX: 0 }, G.view.camera.aspect, g.world); } }
+          return [p.x, p.z]; }'''
+        H0 = await pg.evaluate("import('./src/birger.js').then((b) => b.HOUSE.room)")
+        hx, hz = H0['x0'], H0['z0']
+        walked = 99
         for sid in ['soffa', 'kyl', 'badkar']:
             s = sp[sid]
-            await pg.evaluate(TO, [s['x'], s['z'], None])
+            if sid != 'badkar':
+                await pg.evaluate(TO, [s['x'], s['z'], None])
+            else:
+                await pg.evaluate(TO, [hx + 5.5, hz + 8.2, None])
+                end_at = await pg.evaluate(WALK, [[hx + 6.1, hz + 5.3], [hx + 8.75, hz + 5.3], [hx + 8.75, hz + 2.6], [s['x'], s['z']]])
+                walked = math.hypot(end_at[0] - s['x'], end_at[1] - s['z'])
+                await shot(pg, name, '03b_bathroom')
+                print(name, 'walked from the front door to the bathtub: off by', round(walked, 2), 'm')
             await pg.evaluate(STEP, [0.3, None])
             pr = (await pg.evaluate(INFO))['prompt']
             await pg.evaluate(STEP, [0.05, {'action': True}])
@@ -130,7 +145,7 @@ async def main(name, w, h, mobile):
         await talk_through(pg, at=(0, name, '08_vera'))
         home = await pg.evaluate(INFO)
         print(name, 'home', json.dumps(home, ensure_ascii=False))
-        ok = (pia is not None and inside['where'] == 'birger' and honk['stage'] == 'honk' and chase['stage'] == 'chase'
+        ok = (walked < 0.3 and pia is not None and inside['where'] == 'birger' and honk['stage'] == 'honk' and chase['stage'] == 'chase'
               and 'cykelgomman' in end['done'] and ride['active'] == 'cyklarhem' and home['stage'] == 'ride')
         print(name, 'V12', 'ok' if ok else 'FAIL')
         print(name, 'logs', json.dumps(logs[:20], ensure_ascii=False, indent=1))

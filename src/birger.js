@@ -7,9 +7,9 @@
 //   z=0    ┌ bed ─── wardrobe ── bike ──┬─ bathtub (saddles) ─┐
 //          │ bedroom                    │ bathroom    toilet  │
 //   z=3.6  ├──door──────── shelf ───────┴──door──────────────┤
-//          │ sofa      (bike pile)       │ bike     counter   │
+//          │ sofa      (bike pile)       │          counter   │
 //          │ living room                 ⌐ kitchen     table   │
-//          │ bike  bike                  │            fridge  │
+//          │ bike  bike                  │ bike       fridge  │
 //   z=9    └────────────────door─────────┴────────────────────┘
 //          x=0                          x=6.6                x=11
 import { INDOOR } from './config.js';
@@ -68,7 +68,7 @@ export const HOUSE_FURN = [
   [3.8, 3.75, 5.6, 4.15, 1.9],      // the bookshelf
   [2.2, 5.3, 4.2, 7.6, 1.1],        // the pile of bikes in the middle of the living room
   [0.25, 8.3, 4.35, 8.9, 1.05],     // two bikes along the south wall
-  [7.6, 3.75, 9.4, 4.4, 1.05],      // a bike against the kitchen wall
+  [6.85, 8.35, 8.75, 8.95, 1.05],   // a bike under the kitchen window (v1.4.1: it stood in front of the bathroom door)
   [10.4, 3.75, 11, 7.8, 0.92],      // the kitchen counter
   [10.35, 7.9, 11, 8.8, 1.95],      // the fridge
   [7.6, 6.4, 8.8, 7.4, 0.76],       // the kitchen table
@@ -223,7 +223,7 @@ export function birgerInto(B) {
   bx(7.8, 0.76, 6.6, 8.3, 0.86, 6.9, 0x2a2b2f); cyl(8.55, 7.05, 0.76, 1.15, 0.03, 0x3a5f8a); // a pump and a box of patches
   bx(7.75, 0.76, 7.0, 8.15, 0.79, 7.3, 0xf2efe6);                                            // the note
   for (const x0 of [7.85, 8.35]) { bx(x0, 0.42, 7.45, x0 + 0.42, 0.46, 7.87, 0x7a5a3c, PLAIN, { skipBottom: false }); bx(x0, 0.46, 7.83, x0 + 0.42, 0.9, 7.87, 0x7a5a3c); for (const [dx, dz] of [[0.02, 0.02], [0.36, 0.02], [0.02, 0.38], [0.36, 0.38]]) bx(x0 + dx, 0, 7.45 + dz, x0 + dx + 0.04, 0.42, 7.49 + dz, 0x5a4230); }
-  bikeProp(B, 8.5, 4.08, Math.PI / 2, 0xc4191b, 0.12);
+  bikeProp(B, 7.8, 8.65, Math.PI / 2, 0xc4191b, 0.12);
   // pizza boxes from Sjuan on the floor
   for (let i = 0; i < 3; i++) bx(9.5, i * 0.05, 8.2 - i * 0.03, 9.95, i * 0.05 + 0.045, 8.65 - i * 0.03, 0xe9e1cf, PLAIN, { skipBottom: false });
 
