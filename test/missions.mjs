@@ -14,7 +14,7 @@ import { SOUTH, WHEEL, CAROUSEL, COASTER, CO_LEN, CO_PERIOD, onSouth, inTivoli, 
 import { WHEEL_FARE } from '../src/rides.js';
 import { UTSIKT, EBBE, MASEN } from '../src/tivolijobs.js';
 import { CO_STUCK_T } from '../src/southisle.js';
-import { SECRETS, SECRET_COUNT, monsterRise } from '../src/secrets.js';
+import { SECRETS, SECRET_COUNT, monsterRise, DUCKS, duckAt } from '../src/secrets.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
@@ -2677,6 +2677,12 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   const ev = record(g, ['banner', 'toast', 'talk', 'ring', 'secret', 'ollie']);
   const S = Object.fromEntries(SECRETS.map((q) => [q.id, q]));
   check(SECRET_COUNT === 8, `${SECRET_COUNT} secrets`);
+  // (v1.8.1) the pond shows its water: nothing flat lies over the middle of it, higher than the water
+  const pond = g.layout.zones.pond, inPoly = (pts, x, z) => { let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, zi] = pts[i], [xj, zj] = pts[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; };
+  const water = g.layout.prims.find((q) => q.t === 'poly' && q.m === 6 /* M.WATER */ && inPoly(q.pts, pond.x, pond.z));
+  const cover = g.layout.prims.filter((q) => q.t === 'poly' && q !== water && q.y > water.y + 0.001 && inPoly(q.pts, pond.x, pond.z));
+  check(water && !cover.length, `the park pond: water you can see (${cover.length} things lying over it)`);
+  check(DUCKS.length === 5 && [0, 1, 2, 3, 4].every((i) => { const d = duckAt(i, 33); return Math.hypot(d.x - pond.x, d.z - pond.z) < pond.r - 2.5; }), 'five rubber ducks swimming round inside it');
   // you can walk up to every one of them (from a street, the bridge landings)
   const town = SECRETS.filter((q) => ['skate', 'phone', 'ducks', 'heart', 'monster'].includes(q.id));
   check(!reachable(g, { x: -33.4, z: 4 }, town.map((q) => ({ x: q.x, z: q.z })), { x0: -146, z0: -172, x1: 146, z1: 146 }).length, 'in town: the pitch, the phone box, the pond, the stump, the end of the pier');

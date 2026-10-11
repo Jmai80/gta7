@@ -18,7 +18,7 @@ import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 import { makeBody } from './peds.js';
 import { buildTivoli } from './tivoli.js';
-import { MONSTER, monsterRise } from './secrets.js';
+import { MONSTER, monsterRise, DUCKS, duckAt, POND } from './secrets.js';
 
 const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
@@ -192,6 +192,15 @@ export class View {
     this.skateMesh.rotation.order = 'YXZ';
     this.skateMesh.visible = false;
     this.scene.add(this.skateMesh);
+    // (v1.8.1) the rubber ducks in the park pond: one mesh each, swimming in a line round the pond
+    this.ducks = DUCKS.map((d) => {
+      const m = new THREE.Mesh(duckGeometry(d), this.matStatic);
+      m.rotation.order = 'YXZ';
+      m.scale.setScalar(d.s);
+      m.visible = false;
+      this.scene.add(m);
+      return m;
+    });
     // (v1.8) Sjubyodjuret: three green humps and a head on a long neck, out in the harbour
     const Mn = new GeomBuilder(), GREEN = 0x2f5d3a, BELLY = 0x6b8f5a;
     for (const [z, r] of [[3.4, 1.05], [0.6, 1.25], [-2.3, 0.95], [-4.6, 0.55]]) { Mn.ico(0, 0, z, r, 0.85, GREEN, 0, Math.round(z * 10) + 50); Mn.ico(0.15, -0.25, z, r * 0.8, 0.6, BELLY, 0, Math.round(z * 7) + 9); }
@@ -216,6 +225,14 @@ export class View {
       this.skateMesh.position.set(sk.x, sk.visY ?? sk.y, sk.z);
       this.skateMesh.rotation.set(sk.air ? -0.12 : 0, sk.h, (sk.lean || 0) * 0.5);
     }
+    // (v1.8.1) the rubber ducks paddle round the park pond
+    const cp = this.camera.position, nearPond = !this.indoor && Math.hypot(cp.x - POND.x, cp.z - POND.z) < 160;
+    this.ducks.forEach((m, i) => {
+      m.visible = nearPond;
+      if (!nearPond) return;
+      const d = duckAt(i, game.time);
+      m.position.set(d.x, d.y, d.z); m.rotation.set(d.tilt * 0.5, d.h, d.tilt);
+    });
     // (v1.8) the sea monster rises out of the harbour now and then
     const up = monsterRise(game.time);
     this.monster.visible = up > 0.01 && !this.indoor;
@@ -1002,6 +1019,63 @@ export class CameraRig {
     if (Math.abs(this.cam.fov - this.fov) > 0.05) { this.cam.fov = this.fov; this.cam.updateProjectionMatrix(); }
     return yaw;
   }
+}
+
+// ------------------------------------------------------------------ the rubber ducks (v1.8.1)
+// A rubber duck, facing +z, floating at y = 0 (the water line): a round body with an upturned tail,
+// wings, a chest, a head with white-and-black eyes and an orange beak (upper and lower half), a
+// ripple ring on the water and a little wake behind. The big one has a golden crown with a red jewel,
+// one of the little ones sunglasses.
+function duckGeometry(d) {
+  const B = new GeomBuilder(), Y = 0xf6c418, Y2 = 0xe8a812, OR = 0xf27a1a, OR2 = 0xd8601a;
+  let seed = 1;
+  const ico = (x, y, z, r, sy, c, m = 0) => B.ico(x, y, z, r, sy, c, m, seed++);
+  // the body: the rear, the chest, the tail and the sides
+  ico(0, 0.1, -0.06, 0.25, 0.62, Y);
+  ico(0, 0.11, 0.08, 0.21, 0.62, Y);
+  ico(0, 0.2, -0.24, 0.12, 0.9, Y);
+  ico(0, 0.27, -0.3, 0.06, 1.3, Y);
+  for (const s of [-1, 1]) {
+    ico(s * 0.15, 0.17, -0.06, 0.14, 0.5, Y2);                     // the wings, folded
+    ico(s * 0.17, 0.2, -0.13, 0.07, 0.6, Y2);
+  }
+  // the head on a short neck, the cheeks
+  ico(0, 0.28, 0.14, 0.12, 1, Y);
+  ico(0, 0.43, 0.16, 0.15, 1.02, Y);
+  for (const s of [-1, 1]) ico(s * 0.08, 0.39, 0.22, 0.07, 0.8, Y);
+  // the eyes
+  for (const s of [-1, 1]) {
+    ico(s * 0.085, 0.47, 0.25, 0.04, 1, 0xf8f6f0);
+    ico(s * 0.074, 0.475, 0.284, 0.022, 1, 0x1d1f22);
+    ico(s * 0.078, 0.484, 0.298, 0.008, 1, 0xffffff);
+  }
+  // the beak: the upper half a little longer, the lower one darker
+  B.rbox(0, 0.415, 0.31, 0.13, 0.035, 0.14, 0, OR, 0, -0.08);
+  B.rbox(0, 0.392, 0.3, 0.1, 0.028, 0.11, 0, OR2, 0, 0.1);
+  ico(0, 0.418, 0.375, 0.05, 0.45, OR);
+  if (d.crown) {
+    // a golden crown with five points and a red jewel in front
+    B.cyl(0, 0.16, 0.555, 0.61, 0.08, 0.085, 10, 0xf2c21b, M.PAINT);
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2 + Math.PI / 2, x = Math.cos(a) * 0.075, z = 0.16 + Math.sin(a) * 0.075;
+      B.tube([x, 0.6, z], [x * 1.05, 0.68, z + (z - 0.16) * 0.05], 0.018, 0.004, 4, 0xf2c21b, M.PAINT);
+      ico(x * 1.06, 0.685, z + (z - 0.16) * 0.06, 0.014, 1, 0xfff1a8, M.LIGHT);
+    }
+    ico(0, 0.585, 0.24, 0.02, 1, 0xd2342c);
+  }
+  if (d.shades) {
+    // cool sunglasses
+    for (const s of [-1, 1]) B.rbox(s * 0.06, 0.475, 0.285, 0.08, 0.045, 0.02, 0, 0x1d1f22, 0, 0);
+    B.rbox(0, 0.485, 0.288, 0.05, 0.012, 0.012, 0, 0x1d1f22, 0, 0);
+    for (const s of [-1, 1]) B.rbox(s * 0.112, 0.48, 0.21, 0.01, 0.012, 0.16, 0, 0x1d1f22, 0, 0);
+  }
+  // a ripple ring round it on the water, and a V-shaped wake behind
+  for (let k = 0; k < 16; k++) {
+    const a0 = (k / 16) * Math.PI * 2, a1 = ((k + 1) / 16) * Math.PI * 2, r0 = 0.3, r1 = 0.36;
+    B.quad([Math.cos(a0) * r1, 0.012, Math.sin(a0) * r1 - 0.02], [Math.cos(a1) * r1, 0.012, Math.sin(a1) * r1 - 0.02], [Math.cos(a1) * r0, 0.012, Math.sin(a1) * r0 - 0.02], [Math.cos(a0) * r0, 0.012, Math.sin(a0) * r0 - 0.02], 0xd8eef0, 0, null, [0, 1, 0]);
+  }
+  for (const s of [-1, 1]) B.rbox(s * 0.2, 0.008, -0.55, 0.035, 0.004, 0.45, s * 0.4, 0xd8eef0, 0, 0);
+  return B.toGeometry(THREE);
 }
 
 // ------------------------------------------------------------------ particles

@@ -9,8 +9,8 @@
 //   gnome    a garden gnome by the allotments' car park – "Tillhör Dahlgren"
 //   bottle   a message in a bottle on Söderholmen's south cliffs
 //   monster  Sjubyodjuret: humps in the harbour that rise now and then – sit at the end of the pier
-// The props are layout prims (secretsInto, called last in createLayout); the sea monster moves, so
-// render.js draws it from monsterRise(t).
+// The props are layout prims (secretsInto, called last in createLayout); the sea monster and the ducks
+// move, so render.js draws them from monsterRise(t) and duckAt(i, t).
 import { CURB_H, WATER_Y, PIER_BENCH } from './config.js';
 
 export const SECRETS = [
@@ -48,6 +48,19 @@ export function monsterRise(t) {
   if (u < 0.55) return 0;
   const k = (u - 0.55) / 0.45;                         // up, a while above water, down again
   return Math.min(1, Math.sin(k * Math.PI) * 1.6);
+}
+
+// (v1.8.1) the rubber ducks: the crowned one leads the others round the pond in a line, bobbing
+export const POND = { x: 96, z: -95, r: 7.9, y: CURB_H + 0.12 };
+export const DUCKS = [
+  { s: 1.9, crown: true }, { s: 1.0 }, { s: 1.0, shades: true }, { s: 0.95 }, { s: 0.9 },
+];
+export function duckAt(i, t) {
+  const lead = t * 0.11, a = lead - (i === 0 ? 0 : 0.42 + (i - 1) * 0.3);
+  const r = 4.4 + Math.sin(t * 0.23 + i * 1.7) * 0.35;
+  const x = POND.x + Math.cos(a) * r, z = POND.z + Math.sin(a) * r;
+  // swimming anticlockwise (seen from above): the heading is along the circle
+  return { x, z, y: POND.y + Math.sin(t * 2.1 + i * 1.3) * 0.018, h: Math.atan2(-Math.sin(a), Math.cos(a)), tilt: Math.sin(t * 1.7 + i) * 0.05 };
 }
 
 export function found(g) { return Array.isArray(g.stats.secrets) ? g.stats.secrets : (g.stats.secrets = []); }
@@ -143,19 +156,7 @@ export function secretsInto(H) {
     H.casters.push({ t: 'box', x0: x - w, y0: Y, z0: z - w, x1: x + w, y1: Y + 2.5, z1: z + w });
   }
 
-  // the rubber ducks in the park pond (the big one has a crown)
-  {
-    const cx = 96, cz = -95, wy = CURB_H + 0.12;
-    const duck = (x, z, h, s, crown) => {
-      P({ t: 'ico', x, y: wy + 0.1 * s, z, r: 0.22 * s, sy: 0.7, c: 0xf2c21b });
-      const fx = Math.sin(h), fz = Math.cos(h);
-      P({ t: 'ico', x: x + fx * 0.14 * s, y: wy + 0.3 * s, z: z + fz * 0.14 * s, r: 0.12 * s, sy: 1, c: 0xf2c21b });
-      P({ t: 'rbox', cx: x + fx * 0.26 * s, cy: wy + 0.28 * s, cz: z + fz * 0.26 * s, sx: 0.08 * s, sy: 0.04 * s, sz: 0.1 * s, rot: h, c: 0xf28c28 });
-      if (crown) P({ t: 'cyl', x: x + fx * 0.14 * s, z: z + fz * 0.14 * s, y0: wy + 0.4 * s, y1: wy + 0.5 * s, r: 0.07 * s, r1: 0.09 * s, n: 6, c: 0xd9b23a, m: M.CHROME });
-    };
-    duck(cx + 1.2, cz + 3.4, 0.4, 1.9, true);
-    for (const [dx, dz, h] of [[0.2, 4.6, 0.5], [-0.6, 5.5, 0.3], [-1.6, 6.0, 0.2], [-2.7, 6.2, 0.1]]) duck(cx + dx, cz + dz, h, 1.0, false);
-  }
+  // (the rubber ducks swim: render.js builds them and moves them with duckAt)
 
   // an old oak stump in the park with a heart carved in its side
   {

@@ -501,8 +501,12 @@ export function createLayout(seed = 7) {
     sign('dala', { lines: ['DALAHÄSTEN', 'Sjubys stolthet sedan 1977'], bg: '#3b3a36', fg: '#f2e6c8', font: 0.42 }, b.cx, CURB_H + 0.65, b.cz + 3.22, 3.4, 0.8, 0);
     // pond (NE quadrant)
     const px = b.cx + 16, pz = b.cz - 15;
-    poly(ngon(px, pz, 8.6, 14), COL.stone, M.STONE, CURB_H + 0.32);
-    poly(ngon(px, pz, 7.9, 14), 0x2f6a66, M.WATER, CURB_H + 0.12);
+    // (v1.8.1) the stone rim is a ring – it used to be a whole stone disc lying on top of the water
+    for (let k = 0; k < 28; k++) {
+      const a0 = (k / 28) * Math.PI * 2, a1 = ((k + 1) / 28) * Math.PI * 2;
+      poly([[px + Math.cos(a0) * 8.6, pz + Math.sin(a0) * 8.6], [px + Math.cos(a1) * 8.6, pz + Math.sin(a1) * 8.6], [px + Math.cos(a1) * 7.9, pz + Math.sin(a1) * 7.9], [px + Math.cos(a0) * 7.9, pz + Math.sin(a0) * 7.9]], k % 2 ? COL.stone : 0x8a857c, M.STONE, CURB_H + 0.32);
+    }
+    poly(ngon(px, pz, 7.95, 28), 0x3d7f8a, M.WATER, CURB_H + 0.12);
     for (let k = 0; k < 14; k++) {
       const a0 = (k / 14) * Math.PI * 2, a1 = ((k + 1) / 14) * Math.PI * 2;
       P({ t: 'wall', x0: px + Math.cos(a0) * 8.6, z0: pz + Math.sin(a0) * 8.6, x1: px + Math.cos(a1) * 8.6, z1: pz + Math.sin(a1) * 8.6, y0: CURB_H, y1: CURB_H + 0.32, c: COL.stone, m: M.STONE });
@@ -510,6 +514,21 @@ export function createLayout(seed = 7) {
     }
     colCircle(px, pz, 8.6, 0.4);
     zones.pond = { x: px, z: pz, r: 7.9 };
+    // lily pads (some in flower) and clumps of reeds along the edge
+    for (const [a, d, r, fl] of [[0.3, 6.5, 0.7, true], [0.55, 6.9, 0.5, false], [0.85, 6.2, 0.58, false], [1.25, 6.8, 0.45, false], [2.55, 6.6, 0.72, true], [2.85, 7.0, 0.48, false], [3.15, 6.4, 0.55, false], [4.05, 6.5, 0.62, false], [4.35, 6.9, 0.52, true], [4.7, 6.3, 0.45, false], [5.55, 6.6, 0.66, false], [5.9, 7.0, 0.42, true]]) {
+      const lx = px + Math.cos(a) * d, lz = pz + Math.sin(a) * d, pts = [];
+      for (let k = 0; k <= 9; k++) { const b = a + 0.5 + (k / 10) * Math.PI * 1.8; pts.push([lx + Math.cos(b) * r, lz + Math.sin(b) * r]); }
+      poly([[lx, lz], ...pts], 0x4f8f3a, M.PLAIN, CURB_H + 0.135);
+      if (fl) for (let k = 0; k < 5; k++) { const b = k * 1.26; P({ t: 'ico', x: lx + Math.cos(b) * 0.07, y: CURB_H + 0.19, z: lz + Math.sin(b) * 0.07, r: 0.07, sy: 0.6, c: 0xf2a6c8 }); }
+      if (fl) P({ t: 'ico', x: lx, y: CURB_H + 0.22, z: lz, r: 0.04, sy: 1, c: 0xf2c21b });
+    }
+    for (const a of [1.6, 3.5, 5.15]) {
+      for (let k = 0; k < 9; k++) {
+        const b = a + (k - 4) * 0.035, d = 7.35 + (k % 3) * 0.18, rx = px + Math.cos(b) * d, rz = pz + Math.sin(b) * d, hh = 0.9 + ((k * 7) % 5) * 0.12;
+        P({ t: 'cyl', x: rx, z: rz, y0: CURB_H + 0.1, y1: CURB_H + hh, r: 0.025, r1: 0.008, n: 4, c: 0x6b8f3a });
+        if (k % 3 === 1) P({ t: 'cyl', x: rx, z: rz, y0: CURB_H + hh - 0.32, y1: CURB_H + hh - 0.1, r: 0.045, n: 5, c: 0x6b4a2a, cap: true });
+      }
+    }
     // trees + benches
     const parkTrees = [
       [b.x0 + 6, b.z0 + 6, 'birch'], [b.x0 + 14, b.z0 + 9, 'oak'], [b.x0 + 8, b.z0 + 20, 'birch'],
