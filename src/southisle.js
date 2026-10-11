@@ -326,6 +326,74 @@ export function southInto(H) {
   tivoliInto(H, post);
 }
 
+// ---------------------------------------------------------------- flower beds (v1.8.2)
+// An oval raised bed at (cx, cz): white boards round it, dark soil, low leaves, and flowers of one
+// kind in mixed colours. Placed "at random" with hash() – no layout random numbers.
+function flowerBed(H, cx, cz, kind, k) {
+  const { P, colCircle, M } = H;
+  const tube = (a, b, r, c, n = 4) => P({ t: 'tube', a, b, r, c, m: 0, n });
+  const rx = 2.4, rz = 1.6, top = CURB_H + 0.24, N = 16;
+  const pts = [];
+  for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2; pts.push([cx + Math.cos(a) * rx, cz + Math.sin(a) * rz]); }
+  H.poly([[cx, cz], ...pts, pts[0]], 0x4a3324, M.DIRT, top);
+  for (let i = 0; i < N; i++) {
+    const [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % N], len = Math.hypot(x1 - x0, z1 - z0);
+    P({ t: 'rbox', cx: (x0 + x1) / 2, cy: CURB_H + 0.13, cz: (z0 + z1) / 2, sx: 0.09, sy: 0.27, sz: len + 0.05, rot: Math.atan2(x1 - x0, z1 - z0), c: 0xa8743e, m: M.PLANKS });
+  }
+  colCircle(cx - 1.0, cz, 1.55, 0.6); colCircle(cx + 1.0, cz, 1.55, 0.6);
+  const rnd = (i) => hash(k * 131 + i * 7.3);
+  // low leaves covering most of the soil
+  for (let i = 0; i < 16; i++) {
+    const a = rnd(i) * Math.PI * 2, d = Math.sqrt(rnd(i + 50)) * 0.88;
+    P({ t: 'ico', x: cx + Math.cos(a) * rx * d, y: top + 0.03, z: cz + Math.sin(a) * rz * d, r: 0.26 + rnd(i + 9) * 0.12, sy: 0.4, c: [0x3f7a2a, 0x4f8a2e, 0x467d2a, 0x5a9436][i % 4] });
+  }
+  const COLORS = { tulip: [0xd2342c, 0xf2c21b, 0xe85d9a, 0xf28c28, 0xfaf4ec, 0xb8206a], daisy: [0xfaf6ee, 0xfaf6ee, 0xf6e0ee], salvia: [0x7a3fb8, 0x8e44ad, 0x5a4fc8, 0xb06ad8], sun: [0xf2c21b] };
+  // the flowers on a sunflower-seed spiral filling the oval, the tallest in the middle
+  const n = kind === 'sun' ? 9 : 30;
+  for (let i = 0; i < n; i++) {
+    const d = Math.sqrt((i + 0.5) / n) * 0.86, a = i * 2.39996 + rnd(i) * 0.3;
+    const x = cx + Math.cos(a) * rx * d, z = cz + Math.sin(a) * rz * d;
+    const c = COLORS[kind][Math.floor(rnd(i + 70) * COLORS[kind].length)];
+    const h = (kind === 'sun' ? 1.1 + rnd(i + 3) * 0.4 : kind === 'salvia' ? 0.4 + rnd(i + 3) * 0.14 : 0.34 + rnd(i + 3) * 0.16) * (1.15 - d * 0.35);
+    const lx = (rnd(i + 30) - 0.5) * 0.08, lz = (rnd(i + 40) - 0.5) * 0.08, y1 = top + h, hx = x + lx, hz = z + lz;
+    tube([x, top, z], [hx, y1, hz], kind === 'sun' ? 0.028 : 0.014, 0x3f7a2a);
+    // leaves on the stem
+    for (let j = 0; j < (kind === 'sun' ? 3 : 2); j++) {
+      const la = rnd(i + j * 11) * Math.PI * 2, ly = top + h * (0.2 + j * 0.22), ls = kind === 'sun' ? 0.28 : kind === 'tulip' ? 0.2 : 0.11;
+      P({ t: 'rbox', cx: x + Math.sin(la) * ls * 0.45, cy: ly, cz: z + Math.cos(la) * ls * 0.45, sx: ls * 0.45, sy: 0.014, sz: ls, rot: la, tiltX: -0.5, c: 0x4f8a2e });
+    }
+    if (kind === 'tulip') {
+      // a cup: a widening body, three outer petals and a rounded bottom
+      P({ t: 'cyl', x: hx, z: hz, y0: y1, y1: y1 + 0.14, r: 0.04, r1: 0.075, n: 6, c });
+      for (let j = 0; j < 3; j++) {
+        const pa = (j / 3) * Math.PI * 2 + rnd(i + 5);
+        P({ t: 'rbox', cx: hx + Math.sin(pa) * 0.06, cy: y1 + 0.09, cz: hz + Math.cos(pa) * 0.06, sx: 0.075, sy: 0.13, sz: 0.016, rot: pa, tiltX: -0.22, c });
+      }
+      P({ t: 'ico', x: hx, y: y1 + 0.02, z: hz, r: 0.05, sy: 0.9, c });
+    } else if (kind === 'daisy') {
+      // white petals round a yellow middle
+      for (let j = 0; j < 9; j++) {
+        const pa = (j / 9) * Math.PI * 2;
+        P({ t: 'rbox', cx: hx + Math.sin(pa) * 0.075, cy: y1, cz: hz + Math.cos(pa) * 0.075, sx: 0.04, sy: 0.01, sz: 0.105, rot: pa, tiltX: -0.15, c });
+      }
+      P({ t: 'ico', x: hx, y: y1 + 0.015, z: hz, r: 0.045, sy: 0.6, c: 0xf2b01b });
+    } else if (kind === 'salvia') {
+      // a spike of small flowers
+      for (let j = 0; j < 7; j++) P({ t: 'ico', x: hx, y: y1 - 0.02 + j * 0.04, z: hz, r: 0.045 - j * 0.005, sy: 1.2, c });
+    } else {
+      // a sunflower: two rings of yellow petals round a big brown middle, turned to the sun (south-west)
+      const fa = -2.4 + (rnd(i + 8) - 0.5) * 0.5, fx = Math.sin(fa), fz = Math.cos(fa);
+      for (const [cnt, rr, sz, col] of [[14, 0.2, 0.11, 0xe8a812], [14, 0.15, 0.1, 0xf2c21b]]) {
+        for (let j = 0; j < cnt; j++) {
+          const pa = (j / cnt) * Math.PI * 2 + (rr < 0.18 ? 0.22 : 0), ox = Math.cos(pa), oy = Math.sin(pa);
+          P({ t: 'rbox', cx: hx + fz * ox * rr + fx * 0.01, cy: y1 + oy * rr, cz: hz - fx * ox * rr + fz * 0.01, sx: sz, sy: sz, sz: 0.014, rot: Math.atan2(fx, fz), tiltX: 0, c: col });
+        }
+      }
+      P({ t: 'ico', x: hx + fx * 0.03, y: y1, z: hz + fz * 0.03, r: 0.13, sy: 1, c: 0x5a3a1a });
+    }
+  }
+}
+
 // ---------------------------------------------------------------- Tivoli Lyckoland
 function tivoliInto(H, post) {
   const { P, box, solid, sign, colBox, colOBox, colCircle, bench, woodFence, M, COL } = H;
@@ -342,10 +410,10 @@ function tivoliInto(H, post) {
   H.area(12.2, 209, 84, 213.2, PAVE, M.PAVING, Y);                            // past the kiosks
   // inside the coaster's oval: grass and flowers
   H.area(COASTER.x0, COASTER.zN + 1.4, COASTER.x1, COASTER.zS - 1.4, 0x6a9640, M.LAWN, Y - 0.005);
-  for (let k = 0; k < 7; k++) {
-    const x = COASTER.x0 + 8 + k * 10.5, c = [0xd2342c, 0xf2c21b, 0xe85d9a, 0x8e44ad][k % 4];
-    for (let j = 0; j < 9; j++) P({ t: 'ico', x: x + Math.cos(j * 0.7) * (0.4 + (j % 3) * 0.45), y: CURB_H + 0.25, z: 252 + Math.sin(j * 0.7) * (0.4 + (j % 3) * 0.45), r: 0.26, sy: 0.7, c });
-  }
+  // (v1.8.2) seven raised flower beds with white board edging: tulips, marguerites, purple salvia
+  // and – in the middle – tall sunflowers. Each flower has a stem, leaves and petals.
+  const BEDS = ['tulip', 'daisy', 'salvia', 'sun', 'tulip', 'daisy', 'salvia'];
+  BEDS.forEach((kind, k) => flowerBed(H, COASTER.x0 + 8 + k * 10.5, 252, kind, k));
 
   // the white picket fence round it all, open at the gate
   const fh = 1.25;
