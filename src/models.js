@@ -146,7 +146,8 @@ function stations(main, wheels, R, cy, section) {
 function wheel(B, x, r, z, w, outer, style = 'alloy') {
   const n = 14, s = outer ? 1 : -1;
   const xo = x + (s * w) / 2, xi = x - (s * w) / 2, sh = 0.035;
-  const rr = r * (style === 'alloy' ? 0.66 : 0.6);
+  const rr = r * (style === 'alloy' ? 0.66 : style === 'wire' ? 0.62 : 0.6);
+  const wall = style === 'wire' ? 0xf1eee4 : 0x202124; // (v1.5) white walls on the Spider
   const P = (xx, rad, a) => [xx, r + Math.sin(a) * rad, z + Math.cos(a) * rad];
   for (let i = 0; i < n; i++) {
     const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, am = (a0 + a1) / 2;
@@ -155,11 +156,21 @@ function wheel(B, x, r, z, w, outer, style = 'alloy') {
     B.quad(P(xo - s * sh, r, a0), P(xo - s * sh, r, a1), P(xi + s * sh, r, a1), P(xi + s * sh, r, a0), TIRE, M.PLAIN, null, rad);
     B.quad(P(xo, r * 0.9, a0), P(xo, r * 0.9, a1), P(xo - s * sh, r, a1), P(xo - s * sh, r, a0), 0x1c1d1f, M.PLAIN, null, [s * 0.7, rad[1], rad[2]]);
     B.quad(P(xi, r * 0.9, a0), P(xi, r * 0.9, a1), P(xi + s * sh, r, a1), P(xi + s * sh, r, a0), 0x1c1d1f, M.PLAIN, null, [-s * 0.7, rad[1], rad[2]]);
-    B.quad(P(xo, rr, a0), P(xo, rr, a1), P(xo, r * 0.9, a1), P(xo, r * 0.9, a0), 0x202124, M.PLAIN, null, [s, 0, 0]);
+    B.quad(P(xo, rr, a0), P(xo, rr, a1), P(xo, r * 0.9, a1), P(xo, r * 0.9, a0), wall, M.PLAIN, null, [s, 0, 0]);
   }
   const face = [s, 0, 0];
   disc(B, [xo + s * 0.002, r, z], face, rr, n, CHROME, M.CHROME);
-  if (style === 'alloy') {
+  if (style === 'wire') {
+    // a dark well with crossed chrome spokes, a chrome rim ring and the eared knock-off in the middle
+    disc(B, [xo + s * 0.003, r, z], face, rr * 0.93, n, 0x2a2c30, M.PLAIN);
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2, b = a + (k % 2 ? 0.5 : -0.5);
+      const p0 = P(xo + s * 0.006, rr * 0.18, a), p1 = P(xo + s * 0.006, rr * 0.9, b);
+      B.tube(p0, p1, 0.006, 0.006, 3, CHROME, M.CHROME);
+    }
+    disc(B, [xo + s * 0.009, r, z], face, rr * 0.24, 8, CHROME, M.CHROME);
+    for (const da of [0, Math.PI]) B.tube(P(xo + s * 0.012, 0, da), P(xo + s * 0.012, rr * 0.36, da), 0.016, 0.006, 4, CHROME, M.CHROME);
+  } else if (style === 'alloy') {
     // dark gaps between five spokes, so the turning reads
     for (let k = 0; k < 5; k++) {
       const a = (k / 5) * Math.PI * 2 + Math.PI / 5, h = 0.36;
@@ -355,16 +366,121 @@ export function vanBody(B, paint = WHITE, pmat = M.PAINT, signUV = null) {
   }
 }
 
+
+// ------------------------------------------------------------------ Sjuby Spider -62 (v1.5)
+// Birger's bingo prize: a long-bonneted open two-seater with round headlights in the wings, an oval
+// chrome grille, chrome bumpers and a chrome side spear, cream leather inside, a wooden steering
+// wheel, a low windscreen in a chrome frame, wire wheels with white walls. Paint: the instance colour.
+const SPIDER_MAIN = [ // z, half width, bottom, belt, deck top
+  [2.12, 0.62, 0.34, 0.52, 0.56],
+  [2.04, 0.76, 0.29, 0.6, 0.64],
+  [1.82, 0.85, 0.26, 0.68, 0.72],
+  [1.3, 0.88, 0.25, 0.71, 0.77],
+  [0.5, 0.88, 0.25, 0.72, 0.775],
+  [0.38, 0.88, 0.25, 0.72, 0.735],
+  [-1.08, 0.88, 0.25, 0.72, 0.735],
+  [-1.22, 0.88, 0.25, 0.73, 0.79],
+  [-1.85, 0.86, 0.26, 0.7, 0.75],
+  [-2.05, 0.78, 0.3, 0.6, 0.64],
+  [-2.13, 0.64, 0.34, 0.52, 0.55],
+];
+const spiderSection = (hw, yb, belt, top) => [
+  [hw - 0.12, yb],
+  [hw - 0.01, Math.min(yb + 0.1, belt - 0.12)],
+  [hw, belt - 0.05],
+  [hw - 0.06, belt + 0.03],
+  [hw * 0.55, top - 0.008],
+  [0, top],
+];
+export function spiderBody(B, paint = WHITE, pmat = M.PAINT) {
+  const Pm = [paint, pmat], T = [TRIM, M.PLAIN];
+  const LEATHER = 0xe8d7b4, WOOD = 0x7a4626, CARPET = 0x5a2a20;
+  loft(B, stations(SPIDER_MAIN, [1.28, -1.22], 0.4, 0.33, spiderSection), [T, Pm, Pm, Pm, Pm], { mat: Pm });
+  for (const zw of [1.28, -1.22]) B.box(-0.84, 0.22, zw - 0.4, 0.84, 0.72, zw + 0.4, BLACK, M.PLAIN, { skipTop: true });
+  // the cockpit: a carpeted tub, two cream bucket seats, the dashboard in wood, a padded rim
+  const ct = 0.737;
+  B.quad([-0.74, ct, 0.36], [0.74, ct, 0.36], [0.74, ct, -1.06], [-0.74, ct, -1.06], CARPET, M.PLAIN, null, [0, 1, 0]);
+  for (const sx of [1, -1]) {
+    const x0 = sx * 0.12, x1 = sx * 0.66;
+    B.box(Math.min(x0, x1), ct, -0.98, Math.max(x0, x1), ct + 0.04, -0.42, LEATHER, M.PLAIN);                // the cushion (sunk in the tub)
+    B.box(Math.min(x0, x1), ct, -1.06, Math.max(x0, x1), ct + 0.5, -0.94, LEATHER, M.PLAIN, { skipBottom: false }); // the back
+    for (let k = 1; k < 4; k++) { const x = sx * (0.12 + k * 0.135); B.box(x - 0.006, ct + 0.04, -0.98, x + 0.006, ct + 0.042, -0.44, 0xc9b48e); } // pleats
+    B.box(sx > 0 ? 0.24 : -0.54, ct + 0.5, -1.07, sx > 0 ? 0.54 : -0.24, ct + 0.62, -0.97, LEATHER, M.PLAIN, { skipBottom: false }); // headrest
+    // the humps behind the seats, in the body colour
+    B.box(Math.min(x0, x1) + (sx > 0 ? 0.08 : 0), 0.79, -1.22, Math.max(x0, x1) - (sx > 0 ? 0 : 0.08), 0.86, -1.08, paint, pmat);
+  }
+  B.box(-0.12, ct, -1.0, 0.12, ct + 0.2, 0.3, CARPET);                                                           // the tunnel
+  B.box(-0.03, ct + 0.2, -0.05, 0.03, ct + 0.36, 0.01, 0x2a2b2f); B.box(-0.04, ct + 0.36, -0.06, 0.04, ct + 0.4, 0.02, WOOD); // gear lever
+  B.box(-0.8, 0.735, 0.28, 0.8, 0.9, 0.42, WOOD, M.PLAIN, { skipBottom: false });                                // the dashboard
+  for (const [x, r] of [[0.48, 0.055], [0.3, 0.055], [-0.1, 0.035], [-0.22, 0.035]]) { disc(B, [x, 0.83, 0.278], [0, 0, -1], r + 0.008, 12, CHROME, M.CHROME); disc(B, [x, 0.83, 0.276], [0, 0, -1], r, 12, 0xf2efe6, M.PLAIN); }
+  B.tube([-0.86, 0.79, 0.4], [-0.86, 0.79, -1.1], 0.025, 0.025, 6, LEATHER, M.PLAIN, true);                    // padded rims
+  B.tube([0.86, 0.79, 0.4], [0.86, 0.79, -1.1], 0.025, 0.025, 6, LEATHER, M.PLAIN, true);
+  // the steering wheel (driver: +x), wood rim on three chrome spokes
+  {
+    const c = [0.38, 0.96, 0.12], tilt = 0.45, R = 0.19, n = 16;
+    const P = (a, r) => [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r * Math.cos(tilt), c[2] + Math.sin(a) * r * Math.sin(tilt)];
+    for (let i = 0; i < n; i++) B.tube(P((i / n) * Math.PI * 2, R), P(((i + 1) / n) * Math.PI * 2, R), 0.016, 0.016, 5, WOOD, M.PLAIN);
+    for (const a of [Math.PI * 0.5, Math.PI * 1.17, Math.PI * 1.83]) B.tube(c, P(a, R), 0.008, 0.008, 4, CHROME, M.CHROME);
+    B.tube(c, [0.38, 0.86, 0.36], 0.02, 0.02, 6, 0x2a2b2f);
+  }
+  // the windscreen: a low pane in a chrome frame, raked back
+  {
+    const yb = 0.775, yt = 1.07, zb = 0.4, zt = 0.27, hb = 0.8, ht = 0.74;
+    const q = [[-hb, yb, zb], [hb, yb, zb], [ht, yt, zt], [-ht, yt, zt]];
+    B.quad(q[0], q[1], q[2], q[3], GLASS, M.GLASS, null, [0, 0.4, 1]);
+    B.quad(q[1], q[0], q[3], q[2], GLASS, M.GLASS, null, [0, -0.4, -1]);
+    B.tube([-ht, yt, zt], [ht, yt, zt], 0.016, 0.016, 6, CHROME, M.CHROME);
+    for (const s of [1, -1]) B.tube([s * hb, yb, zb], [s * ht, yt, zt], 0.018, 0.018, 6, CHROME, M.CHROME);
+    B.tube([0, yt - 0.05, zt + 0.02], [0, yt - 0.02, zt - 0.06], 0.012, 0.012, 4, CHROME, M.CHROME);            // the mirror stalk
+    B.box(-0.09, yt - 0.06, zt - 0.1, 0.09, yt - 0.01, zt - 0.06, CHROME, M.CHROME, { skipBottom: false });
+  }
+  // front: the oval grille, the round headlights in the wings, a chrome bumper with overriders
+  const zf = 2.122;
+  B.tube([-0.82, 0.4, 2.12], [0.82, 0.4, 2.12], 0.045, 0.045, 8, CHROME, M.CHROME, true);
+  for (const s of [1, -1]) { B.tube([s * 0.82, 0.4, 2.12], [s * 0.86, 0.4, 1.92], 0.045, 0.045, 8, CHROME, M.CHROME, true); B.box(s * 0.28 - 0.03, 0.34, 2.1, s * 0.28 + 0.03, 0.5, 2.18, CHROME, M.CHROME); }
+  {
+    const n = 18, ell = (a, sx, sy) => [Math.cos(a) * sx, 0.46 + Math.sin(a) * sy, zf + 0.004];
+    for (let i = 0; i < n; i++) { const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2; B.tri([0, 0.46, zf + 0.004], ell(a0, 0.27, 0.075), ell(a1, 0.27, 0.075), CHROME, M.CHROME, undefined, undefined, undefined, [0, 0, 1]); B.tri([0, 0.46, zf + 0.006], ell(a0, 0.235, 0.055), ell(a1, 0.235, 0.055), 0x141518, M.PLAIN, undefined, undefined, undefined, [0, 0, 1]); }
+    for (const x of [-0.16, -0.08, 0, 0.08, 0.16]) decal(B, [x, 0.46, zf + 0.008], [0, 0, 1], 0.012, 0.09, CHROME, M.CHROME);
+  }
+  for (const s of [1, -1]) {
+    const hl = [0.6 * s, 0.6, 1.98];
+    B.tube([hl[0], hl[1], hl[2] - 0.05], [hl[0], hl[1], hl[2] + 0.05], 0.105, 0.1, 12, CHROME, M.CHROME, true);
+    disc(B, [hl[0], hl[1], hl[2] + 0.052], [0, 0, 1], 0.085, 12, LIGHT, M.LIGHT);
+    disc(B, [0.42 * s, 0.4, 2.135], [0, 0, 1], 0.03, 8, AMBER, M.PLAIN);
+  }
+  decal(B, [0, 0.778, 1.0], [0, 1, 0], 0.05, 1.1, CHROME, M.CHROME);                                            // a chrome strip down the bonnet
+  // rear: round twin tail lights, a chrome bumper, the plate, two exhausts, the boot handle
+  B.tube([-0.8, 0.42, -2.13], [0.8, 0.42, -2.13], 0.045, 0.045, 8, CHROME, M.CHROME, true);
+  for (const s of [1, -1]) {
+    B.tube([s * 0.8, 0.42, -2.13], [s * 0.84, 0.42, -1.93], 0.045, 0.045, 8, CHROME, M.CHROME, true);
+    for (const x of [0.5, 0.66]) { disc(B, [x * s, 0.6, -2.055], [0, 0, -1], 0.055, 10, CHROME, M.CHROME); disc(B, [x * s, 0.6, -2.058], [0, 0, -1], 0.046, 10, TAIL, M.TAIL); }
+    B.tube([s * 0.32, 0.27, -1.95], [s * 0.32, 0.27, -2.2], 0.03, 0.03, 8, CHROME, M.CHROME);
+  }
+  decal(B, [0, 0.52, -2.07], [0, 0, -1], 0.42, 0.09, PLATE, M.PLAIN);
+  decal(B, [0.19, 0.52, -2.072], [0, 0, -1], 0.04, 0.09, EU, M.PLAIN);
+  B.box(-0.09, 0.66, -2.02, 0.09, 0.68, -1.98, CHROME, M.CHROME);
+  // sides: the chrome spear, the door line, a chrome handle, the fuel cap
+  for (const s of [1, -1]) {
+    const x = 0.882 * s;
+    decal(B, [x, 0.55, 0.1], [s, 0, 0], 3.2, 0.022, CHROME, M.CHROME);
+    decal(B, [x + s * 0.001, 0.47, 0.32], [s, 0, 0], 0.012, 0.42, TRIM, M.PLAIN);
+    decal(B, [x + s * 0.001, 0.47, -0.95], [s, 0, 0], 0.012, 0.42, TRIM, M.PLAIN);
+    decal(B, [x + s * 0.002, 0.63, -0.78], [s, 0, 0], 0.11, 0.025, CHROME, M.CHROME);
+  }
+  B.cyl(0.55, -1.6, 0.76, 0.785, 0.06, 0.06, 10, CHROME, M.CHROME, true);                                       // the fuel cap
+}
+
 export function buildCarGeometry(type, signUV) {
   const B = new GeomBuilder([['aBone', 1], ['aPivot', 3]]);
   const s = CAR_TYPES[type];
   B.cur.aBone = 0; B.cur.aPivot = [0, 0.6, 0];
-  if (type === 'sedan') sedanBody(B); else vanBody(B, WHITE, M.PAINT, signUV);
+  if (type === 'sedan') sedanBody(B); else if (type === 'spider') spiderBody(B); else vanBody(B, WHITE, M.PAINT, signUV);
   const [zf, zr] = s.wheelZ;
-  const ww = type === 'van' ? 0.26 : 0.24, wx = type === 'van' ? 0.86 : 0.79;
+  const ww = type === 'van' ? 0.26 : type === 'spider' ? 0.2 : 0.24, wx = type === 'van' ? 0.86 : type === 'spider' ? 0.76 : 0.79;
   [[wx, zf, 1], [-wx, zf, 2], [wx, zr, 3], [-wx, zr, 4]].forEach(([x, z, bone]) => {
     B.cur.aBone = bone; B.cur.aPivot = [x, s.wheelR, z];
-    wheel(B, x, s.wheelR, z, ww, x > 0, type === 'van' ? 'hubcap' : 'alloy');
+    wheel(B, x, s.wheelR, z, ww, x > 0, type === 'van' ? 'hubcap' : type === 'spider' ? 'wire' : 'alloy');
   });
   return B.toGeometry(THREE);
 }

@@ -12,7 +12,7 @@ import { PIZZA_CAR } from './config.js';
 import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3, spider: 1 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -34,6 +34,7 @@ export class Game {
     this.racers = [];      // computer drivers in Kim's street race
     this.pizzaCar = null;  // Sanna's car, parked across from the pizzeria
     this.bike = null;      // Arne's delivery bike (Norrholmen, later at tant Gun's)
+    this.spider = null;    // (v1.5) Birger's Sjuby Spider
     this.view = { x: 0, z: 0, fx: 0, fz: -1, valid: false };
     this.input = null;
     this.camFocus = null;  // { x, y, z }: something a mission wants the camera to look at
@@ -150,6 +151,16 @@ export class Game {
     const v = this.addVehicle('citybike', paint, x, z, h);
     if (!v) return null;
     v.parkedSpot = true;
+    return v;
+  }
+
+  // (v1.5) the Sjuby Spider: there is only ever one
+  spawnSpider(x, z, h) {
+    if (this.spider && !this.spider.removed) this.removeVehicle(this.spider);
+    const v = this.addVehicle('spider', 'spider', x, z, h);
+    if (!v) return null;
+    v.parkedSpot = true;
+    this.spider = v;
     return v;
   }
 

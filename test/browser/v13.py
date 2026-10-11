@@ -87,8 +87,9 @@ async def main(name, w, h, mobile):
         await pg.screenshot(path=f'test/shots/v13_{name}_05_start.png')
         r = {'quiet': quiet, 'none': [t_none, engine], 'red': [t_red, red], 'blue': [t_blue, blue], 'off': [t_off, off], 'mute': [t_mute, badge, muted], 'on': [t_on, badge2, on], 'start': [t_start, badge3]}
         print(name, json.dumps(r, ensure_ascii=False))
-        ok = (not (t_none or '').startswith('Bilradio:') and red['rms'] > engine['rms'] * 1.05 and red['rms'] < engine['rms'] * 2.2 and red['rms'] > quiet['rms'] * 3 and blue['rms'] > quiet['rms'] * 3 and red['peak'] < 1.0 and t_red and 'Glada Hits' in t_red and t_blue and 'Blå Lounge' in t_blue
-              and off['rms'] < red['rms'] and t_mute and 'Ljud av' in t_mute and badge and muted['rms'] < 0.002 and t_on == 'Ljud på' and not badge2 and on['rms'] > 0
+        loud = max(red['rms'], blue['rms'])  # (the quiet radio of v1.4 sits close to the engine: a rest in one tune can dip below it)
+        ok = (not (t_none or '').startswith('Bilradio:') and loud > engine['rms'] * 1.08 and loud < engine['rms'] * 2.2 and red['rms'] > quiet['rms'] * 3 and blue['rms'] > quiet['rms'] * 3 and red['peak'] < 1.0 and t_red and 'Glada Hits' in t_red and t_blue and 'Blå Lounge' in t_blue
+              and off['rms'] < loud and t_mute and 'Ljud av' in t_mute and badge and muted['rms'] < 0.002 and t_on == 'Ljud på' and not badge2 and on['rms'] > 0
               and t_start and 'avstängt' in t_start and badge3)
         print(name, 'V13', 'ok' if ok else 'FAIL')
         print(name, 'logs', json.dumps(logs[:20], ensure_ascii=False, indent=1))

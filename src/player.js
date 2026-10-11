@@ -48,6 +48,13 @@ export class Player {
       b.h = bike.h; b.pose = 6; b.roll = bike.lean || 0; b.lean = 0; b.lie = 0;
       if (bike.input.throttle > 0.05) b.phase += (1.2 + Math.max(0, bike.fwdSpeed)) * dt * 1.5;
       b.visible = true;
+    } else if (this.state === 'car' && this.car && this.car.spec.open) {
+      // (v1.5) an open car: you are seen sitting behind the wheel (the driver's side is the car's left)
+      const car = this.car, s = car.local(-0.38, -0.72);
+      b.x = s.x; b.z = s.z; b.y = (car.visY ?? car.y) + 0.66 - 0.92 * this.look.height; // (legs down in the footwell)
+      b.h = car.h; b.pose = 5; b.roll = 0; b.lean = 0; b.lie = 0; b.headYaw = 0; b.headPitch = 0.05;
+      b.legAmp = 0; b.armAmp = 0;
+      b.visible = true;
     } else {
       b.x = this.x; b.y = this.y; b.z = this.z; b.h = this.h;
       b.roll = 0;

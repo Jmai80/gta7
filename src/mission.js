@@ -31,6 +31,9 @@
 //                          door to Gun, then Ronny's van full of bikes (v1.2)
 //   N  Nova:               "Konsertbiljetten" – side quest indoors: tidy Nova's room before her mum is home
 //                          (and find her K-pop concert ticket) (v1.4)
+//   G  Tant Gun:           "Birger kommer hem" – main quest, part 10: drive Birger and his bingo prize, the
+//                          Sjuby Spider, round town and home; then the car is yours to borrow (v1.5)
+//   T  Livräddar-Tove:     "Badhyttsgåtan" – side quest on the beach: a logic puzzle with four huts (v1.5)
 //   P  Polis-Pia:          "Cyklarna hem" – side quest: ride three of the bikes home to Vera, Lasse
 //                          and Yasmin (v1.2)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
@@ -42,7 +45,7 @@ import {
   OFFICE_DOOR, SAFE_REWARD, LEIF_MARK, KEY_REWARD, KEY_TIME,
   KONDITORI, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START,
   JAR, FACTORY_START, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST,
-  BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY,
+  BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY, HOMECOMING,
 } from './config.js';
 import { PizzaJob } from './pizza.js';
 import { RaceJob } from './race.js';
@@ -64,6 +67,8 @@ import { FestJob, FestParty } from './fest.js';
 import { HideoutJob, gatePia } from './hideout.js';
 import { BikesHomeJob } from './bikeshome.js';
 import { ConcertJob } from './concert.js';
+import { HomecomingJob, homecomingWorld } from './homecoming.js';
+import { HutsJob, beachPeople, TOVE_AT, HUT_PAY } from './beachhuts.js';
 import { ISLE } from './island.js';
 import { fmt } from './rng.js';
 
@@ -195,6 +200,20 @@ export const QUESTS = [
     reward: `${fmt(FEST.reward)} kr och så många bullar du orkar`, where: 'Torget, framför Sjuby Konditori',
   },
   {
+    // main quest, part 10 (v1.5): Birger is home from his cruise with a bingo prize – the Sjuby Spider
+    id: 'birger', letter: 'G', who: WHO.gun, title: 'Birger kommer hem', color: '#c58be0', x: HOMECOMING.mark.x, z: HOMECOMING.mark.z, r: HOMECOMING.mark.r, Job: HomecomingJob, main: true,
+    after: 'cykelgomman', at: 25, needFoot: 'Kliv ur – Birger väntar på kajen.',
+    text: 'Birger kommer hem med kryssningsfärjan i dag! Möt honom på kajen vid bryggan i hamnen, lilla vän. Han säger att han har vunnit något på bingon. Jag har inte vågat berätta om cyklarna.',
+    reward: `upp till ${fmt(HOMECOMING.reward + HOMECOMING.perHealth * 100)} kr – och en bil`, where: 'Kajen vid bryggan i Sjuby hamn',
+  },
+  {
+    // side quest (v1.5) on the beach: a logic puzzle – which kid rents which hut?
+    id: 'hytter', letter: 'T', who: WHO.tove, title: 'Badhyttsgåtan', color: '#d2342c', x: TOVE_AT.x + Math.sin(TOVE_AT.h) * 1.3, z: TOVE_AT.z + Math.cos(TOVE_AT.h) * 1.3, r: 1.4, Job: HutsJob,
+    side: true, sms: true, bridge: true, after: 'cykel', at: 60, needFoot: 'Kliv ur – Tove står vid livräddartornet.',
+    text: 'Hej, Tove här, livräddaren på Norrholmens badplats! Fyra ungar har glömt vilken badhytt de hyr, och nycklarna hänger i fel hytter. Jag kan inte lämna vattnet. Kan du komma och reda ut det? Det är en riktig gåta.',
+    reward: `upp till ${fmt(HUT_PAY.base)} kr`, where: 'Livräddartornet på Norrholmens badplats',
+  },
+  {
     // side quest (v1.4), indoors: Nova's room in the flats behind Macken – tidy it before her mum is home
     id: 'konsert', letter: 'N', who: WHO.nova, title: 'Konsertbiljetten', color: '#b36cff', x: NOVA_DOOR.x, z: NOVA_DOOR.z, r: NOVA_DOOR.r, Job: ConcertJob,
     side: true, sms: true, after: 'konditori', at: 40, needFoot: 'Kliv ur – Nova bor en trappa upp.',
@@ -219,7 +238,7 @@ export const QUESTS = [
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman']; // all twelve → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger']; // all thirteen → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -245,6 +264,8 @@ export class Missions {
     this.flag = new FlagQuest(this);
     this.party = new FestParty(this); // the bun party on the square (v1.0)
     this.gatePia = null;            // (v1.2) Polis-Pia waiting at Birger's gate
+    this.birger = null;             // (v1.5) Birger (on the quay, then home)
+    this.beachFolk = null;          // (v1.5) Tove and the four kids on the beach
     this.upgrades = new Set();      // what you have bought at Lasse's (v0.8): 'turbo', 'pansar', 'tuta'
     this.bestJump = 0;              // for Kim's long jump
     this.shopArmed = true;
@@ -393,6 +414,8 @@ export class Missions {
       case 'cykelgomman': return 'Möt Polis-Pia vid Birgers grind på Storgatan';
       case 'cyklarhem': return 'Cykla hem tre cyklar till Vera, Lasse och Yasmin';
       case 'konsert': return 'Hjälp Nova att städa – porten bakom Macken, Skolgatan';
+      case 'birger': return 'Möt Birger på kajen vid bryggan i hamnen';
+      case 'hytter': return 'Lös badhyttsgåtan på Norrholmens badplats';
     }
     return '';
   }
@@ -438,6 +461,7 @@ export class Missions {
     else if (this.done.has('cykel')) g.spawnBike(GUN_BIKE.x, GUN_BIKE.z, GUN_BIKE.h, false); // the bike is yours now, by Gun's gate
     if (this.done.has('livs')) this.ingvar = spawnIngvar(g); // the lighthouse keeper, outside his cottage
     if (this.known.has('nycklar') || this.done.has('nycklar')) this.ensureLeif();
+    if (this.done.has('birger')) g.spawnSpider(HOMECOMING.spot.x, HOMECOMING.spot.z, HOMECOMING.spot.h); // (v1.5) the Spider, across from Birger's house
     if (this.allDone()) this.flags.allDone = true;
     if (QUESTS.some((q) => !q.main && this.done.has(q.id))) this.flags.firstDone = 0;
     this.restored = true;
@@ -460,6 +484,8 @@ export class Missions {
     this.flag.update(dt);
     this.party.update(dt);
     gatePia(this);
+    homecomingWorld(this);
+    beachPeople(this);
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
     if (this.active) this.choose = false;
@@ -584,11 +610,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.4.1! Jontes cykelgömma är hittad och Ronny fast. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.4.1! Jontes cykelgömma är hittad och Ronny fast. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.5! Birger är hemma och Spidern står på parkeringen. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.5! Birger är hemma och Spidern står på parkeringen. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -642,6 +668,8 @@ export class Missions {
       case 'bullfest': return { text: 'Gå till Bullfesten (G)', sub: this.game.player.inCar ? 'Parkera och gå till torget' : 'Torget, framför Sjuby Konditori' };
       case 'cykelgomman': return { text: 'Möt Polis-Pia (P)', sub: this.game.player.inCar ? 'Parkera och gå till grinden' : 'Birgers grind på Storgatan, granne med tant Gun' };
       case 'cyklarhem': return { text: 'Cyklarna hem', sub: 'Veras cykel vid Birgers grind' };
+      case 'birger': return { text: 'Möt Birger (G)', sub: this.game.player.inCar ? 'Parkera vid hamnen' : 'Kajen vid bryggan i hamnen' };
+      case 'hytter': return { text: 'Gå till Tove (T)', sub: this.game.player.z < -229 ? 'Livräddartornet på badplatsen' : 'Över norra bron till Norrholmens badplats' };
       case 'konsert': return { text: 'Gå till Nova (N)', sub: this.game.player.inCar ? 'Parkera och gå in genom porten' : 'Den blå porten bakom Macken, Skolgatan' };
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
     }

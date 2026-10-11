@@ -45,7 +45,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia', nova: 'Nova (Kims lillasyster)' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia', nova: 'Nova (Kims lillasyster)', tove: 'Livräddar-Tove' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)
@@ -153,5 +153,21 @@ export const BIKE_HOME_PAY = 400, BIKES_HOME_BONUS = 300;
 // ---- version 1.4: side quest "Konsertbiljetten" – Nova's room in the flats behind Macken ----
 export const NOVA_DOOR = { x: 80, z: 30.4, r: 1.2 };          // the new street door of the flats behind Macken (Skolgatan)
 export const NOVA_PAY = { time: 90, base: 700, perSec: 10 };  // her mum is home in 90 s; 700 kr + 10 kr for every second left
+
+// ---- version 1.5: main quest part 10 "Birger kommer hem" (the Sjuby Spider) and side quest "Badhyttsgåtan" ----
+export const HOMECOMING = {
+  mark: { x: -72, z: -141.4, r: 1.8 },                       // the quay at the foot of the pier, where the cruise ferry put him ashore
+  birger: { x: -73.6, z: -142.6, h: 0.6 },                   // Birger with his suitcase
+  car: { x: -64, z: -138, h: -Math.PI / 2 },                 // his bingo prize, unloaded on the quay
+  stops: [                                                   // the tour he wants first – then home
+    { x: -37.5, z: -2, r: 5.5, name: 'Hörnlivs', where: 'Kungsgatan' },
+    { x: 18, z: 40, r: 5.5, name: 'Salong Saxen', where: 'Skolgatan' },
+    { x: 40, z: 2, r: 5.5, name: 'Macken', where: 'Drottninggatan' },
+  ],
+  home: { x: -62.5, z: -42.5, r: 3.6 },                      // stop outside his gate on Storgatan
+  spot: { x: -52.75, z: -24.65, h: -Math.PI / 2 },           // afterwards the Spider lives here: the parking lot across the street, backed in
+  minHealth: 40,                                             // below this Birger has had enough
+  reward: 2500, perHealth: 25,                               // 2 500 kr + 25 kr per percent the car is still in one piece
+};
 
 export const SIM_HZ = 60;

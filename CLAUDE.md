@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 11 oktober 2026, efter version 1.4.1 (buggfix: en cykel spärrade badrumsdörren i Birgers hus i Cykelgömman, se HANDOFF avsnitt 9; den förra buggfixen, Långhoppet i 1.1.1, står i avsnitt 4). Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 11 oktober 2026, efter version 1.5 (huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden). Den senaste buggfixen (1.4.1) gällde en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -13,7 +13,7 @@ Senast uppdaterad 11 oktober 2026, efter version 1.4.1 (buggfix: en cykel spärr
 3. Använd miljön **Default**, vars nätverksnivå heter **Trusted**. Den når npm, PyPI och GitHub, vilket räcker för testerna.
 4. Välj repot **Jmai80/gta7** i väljaren under textrutan och skriv uppgiften, till exempel:
 
-   > Läs CLAUDE.md och docs/HANDOFF.md. Sedan: <beskriv vad du vill ha, t.ex. "bygg nästa del i huvuduppdraget: Birger kommer hem" eller "när jag gör X händer Y, men det borde bli Z">. Testa i Node och i webbläsaren, höj versionen, uppdatera dokumenten och se till att ändringen hamnar på main. Svara på svenska och skicka ett skärmdumpsark när du är klar.
+   > Läs CLAUDE.md och docs/HANDOFF.md. Sedan: <beskriv vad du vill ha, t.ex. "bygg nästa del i huvuduppdraget" eller "när jag gör X händer Y, men det borde bli Z">. Testa i Node och i webbläsaren, höj versionen, uppdatera dokumenten och se till att ändringen hamnar på main. Svara på svenska och skicka ett skärmdumpsark när du är klar.
 
    Beskriv en bugg så som du upplevde den i spelet (var du var, vad du gjorde, vad som hände). Det räcker för att hitta felet.
 
@@ -27,9 +27,10 @@ Senast uppdaterad 11 oktober 2026, efter version 1.4.1 (buggfix: en cykel spärr
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.4.1 innehåller:
-  - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma,
-  - tio sidouppdrag (senast Konsertbiljetten i Novas rum),
+- Version 1.5 innehåller:
+  - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma och del 10 där Birger kommer hem,
+  - **Sjuby Spider -62**, en exklusiv öppen bil (`spider`) som finns att låna efter del 10,
+  - elva sidouppdrag (senast pusslet Badhyttsgåtan på stranden),
   - Lasses trimningsbutik,
   - Kims långhopp,
   - Norrholmen med Bullbilens bageri, kvarnen, fyren och badplatsen,
@@ -59,9 +60,9 @@ Senast uppdaterad 11 oktober 2026, efter version 1.4.1 (buggfix: en cykel spärr
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.4.1 eller senare
+git log --oneline -3                         # överst: v1.5 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
-npm test                                     # ~650 kontroller, 1–2 min. Ska sluta med:
+npm test                                     # ~740 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
 (nohup python3 -m http.server 8765 --directory "$PWD" > /dev/null 2>&1 &)   # server för webbläsartesterna
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8765/index.html   # ska ge 200
@@ -147,11 +148,11 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/island.js` | Norrholmen: kust, vägar, kolonilotter, bageri, kvarn, fyr, båthamn och badplatsen (`BEACH`, `beach()`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
 | `src/mission.js` | `Missions`: uppdragslistan `QUESTS`, sms-erbjudanden, `checkJobs` (markörer som startar jobb), mål-rutan, `updateTargets`, spara och ladda, Lasses butik, `onStunt` (Långhoppet), `activities` (stunthopp, biltvätt) och slutskärmen. |
-| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `concert.js` (Konsertbiljetten) och `nova.js` (Novas rum), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
+| Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `concert.js` (Konsertbiljetten) och `nova.js` (Novas rum), `homecoming.js` (Birger kommer hem, Spidern), `beachhuts.js` (Badhyttsgåtan), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -207,7 +208,8 @@ Allt som syns i spelet ska använda de nya namnen.
 
 - **Huvudäventyret:** receptet på **Sjubybullen**. Det gömdes av **Arne**, tant Guns avlidne man och konditor på Sjuby Konditori, i hans budcykel. **Bullbilen** (Bagar-Bengt och direktör Dahlgren) har jagat receptet i 30 år.
 - **Del 8, Bullfesten:** cykeltjuven **Jonte** snor Arnes cykel med bullarna och Polis-Pia tar honom.
-- **Del 9, Cykelgömman (v1.2):** Jonte ljög om båthuset. Cyklarna finns hos tant Guns granne **Birger** (på kryssning sedan maj). Du letar inne i huset och stoppar sedan **Ronny**, Jontes kusin, i en skåpbil. Sidouppdraget **Cyklarna hem** följer. Slutskärmen visas när alla 12 uppdrag i `MAIN` är klara.
+- **Del 9, Cykelgömman (v1.2):** Jonte ljög om båthuset. Cyklarna finns hos tant Guns granne **Birger** (på kryssning sedan maj). Du letar inne i huset och stoppar sedan **Ronny**, Jontes kusin, i en skåpbil. Sidouppdraget **Cyklarna hem** följer.
+- **Del 10, Birger kommer hem (v1.5):** Birger vann **Sjuby Spider -62** på bingon. Du kör honom runt stan och hem, och sedan får du låna bilen. Slutskärmen visas när alla 13 uppdrag i `MAIN` är klara.
 - **Personer:**
   - tant Gun,
   - Melker,
@@ -224,9 +226,10 @@ Allt som syns i spelet ska använda de nya namnen.
   - Vera (Salong Saxen),
   - Jonte,
   - Nova (Kims lillasyster, 13) och hennes mamma,
-  - Birger (grannen, bortrest),
+  - Birger (grannen, hemma från kryssningen sedan del 10),
+  - Livräddar-Tove och ungarna Alva, Bosse, Cleo och Dante (badplatsen),
   - Ronny (Jontes kusin).
-- **Nästa naturliga del:** Birger kommer hem från kryssningen "på lördag" (Pia och Gun nämner det), och de övriga åtta cyklarna ska till sina ägare.
+- **Nästa naturliga del:** Birger har bjudit på kaffe och vill höra hela historien om cyklarna; de övriga åtta cyklarna ska till sina ägare; Spidern kunde få en egen trimning hos Lasse.
 - **Bilradion:** användaren tyckte att midimusiken lät för mycket glassbil/party. Den är av från början sedan v1.4. Användaren tänker ladda ner en mjuk radioslinga att spela i stället – då läggs en ljudfil in (den första i projektet).
 - **Andra idéer användaren kan vilja ha:**
   - västra bron (stängd, `BRIDGES[1]`) som nästa område,

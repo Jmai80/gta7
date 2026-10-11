@@ -17,6 +17,15 @@ export const CAR_TYPES = {
     grip: 12.5, hbGrip: 3.6, steerMax: 0.56,
     circles: [-1.55, 0, 1.55], radius: 1.0,
   },
+  // (v1.5) Birger's bingo prize: the Sjuby Spider '62, an open two-seater – the finest car in town.
+  // Quicker, grippier and sharper than the Dalahäst; only one in the world (open: you see who sits in it)
+  spider: {
+    key: 'spider', name: 'Sjuby Spider -62', len: 4.25, wid: 1.76, height: 1.15,
+    wheelbase: 2.5, track: 0.8, wheelR: 0.33, wheelZ: [1.28, -1.22],
+    mass: 1050, accel: 12.6, maxSpeed: 41, brake: 21, revAccel: 5.5, revMax: 9,
+    grip: 17, hbGrip: 4.6, steerMax: 0.64,
+    circles: [-1.32, 0, 1.32], radius: 0.88, open: true,
+  },
   // Arne's old delivery bike from Sjuby Konditori (v0.6): light, quick to turn, never breaks down
   bike: {
     key: 'bike', name: 'Arnes budcykel', len: 1.9, wid: 0.62, height: 1.1,
@@ -58,7 +67,8 @@ export const PAINTS = {
   pizza: { hex: 0x2e7a46, name: 'grön' },        // Pizzeria Sjuan's delivery car
   bike: { hex: 0x23452f, name: 'grön' },         // Arne's bike
   racer: { hex: 0xc4191b, name: 'röd' },         // the racing bike Jonte leaves behind (v1.0) – not a red CAR for Lasse
-  ronny: { hex: 0x7d6a52, name: 'brun' },        // (v1.2) Ronny's rusty old van
+  ronny: { hex: 0x7d6a52, name: 'brun' },
+  spider: { hex: 0x9e1020, name: 'lingonröd' },  // (v1.5) the Sjuby Spider: deep cherry red (not a red car for Lasse)        // (v1.2) Ronny's rusty old van
   cityOrange: { hex: 0xe8833a, name: 'orange' },   // (v1.2) the bikes going home: Vera's,
   cityYellow: { hex: 0xe2b52a, name: 'gul' },      // Lasse's
   cityPink: { hex: 0xe86aa0, name: 'rosa' },       // and Yasmin's

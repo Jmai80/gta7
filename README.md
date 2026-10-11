@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.4.1 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, tio sidouppdrag, ett huvudäventyr i nio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, och till sist in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.5 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, elva sidouppdrag, ett huvudäventyr i tio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, och till sist ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -27,7 +27,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.4.1
+## Uppdrag i version 1.5
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -70,6 +70,15 @@ Pizzabudet, gatloppet och huvuduppdraget körs ett i taget. Lasses bil och tant 
   - Huset är fullt av cyklar: i vardagsrummet, i köket, mot väggen i sovrummet och till och med i Birgers säng. Gå fram till möblerna med pilar och tryck **LETA**. Du letar efter två saker: Jontes anteckningsbok och Veras cykelsadel. Det finns sju ställen att leta på, och resten är Birgers (och Jontes) liv.
   - När båda är hittade tutar det utanför. Gå ut: Ronny, Jontes kusin, kör iväg med en brun skåpbil full av cyklar. Ta en bil och kör in i skåpbilen tills motorn ger upp (uppdragsrutan visar hur mycket motor som är kvar). Gå sedan fram till Ronny, så kommer Pia. 3 500 kr.
   - Går du ut innan du hittat allt finns uppdraget kvar – nyckeln har du kvar. Kommer skåpbilen för långt bort för länge slinker den undan, men Ronny kommer tillbaka efter resten av cyklarna: gå till grinden igen.
+- **G – Tant Gun (huvuduppdrag, del 10): Birger kommer hem.** En stund efter Cykelgömman sms:ar tant Gun: Birger kommer hem med kryssningsfärjan och har vunnit något på bingon. Möt honom på kajen vid bryggan i hamnen (till fots).
+  - Bingovinsten är **Sjuby Spider -62**, en lingonröd öppen tvåsitsig cabriolet med krom, ekerfälgar med vita däcksidor och ljus läderinredning – stans snyggaste och snabbaste bil. Birger har inte kört sedan 1987, så du kör.
+  - Birger sitter bredvid dig (bilen är öppen, så ni syns båda). Först vill han se stan: Hörnlivs på Kungsgatan, Salong Saxen på Skolgatan och Macken på Drottninggatan. Han pratar vid varje ställe. Sedan hem till hans grind på Storgatan.
+  - Kör snällt: uppdragsrutan visar hur hel lacken är. Under 40 % tröttnar Birger och går hem, och du får försöka igen. 2 500 kr plus 25 kr per procent hel lack, upp till 5 000 kr.
+  - Efteråt är Spidern din att låna. Den står på parkeringen mittemot Birgers hus (raden närmast Kungsgatan, längst norrut). Lämnar du den någonstans står den där igen nästa gång du kommer dit, och kvaddar du den finns det en ny.
+- **T – Livräddar-Tove (sidouppdrag, pussel): Badhyttsgåtan.** När norra bron är öppen sms:ar Tove, livräddaren på Norrholmens badplats. Fyra ungar – Alva, Bosse, Cleo och Dante – har glömt vilken av de fyra badhytterna de hyr.
+  - Prata med Tove vid livräddartornet, och sedan med ungarna på stranden: var och en minns en sak. Ungarnas bokstäver blir gråa när du har hört dem.
+  - Sätt rätt namnskylt på varje hytt: ställ dig vid hyttdörren och tryck **SKYLT** för att bläddra mellan namnen. Namn som sitter på en annan hytt hoppas över. Bokstaven ovanför hytten visar vem den är skyltad för.
+  - Säg till Tove när alla fyra hytter har en skylt. Hon provar nycklarna och säger bara hur många som stämmer. Rätt på första försöket ger 1 500 kr, sedan 200 kr mindre för varje fel försök.
 - **N – Nova (sidouppdrag, inomhus): Konsertbiljetten.** En stund efter Nyöppningen sms:ar Nova, Kims lillasyster (13): K-pop Demonjägarna spelar i kväll, biljetten är borta och mamma säger att hon inte får gå förrän rummet är städat. Gå in genom den nya blå porten till lägenheterna bakom Macken på Skolgatan.
   - Novas rum har K-pop-affischer, LED-list i taket, gamingskrivbord, ringlampa – och sex saker på golvet: luvtröjan, Labubun, lightsticken, pizzakartongen, skateboarden och hörlurarna. Plocka upp en i taget (**TA**) och lägg den där den ska vara (**LÄGG**) – uppdragsrutan säger var. Biljetten ligger i luvtröjans ficka.
   - Mamma är hemma om 90 sekunder. Är allt på plats får Nova gå: 700 kr plus 10 kr för varje sekund som är kvar (upp till 1 600 kr). Hinner du inte får du försöka igen.
@@ -102,6 +111,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Trafik:** två bilmodeller, turordning i korsningar och förare som tutar när du står i vägen. Bilar med ett mål (som Dahlgrens lastbil) tar kortaste vägen dit och väntar på sin tur som alla andra. Det går även folk på trottoarerna.
 - **Bilarna:** rundade karosser med hjulhus, däck med fälgar, fönster med stolpar och ramar, krom, backspeglar och lyktor fram och bak. Bullbilen är tvåfärgad med skylt på sidan.
 - **Människorna:** ansikten med ögon, ögonbryn, näsa, öron och mun, händer med tummar, skor med ljusa sulor, bälte, krage och frisyrer med lugg. Folk på stan får långt hår, knut, skägg, glasögon, keps eller jacka. Personerna i berättelsen har egna kläder: tant Gun i lila kofta med glasögon och knut, Melker i keps och huvtröja, Yasmin i Hörnlivs blå förkläde, Ingvar med grått skägg och kaptensmössa, Lås-Leif med mustasch, glasögon och läderförkläde, Bagar-Bengt med bagarmössa och förkläde och Mjölnar-Majken med ett mjöligt förkläde. På badplatsen har folk badkläder: baddräkt eller badbyxor, bara armar och ben och bara fötter.
+- **Sjuby Spider -62:** Birgers bingovinst efter huvuduppdragets del 10. Lång motorhuv, runda strålkastare, oval kromgrill, kromstötfångare, ekerfälgar med vita däcksidor, ljust läder och en ratt i trä. Snabbare och med bättre väggrepp än alla andra bilar, och öppen – man ser föraren.
 - **Cyklarna:** Arnes gröna budcykel med lådan, stänkskärmar, pakethållare, kedjeskydd och krämvita däck, Jontes röda racercykel med böjt styre och två stora hjul med svarta fälgar, och damcyklarna med trådkorg på styret (Veras orange, Lasses gula och Yasmins rosa). Hjulen har runda däck, fälgar och korsade ekrar som stannar innanför fälgen, och framhjulet svänger med styret.
 - **Bilradion** (av från början, slå på den i pausmenyn eller med B): varje bilfärg har en egen kanal med midimusik som spelar svagt under motorljudet, och namnet syns på skärmen. Röd bil: Glada Hits (pop), blå: Blå Lounge (jazz), svart: Natt-FM (syntpop), vit: P2 Barock, gul: Sol-Radio (calypso), grön: Dansbandskanalen, ljusblå: Disco 79, silver: Techno Sjuby, pizzabilen: Radio Napoli (tarantella) och Ronnys bruna skåpbil: Country-Kanalen. Cyklar har ingen radio. Stäng av radion i pausmenyn eller med B.
 - **Ljud av:** när ljudet är avstängt (pausmenyn eller M) står det LJUD AV uppe till höger. Tryck på skylten för att slå på ljudet igen. Startar du spelet med ljudet avstängt säger spelet det.
@@ -156,6 +166,8 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/jar.js`, `factory.js`, `errands.js` | Huvuduppdragets del 6–7 (Syltburken, Bullfabriken) och sidouppdragen Melkers cykel och Hemleverans |
 | `src/fest.js`, `sander.js` | Huvuduppdragets del 8, Bullfesten, och cykeltjuven Jonte på trottoarerna |
 | `src/barber.js`, `salon.js` | Sidouppdraget Salong Saxen och frisersalongens insida |
+| `src/homecoming.js` | Huvuduppdragets del 10, Birger kommer hem, och Sjuby Spider efteråt |
+| `src/beachhuts.js` | Sidouppdraget Badhyttsgåtan på badplatsen |
 | `src/concert.js`, `nova.js` | Sidouppdraget Konsertbiljetten och Novas rum |
 | `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |

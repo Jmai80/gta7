@@ -428,14 +428,14 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270 };
+const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270, Birger: 125, 'Livräddar-Tove': 300, Alva: 380, Bosse: 340, Cleo: 390, Dante: 330 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
+const NPC_VOICE = { gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -551,6 +551,8 @@ function showEnd(s) {
     ['Cykelgömman', s.hideoutFound ? 'Avslöjad!' : '–'],
     ['Cyklar hem', s.bikesHome != null ? `${s.bikesHome} av 3` : '–'],
     ['Konsertbiljetten', s.concert != null ? `${s.concert} s över` : '–'],
+    ['Spidern hem', s.spiderCond != null ? `${s.spiderCond} % hel` : '–'],
+    ['Badhyttsgåtan', s.hutTries != null ? `${s.hutTries} försök` : '–'],
   ];
   const grid = $('endStats');
   grid.innerHTML = '';

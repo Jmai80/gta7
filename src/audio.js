@@ -99,8 +99,8 @@ export class AudioFX {
       const frac = (v - bands[gi]) / (bands[gi + 1] - bands[gi]);
       const target = car.dead ? 0 : 0.2 + 0.8 * Math.min(1, frac * 0.85 + (gi > 0 ? 0.15 : 0)) + thr * 0.08;
       E.rpm += (target - E.rpm) * Math.min(1, dt * (target > E.rpm ? 6 : 9));
-      const base = car.type === 'van' ? 30 : 38;
-      const f = base + E.rpm * (car.type === 'van' ? 70 : 95);
+      const base = car.type === 'van' ? 30 : car.type === 'spider' ? 34 : 38; // (the Spider: a deeper, throatier note)
+      const f = base + E.rpm * (car.type === 'van' ? 70 : car.type === 'spider' ? 110 : 95);
       E.o1.frequency.setTargetAtTime(f, t, 0.04);
       E.o3.frequency.setTargetAtTime(f * 1.012, t, 0.04);
       E.o2.frequency.setTargetAtTime(f / 2, t, 0.04);

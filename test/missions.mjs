@@ -1,10 +1,11 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY, HOMECOMING } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
 import { HOUSE, SPOTS as HOUSE_SPOTS } from '../src/birger.js';
 import { ROOM as NOVA_ROOM, THINGS as NOVA_THINGS } from '../src/nova.js';
+import { HUTS, KIDS, TOVE_AT, HUT_PAY } from '../src/beachhuts.js';
 import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
@@ -320,8 +321,12 @@ function startRace(g) {
   g2.mission.done.add('cykelgomman');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all twelve are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.4\.1/.test(d.text) && /Ronny/.test(d.text)), 'the last text: version 1.4.1, Ronny is caught');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while Birger is not home yet');
+  g2.mission.done.add('birger');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all thirteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.5/.test(d.text) && /Birger/.test(d.text)), 'the last text: version 1.5, Birger is home');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2010,7 +2015,7 @@ function hideGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
   check(m.done.has('cykelgomman') && g.money - money0 === BIRGER.reward && g.stats.hideoutFound, `main quest part 9 done: ${BIRGER.reward} kr`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Cykelgömman'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.4\.1/.test(d.text)), 'all twelve done: the end card (version 1.4.1)');
+  check(!ev.some(([n]) => n === 'endcard'), 'no end card yet: part 10 is left (v1.5)');
   check(ev.some(([n, d]) => n === 'sms' && d.from === 'Tant Gun (Storgatan)' && /kylskåp/.test(d.text)), 'tant Gun texts');
   run(g, 10);
   check(m.known.has('cyklarhem') && ev.some(([n, d]) => n === 'sms' && d.offer === 'cyklarhem'), 'a while later: Pia offers "Cyklarna hem"');
@@ -2181,6 +2186,161 @@ function tidyOne(g, t) {
   check(m.prompt === 'GÅ UT', 'GÅ UT by the door');
   press(g); run(g, 1.5);
   check(!g.indoor && !m.active && m.isOpen('konsert') && ev.filter(([n, d]) => n === 'banner' && d.kind === 'fail').length === 1, 'out half-way: no failure, the quest stays open');
+}
+
+// ---------- 30. main quest, part 10: "Birger kommer hem" – the Sjuby Spider (v1.5) ----------
+const UP_TO_HIDEOUT = [...UP_TO_FEST, 'cykelgomman'];
+function driveTo(g, car, x, z, h) { car.x = x; car.z = z; car.h = h ?? car.h; car.vx = car.vz = car.w = 0; run(g, 0.4); }
+{
+  console.log('Birger kommer hem (huvuduppdrag del 10)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_HIDEOUT));
+  const ev = record(g, ['sms', 'banner', 'toast', 'say', 'talk', 'checkpoint', 'endcard']);
+  walkHere(g, -33.4, 4); run(g, 27);
+  check(m.known.has('birger') && ev.some(([n, d]) => n === 'sms' && d.offer === 'birger' && /bingon/.test(d.text)), 'tant Gun texts: Birger is home from his cruise – he won something at the bingo');
+  const sp = g.spider, B = m.birger;
+  check(sp && sp.type === 'spider' && sp.locked && Math.hypot(sp.x - HOMECOMING.car.x, sp.z - HOMECOMING.car.z) < 0.5, 'the Sjuby Spider waits on the quay (locked until you meet Birger)');
+  check(B && Math.hypot(B.x - HOMECOMING.birger.x, B.z - HOMECOMING.birger.z) < 0.5, 'Birger stands at the foot of the pier');
+  check(CAR_TYPES.spider.maxSpeed > CAR_TYPES.sedan.maxSpeed && CAR_TYPES.spider.grip > CAR_TYPES.sedan.grip && CAR_TYPES.spider.accel > CAR_TYPES.sedan.accel && CAR_TYPES.spider.open, 'the Spider: quicker, grippier and faster than a Dalahäst – and open');
+  check(!sp.isRed, 'red, but not a red car for Lasse');
+  m.accept('birger');
+  walkHere(g, HOMECOMING.mark.x, HOMECOMING.mark.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'birger' && job.stage === 'talk', 'on the quay: the talk with Birger');
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'birger').pop();
+  check(tk && tk[1].pages.some((pg) => /Sjuby Spider/.test(pg.text)) && tk[1].pages.some((pg) => /1987/.test(pg.text)), 'a Sjuby Spider -62 – and he hasn\'t driven since 1987');
+  m.talkDone('birger'); run(g, 0.3);
+  check(job.stage === 'board' && !sp.locked && m.targets.some((t) => t.kind === 'car' && t.car === sp && t.gps), 'get in the Spider (the arrow over it)');
+  check(enterCar(g, sp), 'you get in');
+  run(g, 0.5);
+  check(job.stage === 'tour' && B.state === 'lounge', 'Birger sits down beside you');
+  const seat = sp.local(0.38, -0.72), drv = sp.local(-0.38, -0.72);
+  check(Math.hypot(B.x - seat.x, B.z - seat.z) < 0.05 && Math.hypot(g.player.body.x - drv.x, g.player.body.z - drv.z) < 0.05 && g.player.body.visible, 'an open car: you at the wheel, Birger in the passenger seat – both in view');
+  run(g, 3, { ...idle, throttleAxis: 1, steerAxis: 0 });
+  check(Math.hypot(B.x - sp.local(0.38, -0.72).x, B.z - sp.local(0.38, -0.72).z) < 0.05, 'he stays in his seat while you drive');
+  // the tour: three stops, in order
+  for (const [i, S] of HOMECOMING.stops.entries()) {
+    check(m.targets.some((t) => t.kind === 'zone' && t.gps && t.x === S.x && t.z === S.z), `stop ${i + 1}: ${S.name} (the GPS)`);
+    driveTo(g, sp, S.x, S.z);
+    const said = ev.filter(([n]) => n === 'say').pop();
+    check(said && said[1].who === B, `at ${S.name} Birger says: "${said && said[1].text.slice(0, 40)}…"`);
+  }
+  check(job.stage === 'home' && /Kör Birger hem/.test(m.objective), 'then home');
+  // a knock: Birger complains, the paint shows it
+  g.emit('crash', { x: sp.x, z: sp.z, impact: 8, player: true, car: sp }); sp.damage(10); run(g, 0.2);
+  check(ev.filter(([n, d]) => n === 'say' && d.who === B).length >= 4 && /Lacken 9\d %/.test(m.sub), `a knock: he complains (${m.sub})`);
+  driveTo(g, sp, HOMECOMING.home.x, HOMECOMING.home.z, -Math.PI / 2); run(g, 1);
+  check(job.stage === 'final' && !g.player.inCar, 'outside his gate: you get out, and the talk');
+  const hp = ev.filter(([n, d]) => n === 'talk' && d.id === 'birger').pop();
+  check(hp && hp[1].pages.some((pg) => /din att låna/.test(pg.text)), 'the Spider is yours to borrow');
+  const money0 = g.money, cond = job.health;
+  m.talkDone('birger'); run(g, 0.5);
+  check(m.done.has('birger') && g.money - money0 === HOMECOMING.reward + HOMECOMING.perHealth * cond, `main quest part 10 done: ${g.money - money0} kr (${cond} % of the paint left)`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Birger kommer hem'), 'HUVUDUPPDRAG KLART');
+  run(g, 15);
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.5/.test(d.text)), 'all thirteen done: the end card (version 1.5)');
+  // afterwards: borrow it whenever – it goes back to its stall when you leave it somewhere
+  const S2 = HOMECOMING.spot;
+  check(enterCar(g, sp), 'you can drive the Spider afterwards');
+  driveTo(g, sp, 100, 90); g.step(DT, { ...idle, action: true }); run(g, 1);
+  walkHere(g, -100, 100); run(g, 4);
+  check(g.spider && Math.hypot(g.spider.x - S2.x, g.spider.z - S2.z) < 0.5 && !g.spider.locked, 'left far away: out of sight it is back in its stall across from Birger\'s house');
+  g.spider.damage(200); run(g, 4);
+  check(g.spider && !g.spider.dead && Math.hypot(g.spider.x - S2.x, g.spider.z - S2.z) < 0.5, 'a wreck: a fresh one in the stall');
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(livsSave([...UP_TO_HIDEOUT, 'birger']));
+  check(g2.spider && Math.hypot(g2.spider.x - S2.x, g2.spider.z - S2.z) < 0.5, 'in a saved game: the Spider is in its stall');
+}
+{
+  console.log('Birger kommer hem: för många bucklor');
+  const g = new Game({ seed: 9, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(UP_TO_HIDEOUT));
+  const ev = record(g, ['sms', 'banner', 'say', 'talk']);
+  m.offer('birger'); m.accept('birger');
+  walkHere(g, -100, -100); run(g, 1);
+  walkHere(g, HOMECOMING.mark.x, HOMECOMING.mark.z); run(g, 1);
+  m.talkDone('birger'); run(g, 0.3);
+  enterCar(g, g.spider); run(g, 0.5);
+  g.spider.damage(65); run(g, 0.5);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail' && /bucklorna/.test(d.sub)) && ev.some(([n, d]) => n === 'say' && /räcker/.test(d.text)), 'too many knocks: "Nu räcker det!" – failed');
+  run(g, 4);
+  check(ev.some(([n, d]) => n === 'sms' && /försök en gång till/.test(d.text)) && m.isOpen('birger'), 'tant Gun: try again');
+  walkHere(g, -100, 100); run(g, 3);
+  check(g.spider && !g.spider.dead && g.spider.health === 100 && Math.hypot(g.spider.x - HOMECOMING.car.x, g.spider.z - HOMECOMING.car.z) < 0.5 && Math.hypot(m.birger.x - HOMECOMING.birger.x, m.birger.z - HOMECOMING.birger.z) < 0.5, 'out of sight: Birger and a shiny Spider are back on the quay');
+  walkHere(g, HOMECOMING.mark.x, HOMECOMING.mark.z); run(g, 1);
+  const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'birger').pop();
+  check(m.active && tk[1].pages.length === 1, 'the second time: one line from Birger');
+}
+
+// ---------- 31. side quest: "Badhyttsgåtan" – a logic puzzle on the beach (v1.5) ----------
+{
+  console.log('Badhyttsgåtan (sidouppdrag, pussel)');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission;
+  m.restore(livsSave(['red', 'lasse', 'samuel', 'overlamning', 'cykel']));
+  const ev = record(g, ['sms', 'banner', 'toast', 'talk', 'keys']);
+  walkHere(g, 4, -340); run(g, 62);
+  walkHere(g, 4, -251); run(g, 0.5);
+  check(m.known.has('hytter') && ev.some(([n, d]) => n === 'sms' && d.offer === 'hytter' && /badhytt/.test(d.text)), 'Tove the lifeguard texts: four kids have forgotten which beach hut is theirs');
+  const F = m.beachFolk;
+  check(F && F.tove && F.kids.length === 4, 'Tove by the tower, four kids on the beach');
+  // everyone stands on dry sand you can walk to from the boardwalk
+  const spots = [{ id: 'Tove', x: TOVE_AT.x, z: TOVE_AT.z }, ...KIDS.map((k) => ({ id: k.name, x: k.at[0], z: k.at[1] })), ...HUTS.map((h) => ({ id: `${h.name} hytten`, x: h.door.x, z: h.door.z }))];
+  const B0 = { x0: -40, x1: 28, z0: -256, z1: -219 };
+  const stuck = reachable(g, { x: 4, z: -250 }, spots.map((q) => ({ ...q })), B0, 0.32);
+  check(!stuck.length, `you can walk to Tove, every kid and every hut door${stuck.length ? ' – NOT to: ' + stuck.map((q) => q.id).join(', ') : ''}`);
+  check(spots.every((q) => g.world.groundHeight(q.x, q.z) > 0), 'all on dry land (or the jetty)');
+  m.accept('hytter');
+  const Q = m.quest('hytter');
+  walkHere(g, Q.x, Q.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'hytter' && job.stage === 'talk', 'at the tower: Tove explains');
+  m.talkDone('hytter'); run(g, 0.2);
+  check(job.stage === 'puzzle' && /0 av 4 skyltar/.test(m.objective), 'the puzzle: no signs yet');
+  check(m.targets.filter((t) => t.kind === 'contact' && t.always).length === 4, 'a "?" over every hut');
+  // ask the kids
+  for (const [i, k] of KIDS.entries()) {
+    const q = F.kids[i];
+    walkHere(g, q.x + 1.2, q.z);
+    check(m.prompt === 'PRATA', `PRATA by ${k.name}`);
+    press(g); run(g, 0.3);
+    const tk = ev.filter(([n, d]) => n === 'talk' && d.id === 'hytter').pop();
+    check(tk && tk[1].pages[0].who === k.name, `${k.name}: "${k.clue.slice(0, 44)}…"`);
+    m.talkDone('hytter'); run(g, 0.2);
+  }
+  check(job.heard.length === 4, 'all four clues heard');
+  // a sign on each hut: press SKYLT to step through the names
+  const signHut = (h, id) => { walkHere(g, h.door.x, h.door.z); let n = 0; while (job.tags[h.i] !== id && n++ < 6) press(g); return job.tags[h.i] === id; };
+  // first a wrong answer: alphabetical
+  const wrong = ['alva', 'bosse', 'cleo', 'dante'];
+  check(HUTS.every((h) => signHut(h, wrong[h.i])), 'signs: Alva, Bosse, Cleo, Dante – just in order');
+  walkHere(g, F.tove.x + 1.2, F.tove.z); press(g); run(g, 0.3);
+  let tv = ev.filter(([n, d]) => n === 'talk' && d.id === 'hytter').pop();
+  check(tv && /1 av 4 hytter stämmer/.test(tv[1].pages[0].text), `Tove tries the keys: "${tv && tv[1].pages[0].text.slice(0, 48)}…"`);
+  m.talkDone('hytter'); run(g, 0.2);
+  // a name on another hut is skipped: take it off there first
+  walkHere(g, HUTS[0].door.x, HUTS[0].door.z); press(g);
+  check(job.tags[0] === null, 'the names on the other huts are skipped: round to no sign');
+  for (const h of HUTS) { walkHere(g, h.door.x, h.door.z); let n = 0; while (job.tags[h.i] !== null && n++ < 6) press(g); }
+  check(job.tags.every((t) => t === null), 'all the signs off again');
+  signHut(HUTS[0], 'dante'); signHut(HUTS[1], 'alva'); signHut(HUTS[2], 'cleo'); signHut(HUTS[3], 'bosse');
+  check(job.tags.join() === 'dante,alva,cleo,bosse', `the answer: ${job.tags.join(', ')}`);
+  // the puzzle has one answer only (check every way of putting four kids on four huts)
+  const perms = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((r) => [x, ...r])));
+  const ok = perms(['alva', 'bosse', 'cleo', 'dante']).filter((t) => { const at = (id) => t.indexOf(id); return at('bosse') === at('cleo') + 1 && at('alva') > 0 && at('alva') < 3 && at('dante') !== 3 && at('cleo') !== 0; });
+  check(ok.length === 1 && ok[0].join() === KIDS.slice().sort((a, b) => a.hut - b.hut).map((k) => k.id).join(), 'the clues allow one answer only – the right one');
+  const money0 = g.money;
+  walkHere(g, F.tove.x + 1.2, F.tove.z); press(g); run(g, 0.3);
+  tv = ev.filter(([n, d]) => n === 'talk' && d.id === 'hytter').pop();
+  check(job.stage === 'won' && tv[1].pages.some((pg) => /Alla fyra nycklarna passar/.test(pg.text)), 'all four keys fit!');
+  m.talkDone('hytter'); run(g, 0.5);
+  const paid = g.money - money0;
+  check(m.done.has('hytter') && paid === HUT_PAY.base - HUT_PAY.wrong, `side quest done: ${paid} kr (one wrong try: −${HUT_PAY.wrong} kr)`);
+  check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Badhyttsgåtan'), 'SIDOUPPDRAG KLART');
+  walkHere(g, 40, 100); run(g, 4);
+  check(!m.beachFolk, 'out of sight: Tove and the kids go back to the water');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

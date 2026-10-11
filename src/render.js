@@ -66,7 +66,7 @@ export class View {
 
     // cars
     this.cars = {};
-    for (const type of ['sedan', 'van']) {
+    for (const type of ['sedan', 'van', 'spider']) {
       const geo = buildCarGeometry(type, this.atlas.uv.bullbil);
       const n = CAPACITY[type];
       geo.setAttribute('iCar', new THREE.InstancedBufferAttribute(new Float32Array(n * 4), 4));
@@ -243,7 +243,7 @@ export class View {
     const cylGeo = new THREE.CylinderGeometry(1, 1, 3.2, 32, 1, true).translate(0, 1.6, 0);
     const ringGeo = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2).translate(0, 0.06, 0);
     this.markers = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 14; i++) { // (v1.5: the beach puzzle shows nine badges at once)
       const grp = new THREE.Group();
       const cyl = new THREE.Mesh(cylGeo, new THREE.MeshBasicMaterial({ map: gt, color: 0xffcf33, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
       const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
@@ -545,7 +545,7 @@ export class View {
   }
 
   syncCars(game, dt) {
-    const counts = { sedan: 0, van: 0 };
+    const counts = { sedan: 0, van: 0, spider: 0 };
     let b = 0;
     const blobs = this.blobs;
     for (const v of game.vehicles) {
@@ -680,7 +680,7 @@ export class View {
         this.arrows.setColorAt(n, tmpC);
         n++;
       } else if ((tg.kind === 'zone' || (tg.kind === 'contact' && !tg.mapOnly)) && m < this.markers.length) {
-        if (tg.badgeOnly && Math.hypot(tg.x - p.x, tg.z - p.z) < 6) continue; // up close the PRATA button is enough
+        if (tg.badgeOnly && !tg.always && Math.hypot(tg.x - p.x, tg.z - p.z) < 6) continue; // up close the PRATA button is enough (not a sign on a hut)
         const mk = this.markers[m++];
         const col = tg.kind === 'zone' ? 0xffcf33 : parseInt(tg.color.slice(1), 16);
         const k = 1 + Math.sin(t * 4 + m) * 0.04;
