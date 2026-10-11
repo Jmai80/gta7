@@ -63,8 +63,9 @@ function boxBlur(src, dst, W, H, r) {
   }
 }
 
-// Baked sun shadows and ambient occlusion for the town and Norrholmen (north of it): 3.2 px/m.
-export function makeShadowMap(layout, W = 1024, H = 2048, rect = { x0: -160, z0: -480, w: 320, h: 640 }) {
+// Baked sun shadows and ambient occlusion for the town, Norrholmen (north of it) and Söderholmen
+// (south, v1.6): 3.2 px/m.
+export function makeShadowMap(layout, W = 1024, H = 2496, rect = { x0: -160, z0: -480, w: 320, h: 780 }) {
   const k = W / rect.w;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
@@ -201,6 +202,20 @@ const PAINTERS = {
     g.fillStyle = '#111'; g.textAlign = 'center'; g.textBaseline = 'middle';
     fitText(g, d.lines[0], w * 0.84, h * 0.3); g.fillText(d.lines[0], x + w / 2, y + h * 0.38);
     if (d.lines[1]) { fitText(g, d.lines[1], w * 0.84, h * 0.2, 700); g.fillText(d.lines[1], x + w / 2, y + h * 0.68); }
+  },
+  // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
+  lyckoland(g, d, x, y, w, h) {
+    g.fillStyle = '#1d2f6b'; g.fillRect(x, y, w, h);
+    const n = Math.round(w / (h * 0.16));
+    for (let i = 0; i < n; i++) {
+      const bx = x + ((i + 0.5) * w) / n;
+      for (const by of [y + h * 0.09, y + h * 0.91]) { g.fillStyle = i % 2 ? '#ffe08a' : '#ff7a5c'; g.beginPath(); g.arc(bx, by, h * 0.045, 0, 7); g.fill(); }
+    }
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'TIVOLI', w * 0.3, h * 0.2, 700); g.fillStyle = '#ffffff'; g.fillText('TIVOLI', x + w / 2, y + h * 0.29);
+    fitText(g, 'LYCKOLAND', w * 0.86, h * 0.48);
+    g.fillStyle = '#c0302a'; g.fillText('LYCKOLAND', x + w / 2 + h * 0.03, y + h * 0.65 + h * 0.03);
+    g.fillStyle = '#ffd34d'; g.fillText('LYCKOLAND', x + w / 2, y + h * 0.65);
   },
   closed(g, d, x, y, w, h) {
     const n = 10;

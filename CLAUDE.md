@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 11 oktober 2026, efter version 1.5 (huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden). Den senaste buggfixen (1.4.1) gällde en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 11 oktober 2026, efter version 1.6 (ny stadsdel: ön Söderholmen söder om stan med Tivoli Lyckoland, där man kan åka pariserhjulet). Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. Den senaste buggfixen (1.4.1) gällde en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -23,17 +23,18 @@ Senast uppdaterad 11 oktober 2026, efter version 1.5 (huvuduppdragets del 10 Bir
 
 ## 1. Projektet på en minut
 
-- **GTA 7** ("Grovt Tillgrepp av Automobil") är ett mobilanpassat GTA-skämtspel i webbläsaren. Staden heter **Sjuby** och ön norr om stan heter **Norrholmen** (dit leder norra bron, x = 40).
+- **GTA 7** ("Grovt Tillgrepp av Automobil") är ett mobilanpassat GTA-skämtspel i webbläsaren. Staden heter **Sjuby**, ön norr om stan heter **Norrholmen** (dit leder norra bron, x = 40) och ön söder om stan heter **Söderholmen** (södra bron, x = −40, från v1.6).
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.5 innehåller:
+- Version 1.6 innehåller:
   - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma och del 10 där Birger kommer hem,
   - **Sjuby Spider -62**, en exklusiv öppen bil (`spider`) som finns att låna efter del 10,
   - elva sidouppdrag (senast pusslet Badhyttsgåtan på stranden),
   - Lasses trimningsbutik,
   - Kims långhopp,
   - Norrholmen med Bullbilens bageri, kvarnen, fyren och badplatsen,
+  - Söderholmen (v1.6) med Tivoli Lyckoland: pariserhjul (åk ett varv för 20 kr), karusell, berg-och-dalbanan Måsen, radiobilar och kiosker, plus parkering, några hus och ett kapell. Ingen strand – klippor runt om,
   - bilradio (en kanal per bilfärg, `radio.js`, av från början) och skylten LJUD AV när ljudet är avstängt (M på datorn),
   - slutskärm och sparade framsteg i `localStorage`.
 
@@ -60,9 +61,9 @@ Senast uppdaterad 11 oktober 2026, efter version 1.5 (huvuduppdragets del 10 Bir
 Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. Lokalt klonar du det med `git clone https://github.com/Jmai80/gta7.git`.
 
 ```sh
-git log --oneline -3                         # överst: v1.5 eller senare
+git log --oneline -3                         # överst: v1.6 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
-npm test                                     # ~740 kontroller, 1–2 min. Ska sluta med:
+npm test                                     # ~770 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
 (nohup python3 -m http.server 8765 --directory "$PWD" > /dev/null 2>&1 &)   # server för webbläsartesterna
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8765/index.html   # ska ge 200
@@ -91,7 +92,7 @@ Fler saker att veta om testmiljön:
   - `openOffer(id)`, `nextTalk()`, `openShop()`, `buyItem(id)`,
   - `perf.apply('pretty' | 'auto' | 'saver')`.
 - **Mönster i genomgångarna:** stega simuleringen med `game.step(1/60, input)` och flytta spelaren direkt. Ett sparat spel läggs i `localStorage['gta7-progress']` (`{ v: 2, money, done, known, seen, stats }`). Se `v10.py`, `v11.py` och `v111.py`.
-- **Studioskript:** `beach_studio.py TAG [phone]`, `bike_studio.py TAG` och `people.py` tar närbilder med fast kamera.
+- **Studioskript:** `south_studio.py TAG [phone] [speltid]` (Söderholmen och tivolit), `beach_studio.py TAG [phone]`, `bike_studio.py TAG` och `people.py` tar närbilder med fast kamera.
 
 ## 4. Senast fixat: Långhoppet (v1.1.1)
 
@@ -146,13 +147,14 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/config.js` | Konstanter och platser (dörrar, markörer, belöningar), `WHO` (uppdragsgivarnas namn) och `JUMP_GOAL`/`JUMP_REWARD`/`JUMP_START`. |
 | `src/layout.js` | Hela stan som data: `prims` som byggs till meshar, `colliders`, `casters` (bakade skuggor), `signs`, `ramps`, `parked`, `zones`, `floors` och GPS-grafen. Exporterar `createLayout(seed)` och materialkoderna `M`. |
 | `src/island.js` | Norrholmen: kust, vägar, kolonilotter, bageri, kvarn, fyr, båthamn och badplatsen (`BEACH`, `beach()`). |
+| `src/southisle.js`, `tivoli.js`, `rides.js` | (v1.6) Söderholmen och Tivoli Lyckoland som data (`SOUTH`, `onSouth`, `WHEEL`, `COASTER` …, och de rörliga delarnas rörelse som funktioner av `game.time`), de rörliga delarnas grafik (`buildTivoli`) och åkturen i pariserhjulet (`Rides`, spelarläget `'ride'`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
 | `src/mission.js` | `Missions`: uppdragslistan `QUESTS`, sms-erbjudanden, `checkJobs` (markörer som startar jobb), mål-rutan, `updateTargets`, spara och ladda, Lasses butik, `onStunt` (Långhoppet), `activities` (stunthopp, biltvätt) och slutskärmen. |
 | Uppdragsfiler | `pizza.js`, `race.js` (gatloppet, ringar), `longjump.js` (Långhoppet), `hideout.js` (Cykelgömman) och `birger.js` (Birgers hus), `bikeshome.js` (Cyklarna hem), `concert.js` (Konsertbiljetten) och `nova.js` (Novas rum), `homecoming.js` (Birger kommer hem, Spidern), `beachhuts.js` (Badhyttsgåtan), `flag.js`, `samuel.js` (Melker), `handover.js`, `bikejob.js` (inkl. jakt-AI:n `Chaser`), `livs.js`, `leif.js`, `safe.js`, `opening.js`, `jar.js`, `factory.js`, `errands.js`, `barber.js` och `salon.js` (Vera), `fest.js` och `sander.js` (Jonte). |
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan, `v16.py` för Söderholmen och pariserhjulet) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -193,7 +195,8 @@ Allt som syns i spelet ska använda de nya namnen.
 - **Folk som bara syns:** badgästerna i `layout.zones.beachFolk` ritas av render.js och är inga `Ped`. De påverkar varken simuleringen eller slumpen.
 - `GeomBuilder.box` hoppar över undersidan som standard (`skipBottom: true`). En synlig undersida kräver `{ skipBottom: false }`.
 - **Skyltatlasen** har begränsad plats. Kolla konsolen efter `sign atlas full` när du lägger till skyltar.
-- **Kollisionsgridden** täcker x/z −440..260. Ny mark måste in i `onIsland`/`onIsle`, och golv in i `layout.floors`.
+- **Kollisionsgridden** täcker x/z −440..320 (sedan v1.6). Ny mark måste in i `onIsland`/`onIsle`/`onSouth`, och golv in i `layout.floors`.
+- **Rörliga saker** som simuleringen bryr sig om (pariserhjulets gondoler) ska följa `game.time` genom rena funktioner i en simuleringsfil, och uppdateras i render.js före `syncHumans`.
 - **Jobb-API:**
   - `start`, `update(dt)`, `targets(T)`, `cleanup`,
   - frivilliga krokar: `interact`, `prompt`, `onExitCar`, `onCrash`, `talkFx`, `talkDone`,
@@ -231,6 +234,7 @@ Allt som syns i spelet ska använda de nya namnen.
   - Ronny (Jontes kusin).
 - **Nästa naturliga del:** Birger har bjudit på kaffe och vill höra hela historien om cyklarna; de övriga åtta cyklarna ska till sina ägare; Spidern kunde få en egen trimning hos Lasse.
 - **Bilradion:** användaren tyckte att midimusiken lät för mycket glassbil/party. Den är av från början sedan v1.4. Användaren tänker ladda ner en mjuk radioslinga att spela i stället – då läggs en ljudfil in (den första i projektet).
+- **Tivolit (v1.6)** kan få mer att göra: åka berg-och-dalbanan eller radiobilarna, ett lyckohjul att snurra, ett sidouppdrag (t.ex. ett barn som tappat bort sig, eller en tivoliägare med problem).
 - **Andra idéer användaren kan vilja ha:**
   - västra bron (stängd, `BRIDGES[1]`) som nästa område,
   - fler butiker att handla i,

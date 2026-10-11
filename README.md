@@ -1,6 +1,6 @@
 # GTA 7 – Grovt Tillgrepp av Automobil
 
-Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.5 är småstaden Sjuby och ön Norrholmen på andra sidan norra bron, med tre uppdragsgivare, elva sidouppdrag, ett huvudäventyr i tio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, och till sist ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil.
+Ett litet GTA-inspirerat skämtspel som körs direkt i webbläsaren och är byggt för mobilen först. Version 1.6 är småstaden Sjuby, ön Norrholmen på andra sidan norra bron och ön Söderholmen med Tivoli Lyckoland på andra sidan södra bron, med tre uppdragsgivare, elva sidouppdrag, ett huvudäventyr i tio delar, en trimningsbutik, en badplats med parasoller och brygga och en uppdragslista där du själv väljer vad du tar dig an härnäst. Huvuduppdraget tar dig in i höghuset vid torget, där du smyger in hos Melker på plan 7, ut på bryggan i hamnen för att lämna över det du tog, sedan över bron till Norrholmen efter Arnes gamla budcykel – med Bullbilen i hasorna – in på Bullbilens bagerikontor, där kassaskåpet med andra halvan av receptet står, till invigningen av Sjuby Konditori, på jakt efter en stulen syltburk och en hemlig bullfabrik – till Bullfesten på torget, där cykeltjuven Jonte slår till, in i grannhuset hos tant Gun, där Jonte har gömt alla stulna cyklar, och till sist ner till hamnen när grannen Birger kommer hem från kryssningen med en bingovinst: stans snyggaste bil.
 
 **Spela:** https://jmai80.github.io/gta7/
 
@@ -27,7 +27,7 @@ Lägg gärna till spelet på hemskärmen, så körs det i helskärm:
 
 I pausmenyn finns ljud, bilradio, körkontroll (spak eller pedaler), grafik (Auto, Batterisnål, Snygg) och en FPS-mätare.
 
-## Uppdrag i version 1.5
+## Uppdrag i version 1.6
 
 Uppdragen kommer som sms. Tryck på sms:et och välj **Acceptera** för att följa uppdraget, så visar den gula linjen på kartan vägen, eller **Vänta** för att spara det i uppdragslistan. I listan (listknappen uppe till höger, eller tryck på uppdragsrutan) väljer du sedan vilket uppdrag du vill följa härnäst. Bokstäverna på kartan visar alla uppdrag du kan ta dig an.
 
@@ -124,6 +124,9 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - **Birgers hus:** tant Guns granne på Storgatan. Inne finns vardagsrum med blommig soffa, bokhylla och pelargoner i fönstret, kök, sovrum och badrum – och åtta stulna cyklar.
 - **Annat att göra:** bilkapning, hopp ut i farten, stunthopp på byggtomten, en biltvätt som lagar bucklor och en brygga i hamnen att promenera ut på.
 - **Norrholmen:** ön norr om stan, ungefär en tredjedel så stor som Sjuby. Där finns en kurvig kustväg runt ön, kolonilotter, Bullbilens bageri med mjölsilor, skåpbilar och en jättebulle på taket, en väderkvarn vars vingar snurrar, en fyr, en badplats och en liten båthamn.
+- **Söderholmen och Tivoli Lyckoland (v1.6):** ön söder om stan. Kör Kungsgatan söderut över Södra Ringvägen och ut på södra bron. Ön har ingen strand – runt om är det klippor och granitblock – men mitt på ön ligger Tivoli Lyckoland: ett stort pariserhjul med sexton färgade gondoler, en karusell med hästar under ett röd-vitrandigt tak, berg-och-dalbanan **Måsen** (ett tåg med fyra vagnar som dras upp i en lång backe och sedan störtar ner genom två kullar), radiobilar under ett tak, ett lyckohjul, kiosker med sockervadd, popcorn och korv och ljusslingor längs promenaden. Gå in under valvet med skylten TIVOLI LYCKOLAND (bilar kommer inte in). Väster om tivolit finns tivolits parkering, några trähus och ett litet vitt kapell. Allt på tivolit snurrar och åker hela tiden, och det är fullt av folk – i kön, vid kioskerna, i gondolerna, på hästarna och i berg-och-dalbanan.
+  - **Åk pariserhjulet:** gå uppför rampen till plattformen under hjulet och tryck **ÅK HJULET**. Ett varv kostar 20 kr och tar drygt en halv minut, och högst upp ser du ut över hela Sjuby. Du kliver av vid plattformen igen.
+  - Kim sms:ar om tivolit en stund efter Lasses första uppdrag (i ett sparat spel: en halv minut efter att du börjat spela).
 - **Badplatsen på Norrholmen:** en sandstrand med våt strandkant och skum där vågorna slår in, randiga parasoller med solstolar och badhanddukar, fyra färgglada badhytter, ett livräddartorn med livräddare och livboj, en glasskiosk med en jättestrut på taket, picknickbord, en volleybollplan, ett sandslott, en badflotte, bojar runt badområdet och strandråg och vresrosor längs kanten. Gå in under portalen med skylten NORRHOLMENS BADPLATS, ner längs strandpromenaden och ut på bryggan med hoppsvikten längst ut. Där finns folk som solar, spelar volleyboll, bygger sandslott och sitter och dinglar med benen längst ut på bryggan.
 - **HUD:** minikarta med GPS och uppdragsbokstäver (inomhus visar den en planritning med Melker och nycklarna), SMS från uppdragsgivarna, fartmätare och bilens skick.
 
@@ -133,7 +136,7 @@ Framstegen (pengar, klara uppdrag, uppdragslistan och statistik) sparas i webbl�
 - Allt genereras av kod: inga bilder, 3D-modeller eller ljudfiler. Ljudet syntetiseras med Web Audio.
 - Stan slås ihop till omkring 30 ritanrop. Bilar och människor ritas med instancing och animeras i shadern.
 - Cykeltjuven Jonte cyklar efter ett eget nät av trottoarer och övergångsställen och planerar hela tiden en ny väg bort från dig. I stan kör Dahlgrens lastbil som den vanliga trafiken.
-- Norrholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över bron och runt ön.
+- Norrholmen och Söderholmen byggs på samma sätt som stan. Vägarna där är kurvor av mjukt rundade hörn, och både GPS-linjen och Bullbilen hittar vägen med kortaste-väg-sökning över ett vägnät som går genom stan, över broarna och runt öarna. Tivolits pariserhjul, karusell, berg-och-dalbana och radiobilar går efter spelets egen klocka, så att din gondol och bilden alltid stämmer.
 - Insidorna (höghuset, Hörnlivs, bagerikontoret, Salong Saxen, Birgers hus och Novas rum) byggs en bit ut till havs och visas i stället för stan när du är inne. Kameran tittar brant ner i rummen, och står en vägg mellan kameran och dig syns du som en siluett genom den.
 - Skuggorna bakas en gång vid start. Bilarna har en egen enkel fysik, och upplösningen anpassas efter enhetens prestanda med ett tak på 60 fps.
 - Simuleringen (trafik, fysik, datorförarna i gatloppet och uppdragen) är ren JavaScript utan grafik och testas i Node.
@@ -172,6 +175,7 @@ python3 -m http.server 8000    # eller: npx serve .
 | `src/hideout.js`, `birger.js`, `bikeshome.js` | Huvuduppdragets del 9, Cykelgömman, Birgers hus inifrån och sidouppdraget Cyklarna hem |
 | `src/samuel.js`, `indoors.js`, `interior.js`, `handover.js`, `bikejob.js` | Huvuduppdraget: Melker och hans lägenhet, höghusets insida, överlämningen på bryggan och jakten med Arnes cykel |
 | `src/island.js`, `route.js` | Norrholmen och vägnätet som GPS:en och Bullbilen kör efter |
+| `src/southisle.js`, `tivoli.js`, `rides.js` | Söderholmen och Tivoli Lyckoland, tivolits åkattraktioner som rör sig och åkturen i pariserhjulet |
 | `src/beach.js` | Badplatsen på Norrholmen: parasoller, solstolar, badhytter, livräddartornet, glasskiosken, bryggan och resten |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `geom.js`, `textures.js` | Grafiken |
 | `src/hud.js`, `input.js`, `audio.js`, `radio.js` | Gränssnitt, kontroller, ljud och bilradions kanaler |

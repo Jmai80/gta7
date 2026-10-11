@@ -17,8 +17,9 @@ import { SUN, CARWASH, FEST, CURB_H } from './config.js';
 import { M } from './layout.js';
 import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 import { makeBody } from './peds.js';
+import { buildTivoli } from './tivoli.js';
 
-const MAX_HUMANS = 64; // (v1.0: the bun party on the square and the hair salon bring a few more)
+const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
 const tmpV = new THREE.Vector3();
 
@@ -63,6 +64,9 @@ export class View {
     this.world = world;
     this.scene.add(world.group);
     if (world.interior) this.scene.add(world.interior);
+    // (v1.6) Tivoli Lyckoland's rides on Söderholmen: they move with the game's clock
+    this.tivoli = buildTivoli(this.matStatic);
+    world.group.add(this.tivoli.group);
 
     // cars
     this.cars = {};
@@ -136,6 +140,10 @@ export class View {
     const BF = layout.zones.beachFolk;
     this.beachAt = BF ? { x: BF.x, z: BF.z } : null;
     this.beachFolk = BF ? BF.list.map((f) => Object.assign(makeBody(f.look), { x: f.x, y: f.y, z: f.z, h: f.h, pose: f.pose, lie: f.lie, lieDir: f.lieDir, headPitch: f.headPitch })) : [];
+    // (v1.6) the people at the tivoli: the same, only drawn
+    const TF = layout.zones.tivoliFolk;
+    this.tivoliAt = TF ? { x: TF.x, z: TF.z } : null;
+    this.tivoliFolk = TF ? TF.list.map((f) => Object.assign(makeBody(f.look), { x: f.x, y: f.y, z: f.z, h: f.h, pose: f.pose, headPitch: 0.05 })) : [];
     this.bunBurstT = 0;
 
     this.rig = new CameraRig(this.camera);
@@ -522,6 +530,7 @@ export class View {
     this.U.uTime.value = this.time;
     this.syncCars(game, dt);
     this.syncBike(game, dt);
+    if (!this.indoor) this.tivoli.update(game.time, this.camera.position); // (before the riders are drawn)
     this.syncHumans(game, dt);
     this.syncMarkers(game);
     this.syncFx(game, dt);
@@ -645,6 +654,8 @@ export class View {
     for (const p of game.peds.list) add(p.body);
     const cp = this.camera.position, ba = this.beachAt;
     if (ba && !this.indoor && Math.hypot(cp.x - ba.x, cp.z - ba.z) < 170) for (const f of this.beachFolk) add(f); // (v1.1) the people on the beach
+    const ta = this.tivoliAt;
+    if (ta && !this.indoor && Math.hypot(cp.x - ta.x, cp.z - ta.z) < 190) { for (const f of this.tivoliFolk) add(f); for (const f of this.tivoli.bodies) add(f); } // (v1.6) the tivoli
     H.count = i;
     H.instanceMatrix.needsUpdate = true;
     if (H.instanceColor) H.instanceColor.needsUpdate = true;
@@ -848,6 +859,12 @@ export class CameraRig {
       let hd = car.h;
       if (sp > 3 && car.fwdSpeed > 0) hd = car.h + wrapAngle(Math.atan2(car.vx, car.vz) - car.h) * 0.45;
       target = hd; rate = car.air ? 1.5 : 3.0;
+    } else if (p.state === 'ride') {
+      // (v1.6) in a gondola of the Ferris wheel: from behind and a little above, out over the town
+      dist = portrait ? 12.5 : 9.5;
+      height = portrait ? 3.0 : 1.2;
+      lookH = 0.2; ahead = portrait ? 8 : 5; fov = portrait ? 66 : 56;
+      target = p.rideYaw ?? Math.PI; rate = 1.6;
     } else if (game.indoor) {
       // inside the tower: look down into the rooms from above (the walls in the way open up).
       // The camera keeps its direction (east, along the corridor) unless you turn it yourself,
@@ -912,7 +929,7 @@ export class CameraRig {
     if (near) { tx += (this.fPos.x - tx) * this.fk; tz += (this.fPos.z - tz) * this.fk; }
     // keep the camera out of buildings
     const want = dist;
-    const hit = game.indoor ? 1 : world.raycast(tx, tz, tx - fx * (want + 0.8), tz - fz * (want + 0.8), Math.max(2.5, height * 0.9));
+    const hit = game.indoor || p.state === 'ride' ? 1 : world.raycast(tx, tz, tx - fx * (want + 0.8), tz - fz * (want + 0.8), Math.max(2.5, height * 0.9));
     const kT = hit < 1 ? Math.max(0.18, (hit * (want + 0.8) - 0.8) / want) : 1;
     this.k = smooth(this.k, kT, kT < this.k ? 14 : 2.5, dt);
     const d = want * this.k;

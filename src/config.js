@@ -19,6 +19,8 @@ export const BRIDGES = [
   { axis: 'z', at: 40, from: -RING, to: -230, barrier: -178, dir: -1 }, // north, along x=40
   { axis: 'x', at: -40, from: -RING, to: -230, barrier: -178, dir: -1 }, // west, along z=-40
 ];
+// (v1.6) the south bridge to Söderholmen: Kungsgatan (x = -40) runs on over the water, open from the start
+export const SOUTH_BRIDGE = { at: -40, to: 180 };
 
 export const STREET_NAMES = {
   x: { '-120': 'Västra Ringvägen', '-40': 'Kungsgatan', '40': 'Drottninggatan', '120': 'Östra Ringvägen' },

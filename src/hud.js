@@ -11,6 +11,7 @@ import { HOUSE, HOUSE_WALLS, HOUSE_FURN } from './birger.js';
 import { ROOM as NOVA_ROOM, ROOM_WALLS as NOVA_WALLS, ROOM_FURN as NOVA_FURN } from './nova.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
+import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
@@ -20,7 +21,7 @@ const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
 const MAP_PX = 2;
-const MAP = { x0: -170, z0: -430, x1: 170, z1: 170 };   // the town and Norrholmen up north
+const MAP = { x0: -170, z0: -430, x1: 170, z1: 300 };   // the town, Norrholmen up north and Söderholmen down south
 
 export class HUD {
   constructor(root, layout) {
@@ -113,6 +114,7 @@ export class HUD {
     }
     g.fillRect(P(35), P(-233), 10 * MAP_PX, 108 * MAP_PX);   // the north bridge (its gate is drawn live)
     g.fillRect(P(-200), P(-45), 75 * MAP_PX, 10 * MAP_PX);
+    g.fillRect(P(-45), P(125), 10 * MAP_PX, 58 * MAP_PX);   // (v1.6) the south bridge
     g.fillStyle = '#d2342c';
     g.fillRect(P(-179), P(-46), 2 * MAP_PX, 12 * MAP_PX);
     // pond + pitch
@@ -121,6 +123,7 @@ export class HUD {
     if (z.pitch) { g.fillStyle = '#5c9a45'; g.fillRect(P(z.pitch.x0), P(z.pitch.z0), (z.pitch.x1 - z.pitch.x0) * MAP_PX, (z.pitch.z1 - z.pitch.z0) * MAP_PX); }
     if (z.pier) { g.fillStyle = '#8a6a48'; g.fillRect(P(z.pier.x0), P(z.pier.z0), (z.pier.x1 - z.pier.x0) * MAP_PX, (z.pier.z1 - z.pier.z0) * MAP_PX); }
     this.drawIsle(g, P, L);
+    this.drawSouth(g, P, L);
     return c;
   }
 
@@ -142,6 +145,30 @@ export class HUD {
     }
     g.fillStyle = '#2b2f36';
     for (const f of L.footprints) if (f.z1 < -200) g.fillRect(P(f.x0), P(f.z0), (f.x1 - f.x0) * MAP_PX, (f.z1 - f.z0) * MAP_PX);
+  }
+
+  // (v1.6) Söderholmen on the map: the shore, the tivoli, the roads and the buildings
+  drawSouth(g, P, L) {
+    const path = (pts) => { g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z)))); g.closePath(); };
+    g.fillStyle = '#4f6448'; path(SOUTH.coast); g.fill();
+    const T = SOUTH.tivoli, Pk = SOUTH.parking;
+    g.fillStyle = '#8a7a5c'; g.fillRect(P(T.x0), P(T.z0), (T.x1 - T.x0) * MAP_PX, (T.z1 - T.z0) * MAP_PX);
+    g.fillStyle = '#3d4249'; g.fillRect(P(Pk.x0), P(Pk.z0), (Pk.x1 - Pk.x0) * MAP_PX, (Pk.z1 - Pk.z0) * MAP_PX);
+    g.strokeStyle = '#d8d3c6'; g.lineWidth = 8 * MAP_PX; g.lineJoin = 'round'; g.lineCap = 'round';
+    for (const R of Object.values(L.southRoads || {})) {
+      g.beginPath();
+      R.pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z))));
+      if (R.closed) g.closePath();
+      g.stroke();
+    }
+    g.fillStyle = '#2b2f36';
+    for (const f of L.footprints) if (f.z0 > 175 && f.x1 < 150) g.fillRect(P(f.x0), P(f.z0), (f.x1 - f.x0) * MAP_PX, (f.z1 - f.z0) * MAP_PX);
+    // the rides, in colour: the bumper cars, the carousel and the Ferris wheel (seen from above)
+    g.fillStyle = '#2c62a8'; g.fillRect(P(BUMPERS.x0), P(BUMPERS.z0), (BUMPERS.x1 - BUMPERS.x0) * MAP_PX, (BUMPERS.z1 - BUMPERS.z0) * MAP_PX);
+    g.fillStyle = '#d2342c'; g.beginPath(); g.arc(P(CAROUSEL.x), P(CAROUSEL.z), CAROUSEL.r * MAP_PX, 0, 7); g.fill();
+    g.fillStyle = '#f2efe6'; g.fillRect(P(WHEEL.x - WHEEL.r), P(WHEEL.z - 1.4), 2 * WHEEL.r * MAP_PX, 2.8 * MAP_PX);
+    g.strokeStyle = '#d2342c'; g.lineWidth = 1.2 * MAP_PX;
+    g.beginPath(); g.ellipse(P(33), P(252), 47 * MAP_PX, 7 * MAP_PX, 0, 0, 7); g.stroke();   // the roller coaster
   }
 
   // the floor plan of the tower's 7th floor (corridor + Melker's flat)

@@ -10,7 +10,9 @@ import { CAR_TYPES } from '../src/vehicle.js';
 import { OFFICE } from '../src/office.js';
 import { SHOP } from '../src/shop.js';
 import { ISLE, onIsle } from '../src/island.js';
-import { routePoints } from '../src/route.js';
+import { SOUTH, WHEEL, CAROUSEL, COASTER, CO_LEN, CO_PERIOD, onSouth, inTivoli, gondolaPivot, nextGondola, coasterH, coasterCar, southRoadDist } from '../src/southisle.js';
+import { WHEEL_FARE } from '../src/rides.js';
+import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
@@ -326,7 +328,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all thirteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.5/.test(d.text) && /Birger/.test(d.text)), 'the last text: version 1.5, Birger is home');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.6/.test(d.text) && /Birger/.test(d.text)), 'the last text: version 1.6, Birger is home');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2239,7 +2241,7 @@ function driveTo(g, car, x, z, h) { car.x = x; car.z = z; car.h = h ?? car.h; ca
   check(m.done.has('birger') && g.money - money0 === HOMECOMING.reward + HOMECOMING.perHealth * cond, `main quest part 10 done: ${g.money - money0} kr (${cond} % of the paint left)`);
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Birger kommer hem'), 'HUVUDUPPDRAG KLART');
   run(g, 15);
-  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.5/.test(d.text)), 'all thirteen done: the end card (version 1.5)');
+  check(ev.some(([n]) => n === 'endcard') && ev.some(([n, d]) => n === 'sms' && /version 1\.6/.test(d.text)), 'all thirteen done: the end card (version 1.6)');
   // afterwards: borrow it whenever – it goes back to its stall when you leave it somewhere
   const S2 = HOMECOMING.spot;
   check(enterCar(g, sp), 'you can drive the Spider afterwards');
@@ -2341,6 +2343,105 @@ function driveTo(g, car, x, z, h) { car.x = x; car.z = z; car.h = h ?? car.h; ca
   check(ev.some(([n, d]) => n === 'banner' && d.title === 'SIDOUPPDRAG KLART' && d.sub === 'Badhyttsgåtan'), 'SIDOUPPDRAG KLART');
   walkHere(g, 40, 100); run(g, 4);
   check(!m.beachFolk, 'out of sight: Tove and the kids go back to the water');
+}
+
+// ---------- 32. Söderholmen and Tivoli Lyckoland (v1.6) ----------
+{
+  console.log('Söderholmen: bron, ön och tivolit');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const m = g.mission, W = g.world;
+  m.restore({ ...livsSave(['red', 'lasse']), money: 100 });
+  const ev = record(g, ['sms', 'toast', 'money', 'ride']);
+  // the ground: the bridge deck, the island, the sea beside them
+  check(W.groundHeight(-40, 135) === 0 && W.groundHeight(-40, 165) === 0, 'the south bridge: a road from Södra Ringvägen out over the water');
+  check(W.groundHeight(-52, 165) < -1 && W.groundHeight(-28, 165) < -1, 'water on both sides of the bridge');
+  check(W.groundHeight(-40, 190) === CURB_H && W.groundHeight(30, 240) === CURB_H && W.groundHeight(-100, 240) === CURB_H, 'Söderholmen is land (the road, the tivoli, the west side)');
+  check(W.groundHeight(0, 295) < -1 && !onSouth(0, 295) && onSouth(0, 285), 'and the sea beyond its south shore');
+  check(landOf(-40, 160) === 'bridge' && landOf(30, 240) === 'south' && landOf(0, 0) === 'town' && landOf(40, -300) === 'isle', `landOf: bridge, south, town, isle`);
+  check(southRoadDist(-40, 198) < 0.5 && southRoadDist(100, 235) < 0.5, 'the road round the tivoli and the road up from the bridge');
+  // the GPS: from the square to the tivoli gate, over the south bridge
+  const rt = routePoints(g.layout.gps, 0, 0, SOUTH.gate.x0 + 4, SOUTH.gate.z - 4);
+  check(rt.some(([x, z]) => Math.abs(x + 40) < 1 && z > 150 && z < 175) && rt.every(([x, z]) => !(z > 130 && z < 178) || Math.abs(x + 40) < 1), `the GPS line goes over the south bridge (${rt.length} points)`);
+  // drive there: Kungsgatan south, over the bridge, round to the car park
+  const car = g.addVehicle('sedan', 'blue', -37.5, 100, 0);
+  check(enterCar(g, car), 'into a car on Kungsgatan');
+  const path = routePoints(g.layout.gps, car.x, car.z, (SOUTH.parking.x0 + SOUTH.parking.x1) / 2, 214);
+  let wi = 1, minDist = 1e9, maxH = 0;
+  for (let i = 0; i < 60 * 40 && wi < path.length; i++) {
+    const [tx, tz] = path[wi];
+    if (Math.hypot(tx - car.x, tz - car.z) < 5) { wi++; continue; }
+    const sn = Math.sin(car.h), cs = Math.cos(car.h), dx = tx - car.x, dz = tz - car.z;
+    const lr = -dx * cs + dz * sn, lf = dx * sn + dz * cs;
+    const st = clamp(Math.atan2(lr, Math.max(lf, 0.5)) * 1.6, -1, 1);
+    g.step(DT, { ...idle, throttleAxis: car.speed < 9 ? 0.7 : 0.1, steerAxis: st });
+    minDist = Math.min(minDist, Math.hypot(car.x - path[path.length - 1][0], car.z - path[path.length - 1][1]));
+    maxH = Math.max(maxH, Math.abs(car.y - g.world.groundHeight(car.x, car.z)));
+  }
+  check(wi >= path.length && minDist < 6, `driven over the bridge to the tivoli's car park (${minDist.toFixed(1)} m from it)`);
+  check(car.health > 95 && maxH < 0.6, `no knocks and no drops on the way (health ${car.health.toFixed(0)})`);
+  // Kim tells you about it, once
+  run(g, 26);
+  const kim = ev.filter(([n, d]) => n === 'sms' && /Söderholmen/.test(d.text));
+  check(kim.length === 1 && kim[0][1].from === 'Kim (Macken)', 'Kim texts about the new tivoli on Söderholmen');
+  check(m.restore(m.progress()) && (run(g, 30), ev.filter(([n, d]) => n === 'sms' && /Söderholmen/.test(d.text)).length === 1), 'only once (saved)');
+  {
+    const p = g.player;
+    p.exitCar(); run(g, 1);
+    // on foot from the bridge landing: everywhere on the island you should get to
+    const L = SOUTH.landing;
+    walkHere(g, L.x + 2, L.z + 4);
+    const spots = [
+      { x: SOUTH.gate.x0 + 4, z: SOUTH.gate.z + 2, n: 'in under the arch' }, { x: WHEEL.board.x, z: WHEEL.board.z, n: 'the wheel\'s platform' },
+      { x: 14.6, z: 211.4, n: 'BILJETTER' }, { x: 36, z: 211.2, n: 'SOCKERVADD' }, { x: 46, z: 211.4, n: 'POPCORN' }, { x: 78, z: 211.6, n: 'KORV' },
+      { x: CAROUSEL.x, z: CAROUSEL.z + 8.6, n: 'by the carousel' }, { x: 26, z: 241.6, n: 'the benches by the coaster' }, { x: 80, z: 238, n: 'the east end of the promenade' },
+      { x: -50.5, z: 233.6, n: 'the chapel door' }, { x: -66.2, z: 215.5, n: 'a house door' }, { x: -91.8, z: 243.5, n: 'a house door on the west road' },
+      { x: 10, z: 283.5, n: 'the benches on the south cliffs' },
+    ];
+    const blocked = reachable(g, { x: p.x, z: p.z }, spots, { x0: -112, z0: 182, x1: 112, z1: 290 });
+    check(!blocked.length, `on foot from the bridge you get everywhere${blocked.length ? ': not ' + blocked.map((b) => b.n).join(', ') : ''}`);
+    const inside = reachable(g, { x: p.x, z: p.z }, [{ x: CAROUSEL.x, z: CAROUSEL.z, n: 'onto the carousel' }, { x: -7, z: 220, n: 'onto the bumper cars' }, { x: 0, z: 245, n: 'onto the coaster\'s track in the station' }], { x0: -112, z0: 182, x1: 112, z1: 290 });
+    check(inside.length === 3, 'but not onto the carousel, the bumper-car floor or the coaster\'s track where it runs low');
+    // the sea stops you on the south cliffs
+    walkHere(g, 10, 286);
+    run(g, 4, { ...idle, camYaw: 0, moveY: 1 });
+    check(p.z < 291 && onSouth(p.x, p.z), `the shore stops you (z ${p.z.toFixed(1)})`);
+    // the first time in under the arch
+    walkHere(g, SOUTH.gate.x0 + 4, SOUTH.gate.z - 3); run(g, 0.2);
+    walkHere(g, SOUTH.gate.x0 + 4, SOUTH.gate.z + 3); run(g, 0.2);
+    check(ev.some(([n, d]) => n === 'toast' && /Välkommen till Tivoli Lyckoland/.test(d.text)), 'a welcome at the gate');
+    // the Ferris wheel: not enough money first
+    g.money = 5;
+    walkHere(g, WHEEL.board.x, WHEEL.board.z);
+    check(m.prompt === 'ÅK HJULET', 'on the platform: ÅK HJULET');
+    press(g);
+    check(p.state === 'foot' && g.money === 5 && ev.some(([n, d]) => n === 'toast' && /inte råd/.test(d.text)), 'with 5 kr: "du har inte råd"');
+    g.money = 100;
+    press(g);
+    check(g.money === 100 - WHEEL_FARE && p.frozen, `${WHEEL_FARE} kr, and you wait for the gondola`);
+    for (let i = 0; i < 60 * 5 && p.state !== 'ride'; i++) g.step(DT, idle);
+    check(p.state === 'ride' && g.time - m.rides.t0 < 0.05, 'into the next empty gondola as it comes down');
+    const k = m.rides.k, q0 = gondolaPivot(k, g.time), t0 = m.rides.t0, qb = gondolaPivot(k, t0);
+    check(Math.abs(p.x - q0.x) < 0.05 && Math.abs(p.rideHip - (q0.y - WHEEL.hang + 0.46)) < 0.05 && Math.abs(qb.y - (WHEEL.hubY - WHEEL.r)) < 0.01 && k % 4 !== 2, 'sitting in an empty gondola, boarded at the bottom of the wheel');
+    let top = 0, steps = 0;
+    while (p.state === 'ride' && steps++ < 60 * (WHEEL.period + 5)) { g.step(DT, { ...idle, action: steps % 60 === 0 }); top = Math.max(top, p.rideHip); }
+    check(top > WHEEL.hubY + WHEEL.r - 2.2, `up to the top: ${top.toFixed(1)} m over the ground`);
+    check(ev.some(([n, d]) => n === 'toast' && /Vilken utsikt/.test(d.text)), 'the view from the top');
+    check(Math.abs(g.time - t0 - WHEEL.period) < 0.1, `one turn: ${(g.time - t0).toFixed(1)} s (pressing the button does not throw you out)`);
+    check(p.state === 'foot' && !p.frozen && Math.hypot(p.x - WHEEL.exit.x, p.z - WHEEL.exit.z) < 0.3 && Math.abs(p.y - g.world.groundHeight(p.x, p.z)) < 0.01, 'off again by the platform, on your feet');
+    check(!reachable(g, { x: p.x, z: p.z }, [{ x: SOUTH.gate.x0 + 4, z: SOUTH.gate.z + 2 }], { x0: -25, z0: 200, x1: 90, z1: 268 }).length, 'and the way out is open');
+    check(g.stats.wheelRides === 1 && ev.filter(([n]) => n === 'ride').length === 2, 'one ride counted');
+  }
+  // the rides: the gondolas keep their spacing, the coaster runs its round
+  const nx = nextGondola(10.3), qa = gondolaPivot(nx.k, nx.at);
+  check(nx.at > 10.3 && nx.at - 10.3 <= WHEEL.period / WHEEL.n + 1e-6 && Math.abs(qa.y - (WHEEL.hubY - WHEEL.r)) < 1e-6 && Math.abs(qa.x - WHEEL.x) < 1e-6, 'the next gondola reaches the bottom on time');
+  let hMin = 99, hMax = 0;
+  for (let s2 = 0; s2 < CO_LEN; s2 += 0.5) { hMin = Math.min(hMin, coasterH(s2)); hMax = Math.max(hMax, coasterH(s2)); }
+  check(hMin > 1.2 && hMax > 12 && hMax < 14, `Måsen: ${CO_LEN.toFixed(0)} m of track, from ${hMin.toFixed(1)} to ${hMax.toFixed(1)} m up`);
+  const c0 = coasterCar(0, 0), c1 = coasterCar(0, 3);
+  let vMax = 0;
+  for (let t = 0; t < CO_PERIOD; t += 0.1) { const a = coasterCar(0, t), b = coasterCar(0, t + 0.1); vMax = Math.max(vMax, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / 0.1); }
+  check(CO_PERIOD > 40 && CO_PERIOD < 90 && Math.hypot(c0.x - c1.x, c0.z - c1.z) < 0.01 && vMax > 10 && vMax < 20, `a round takes ${CO_PERIOD.toFixed(0)} s, a pause in the station, top speed ${(vMax * 3.6).toFixed(0)} km/h`);
+  check(inTivoli(CAROUSEL.x, CAROUSEL.z) && inTivoli(WHEEL.x, WHEEL.z) && inTivoli(COASTER.x1 + COASTER.r, (COASTER.zN + COASTER.zS) / 2), 'the rides are inside the fence');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

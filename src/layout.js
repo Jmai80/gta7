@@ -2,13 +2,14 @@
 // Everything here is plain JS (no three.js) so the simulation can run in Node for tests.
 // The layout emits render primitives, colliders, shadow casters, the road graph and spawn spots.
 import {
-  ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, XWALK_IN, XWALK_OUT,
+  ROAD_W, ROADS, RING, ISLAND, CURB_H, OVERLAY_H, BRIDGES, SOUTH_BRIDGE, XWALK_IN, XWALK_OUT,
   blockRange, DELIVERY, CARWASH, GUN, TOWER_DOOR, NOVA_DOOR, PIER, PIER_BENCH, LIVS_DOOR, LEIF, KONDITORI_DOOR, SALON_DOOR, FEST,
 } from './config.js';
 import { makeRng } from './rng.js';
 import { treeCasters } from './trees.js';
 import { interiorLayout } from './interior.js';
 import { islandInto, onIsle, ISLE, BEACH } from './island.js';
+import { southInto, onSouth, SOUTH, SOUTH_ROADS } from './southisle.js';
 
 // Material codes understood by the world shader (see shaders.js)
 export const M = {
@@ -46,6 +47,7 @@ export function onRoad(x, z) {
     if (b.axis === 'z' && Math.abs(x - b.at) < hw && z <= -RING + 0.01 && z >= b.to) return true;
     if (b.axis === 'x' && Math.abs(z - b.at) < hw && x <= -RING + 0.01 && x >= b.to) return true;
   }
+  if (Math.abs(x - SOUTH_BRIDGE.at) < hw && z >= RING - 0.01 && z <= SOUTH_BRIDGE.to) return true; // (v1.6) to Söderholmen
   return false;
 }
 
@@ -280,6 +282,7 @@ export function createLayout(seed = 7) {
     const n = b.axis === 'z' ? nodes.find((q) => q.x === b.at && q.z === -120) : nodes.find((q) => q.z === b.at && q.x === -120);
     if (n) n.arms[b.axis === 'z' ? 0 : 3] = true;
   }
+  nodes.find((q) => q.x === SOUTH_BRIDGE.at && q.z === 120).arms[2] = true;   // (v1.6) the south bridge
   // crosswalks on every arm
   for (const n of nodes) {
     for (let d = 0; d < 4; d++) {
@@ -950,12 +953,13 @@ export function createLayout(seed = 7) {
   // OUTER BAND: harbor promenade (north), lawns, quay railing, bridges
   // =====================================================================
   // lawns on west/east/south band
-  area(-ISLAND, RING + 3, ISLAND, ISLAND - 3, COL.lawn, M.LAWN);
+  area(-ISLAND, RING + 3, SOUTH_BRIDGE.at - 5, ISLAND - 3, COL.lawn, M.LAWN); area(SOUTH_BRIDGE.at + 5, RING + 3, ISLAND, ISLAND - 3, COL.lawn, M.LAWN);
   area(-ISLAND + 0.01, -RING + 0.01, -RING - 3, -45, COL.lawn, M.LAWN);
   area(-ISLAND + 0.01, -35, -RING - 3, RING - 0.01, COL.lawn, M.LAWN);
   area(RING + 3, -RING + 0.01, ISLAND - 0.01, RING - 0.01, COL.lawn, M.LAWN);
   // gravel path along the quay
-  area(-ISLAND + 1, ISLAND - 3, ISLAND - 1, ISLAND - 1, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
+  area(-ISLAND + 1, ISLAND - 3, SOUTH_BRIDGE.at - 5, ISLAND - 1, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
+  area(SOUTH_BRIDGE.at + 5, ISLAND - 3, ISLAND - 1, ISLAND - 1, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
   area(ISLAND - 3, -RING + 0.01, ISLAND - 1, ISLAND - 3, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
   area(-ISLAND + 1, -RING + 0.01, -ISLAND + 3, -45, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
   area(-ISLAND + 1, -35, -ISLAND + 3, ISLAND - 3, COL.gravel, M.PLAIN, OVERLAY_H + 0.02);
@@ -978,14 +982,15 @@ export function createLayout(seed = 7) {
   };
   const E = ISLAND - 0.3;
   rail(-E, -E, PIER.x0 - 0.2, -E); rail(PIER.x1 + 0.2, -E, 34.6, -E); rail(45.4, -E, E, -E); // north (gaps: the pier, the bridge at x=40)
-  rail(-E, E, E, E);                                   // south
+  rail(-E, E, SOUTH_BRIDGE.at - 5.4, E); rail(SOUTH_BRIDGE.at + 5.4, E, E, E); // south (a gap for the bridge to Söderholmen)
   rail(E, -E, E, E);                                   // east
   rail(-E, -E, -E, -45.4); rail(-E, -34.6, -E, E);     // west (gap for bridge at z=-40)
   // island boundary colliders
   colBox(-ISLAND - 6, -ISLAND - 6, PIER.x0, -ISLAND + 0.2, 20, { edge: true });
   colBox(PIER.x1, -ISLAND - 6, 35, -ISLAND + 0.2, 20, { edge: true });
   colBox(45, -ISLAND - 6, ISLAND + 6, -ISLAND + 0.2, 20, { edge: true });
-  colBox(-ISLAND - 6, ISLAND - 0.2, ISLAND + 6, ISLAND + 6, 20, { edge: true });
+  colBox(-ISLAND - 6, ISLAND - 0.2, SOUTH_BRIDGE.at - 5, ISLAND + 6, 20, { edge: true });
+  colBox(SOUTH_BRIDGE.at + 5, ISLAND - 0.2, ISLAND + 6, ISLAND + 6, 20, { edge: true });
   colBox(ISLAND - 0.2, -ISLAND - 6, ISLAND + 6, ISLAND + 6, 20, { edge: true });
   colBox(-ISLAND - 6, -ISLAND - 6, -ISLAND + 0.2, -45, 20, { edge: true });
   colBox(-ISLAND - 6, -35, -ISLAND + 0.2, ISLAND + 6, 20, { edge: true });
@@ -1027,6 +1032,15 @@ export function createLayout(seed = 7) {
       P({ t: 'cyl', x: cx, z: cz, y0: 0, y1: 0.75, r: 0.25, r1: 0.04, n: 6, c: 0xe0782c });
     }
   }
+  // (v1.6) the south bridge to Söderholmen: deck, parapets and pillars, no barrier
+  {
+    const a = SOUTH_BRIDGE.at, s0 = ISLAND, s1 = SOUTH_BRIDGE.to;
+    area(a - 5, s0, a + 5, s1, COL.asphalt, M.ASPHALT, 0);
+    box(a - 5.6, -1.4, s0, a + 5.6, -0.02, s1, COL.concrete);
+    for (const l of [-5.6, 5]) solid(a + l, -0.02, s0 - 0.01, a + l + 0.6, 0.95, s1, COL.concrete);
+    for (let z = s0 + 16; z < s1; z += 17) box(a - 4, -6, z - 1, a + 4, -1.4, z + 1, COL.concrete);
+    dashLine(a, RING + 4, a, s1);
+  }
   // north harbor promenade: benches, trees, a pier with boats
   for (let x = -130; x <= 130; x += 26) {
     if (Math.abs(x - 40) < 9) continue;
@@ -1034,7 +1048,7 @@ export function createLayout(seed = 7) {
     if (Math.abs(x - 40) > 14) tree(x + 9, -RING - 10, 'birch', 0.9);
   }
   for (let z = -100; z <= 130; z += 34) { if (Math.abs(z + 40) > 10) tree(-RING - 10, z, 'oak', 1.0); tree(RING + 10, z + 12, 'oak', 1.0); }
-  for (let x = -110; x <= 120; x += 34) tree(x + 6, RING + 10, 'birch', 1.0);
+  for (let x = -110; x <= 120; x += 34) tree(x === -42 ? -28 : x + 6, RING + 10, 'birch', 1.0); // (v1.6: one birch steps aside for the south bridge)
   // pier
   const pierX = -75;
   box(pierX - 2.5, -0.2, -ISLAND - 26, pierX + 2.5, CURB_H, -ISLAND, COL.wood, M.PLANKS, { cell: [1, 1] });
@@ -1085,10 +1099,21 @@ export function createLayout(seed = 7) {
   inside.floors.push({ x0: PIER.x0, z0: PIER.z0, x1: PIER.x1, z1: -ISLAND + 0.3, y: CURB_H }); // the pier deck
   inside.floors.push({ x0: BEACH.jetty.x0, z0: BEACH.jetty.z0, x1: BEACH.jetty.x1, z1: BEACH.jetty.z1, y: CURB_H + 0.02 }); // the beach's jetty (v1.1)
 
+  // =====================================================================
+  // SÖDERHOLMEN (v1.6): the island across the south bridge, with Tivoli Lyckoland (southisle.js).
+  // Last of all: its trees draw from the layout's random numbers, and nothing comes after them.
+  // =====================================================================
+  const floorsSouth = [];
+  southInto({
+    P, box, solid, area, poly, sign, colBox, colOBox, colCircle, castBox, building, tree, lamp, bench, hedge, woodFence, meshFence, mark,
+    R, M, COL, casters, footprints, parked, zones, loops, blocks, ramps, floorsSouth,
+  });
+  inside.floors.push(...floorsSouth);
+
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,
     zones, kioskSpots, marks, nodes, floors: inside.floors, interiorSigns: inside.signPrims,
-    millSails, isleRoads: isle.roads, gps: gpsGraph(nodes, isle.roads),
+    millSails, isleRoads: isle.roads, southRoads: SOUTH_ROADS, gps: gpsGraph(nodes, isle.roads),
   };
 }
 
@@ -1125,7 +1150,27 @@ function gpsGraph(nodes, roads) {
   link(yard, yardGate); link(yardGate, nearest(spine, 40, (ISLE.yard.gateZ0 + ISLE.yard.gateZ1) / 2));
   const strip = add(33.2, ISLE.allotGate.z, 'isle');
   link(strip, nearest(spine, 40, ISLE.allotGate.z));
+  // (v1.6) Söderholmen: Kungsgatan on over the south bridge, the road up from the landing and the loop
+  const sChain = (R) => {
+    const ids = [];
+    let acc = 1e9, prev = null;
+    R.pts.forEach((p, i) => {
+      if (prev) acc += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+      prev = p;
+      if (acc >= 12 || i === R.pts.length - 1) { ids.push(add(p[0], p[1], 'south')); acc = 0; }
+    });
+    for (let i = 1; i < ids.length; i++) link(ids[i - 1], ids[i]);
+    if (R.closed) link(ids[ids.length - 1], ids[0]);
+    return ids;
+  };
+  const sLoop = sChain(SOUTH_ROADS.sloop), sSpine = sChain(SOUTH_ROADS.sspine);
+  for (const l of near2(sLoop, SOUTH.junction.x, SOUTH.junction.z)) link(sSpine[sSpine.length - 1], l);
+  const sTown = nodes.find((q) => q.x === SOUTH.landing.x && q.z === 120).id;
+  const sBridge = add(SOUTH.landing.x, 160, 'bridge'), sLand = add(SOUTH.landing.x, 181, 'bridge');
+  link(sTown, sBridge); link(sBridge, sLand); link(sLand, sSpine[0]);
+  const lot = add((SOUTH.parking.x0 + SOUTH.parking.x1) / 2, 214, 'south');
+  link(lot, nearest(sLoop, (SOUTH.parking.x0 + SOUTH.parking.x1) / 2, 198));
   return { nodes: G };
 }
 
-export { onIsle, ISLE };
+export { onIsle, ISLE, onSouth, SOUTH };

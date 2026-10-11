@@ -17,6 +17,7 @@ function primCenter(p) {
     case 'rbox': return [p.cx, p.cz];
     case 'gable': return [(p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2];
     case 'poly': case 'quad': return p.pts[0];
+    case 'tube': return [p.a[0], p.a[2]];
     case 'wall': case 'mesh': return [(p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2];
     default: return [p.x, p.z];
   }
@@ -109,6 +110,7 @@ export function buildWorld(layout, material, groundMaterial, fenceMaterial, atla
       case 'gable': gable(B, p); break;
       case 'cyl': B.cyl(p.x, p.z, p.y0, p.y1, p.r, p.r1 ?? p.r, p.n, p.c, p.m || 0, !!p.cap); break;
       case 'hcyl': B.hcyl(p.x, p.y, p.z, p.len, p.r, p.axis, p.n, p.c, p.m || 0); break;
+      case 'tube': B.tube(p.a, p.b, p.r, p.r1 ?? p.r, p.n || 6, p.c, p.m || 0, !!p.cap); break;  // (v1.6) rails and struts
       case 'ico': B.ico(p.x, p.y, p.z, p.r, p.sy, p.c, 0, seed++); break;
       case 'tree': treeInto(B, p); break;
       case 'poly': B.poly(p.pts, p.y, p.c, p.m || 0); break;

@@ -39,6 +39,7 @@
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
+import { Rides } from './rides.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -263,6 +264,7 @@ export class Missions {
     this.keepT = 0;
     this.flag = new FlagQuest(this);
     this.party = new FestParty(this); // the bun party on the square (v1.0)
+    this.rides = new Rides(this);     // the Ferris wheel at Tivoli Lyckoland (v1.6)
     this.gatePia = null;            // (v1.2) Polis-Pia waiting at Birger's gate
     this.birger = null;             // (v1.5) Birger (on the quay, then home)
     this.beachFolk = null;          // (v1.5) Tove and the four kids on the beach
@@ -282,7 +284,7 @@ export class Missions {
   get bridgeOpen() { return this.known.has('cykel') || this.done.has('cykel'); }
   get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
   // the action button's label: the lift, something the running job wants (take the keys), or tant Gun
-  get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt; }
+  get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt || this.rides.prompt; }
 
   // ---------------------------------------------------------------- helpers
   later(delay, fn, owner = null) { this.queue.push({ at: this.game.time + delay, fn, owner }); }
@@ -492,6 +494,7 @@ export class Missions {
     else if (this.holdObj <= 0) this.followObjective();
     this.buildTargets();
     this.activities(dt);
+    this.rides.update(dt);
     if ((this.keepT -= dt) <= 0) { this.keepT = 2; this.keepPizzaCar(); }
   }
 
@@ -613,8 +616,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.5! Birger är hemma och Spidern står på parkeringen. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.5! Birger är hemma och Spidern står på parkeringen. Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.6! Birger är hemma, Spidern står på parkeringen och tivolit på Söderholmen har öppet. Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.6! Birger är hemma, Spidern står på parkeringen och tivolit på Söderholmen har öppet. Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -955,7 +958,7 @@ export class Missions {
   interact() {
     if (this.game.indoors.interact()) return true;
     if (this.active && this.active.interact && this.active.interact()) return true;
-    return this.flag.interact();
+    return this.flag.interact() || this.rides.interact();
   }
 }
 
