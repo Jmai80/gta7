@@ -20,6 +20,7 @@ import { chapelLayout, chapelInto } from './chapel.js';
 import { elsaLayout, elsaInto } from './elsa.js';
 import { pizzaLayout, pizzaInto } from './pizzeria.js';
 import { millLayout, millInto } from './millroom.js';
+import { kondLayout, kondInto } from './konditori.js';
 
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
@@ -130,7 +131,11 @@ export function interiorLayout() {
   colliders.push(...mill.colliders);
   Object.assign(signs, mill.signs);
   signPrims.push(...mill.signPrims);
-  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor], signs, signPrims };
+  const kond = kondLayout(); // Sjuby Konditori by the square (v1.14)
+  colliders.push(...kond.colliders);
+  Object.assign(signs, kond.signs);
+  signPrims.push(...kond.signPrims);
+  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor, kond.floor], signs, signPrims };
 }
 
 // ------------------------------------------------------------------ geometry
@@ -271,6 +276,7 @@ export function interiorInto(B) {
   elsaInto(B); // Elsa's house on Söderholmen (v1.12)
   pizzaInto(B); // Pizzeria Sjuan (v1.13)
   millInto(B); // the windmill (v1.13)
+  kondInto(B); // Sjuby Konditori (v1.14)
 }
 
 // door panel for Melker's front door, hinge at the origin, closed along +x (render.js turns it)

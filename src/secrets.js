@@ -5,8 +5,8 @@
 //   phone    a phone box on the harbour promenade that rings when you come near: a voice with riddles
 //   ducks    rubber ducks in the park pond, one with a crown
 //   heart    "A + G 1971" carved in an oak in the park (Arne and Gun)
-//   goldbun  a golden Sjubybulle among the spruces on Norrholmen
-//   gnome    a garden gnome by the allotments' car park – "Tillhör Dahlgren"
+//   goldbun  a golden Sjubybulle among the spruces on Norrholmen ((v1.14) the trophy Dahlgren stole in 1985)
+//   gnome    a garden gnome by the allotments' car park – "Tillhör Dahlgren" ((v1.14) hollow: the trophy's foot)
 //   bottle   a message in a bottle on Söderholmen's south cliffs
 //   monster  Sjubyodjuret: humps in the harbour that rise now and then – sit at the end of the pier
 // The props are layout prims (secretsInto, called last in createLayout); the sea monster and the ducks
@@ -63,6 +63,14 @@ export function duckAt(i, t) {
   return { x, z, y: POND.y + Math.sin(t * 2.1 + i * 1.3) * 0.018, h: Math.atan2(-Math.sin(a), Math.cos(a)), tilt: Math.sin(t * 1.7 + i) * 0.05 };
 }
 
+// (v1.14) how far up the monster is right now: on its own clock – or, while Nova's camera is out ("Odjurets bild"),
+// wherever the job has put it (game.monsterPose; a log is not the monster)
+export function monsterUp(g) {
+  const P = g.monsterPose;
+  if (P !== undefined) return P && P.kind === 'odjur' ? P.up : 0;
+  return monsterRise(g.time);
+}
+
 export function found(g) { return Array.isArray(g.stats.secrets) ? g.stats.secrets : (g.stats.secrets = []); }
 
 export class Secrets {
@@ -101,9 +109,10 @@ export class Secrets {
     if (this.ringing && dp < P.r) { this.prompt = 'SVARA'; this.near = P; return; }
     // the sea monster: seen from the end of the pier while it is up
     const Mo = BY.monster;
-    if (!this.has('monster') && Math.hypot(p.x - Mo.x, p.z - Mo.z) < Mo.r && monsterRise(g.time) > 0.6) this.find('monster');
+    if (!this.has('monster') && Math.hypot(p.x - Mo.x, p.z - Mo.z) < Mo.r && monsterUp(g) > 0.6) this.find('monster');
     for (const s of SECRETS) {
       if (s.id === 'skate' || s.id === 'phone' || s.id === 'monster' || this.has(s.id)) continue;
+      if (s.id === 'goldbun' && m.goldbunGone) continue;   // ((v1.14) not on its stone: a magpie, or the konditori's shelf)
       if (Math.hypot(p.x - s.x, p.z - s.z) < s.r) { this.prompt = 'UNDERSÖK'; this.near = s; return; }
     }
     void m;
@@ -168,13 +177,11 @@ export function secretsInto(H) {
     colCircle(x, z, 0.62, 0.8);
   }
 
-  // the golden bun on a mossy stone among the spruces
+  // the mossy stone among the spruces. (v1.14) The golden bun on it is drawn by render.js (goldview.js): a
+  // magpie takes it in "Den gyllene bullen", and it ends up on the konditori's shelf.
   {
     const s = BY.goldbun, x = s.x, z = s.z - 0.9;
     P({ t: 'ico', x, y: CURB_H + 0.12, z, r: 0.6, sy: 0.55, c: 0x5f7a4a });
-    P({ t: 'ico', x, y: CURB_H + 0.5, z, r: 0.32, sy: 0.45, c: 0xd9a520, m: M.CHROME });
-    P({ t: 'ico', x, y: CURB_H + 0.6, z, r: 0.2, sy: 0.4, c: 0xf2c21b, m: M.CHROME });
-    for (let i = 0; i < 6; i++) { const a = i * 1.05; box(x + Math.cos(a) * 0.17 - 0.03, CURB_H + 0.62, z + Math.sin(a) * 0.17 - 0.03, x + Math.cos(a) * 0.17 + 0.03, CURB_H + 0.66, z + Math.sin(a) * 0.17 + 0.03, 0xfff4c0, M.LIGHT); }
     colCircle(x, z, 0.55, 0.6);
   }
 

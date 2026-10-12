@@ -27,7 +27,7 @@ function hexa(B, b, t, spec) {
 }
 
 // flat quad on a plane facing `n` (axis aligned), centered c, size (w along u, h along v)
-function decal(B, c, n, w, h, hex, mat, uvs) {
+export function decal(B, c, n, w, h, hex, mat, uvs) {
   let u, v = [0, 1, 0];
   if (Math.abs(n[0]) > 0.5) u = [0, 0, -n[0]];          // facing ±x: u runs along ∓z
   else if (Math.abs(n[2]) > 0.5) u = [n[2], 0, 0];      // facing ±z: u runs along ±x
@@ -885,7 +885,7 @@ export function buildKeys() {
 
 // ------------------------------------------------------------------ the bun party (v1.0)
 // A Sjubybulle: a round knot of dough, a darker swirl on top and a few grains of pearl sugar
-function bunInto(B, x, y, z, s = 1, k = 0) {
+export function bunInto(B, x, y, z, s = 1, k = 0) {
   const tone = [0xb5722e, 0xa9692a, 0xbd7b34][k % 3];
   B.cyl(x, z, y, y + 0.035 * s, 0.062 * s, 0.056 * s, 8, tone, M.PLAIN);
   B.cyl(x, z, y + 0.035 * s, y + 0.058 * s, 0.056 * s, 0.026 * s, 8, 0x9a5a22, M.PLAIN, true);

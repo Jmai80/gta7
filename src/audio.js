@@ -524,6 +524,38 @@ export class AudioFX {
     else if (kind === 'release') { this.burst(0.1, 900, 0.15, 'bandpass'); for (let i = 0; i < 6; i++) this.tone(3400 + Math.random() * 900, 0.05, 'sine', 0.025, 0.1 + i * 0.07, 4200); }
   }
 
+  // ---- (v1.14) Den gyllene bullen: a jar off the counter, handed over, the wrong thing, kneading, a taste, the
+  // magpie's chatter, the brass bun thudding into the moss, a vote, a little fanfare
+  bun(kind) {
+    if (!this.ctx) return;
+    if (kind === 'jar') { this.burst(0.07, 2600, 0.05, 'bandpass'); this.tone(880, 0.06, 'triangle', 0.03); }
+    else if (kind === 'give') { this.tone(660, 0.08, 'triangle', 0.045); this.tone(990, 0.12, 'triangle', 0.04, 0.07); }
+    else if (kind === 'wrong') { this.tone(300, 0.14, 'square', 0.025); this.tone(240, 0.18, 'square', 0.022, 0.12); }
+    else if (kind === 'knead') for (let i = 0; i < 4; i++) { this.burst(0.12, 420, 0.07, 'lowpass', i * 0.2); this.tone(120, 0.06, 'sine', 0.05, i * 0.2, 80); }
+    else if (kind === 'taste') { this.tone(196, 0.25, 'sine', 0.06, 0, 220); this.tone(247, 0.3, 'sine', 0.05, 0.22, 262); }
+    else if (kind === 'magpie') for (let i = 0; i < 5; i++) { const f = 1500 + Math.random() * 500; this.tone(f, 0.05, 'sawtooth', 0.018, i * 0.075, f * 0.8); this.burst(0.05, 3200, 0.04, 'bandpass', i * 0.075); }
+    else if (kind === 'drop') { this.tone(90, 0.18, 'sine', 0.16, 0, 55); this.burst(0.12, 600, 0.12, 'lowpass'); this.tone(1800, 0.3, 'sine', 0.02, 0.02, 1700); }
+    else if (kind === 'vote') { this.tone(1046, 0.1, 'triangle', 0.05); this.tone(1568, 0.25, 'triangle', 0.05, 0.1); }
+    else if (kind === 'fanfare') { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, i === 3 ? 0.5 : 0.14, 'square', 0.03, i * 0.13)); }
+  }
+
+  // ---- (v1.14) Ankorna i dammen: a squeak, a splash with the net, the ducks let go in the pond
+  ducks(kind) {
+    if (!this.ctx) return;
+    const quack = (at, f = 620) => { this.tone(f, 0.13, 'sawtooth', 0.03, at, f * 0.7); this.tone(f * 1.5, 0.1, 'square', 0.012, at, f); };
+    if (kind === 'take' || kind === 'quack') { quack(0); quack(0.16, 700); }
+    else if (kind === 'splash') { this.burst(0.25, 1400, 0.3, 'bandpass'); this.burst(0.12, 500, 0.4, 'lowpass', 0.05); }
+    else if (kind === 'release') { this.burst(0.12, 1200, 0.25, 'bandpass'); quack(0.25); quack(0.45, 560); quack(0.62, 720); }
+  }
+
+  // ---- (v1.14) Odjurets bild: raising the old camera, the shutter and the film wind, showing Nova
+  photo(kind) {
+    if (!this.ctx) return;
+    if (kind === 'aim') { this.burst(0.06, 2000, 0.05, 'bandpass'); this.tone(1200, 0.04, 'square', 0.015, 0.05); }
+    else if (kind === 'snap') { this.burst(0.3, 4200, 0.04, 'highpass'); this.burst(0.18, 1600, 0.05, 'bandpass', 0.05); for (let i = 0; i < 5; i++) this.burst(0.05, 2400, 0.03, 'bandpass', 0.16 + i * 0.045); }
+    else if (kind === 'show') { this.tone(1318, 0.08, 'sine', 0.04); this.tone(1760, 0.12, 'sine', 0.04, 0.08); }
+  }
+
   knock() {
     if (!this.ctx) return;
     for (let i = 0; i < 3; i++) { this.tone(120, 0.07, 'sine', 0.18, i * 0.22, 80); this.burst(0.14, 700, 0.05, 'bandpass', i * 0.22); }

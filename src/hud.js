@@ -13,6 +13,7 @@ import { CHAPEL, CHAPEL_WALLS, CHAPEL_FURN } from './chapel.js';
 import { ELSA_HOUSE, ELSA_WALLS, ELSA_FURN } from './elsa.js';
 import { PIZZA_ROOM, PIZZA_WALLS, PIZZA_FURN } from './pizzeria.js';
 import { MILL_ROOM, MILL_WALLS, MILL_FURN } from './millroom.js';
+import { KOND, KOND_WALLS, KOND_FURN } from './konditori.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
@@ -20,7 +21,7 @@ import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -271,6 +272,15 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of [...MILL_WALLS, ...MILL_FURN.slice(0, 8)]) g.fillRect(X(Mi.x0 + x0), Zs(Mi.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#3b3027'; g.fillRect(X(Mi.x0 + 4.0), Zs(Mi.z0 + 9), 1.0 * IN_PX, 0.2 * IN_PX);
+    // Sjuby Konditori (v1.14): the chequered café, the red-tiled bakery, the door in the north wall
+    const Ko = KOND.room;
+    rect(Ko.x0, Ko.z0, Ko.x1, Ko.z0 + 4.1, '#77736c');
+    rect(Ko.x0, Ko.z0 + 4.1, Ko.x1, Ko.z1, '#7a4a3a');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of KOND_FURN.slice(0, -1)) g.fillRect(X(Ko.x0 + x0), Zs(Ko.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of KOND_WALLS) g.fillRect(X(Ko.x0 + x0), Zs(Ko.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#9fb7c4'; g.fillRect(X(Ko.x0 + 5.0), Zs(Ko.z0 - 0.2), 1.0 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -643,15 +653,18 @@ export class HUD {
       this.el.bAction.classList.toggle('long', label.length > 7); // (BLONDERING, RAKHYVEL… in the hair salon)
       this.el.bAction.classList.toggle('xlong', label.length > 10); // (v1.13: CHAMPINJONER)
       this.el.keyhint.hidden = !label;
-      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', 'GÅ IN': 'Gå in i kapellet', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
+      const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', 'GÅ IN': 'Gå in', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
         'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret',
         'BÄR IN': 'Bär in bullarna i kapellet', RINGA: 'Ring i kyrkklockan', SPELA: 'Sätt dig vid orgeln', // (v1.10)
         BROMSA: 'Håll inne för att bromsa kvarnen', 'STÖT': 'Stöt kardemumman', // (v1.11)
-        TORKA: 'Torka tallriken', KNACKA: 'Knacka på dörren', GE: 'Ge Elsa glasögonen', // (v1.12)
+        TORKA: 'Torka tallriken', KNACKA: 'Knacka på dörren', GE: 'Ge', // (v1.12)
         DEG: 'Ta en pizzabotten', SKINKA: 'Lägg på skinka', CHAMPINJONER: 'Lägg på champinjoner', ANANAS: 'Lägg på ananas', 'RÄKOR': 'Lägg på räkor', KEBAB: 'Lägg på kebab',
-        'IN I UGNEN': 'Sätt in pizzan i ugnen', 'TA UT': 'Ta ut pizzan ur ugnen', SERVERA: 'Lämna pizzan i luckan', 'SLÄNG': 'Släng pizzan',
-        'TÄPP': 'Täpp till mushålet', 'FÅNGA': 'Fånga musen', 'SLÄPP': 'Släpp mössen' }; // (v1.13)
+        'IN I UGNEN': 'Sätt in i ugnen', 'TA UT': 'Ta ut ur ugnen', SERVERA: 'Lämna pizzan i luckan', 'SLÄNG': 'Släng pizzan',
+        'TÄPP': 'Täpp till mushålet', 'FÅNGA': 'Fånga musen', 'SLÄPP': 'Släpp dem', // (v1.13)
+        'MJÖLK': 'Ta mjölken', 'SMÖR': 'Ta smöret', SOCKER: 'Ta sockret', 'MJÖL': 'Ta mjölet', KARDEMUMMA: 'Ta påsen med malen kardemumma',
+        'PLÅTEN': 'Ta plåten med bullar', BJUD: 'Bjud tant Gun på bullarna', SMAKA: 'Smaka på bullen', 'RÖSTA': 'Rösta på den här bagaren', // (v1.14)
+        'HÅVA': 'Fånga ankan med håven', SIKTA: 'Sikta med kameran', FOTA: 'Ta en bild' };
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

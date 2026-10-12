@@ -234,6 +234,72 @@ const PAINTERS = {
     fitText(g, 'A + G', s * 1.1, h * 0.19); g.fillText('A + G', cx, cy - s * 0.1);
     fitText(g, '1971', s * 0.98, h * 0.17, 800); g.fillText('1971', cx, cy + s * 0.3);   // (v1.11: bigger – it is a code now)
   },
+  // (v1.14) the photo on the konditori's wall: Sjuby's bun championship, 1985. A faded print in a white
+  // border – the banner, the judges' table, Arne in the middle holding the golden bun up high, Gun beside
+  // him, young Bengt clapping, and Dahlgren at the far right edge with his arms crossed. A caption in ink.
+  photo1985(g, d, x, y, w, h) {
+    g.fillStyle = '#f4efe2'; g.fillRect(x, y, w, h);
+    const px = x + w * 0.05, py = y + h * 0.06, pw = w * 0.9, ph = h * 0.74;
+    const grd = g.createLinearGradient(0, py, 0, py + ph);
+    grd.addColorStop(0, '#c9b48a'); grd.addColorStop(0.55, '#b39b70'); grd.addColorStop(1, '#8a7452');
+    g.fillStyle = grd; g.fillRect(px, py, pw, ph);
+    // the brick facade behind, and the banner
+    g.fillStyle = 'rgba(110,70,45,0.35)';
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 14; c++) g.fillRect(px + (c + (r % 2) * 0.5) * pw / 14, py + r * ph * 0.07, pw / 14 - 2, ph * 0.07 - 2);
+    g.fillStyle = '#efe4c8'; g.fillRect(px + pw * 0.14, py + ph * 0.05, pw * 0.72, ph * 0.13);
+    g.fillStyle = '#6b4a2e'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'SJUBYS BULLMÄSTERSKAP 1985', pw * 0.66, ph * 0.09, 800); g.fillText('SJUBYS BULLMÄSTERSKAP 1985', px + pw / 2, py + ph * 0.115);
+    // the judges' table across the bottom
+    g.fillStyle = '#e8dcc0'; g.fillRect(px, py + ph * 0.78, pw, ph * 0.22);
+    g.fillStyle = 'rgba(80,55,35,0.4)'; g.fillRect(px, py + ph * 0.78, pw, ph * 0.025);
+    // people: [x along the photo, height, body colour, head colour, hair colour, what they do]
+    const person = (fx, hk, body, hair, pose) => {
+      const cx = px + pw * fx, top = py + ph * (0.78 - 0.5 * hk), bw = pw * 0.1, hr = pw * 0.036;
+      const sh = top + hr * 2.3, foot = py + ph * 0.78;
+      // arms first (behind the body when they hang), in a darker shade, with a hand at the end
+      const arm = (x1, y1) => {
+        g.strokeStyle = 'rgba(40,28,18,0.55)'; g.lineWidth = bw * 0.36; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(cx + Math.sign(x1 - cx) * bw * 0.32, sh + hr * 0.3); g.lineTo(x1, y1); g.stroke();
+        g.strokeStyle = body; g.lineWidth = bw * 0.26;
+        g.beginPath(); g.moveTo(cx + Math.sign(x1 - cx) * bw * 0.32, sh + hr * 0.3); g.lineTo(x1, y1); g.stroke();
+        g.fillStyle = '#e2c8a0'; g.beginPath(); g.arc(x1, y1, bw * 0.15, 0, 7); g.fill();
+      };
+      if (pose === 'up') { arm(cx - bw * 0.62, top - hr * 1.2); arm(cx + bw * 0.62, top - hr * 1.2); }
+      g.fillStyle = body; roundRect(g, cx - bw / 2, top + hr * 1.7, bw, foot - (top + hr * 1.7), bw * 0.35); g.fill();
+      g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(cx - bw / 2, top + hr * 1.7 + (foot - top) * 0.45, bw, 2);  // a belt
+      g.fillStyle = '#e2c8a0'; g.beginPath(); g.arc(cx, top + hr, hr, 0, 7); g.fill();
+      g.fillStyle = hair; g.beginPath(); g.arc(cx, top + hr * 0.8, hr * 1.04, Math.PI * 1.05, Math.PI * 1.95); g.fill();
+      g.fillStyle = '#3a2a1a'; for (const s2 of [-1, 1]) { g.beginPath(); g.arc(cx + s2 * hr * 0.38, top + hr * 1.05, hr * 0.11, 0, 7); g.fill(); }
+      if (pose === 'clap') { arm(cx - bw * 0.05, sh + hr * 1.2); arm(cx + bw * 0.05, sh + hr * 1.2); }
+      else if (pose === 'cross') { arm(cx + bw * 0.42, sh + hr * 1.5); arm(cx - bw * 0.42, sh + hr * 1.5); g.strokeStyle = 'rgba(40,28,18,0.6)'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - hr * 0.4, top + hr * 1.5); g.lineTo(cx + hr * 0.4, top + hr * 1.35); g.stroke(); } // (and a frown)
+      else if (pose === 'up') { g.strokeStyle = 'rgba(40,28,18,0.6)'; g.lineWidth = 2; g.beginPath(); g.arc(cx, top + hr * 1.3, hr * 0.35, 0.2, Math.PI - 0.2); g.stroke(); } // (a big smile)
+      return { cx, top, hr };
+    };
+    person(0.12, 0.84, '#6e6a60', '#3a2c20', 'clap');
+    person(0.27, 0.9, '#d8d2c2', '#4a3a2a', 'clap');                       // young Bengt in his baker's whites
+    const gun = person(0.43, 0.82, '#9a7fb0', '#6b4a2a', 'clap');          // Gun, in a lilac dress
+    const arne = person(0.55, 0.98, '#f2ede0', '#2a2018', 'up');           // Arne in his white jacket
+    person(0.7, 0.86, '#5a6a7a', '#8a8a8a', 'clap');
+    person(0.92, 0.95, '#3a3c41', '#5a5048', 'cross');                     // Dahlgren, sulking at the edge
+    void gun;
+    // the golden bun held up high on its wooden foot
+    const tx = arne.cx, ty = arne.top - arne.hr * 1.4;
+    g.fillStyle = '#5a3a22'; g.fillRect(tx - pw * 0.035, ty, pw * 0.07, ph * 0.05);
+    g.fillStyle = '#e8c04a'; g.beginPath(); g.ellipse(tx, ty - ph * 0.015, pw * 0.045, ph * 0.04, 0, 0, 7); g.fill();
+    g.strokeStyle = '#a07a1a'; g.lineWidth = 2; g.beginPath();
+    for (let t = 0; t < 10; t += 0.2) { const r = (t / 10) * pw * 0.035; const qx = tx + Math.cos(t) * r, qy = ty - ph * 0.015 + Math.sin(t) * r * 0.85; t ? g.lineTo(qx, qy) : g.moveTo(qx, qy); }
+    g.stroke();
+    g.fillStyle = 'rgba(255,240,170,0.55)'; for (const [a, l] of [[-1.2, 0.09], [-0.6, 0.1], [-2.0, 0.09], [-2.6, 0.08]]) { g.save(); g.translate(tx, ty - ph * 0.02); g.rotate(a); g.fillRect(pw * 0.05, -1, pw * l, 2); g.restore(); }
+    // age: a vignette and a few scratches
+    const vg = g.createRadialGradient(px + pw / 2, py + ph / 2, ph * 0.2, px + pw / 2, py + ph / 2, pw * 0.62);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(60,40,20,0.45)');
+    g.fillStyle = vg; g.fillRect(px, py, pw, ph);
+    g.strokeStyle = 'rgba(255,250,235,0.35)'; g.lineWidth = 1;
+    for (const [a, b, c2, e] of [[0.2, 0.1, 0.25, 0.6], [0.8, 0.3, 0.76, 0.9], [0.6, 0.05, 0.62, 0.3]]) { g.beginPath(); g.moveTo(px + pw * a, py + ph * b); g.lineTo(px + pw * c2, py + ph * e); g.stroke(); }
+    // the caption, in ink on the white border
+    g.fillStyle = '#2a3a6a'; g.font = `italic 600 ${h * 0.09}px Georgia, serif`;
+    g.fillText('Arne vinner! Sjuby, juni 1985', x + w / 2, y + h * 0.9);
+  },
   // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
   lyckoland(g, d, x, y, w, h) {
     g.fillStyle = '#1d2f6b'; g.fillRect(x, y, w, h);
@@ -325,6 +391,10 @@ export function makeSignAtlas(signs) {
     ...signs, bullbil: { kind: 'bullbil', w: 2.2, h: 1.0 }, pizzatak: { kind: 'pizzatak', w: 2.6, h: 0.8 },
     konditori: { lines: ['SJUBY', 'Konditori · sedan 1952'], bg: '#f1e3c4', fg: '#7a4a26', border: '#7a4a26', w: 2.2, h: 1.0 }, // Arne's bike
     festbanner: { lines: ['BULLFESTEN'], bg: '#e58fa8', fg: '#ffffff', border: '#f6ead2', font: 0.62, w: 3.9, h: 0.7 }, // the bun party (v1.0)
+    // (v1.14) the bun championship on the square: the judges' banner and the two name cards
+    bmbanner: { lines: ['BULLMÄSTERSKAPET'], bg: '#f2c21b', fg: '#7a3f17', border: '#f6ead2', font: 0.6, w: 3.9, h: 0.7 },
+    bmbengt: { lines: ['BAGAR-BENGT'], bg: '#f6ead2', fg: '#b8261f', font: 0.6, w: 0.9, h: 0.24 },
+    bmdahl: { lines: ['DIREKTÖR DAHLGREN'], bg: '#f6ead2', fg: '#2b2e35', font: 0.6, w: 0.9, h: 0.24 },
   };
   // identical signs (both faces of a flag, the two MACKEN boards…) share one slot
   const byKey = new Map();

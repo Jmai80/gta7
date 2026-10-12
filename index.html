@@ -296,6 +296,22 @@ kbd {
 #tickets .tkt:nth-child(2n) { transform: rotate(0.9deg); }
 #tickets .tkt b { display: block; font: 800 17px/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
 #tickets .tkt i { display: block; font: 600 12px/1.25 var(--ui); font-style: normal; color: #5a5048; margin-top: 3px; }
+/* (v1.14) the viewfinder of Nova's mother's camera ("Odjurets bild") */
+#viewfinder { position: absolute; inset: calc(var(--sat) + 64px) calc(var(--sar) + 18px) calc(var(--sab) + 170px) calc(var(--sal) + 18px); pointer-events: none; }
+#viewfinder .c { position: absolute; width: 34px; height: 34px; border: 0 solid rgba(255,255,255,0.9); }
+#viewfinder .tl { left: 0; top: 0; border-left-width: 3px; border-top-width: 3px; }
+#viewfinder .tr { right: 0; top: 0; border-right-width: 3px; border-top-width: 3px; }
+#viewfinder .bl { left: 0; bottom: 0; border-left-width: 3px; border-bottom-width: 3px; }
+#viewfinder .br { right: 0; bottom: 0; border-right-width: 3px; border-bottom-width: 3px; }
+#viewfinder .x { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; background: linear-gradient(#fff, #fff) center / 2px 100% no-repeat, linear-gradient(#fff, #fff) center / 100% 2px no-repeat; opacity: 0.75; }
+#viewfinder b, #viewfinder span { position: absolute; top: 10px; font: 800 15px/1 var(--display); letter-spacing: 0.08em; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+#viewfinder b { left: 46px; color: #ffcf33; }
+#viewfinder span { right: 46px; }
+#viewfinder em { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 900 30px/1 var(--display); font-style: normal; letter-spacing: 0.06em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+#viewfinder em.good { color: #ffcf33; }
+#vfFlash { position: fixed; inset: 0; background: #fff; opacity: 0; }
+#vfFlash.on { animation: vfflash 0.45s ease-out; }
+@keyframes vfflash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
 #tickets .tkt small { display: block; font: 700 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #8e2c20; margin-top: 4px; }
 #tickets .tkt .bar { height: 4px; border-radius: 2px; background: #e2dccb; margin-top: 5px; overflow: hidden; }
 #tickets .tkt .bar span { display: block; height: 100%; background: #46c96f; }
@@ -605,6 +621,11 @@ kbd {
 <link rel="modulepreload" href="src/millroom.js">
 <link rel="modulepreload" href="src/mice.js">
 <link rel="modulepreload" href="src/insideview.js">
+<link rel="modulepreload" href="src/konditori.js">
+<link rel="modulepreload" href="src/guldbullen.js">
+<link rel="modulepreload" href="src/ankor.js">
+<link rel="modulepreload" href="src/odjuret.js">
+<link rel="modulepreload" href="src/propsview.js">
 <script type="module" src="src/main.js"></script>
 </head>
 <body>
@@ -614,7 +635,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 1.13 · Sjuby, Norrholmen och Söderholmen</div>
+    <div class="ver">Version 1.14 · Sjuby, Norrholmen och Söderholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -649,6 +670,7 @@ kbd {
     <div id="street" hidden></div>
     <div id="objective" class="tap" hidden role="button" aria-label="Uppdrag"><div class="ob"><span id="objText"></span><span id="objSub" hidden></span></div><span class="chev">›</span></div>
     <div id="tickets" hidden aria-label="Beställningar"></div>
+    <div id="viewfinder" hidden aria-label="Kamerans sökare"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="x"></i><b id="vfGood"></b><span id="vfFilm"></span><em id="vfWord"></em><div id="vfFlash"></div></div>
     <div id="phone" hidden><div class="av">L</div><div class="who"></div><div class="msg"></div><div class="act" hidden></div></div>
     <div id="banner" hidden></div>
     <div id="toast" hidden></div>
@@ -762,9 +784,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 1.13 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.14 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma med Sjuby Spider, Dahlgrens bilder av receptet är raderade, och Arnes sista skattjakt ledde hela vägen till det som aldrig stod i receptet. Nu doftar hela Sjuby kardemumma, Dahlgren diskar – och Ingvars flaskpost kom fram till Elsa, femtio år för sent. Det var version 1.13. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma med Sjuby Spider, Dahlgrens bilder av receptet är raderade, och Arnes sista skattjakt ledde hela vägen till det som aldrig stod i receptet. Nu doftar hela Sjuby kardemumma, Dahlgren diskar – Ingvars flaskpost kom fram till Elsa, femtio år för sent – och Den gyllene bullen står på sin hylla i konditoriet igen. Det var version 1.14. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

@@ -17,10 +17,14 @@ import { CHAPEL, CHAPEL_DOOR, CHAPEL_KAFFE as CK } from './chapel.js';
 import { ELSA_HOUSE, ELSA_DOOR } from './elsa.js';
 import { PIZZA_ROOM, PIZZA_DOOR } from './pizzeria.js';
 import { MILL_ROOM, MILL_DOOR } from './millroom.js';
+import { KOND, KOND_DOOR } from './konditori.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { spawnPed, removePed } from './hideout.js';
 import { seat } from './barber.js';
+import { GUN_LOOK } from './flag.js';
+import { BENGT_LOOK } from './opening.js';
+import { BAKE_LOOK } from './guldbullen.js';
 
 // the places with a door you walk through (the tower has its lift): inside, and where you come out
 export const PLACES = {
@@ -33,6 +37,7 @@ export const PLACES = {
   elsa: { inside: ELSA_HOUSE, out: { x: ELSA_DOOR.x + 0.3, z: ELSA_DOOR.z, h: Math.PI / 2 } },        // Elsa's house → her front step, facing the road (v1.12)
   pizza: { inside: PIZZA_ROOM, out: { x: PIZZA_DOOR.x - 0.3, z: PIZZA_DOOR.z, h: -Math.PI / 2 } },     // Pizzeria Sjuan → Kungsgatan, facing the street (v1.13)
   mill: { inside: MILL_ROOM, out: { x: MILL_DOOR.x, z: MILL_DOOR.z, h: MILL_DOOR.h } },                // the windmill → out on its rocks (v1.13)
+  konditori: { inside: KOND, out: { x: KOND_DOOR.x, z: KOND_DOOR.z - 0.6, h: Math.PI } },             // Sjuby Konditori → the square, facing north (v1.14)
 };
 
 // the people in the chapel: Inga in black with a white collar, and three in the pews
@@ -43,6 +48,15 @@ const PEW_LOOKS = [
   { shirt: 0x9db8cc, pants: 0x2b2e35, skin: 0xf2d0b5, hair: 0xe0e0dc, height: 0.94, bulk: 1.05, style: ST.bun | ST.glasses, accent: 0x9db8cc },
 ];
 const INGA = { who: 'Kyrkoherde Inga', letter: 'I', color: '#6b4fa0' };
+const GUN_T = { who: 'Tant Gun', letter: 'G', color: '#c58be0' };
+// (v1.14) Gun behind the counter in the konditori once the trophy is home: one thing each time you come by
+const GUN_KOND = [
+  'Pokalen står där den ska nu. Jag putsar den varje morgon – Arne hade tyckt att det var fånigt.',
+  'Dahlgren bakar på tisdagar nu. Han har bränt två satser och diskat fyra. Det går framåt.',
+  'Bengt säger att han ska vinna nästa år. Dahlgren säger samma sak. Jag säger att jag är domare.',
+  'Det sitter en skata i granarna vid fyren och skränar så fort någon går förbi. Den saknar nog sin bulle.',
+  'Kardemumman ska stötas, inte malas. Det står inte i receptet, lilla vän. Det står i hjärtat.',
+];
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 // what Inga says when you come back (one each time, in turn)
 const INGA_AGAIN = [
@@ -67,6 +81,8 @@ export class Indoors {
     this.prompt = null;
     this.door = game.layout.colliders.find((c) => c.door === 'samuel') || null; // Melker's front door
     this.chapelFolk = [];  // Inga first, then the three in the pews (only while you are in there)
+    this.kondFolk = [];    // (v1.14) Gun behind the counter and a baker at the table, after "Den gyllene bullen"
+    this.goIn = null;      // which door GÅ IN is at: 'chapel' | 'konditori'
     this.organ = new Organ(game); // (v1.10) the chapel organ: the psalm in "Kyrkkaffet", free play afterwards
     this.chapelBuns = 0;   // (v1.10) buns on the coffee table by the door (render.js draws them)
     this.ropeAt = -9;      // (v1.10) when the bell rope was last pulled (render.js swings it)
@@ -96,6 +112,7 @@ export class Indoors {
         this.place(INT.spawn.x, INT.spawn.z, INT.spawn.h);
       } else { const S = PLACES[where].inside.spawn; this.place(S.x, S.z, S.h); }
       if (where === 'chapel') this.fillChapel();
+      if (where === 'konditori' && !g.mission.active) this.fillKonditori();
       g.emit('indoor', { on: true });
       if (done) done();
     });
@@ -113,6 +130,8 @@ export class Indoors {
       if (this.samuel) { this.samuel.remove(); this.samuel = null; }
       for (const q of this.chapelFolk) removePed(g, q);
       this.chapelFolk = [];
+      for (const q of this.kondFolk) removePed(g, q);
+      this.kondFolk = [];
       if (this.organ.open) this.organ.stop();
       this.chapelBuns = 0;
       const P = PLACES[this.where];
@@ -147,7 +166,9 @@ export class Indoors {
     if (g.time - this.ropeAt < 0.75 && p.state === 'foot') p.body.pose = 1; // (v1.10) tugging at the bell rope
     if (!this.inside) {
       // (v1.9) the chapel door on Söderholmen: walk in whenever no job is running
-      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && Math.hypot(p.x - CHAPEL_DOOR.x, p.z - CHAPEL_DOOR.z) < CHAPEL_DOOR.r) this.prompt = 'GÅ IN';
+      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && Math.hypot(p.x - CHAPEL_DOOR.x, p.z - CHAPEL_DOOR.z) < CHAPEL_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'chapel'; }
+      // (v1.14) the konditori, once the trophy is back on its shelf
+      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('guldbullen') && Math.hypot(p.x - KOND_DOOR.x, p.z - KOND_DOOR.z) < KOND_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'konditori'; }
       return;
     }
     if (this.samuel) this.samuel.update(dt);
@@ -159,6 +180,7 @@ export class Indoors {
       if (this.priest && Math.hypot(p.x - CHAPEL.talk.x, p.z - CHAPEL.talk.z) < CHAPEL.talk.r) { this.prompt = 'PRATA'; return; }
       if (g.time - this.ropeAt > 1.1 && Math.hypot(p.x - CK.rope.x, p.z - CK.rope.z) < CK.rope.r) this.prompt = 'RINGA';
     }
+    if (this.where === 'konditori' && this.kondFolk[0] && Math.hypot(p.x - KOND.talk.x, p.z - KOND.talk.z) < KOND.talk.r) { this.prompt = 'PRATA'; return; }
     if (this.where === 'tower' && Math.hypot(p.x - INT.lift.x, p.z - INT.lift.z) < INT.lift.r) this.prompt = 'HISS';
     const P = PLACES[this.where];
     if (P && !this.noExit && Math.hypot(p.x - P.inside.door.x, p.z - P.inside.door.z) < P.inside.door.r) this.prompt = 'GÅ UT';
@@ -167,8 +189,9 @@ export class Indoors {
   interact() {
     if (this.prompt === 'HISS') { this.game.emit('toast', { text: 'Hissen ner…' }); this.exit(); return true; }
     if (this.prompt === 'GÅ UT') { this.exit(); return true; }
-    if (this.prompt === 'GÅ IN') { this.enter(null, 'chapel'); return true; }
+    if (this.prompt === 'GÅ IN') { this.enter(null, this.goIn || 'chapel'); return true; }
     if (this.prompt === 'PRATA' && this.where === 'chapel') { this.talkToInga(); return true; }
+    if (this.prompt === 'PRATA' && this.where === 'konditori') { this.talkToGun(); return true; }
     if (this.prompt === 'RINGA') { this.ringBell(); return true; }
     if (this.prompt === 'SPELA') { this.sitAtOrgan(); this.organ.begin('free'); return true; }
     return false;
@@ -252,8 +275,33 @@ export class Indoors {
     g.emit('talk', { id: 'inga', pages });
   }
 
+  // ---- (v1.14) the konditori after "Den gyllene bullen": Gun at the till, a baker at the table
+  fillKonditori() {
+    const g = this.game;
+    for (const q of this.kondFolk) removePed(g, q);
+    const baker = g.stats.guldVote === 'bengt' ? { ...BENGT_LOOK } : { ...BAKE_LOOK };
+    this.kondFolk = [spawnPed(g, { ...GUN_LOOK }, KOND.gun.x, KOND.gun.z, KOND.gun.h, 'gun'), spawnPed(g, baker, KOND.dahl.x, KOND.dahl.z, KOND.dahl.h, g.stats.guldVote === 'bengt' ? 'bengt' : 'flask-dahl')];
+    if (!g.stats.kondVisit) g.emit('toast', { text: 'Sjuby Konditori. Det doftar kardemumma – och på hyllan glänser något.' });
+  }
+
+  talkToGun() {
+    const g = this.game, p = g.player, q = this.kondFolk[0];
+    const n = g.stats.kondVisit = (g.stats.kondVisit || 0) + 1;
+    p.vx = p.vz = 0;
+    p.h = Math.atan2(q.x - p.x, q.z - p.z);
+    q.standH = q.h = q.body.h = Math.atan2(p.x - q.x, p.z - q.z);
+    g.camFocus = { ...KOND.camTaste, owner: 'kond-gun' };
+    g.emit('talk', { id: 'kond-gun', pages: [{ ...GUN_T, text: GUN_KOND[(n - 1) % GUN_KOND.length], last: 'TACK, GUN' }] });
+  }
+
   // the dialogue is closed: Inga turns back to the pews
   talkDone(id) {
+    if (id === 'kond-gun') {
+      const g = this.game, q = this.kondFolk[0];
+      if (q) q.standH = q.h = q.body.h = KOND.gun.h;
+      if (g.camFocus && g.camFocus.owner === 'kond-gun') g.camFocus = null;
+      return;
+    }
     if (id !== 'inga') return;
     const g = this.game, q = this.priest;
     if (q) q.standH = q.h = q.body.h = CHAPEL.priest.h;

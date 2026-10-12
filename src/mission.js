@@ -45,6 +45,10 @@
 //   S  Sanna (Pizzerian):  "Fredagsrusningen" – side quest inside Pizzeria Sjuan: bake six orders in the kitchen (v1.13)
 //   J  Mjölnar-Majken:     "Möss i kvarnen" – side quest inside the windmill: plug the holes, catch seven mice,
 //                          let the wild ones go at the old bakery and take the tame one home to Nova (v1.13)
+//   G  Tant Gun:           "Den gyllene bullen" – main quest, part 14: Dahlgren bakes inside the konditori, the photo
+//                          from 1985, the trophy he stole (the gnome, a magpie in the spruces), a championship (v1.14)
+//   H  Hanna:              "Ankorna i dammen" – side quest: four rubber ducks blown out of the park pond (v1.14)
+//   N  Nova:               "Odjurets bild" – side quest: photograph Sjubyodjuret from the end of the pier (v1.14)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -57,6 +61,9 @@ import { HuntJob, huntWorld, huntSave, HUNT_MAX } from './skattjakt.js';
 import { BottleJob, flaskWorld, flaskSave, FLASK_MAX } from './flaskpost.js';
 import { KitchenJob, RUSH, RUSH_MAX } from './kitchen.js';
 import { MiceJob, miceWorld, miceSave, MICE, MICE_MAX } from './mice.js';
+import { GoldenBunJob, guldWorld, guldSave, GULD, GULD_MAX } from './guldbullen.js';
+import { DucksJob, ankorWorld, ankorSave, ANKOR } from './ankor.js';
+import { MonsterJob, odjurWorld, ODJUR, ODJUR_MAX } from './odjuret.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -308,11 +315,32 @@ export const QUESTS = [
     text: 'Majken på kvarnen här. Det PIPER i väggarna! Möss i mjölet, och på fredag ska Bengt hämta tjugo säckar. Katten Sotis bara sover. Kan du komma ut till kvarnen på Norrholmen och hjälpa mig fånga dem? Levande, tack.',
     reward: `${fmt(MICE_MAX)} kr`, where: 'Väderkvarnen på Norrholmen',
   },
+  {
+    // main quest, part 14 (v1.14): Dahlgren bakes inside the konditori – the photo from 1985, the stolen trophy, a championship
+    id: 'guldbullen', letter: 'G', who: WHO.gun, title: 'Den gyllene bullen', color: '#c58be0', x: GULD.mark.x, z: GULD.mark.z, r: GULD.mark.r, Job: GoldenBunJob, main: true,
+    after: 'flaskpost', at: 30, needFoot: 'Kliv ur – tant Gun och Dahlgren väntar inne i konditoriet.',
+    text: 'Lilla vän! Dahlgren har diskat i tre veckor utan att klaga – nästan. I dag får han baka sin första sats, inne i konditoriet, efter Arnes recept. Han behöver någon som hjälper honom. Och som håller ett öga på honom. Kom!',
+    reward: `upp till ${fmt(GULD_MAX)} kr`, where: 'Inne i Sjuby Konditori vid torget – sedan Norrholmen',
+  },
+  {
+    // side quest (v1.14) with the secret "Gummiankorna": the storm blew four of Ebbe's ducks out of the park pond
+    id: 'ankor', letter: 'H', who: WHO.hanna, title: 'Ankorna i dammen', color: '#2fb3a8', x: ANKOR.mark.x, z: ANKOR.mark.z, r: ANKOR.mark.r, Job: DucksJob,
+    side: true, sms: true, after: 'ebbe', at: 60, needFoot: 'Kliv ur – Hanna och Ebbe står vid dammen i parken.',
+    text: 'Hanna här igen, Ebbes mamma! Stormen i natt blåste bort fyra av gummiankorna i parkdammen – Ebbe säger godnatt till dem varje kväll, och nu vägrar han gå och lägga sig. Bara Kung Kvack är kvar. Kan du hjälpa oss? Vi står vid dammen.',
+    reward: `${fmt(ANKOR.pay)} kr och en teckning`, where: 'Dammen i parken vid Storgatan',
+  },
+  {
+    // side quest (v1.14) with the secret "Sjubyodjuret": Nova needs a photo of it for school
+    id: 'odjuret', letter: 'N', who: WHO.nova, title: 'Odjurets bild', color: '#b36cff', x: ODJUR.mark.x, z: ODJUR.mark.z, r: ODJUR.mark.r, Job: MonsterJob,
+    side: true, sms: true, after: 'konsert', at: 60, needFoot: 'Kliv ur – Nova väntar på kajen vid bryggan.',
+    text: 'hej det är nova igen!! skolarbete om myter i sjuby. fröken säger att sjubyodjuret är PÅHITTAT. jag behöver en BILD. jag har mammas kamera. möt mig på kajen vid bryggan i hamnen??',
+    reward: `upp till ${fmt(ODJUR_MAX)} kr`, where: 'Kajen vid bryggan i Sjuby hamn',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost']; // all sixteen → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen']; // all seventeen → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -510,6 +538,9 @@ export class Missions {
       case 'flaskpost': { const S = flaskSave(this.game); return S && S.at > 0 ? 'Fortsätt Flaskposten där du var' : 'Möt tant Gun, Dahlgren och Ingvar vid konditoriet'; }
       case 'fredag': return 'Baka pizzor i köket på Pizzeria Sjuan, Kungsgatan';
       case 'moss': { const S = miceSave(this.game); return S && S.at === 1 ? 'Släpp mössen vid Bullbilens gamla bageri' : S && S.at === 2 ? 'Lämna Kimchi hos Nova bakom Macken' : 'Fånga mössen i kvarnen på Norrholmen'; }
+      case 'ankor': { const S = ankorSave(this.game); const n = S && S.home ? S.home.length : 0; return n ? `Hitta resten av ankorna (${n} av 4 hemma)` : 'Möt Hanna och Ebbe vid dammen i parken'; }
+      case 'odjuret': return 'Möt Nova på kajen vid bryggan i hamnen';
+      case 'guldbullen': { const S = guldSave(this.game); return S && S.at === 1 ? 'Leta i Dahlgrens tomte vid kolonilotterna' : S && S.at === 2 ? 'Hämta den gyllene bullen bland granarna nära fyren' : S && S.at === 3 ? 'Till bullmästerskapet på torget' : 'Hjälp Dahlgren att baka inne i konditoriet'; }
     }
     return '';
   }
@@ -585,6 +616,9 @@ export class Missions {
     huntWorld(this);                  // (v1.11) Gun and Bengt wait at the konditori for the treasure hunt
     flaskWorld(this);                 // (v1.12) Gun, Dahlgren at his washing-up and Ingvar, for Flaskposten
     miceWorld(this);                  // (v1.13) Möss i kvarnen goes on where you were
+    guldWorld(this);                  // (v1.14) Den gyllene bullen: where you were, the championship on the square
+    ankorWorld(this);                 // (v1.14) Hanna and Ebbe by the pond, the ducks out in the town
+    odjurWorld(this);                 // (v1.14) Nova on the quay
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
@@ -712,11 +746,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.13! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.13! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.14! Den gyllene bullen står på sin hylla igen – efter fyrtio år. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.14! Den gyllene bullen står på sin hylla igen – efter fyrtio år. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -779,6 +813,9 @@ export class Missions {
       case 'flaskpost': return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Dahlgren diskar utanför dörren' };
       case 'fredag': return { text: 'Gå till Pizzeria Sjuan (S)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Kungsgatan, under den gröna markisen' };
       case 'moss': { const S = miceSave(this.game); if (S && S.at > 0) return { text: 'Möss i kvarnen', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Gå till kvarnen (J)', sub: this.game.player.z < -229 ? (this.game.player.inCar ? 'Parkera och gå in' : 'Dörren på kvarnens södra sida') : 'Över norra bron till Norrholmen' }; }
+      case 'ankor': return { text: 'Gå till dammen (H)', sub: this.game.player.inCar ? 'Parkera vid parken' : 'Hanna och Ebbe står vid dammen i parken' };
+      case 'odjuret': return { text: 'Möt Nova (N)', sub: this.game.player.inCar ? 'Parkera vid hamnen' : 'Kajen vid bryggan i hamnen' };
+      case 'guldbullen': { const S = guldSave(this.game); if (S && S.at > 0) return { text: 'Den gyllene bullen', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Gå in genom dörren mot torget' }; }
     }
     return null;
   }

@@ -23,6 +23,8 @@ import { makeBody } from './peds.js';
 import { buildTivoli } from './tivoli.js';
 import { MONSTER, monsterRise, DUCKS, duckAt, POND } from './secrets.js';
 import { InsideProps } from './insideview.js';
+import { PropsView } from './propsview.js';
+import { duckPlace } from './ankor.js';
 
 const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
@@ -138,6 +140,7 @@ export class View {
     this.makeHunt();
     this.makeFlask();
     this.inside = new InsideProps(this.scene, this.matStatic); // (v1.13) the pizzas in Pizzeria Sjuan, the mice in the mill
+    this.props = new PropsView(this.scene, this.matStatic, this.atlas); // (v1.14) the golden bun, the magpie, the trays, the championship, the log
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -233,17 +236,25 @@ export class View {
       this.skateMesh.rotation.set(sk.air ? -0.12 : 0, sk.h, (sk.lean || 0) * 0.5);
     }
     // (v1.8.1) the rubber ducks paddle round the park pond
+    // ((v1.14) "Ankorna i dammen": four of them out in the town – in the fountain, the car wash, the harbour, Yasmin's hands)
     const cp = this.camera.position, nearPond = !this.indoor && Math.hypot(cp.x - POND.x, cp.z - POND.z) < 160;
     this.ducks.forEach((m, i) => {
-      m.visible = nearPond;
-      if (!nearPond) return;
-      const d = duckAt(i, game.time);
+      const at = this.indoor ? 'hidden' : duckPlace(game.mission, i, game.time);
+      if (at === 'hidden' || (!at && !nearPond)) { m.visible = false; return; }
+      const d = at || duckAt(i, game.time);
+      if (at && Math.hypot(cp.x - d.x, cp.z - d.z) > 160) { m.visible = false; return; }
+      m.visible = true;
       m.position.set(d.x, d.y, d.z); m.rotation.set(d.tilt * 0.5, d.h, d.tilt);
     });
     // (v1.8) the sea monster rises out of the harbour now and then
-    const up = monsterRise(game.time);
+    // ((v1.14) while Nova's camera is out, "Odjurets bild" says where it comes up – and sometimes it is just a log)
+    const MP = game.monsterPose, up = MP !== undefined ? (MP && MP.kind === 'odjur' ? MP.up : 0) : monsterRise(game.time);
     this.monster.visible = up > 0.01 && !this.indoor;
-    if (this.monster.visible) { this.monster.position.y = -4.0 + up * 3.6 + Math.sin(game.time * 1.3) * 0.08; this.monster.rotation.y = 0.7 + Math.sin(game.time * 0.2) * 0.1; }
+    if (this.monster.visible) {
+      this.monster.position.set(MP ? MP.x : MONSTER.x, -4.0 + up * 3.6 + Math.sin(game.time * 1.3) * 0.08, MP ? MP.z : MONSTER.z);
+      this.monster.rotation.y = MP ? MP.h : 0.7 + Math.sin(game.time * 0.2) * 0.1;
+      this.monster.scale.setScalar(MP ? 1.05 : 1.5);   // (closer to the camera than it ever comes on its own)
+    }
     for (const B of Object.values(this.bikes || {})) {
       const v = game.vehicles.find((q) => q.type === B.type && !q.removed && (!B.paint || q.paint === B.paint));
       B.g.visible = !!v && !this.indoor;
@@ -741,6 +752,7 @@ export class View {
     this.syncHunt(game);
     this.syncFlask(game);
     this.inside.sync(game, this.indoor);
+    this.props.sync(game, this.indoor);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)

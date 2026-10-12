@@ -32,6 +32,12 @@ import { RUSH, RUSH_MAX, MENU } from '../src/kitchen.js';
 import { PIZZA_ROOM, TOPPINGS, PIZZA_DOOR } from '../src/pizzeria.js';
 import { MICE, MICE_MAX } from '../src/mice.js';
 import { MILL_ROOM, HOLES, MILL_DOOR } from '../src/millroom.js';
+import { KOND, JARS, KOND_DOOR } from '../src/konditori.js';
+import { GULD, GULD_MAX, ORDER } from '../src/guldbullen.js';
+import { ANKOR, kvackeAt, duckPlace } from '../src/ankor.js';
+import { ODJUR, ODJUR_MAX, surfacing, upAt } from '../src/odjuret.js';
+import { POND } from '../src/secrets.js';
+import { CARWASH } from '../src/config.js';
 
 const DT = 1 / 60;
 const WHO_PIA = 'Polis-Pia';
@@ -353,8 +359,12 @@ function startRace(g) {
   g2.mission.done.add('flaskpost');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all sixteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.13/.test(d.text) && /Flaskposten kom fram/.test(d.text)), 'the last text: version 1.12, the message in the bottle got there');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the golden bun is still lost');
+  g2.mission.done.add('guldbullen');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all seventeen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.14/.test(d.text) && /gyllene bullen står på sin hylla/.test(d.text)), 'the last text: version 1.14, the golden bun is back on its shelf');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -3528,7 +3538,7 @@ function dryDishes(g, job, drop = [], wait = 0.3) {
   check(m.done.has('flaskpost') && g.money - money0 === pay && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Flaskposten'), `main quest part 13 done: ${fmt(pay)} kr (5 000 + 10 plates; the glasses after Elsa's hint)`);
   check(g.stats.flaskDried === 10 && g.stats.flaskBroken === 2 && g.stats.flask.at === 6, '  stats for the end card');
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.13/.test(d.text)), 'all sixteen parts: the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'sixteen of seventeen parts: no end card yet (the golden bun is next)');
   run(g, 16);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === 'Elsa' && /FYRA MINUTER/.test(d.text)), '  and Elsa texts: "…FYRA MINUTER!"');
   walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1); press(g); run(g, 1.4);
@@ -3818,6 +3828,375 @@ function chaseMice(g, job, sec, slow = 0.35) {
   const money0 = g3.money;
   g3.mission.talkDone('moss'); run(g3, 0.5);
   check(j3 && g3.mission.done.has('moss') && g3.money - money0 === MICE_MAX, '  loaded with Kimchi: to Nova, and done');
+}
+
+// ---------- 43. main quest, part 14: "Den gyllene bullen" (v1.14) – the konditori inside, the trophy from 1985 ----------
+const UP_TO_FLASK = [...UP_TO_HUNT, 'flaskpost'];
+function guldGame(stats = {}, known = null, tracked = null, opts = { traffic: 0, peds: 0 }, seed = 7) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_FLASK);
+  g.mission.restore({ ...s, money: 0, stats, known: known || s.known, tracked });
+  return g;
+}
+const GULD_KNOWN = [...UP_TO_FLASK.filter((d) => d !== 'red'), 'guldbullen'];
+// fetch what Dahlgren asks for, one at a time: the jar (or the mortar for the cardamom), then over the table
+function bakeAll(g, job, { crush = true, wrong = 0 } = {}) {
+  const m = g.mission;
+  for (let i = 0; i < ORDER.length && job.stage === 'bake'; i++) {
+    const id = ORDER[i];
+    if (wrong-- > 0) { const j = JARS.find((q) => q.id !== id); walkHere(g, j.x, j.z); press(g); walkHere(g, KOND.give.x, KOND.give.z); press(g); }
+    if (id === 'kardemumma' && crush) { walkHere(g, KOND.mortar.x, KOND.mortar.z); for (let k = 0; k < GULD.pound; k++) press(g); }
+    else { const j = JARS.find((q) => q.id === id); walkHere(g, j.x, j.z); press(g); }
+    walkHere(g, KOND.give.x, KOND.give.z); press(g); run(g, 1.8);
+    void m;
+  }
+}
+// chase the magpie like a player: run at it while it sits, and after it while it flies
+function chaseMagpie(g, job, sec = 120) {
+  const p = g.player;
+  for (let i = 0; i < 60 * sec && job.stage === 'magpie'; i++) {
+    const B = job.magpie, T = B.state === 'fly' ? B.to : B;
+    const d = Math.hypot(T.x - p.x, T.z - p.z);
+    g.step(DT, { ...idle, camYaw: Math.atan2(T.x - p.x, T.z - p.z), moveY: d > 1.2 ? 1 : 0 });
+  }
+}
+{
+  console.log('Den gyllene bullen (huvuduppdrag del 14): hela vägen');
+  const g = guldGame();
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'bun', 'hint', 'endcard', 'secret', 'kitchen', 'pestle', 'keys']);
+  check(GULD_MAX === 5800 && ORDER.length === 5 && JARS.length === 5, `up to ${fmt(GULD_MAX)} kr; five things for the dough`);
+  walkHere(g, 60, -20);
+  run(g, 25);
+  check(!m.known.has('guldbullen'), 'no word yet');
+  run(g, 7);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'guldbullen') || [])[1];
+  check(sms && sms.from === GUN_FROM && /Dahlgren/.test(sms.text) && /baka/.test(sms.text), `30 s after Flaskposten: Gun texts ("${sms && sms.text.slice(0, 44)}…")`);
+  check(!reachable(g, { x: -6, z: 34 }, [KONDITORI], { x0: -30, z0: 8, x1: 20, z1: 45 }).length, '  you can walk up to the konditori door');
+  m.accept('guldbullen'); run(g, 0.3);
+  check(m.objective === 'Till konditoriet (G)' && /Gå in/.test(m.sub), `following it: "${m.objective}" · ${m.sub}`);
+  walkHere(g, KONDITORI.x, KONDITORI.z - 4); walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 2);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'guldbullen');
+  check(job && job.id === 'guldbullen' && ind.where === 'konditori' && job.stage === 'intro' && job.gun && job.dahl && t1.pages.length === 5 && t1.pages.at(-1).last === 'NU BAKAR VI', 'inside the konditori: Gun at the till, Dahlgren at the baking table');
+  const R = KOND.room, Bk = { x0: R.x0, z0: R.z0, x1: R.x1, z1: R.z1 };
+  check(!reachable(g, KOND.spawn, [KOND.give, KOND.mortar, KOND.oven, KOND.serve, KOND.photo, KOND.door, ...JARS], Bk).length, '  you can walk to every jar, the mortar, the oven, Gun, Dahlgren and the photo');
+  m.talkDone('guldbullen'); run(g, 2.2);
+  check(job.stage === 'bake' && m.objective === 'Dahlgren vill ha: mjölk' && ev.some(([n, d]) => n === 'say' && d.who === job.dahl && /Mjölk/.test(d.text)), `"${m.objective}" · ${m.sub}`);
+  // the wrong thing first: he says so, and you keep it
+  const sug = JARS.find((j) => j.id === 'socker');
+  walkHere(g, sug.x, sug.z); run(g, 0.1);
+  check(m.prompt === 'SOCKER', '  SOCKER at the sugar jar');
+  press(g); walkHere(g, KOND.give.x, KOND.give.z); run(g, 0.1);
+  check(m.prompt === 'GE', '  GE across the table'); press(g);
+  check(job.errors === 1 && job.hand === 'socker' && job.want === 0 && ev.some(([n, d]) => n === 'say' && /Jag bad om mjölken/.test(d.text)), '  sugar when he wants milk: "Det där är sockret. Jag bad om mjölken."');
+  bakeAll(g, job, { crush: true });
+  check(job.want === 5 && job.crushed && ev.filter(([n]) => n === 'pestle').length === GULD.pound, `all five – the cardamom crushed in the mortar (${GULD.pound} pounds)`);
+  run(g, GULD.knead + 0.2);
+  check(job.stage === 'tray' && job.tray && ev.some(([n, d]) => n === 'say' && /Plåten är klar/.test(d.text)), 'Dahlgren kneads and shapes: the tray is ready');
+  walkHere(g, KOND.give.x, KOND.give.z); run(g, 0.1);
+  check(m.prompt === 'PLÅTEN', '  PLÅTEN'); press(g);
+  walkHere(g, KOND.oven.x, KOND.oven.z); run(g, 0.1);
+  check(m.prompt === 'IN I UGNEN', '  IN I UGNEN at the stone oven'); press(g);
+  run(g, 3); press(g);
+  check(job.stage === 'oven' && job.trayState === 'raw' && ev.some(([n, d]) => n === 'say' && /bleka/.test(d.text)), '  out too soon: "De är bleka! In igen med dem."');
+  press(g); run(g, GULD.ready - 3 + 0.4);
+  check(job.trayState === 'golden' && m.prompt === 'TA UT' && ev.some(([n, d]) => n === 'kitchen' && d.kind === 'ready'), '  golden: TA UT');
+  press(g);
+  walkHere(g, KOND.serve.x, KOND.serve.z); run(g, 0.1);
+  check(m.prompt === 'BJUD', '  BJUD by Gun'); press(g); run(g, 1);
+  const t2 = lastTalk(ev, 'guldbullen');
+  check(job.stage === 'taste' && t2.pages.some((q) => /nästan Arnes/.test(q.text)) && t2.pages.some((q) => /fotot/.test(q.text)), 'Gun tastes: "Det här är nästan Arnes" – and Dahlgren stares at the photo');
+  m.talkDone('guldbullen'); run(g, 0.3);
+  check(job.stage === 'photo' && ind.noExit && m.objective === 'Titta på fotot', 'look at the photo (the door waits)');
+  walkHere(g, KOND.door.x, KOND.door.z); run(g, 0.1);
+  check(m.prompt !== 'GÅ UT', '  no GÅ UT before the photo');
+  walkHere(g, KOND.photo.x, KOND.photo.z); run(g, 0.1);
+  check(m.prompt === 'TITTA', '  TITTA'); press(g); run(g, 0.8);
+  const t3 = lastTalk(ev, 'guldbullen');
+  check(t3.pages.some((q) => /1985/.test(q.text)) && t3.pages.some((q) => /Jag tog den/.test(q.text)) && t3.pages.some((q) => /tomte/.test(q.text)) && g.camFocus && g.camFocus.cam, 'the photo up close: 1985 – Dahlgren confesses ("Jag tog den.") – the gnome');
+  m.talkDone('guldbullen'); run(g, 0.3);
+  check(job.stage === 'gnome' && g.stats.guld.at === 1 && !ind.noExit, 'to the gnome (saved)');
+  walkHere(g, KOND.door.x, KOND.door.z); run(g, 0.1); press(g); run(g, 1.5);
+  check(!g.indoor && !g.peds.list.includes(job.gun) && Math.hypot(p.x - KOND_DOOR.x, p.z - KOND_DOOR.z) < 1.5, 'out on the square; Gun and Dahlgren stay inside');
+  check(m.targets.some((t) => t.gps && Math.hypot(t.x - GULD.gnome.x, t.z - GULD.gnome.z) < 0.1), '  the GPS to the gnome on Norrholmen');
+  check(!reachable(g, { x: 34.6, z: -305 }, [GULD.gnome], { x0: 10, z0: -345, x1: 50, z1: -295 }).length, '  you can walk to the gnome');
+  walkHere(g, GULD.gnome.x, GULD.gnome.z); run(g, 0.1);
+  check(m.prompt === 'UNDERSÖK', 'UNDERSÖK the gnome'); press(g); run(g, 0.7);
+  const t4 = lastTalk(ev, 'guldbullen');
+  check(job.carry === 'foot' && t4.pages.some((q) => /BULLMÄSTARE 1985/.test(q.text)) && t4.pages.some((q) => q.note && /granarna/.test(q.text)), '  hollow: the oak foot with its brass plate, and his note');
+  m.talkDone('guldbullen'); run(g, 1.6);
+  check(job.stage === 'stone' && g.stats.guld.at === 2 && g.stats.secrets.includes('gnome'), '  to the spruces (saved) – the gnome counts as a secret');
+  check(!m.goldbunGone && job.magpie && job.magpie.state === 'ground', 'the golden bun is on its stone – and a magpie pecks about beside it');
+  walkHere(g, GULD.stone.x, GULD.stone.z + 30); run(g, 0.3);
+  runToward(g, () => [GULD.stone.x, GULD.stone.z], 20, () => job.stage === 'magpie');
+  check(job.stage === 'magpie' && job.magpie.bun && m.goldbunGone && ev.some(([n, d]) => n === 'toast' && /skata/.test(d.text)), 'close to the stone: the magpie snatches the bun and flies');
+  const trees = job.trees;
+  check(trees.length > 12 && !reachable(g, { x: GULD.stone.x, z: GULD.stone.z + 3 }, trees.map((t) => ({ x: t.x + 1.8, z: t.z })), { x0: 30, z0: -400, x1: 120, z1: -330 }).length, `  ${trees.length} spruces for it to sit in, and you can walk up to every one`);
+  chaseMagpie(g, job, 120);
+  check(job.stage === 'pick' && job.magpie.flights === GULD.magpie.flights && ev.some(([n, d]) => n === 'toast' && /släpper bullen/.test(d.text)), `chasing it like a player: ${GULD.magpie.flights} flights, then it drops the bun`);
+  walkHere(g, job.bunAt.x + 0.6, job.bunAt.z); run(g, 0.1);
+  check(m.prompt === 'TA', '  TA in the moss'); press(g); run(g, 0.7);
+  m.talkDone('guldbullen'); run(g, 1.6);
+  check(job.stage === 'fest' && job.carry === 'pokal' && g.stats.guld.at === 3 && g.stats.secrets.includes('goldbun') && m.guldFest, 'the trophy whole again (saved, a secret) – the championship goes up on the square');
+  run(g, 2.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === GUN_FROM && /bullmästerskap/.test(d.text)), '  Gun texts: Bengt wants a championship, now');
+  const F = m.guldFest;
+  check(F.judges.length === 3 && F.bengt && F.dahl && F.gun && g.layout.colliders.filter((c) => c.bm || c.fest).every((c) => c.h > 0), '  three judges, two bakers, Gun and the tables are up');
+  check(!reachable(g, { x: -6, z: -14 }, [GULD.fest.mark, ...GULD.fest.stands.map((S) => S.taste)], { x0: -30, z0: -20, x1: 20, z1: 18 }).length, '  you can walk up to the judges and both stands');
+  walkHere(g, GULD.fest.mark.x, GULD.fest.mark.z - 6); walkHere(g, GULD.fest.mark.x, GULD.fest.mark.z); run(g, 1.2);
+  const t5 = lastTalk(ev, 'guldbullen');
+  check(job.stage === 'festTalk' && t5.pages.some((q) => /Min röst går till Bengt/.test(q.text)) && t5.pages.some((q) => /Båda är goda/.test(q.text)), 'the judges: one for Bengt, one for Dahlgren – Ingvar: "Båda är goda."');
+  m.talkDone('guldbullen'); run(g, 0.3);
+  const [SB, SD] = GULD.fest.stands;
+  walkHere(g, SD.taste.x, SD.taste.z); run(g, 0.1);
+  check(m.prompt === 'SMAKA', '  SMAKA at Dahlgren\'s stand'); press(g);
+  check(m.prompt !== 'RÖSTA', '  no vote before you have tasted both');
+  walkHere(g, SB.taste.x, SB.taste.z); press(g); run(g, 0.2);
+  check(job.tasted.size === 2 && m.prompt === 'RÖSTA', 'both tasted: RÖSTA');
+  walkHere(g, SD.taste.x, SD.taste.z); run(g, 0.1); press(g); run(g, 1.2);
+  const t6 = lastTalk(ev, 'guldbullen');
+  check(job.vote === 'dahl' && /DIREKTÖR DAHLGREN/.test(t6.pages[0].text) && t6.pages.some((q) => q.fx === 'give' && /lånat den/.test(q.text)), 'a vote for Dahlgren: he wins – and gives the trophy to Gun');
+  const money0 = g.money;
+  m.talkDone('guldbullen'); run(g, 0.5);
+  check(m.done.has('guldbullen') && g.money - money0 === 5800 - GULD.pay.perError, `done: ${fmt(g.money - money0)} kr (crushed and golden, one mistake)`);
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.14/.test(d.text)), 'all seventeen parts: the end card');
+  run(g, 16);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === GUN_FROM && /tisdag/.test(d.text)), '  and Gun texts: Dahlgren bakes on Tuesdays now');
+  walkHere(g, 60, -20); run(g, 2);
+  check(!m.guldFest && g.layout.colliders.filter((c) => c.bm || c.fest).every((c) => c.h === 0), 'out of sight: the championship is taken down');
+  // the konditori is open now: Gun at the till, the trophy on its shelf
+  walkHere(g, KOND_DOOR.x, KOND_DOOR.z - 2); walkHere(g, KOND_DOOR.x, KOND_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'GÅ IN', 'GÅ IN at the konditori door, any time now'); press(g); run(g, 1.4);
+  check(ind.where === 'konditori' && ind.kondFolk.length === 2, '  Gun behind the counter, Dahlgren at the baking table');
+  walkHere(g, KOND.talk.x, KOND.talk.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA with Gun'); press(g); run(g, 0.3);
+  check(lastTalk(ev, 'kond-gun') && /Pokalen står där den ska/.test(lastTalk(ev, 'kond-gun').pages[0].text), '  "Pokalen står där den ska nu."');
+  m.talkDone('kond-gun'); walkHere(g, KOND.door.x, KOND.door.z); press(g); run(g, 1.4);
+  check(!g.indoor && !ind.kondFolk.length, '  out again: they stay behind');
+}
+{
+  console.log('Den gyllene bullen: bränt, påse, ut mitt i och omladdning');
+  const g = guldGame();
+  const m = g.mission, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast']);
+  walkHere(g, 60, -20); run(g, 32); m.accept('guldbullen');
+  walkHere(g, KONDITORI.x, KONDITORI.z - 4); walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 2);
+  let job = m.active;
+  m.talkDone('guldbullen'); run(g, 2.2);
+  walkHere(g, KOND.door.x, KOND.door.z); run(g, 0.1); press(g); run(g, 1.5);
+  check(!m.active && m.isOpen('guldbullen') && !g.indoor && ev.some(([n, d]) => n === 'sms' && d.from === GUN_FROM && /väntar med degen/.test(d.text)), 'walking out in the middle of the baking: Gun texts, the quest waits');
+  run(g, 4);
+  walkHere(g, KONDITORI.x, KONDITORI.z - 4); walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 2);
+  job = m.active;
+  check(job && ind.where === 'konditori' && job.stage === 'intro', '  back in through the door: from the start');
+  m.talkDone('guldbullen'); run(g, 2.2);
+  bakeAll(g, job, { crush: false });
+  run(g, GULD.knead + 0.2);
+  walkHere(g, KOND.give.x, KOND.give.z); press(g); walkHere(g, KOND.oven.x, KOND.oven.z); press(g);
+  run(g, GULD.burnt + 0.5); press(g);
+  walkHere(g, KOND.serve.x, KOND.serve.z); press(g); run(g, 1);
+  const t = lastTalk(ev, 'guldbullen');
+  check(!job.crushed && job.bakedState === 'burnt' && t.pages.some((q) => /Svarta/.test(q.text)), 'cardamom from the bag, and left in too long: "Svarta. Helt svarta."');
+  // reloads at each checkpoint
+  for (const [at, stage, carry] of [[1, 'gnome', null], [2, 'stone', 'foot'], [3, 'fest', 'pokal']]) {
+    const g2 = guldGame({ guld: { at, errors: 0, crushed: true, state: 'golden' } }, GULD_KNOWN, 'guldbullen');
+    const ev2 = record(g2, ['toast']);
+    run(g2, 1.5);
+    const j2 = g2.mission.active;
+    check(j2 && j2.stage === stage && j2.carry === carry && ev2.some(([n, d]) => n === 'toast' && /Den gyllene bullen fortsätter/.test(d.text)), `  loaded at checkpoint ${at}: ${stage}${carry ? ` (carrying the ${carry === 'foot' ? 'foot' : 'trophy'})` : ''}`);
+    if (at === 2) check(!g2.mission.goldbunGone && j2.magpie, '    the bun is back on its stone, the magpie beside it');
+    if (at === 3) check(g2.mission.guldFest && g2.mission.goldbunGone, '    the championship is up straight away (you are near the square)');
+  }
+  // the last checkpoint, voting for Bengt
+  const g3 = guldGame({ guld: { at: 3, errors: 2, crushed: false, state: 'golden' } }, GULD_KNOWN, 'guldbullen');
+  const ev3 = record(g3, ['talk']);
+  run(g3, 1.5);
+  const j3 = g3.mission.active;
+  walkHere(g3, GULD.fest.mark.x, GULD.fest.mark.z); run(g3, 1.2); g3.mission.talkDone('guldbullen'); run(g3, 0.3);
+  for (const S of GULD.fest.stands) { walkHere(g3, S.taste.x, S.taste.z); press(g3); }
+  press(g3); run(g3, 1.2);
+  const t3 = lastTalk(ev3, 'guldbullen');
+  const money0 = g3.money;
+  g3.mission.talkDone('guldbullen'); run(g3, 0.5);
+  check(j3.vote === 'dahl' || j3.vote === 'bengt', '  a vote is cast');
+  const g4 = guldGame({ guld: { at: 3, errors: 2, crushed: false, state: 'golden' } }, GULD_KNOWN, 'guldbullen');
+  const ev4 = record(g4, ['talk']);
+  run(g4, 1.5);
+  const j4 = g4.mission.active;
+  walkHere(g4, GULD.fest.mark.x, GULD.fest.mark.z); run(g4, 1.2); g4.mission.talkDone('guldbullen'); run(g4, 0.3);
+  const [SB, SD] = GULD.fest.stands;
+  walkHere(g4, SD.taste.x, SD.taste.z); press(g4); walkHere(g4, SB.taste.x, SB.taste.z); press(g4); press(g4); run(g4, 1.2);
+  const t4 = lastTalk(ev4, 'guldbullen');
+  const m4 = g4.money; g4.mission.talkDone('guldbullen'); run(g4, 0.5);
+  check(j4.vote === 'bengt' && /BAGAR-BENGT/.test(t4.pages[0].text) && t4.pages.some((q) => q.fx === 'give' && /Arnes recept/.test(q.text)) && g4.money - m4 === 5000 + 200 + 300 - 2 * 75 && g4.stats.guldVote === 'bengt', `  a vote for Bengt: he gives the trophy to Gun (${fmt(g4.money - m4)} kr: no crushing, two mistakes)`);
+  void t3; void money0;
+}
+{
+  console.log('Den gyllene bullen: med trafik och folk, flera frön');
+  for (const seed of [3, 11, 19]) {
+    const g = guldGame({ guld: { at: 2, errors: 0, crushed: true, state: 'golden' } }, GULD_KNOWN, 'guldbullen', {}, seed);
+    const m = g.mission;
+    run(g, 1.5);
+    const job = m.active;
+    walkHere(g, GULD.stone.x, GULD.stone.z + 30); run(g, 0.3);
+    runToward(g, () => [GULD.stone.x, GULD.stone.z], 20, () => job.stage === 'magpie');
+    chaseMagpie(g, job, 150);
+    const ok1 = job.stage === 'pick';
+    if (ok1) { walkHere(g, job.bunAt.x + 0.6, job.bunAt.z); press(g); run(g, 0.7); m.talkDone('guldbullen'); run(g, 2); }
+    walkHere(g, GULD.fest.mark.x, GULD.fest.mark.z - 8); run(g, 2); walkHere(g, GULD.fest.mark.x, GULD.fest.mark.z); run(g, 1.5);
+    const ok2 = job.stage === 'festTalk';
+    m.talkDone('guldbullen'); run(g, 0.3);
+    for (const S of GULD.fest.stands) { walkHere(g, S.taste.x, S.taste.z); press(g); }
+    press(g); run(g, 1.2); m.talkDone('guldbullen'); run(g, 0.5);
+    check(ok1 && ok2 && m.done.has('guldbullen'), `seed ${seed} with traffic: the magpie caught up with, the championship held, done`);
+  }
+}
+
+// ---------- 44. side quest: "Ankorna i dammen" (v1.14) – four rubber ducks blown out of the park pond ----------
+const UP_TO_EBBE = [...UP_TO_OPENING, 'ebbe', 'konsert'];
+function duckGame(stats = {}, known = null, tracked = null, opts = { traffic: 0, peds: 0 }, seed = 7) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_EBBE);
+  g.mission.restore({ ...s, money: 0, stats, known: known || s.known, tracked });
+  return g;
+}
+{
+  console.log('Ankorna i dammen (sidouppdrag)');
+  const g = duckGame();
+  const m = g.mission, p = g.player;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'ducks', 'hint', 'secret']);
+  walkHere(g, -20, 60);
+  run(g, 55);
+  check(!m.known.has('ankor'), 'no word yet');
+  run(g, 8);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'ankor') || [])[1];
+  check(sms && sms.from === WHO.hanna && /Kung Kvack/.test(sms.text), `60 s after Ebbe: Hanna texts ("${sms && sms.text.slice(0, 44)}…")`);
+  run(g, 1);
+  check(m.ducksOut && m.ankorHanna && m.ankorEbbe && duckPlace(m, 0, g.time) === null && [1, 2, 3, 4].every((i) => duckPlace(m, i, g.time)), 'out of sight: four ducks blow away (Kung Kvack stays), Hanna and Ebbe wait by the pond');
+  check(!reachable(g, { x: 80, z: -50 }, [ANKOR.mark, ANKOR.release], { x0: 60, z0: -115, x1: 125, z1: -45 }).length, '  you can walk round to the pond');
+  m.accept('ankor'); run(g, 0.3);
+  walkHere(g, ANKOR.mark.x, ANKOR.mark.z + 4); walkHere(g, ANKOR.mark.x, ANKOR.mark.z); run(g, 1.2);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'ankor');
+  check(job && job.id === 'ankor' && job.stage === 'intro' && t1.pages.some((q) => /Pip, Solbrillan, Kvacke och Lillan/.test(q.text)), 'Ebbe: "Pip, Solbrillan, Kvacke och Lillan. Kung Kvack är pappan."');
+  m.talkDone('ankor'); run(g, 1);
+  check(job.stage === 'find' && /Hitta ankorna: 0 av 4/.test(m.objective) && m.targets.filter((t) => t.kind === 'zone').length === 4, `"${m.objective}" · ${m.sub} – four places on the map`);
+  // Pip in the fountain
+  const F = g.layout.zones.fountain;
+  check(!reachable(g, { x: F.x, z: F.z + 9 }, [{ x: F.x + 0.6 * 5.05, z: F.z + 0.8 * 5.05 }], { x0: F.x - 12, z0: F.z - 12, x1: F.x + 12, z1: F.z + 12 }).length, '  you can walk up to the fountain\'s rim');
+  walkHere(g, F.x + 0.6 * 5.05, F.z + 0.8 * 5.05); run(g, 0.1);
+  check(m.prompt === 'TA', 'TA at the fountain'); press(g);
+  check(job.carried.includes('pip') && duckPlace(m, 1, g.time) === 'hidden', '  Pip in your pocket');
+  // Lillan from Yasmin
+  run(g, 0.5);
+  check(m.ankorYasmin, 'Yasmin waits outside Hörnlivs');
+  walkHere(g, ANKOR.yasmin.x + 1.0, ANKOR.yasmin.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA'); press(g); run(g, 0.5);
+  check(lastTalk(ev, 'ankor').pages.some((q) => /citronerna/.test(q.text)), '  "Den här låg bland citronerna i morse."');
+  m.talkDone('ankor'); run(g, 0.3);
+  check(job.carried.includes('lillan'), '  Lillan too');
+  // two back home: the save remembers them
+  walkHere(g, ANKOR.release.x, ANKOR.release.z); run(g, 0.1);
+  check(m.prompt === 'SLÄPP', 'SLÄPP at the pond'); press(g); run(g, 0.3);
+  check(g.stats.ankor.home.length === 2 && duckPlace(m, 1, g.time) === null && ev.some(([n, d]) => n === 'say' && /Två/.test(d.text)), '  two swim in line behind Kung Kvack ("Två!") – saved');
+  // Kvacke off the pier: the net only reaches when he drifts close
+  check(!reachable(g, { x: -72, z: -141 }, [ANKOR.net.end], { x0: -82, z0: -176, x1: -66, z1: -138 }).length, 'you can walk out to the end of the pier');
+  walkHere(g, ANKOR.net.end.x, -160); run(g, 0.1);
+  check(runToward(g, () => [ANKOR.net.end.x, ANKOR.net.end.z], 8, () => m.prompt === 'HÅVA'), '  HÅVA at the end of the pier, beside the bench');
+  let far = false, n = 0;
+  for (let i = 0; i < 60 * 30 && !job.carried.includes('kvacke'); i++) {
+    if (!far && m.prompt === 'HÅVA' && !job.netClose) { far = true; g.step(DT, { ...idle, action: true }); check(!job.carried.includes('kvacke') && ev.some(([nn, d]) => nn === 'toast' && /För långt bort/.test(d.text)), '  too far out: "För långt bort."'); continue; }
+    const go = far && m.prompt === 'HÅVA' && job.netClose;
+    if (go) n++;
+    g.step(DT, { ...idle, action: go });
+  }
+  check(job.carried.includes('kvacke') && n === 1, '  waiting until he drifts close: Kvacke in the net');
+  // Solbrillan: drive a car through the wash
+  check(!job.washed && duckPlace(m, 2, g.time).y > 2, 'Solbrillan up in the car wash\'s brushes');
+  const car = g.vehicles.find((v) => !v.spec.bike && v.parkedSpot);
+  enterCar(g, car); run(g, 1);
+  car.x = (CARWASH.x0 + CARWASH.x1) / 2; car.z = (CARWASH.z0 + CARWASH.z1) / 2; car.vx = car.vz = 0; car.h = Math.PI / 2; car.y = g.world.groundHeight(car.x, car.z);
+  run(g, 3.5);
+  check(job.washed && ev.some(([nn, d]) => nn === 'toast' && /solglasögon/.test(d.text)), '  a car through the wash: out she flies');
+  p.exitCar(); run(g, 1);
+  check(!reachable(g, { x: 110, z: 0 }, [ANKOR.wash.drop], { x0: 90, z0: -20, x1: 120, z1: 10 }).length, '  you can walk round to where she landed');
+  walkHere(g, ANKOR.wash.drop.x, ANKOR.wash.drop.z); run(g, 0.1); press(g);
+  walkHere(g, ANKOR.release.x, ANKOR.release.z); press(g); run(g, 2);
+  const t2 = lastTalk(ev, 'ankor');
+  check(job.stage === 'home' && t2.pages.some((q) => /ALLA ÄR HEMMA/.test(q.text)) && [1, 2, 3, 4].every((i) => duckPlace(m, i, g.time) === null), `all four home: "ALLA ÄR HEMMA!"`);
+  const money0 = g.money;
+  m.talkDone('ankor'); run(g, 1.5);
+  check(m.done.has('ankor') && g.money - money0 === ANKOR.pay && g.stats.secrets.includes('ducks'), `done: ${fmt(ANKOR.pay)} kr – and the ducks count as a secret`);
+  run(g, 30);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.hanna && /somnade/.test(d.text)), 'Hanna texts afterwards');
+  walkHere(g, -20, 60); run(g, 2);
+  check(!m.ducksOut && !g.peds.list.includes(m.ankorHanna), 'out of sight: back to normal');
+  // a reload with two home: on with the other two
+  const known = [...UP_TO_EBBE.filter((d) => d !== 'red'), 'ankor'];
+  const g2 = duckGame({ ankor: { home: ['pip', 'kvacke'] } }, known, 'ankor');
+  run(g2, 1.5);
+  const j2 = g2.mission.active;
+  check(j2 && j2.stage === 'find' && j2.left.length === 2 && duckPlace(g2.mission, 1, g2.time) === null && duckPlace(g2.mission, 2, g2.time), '  loaded with two home: on with Solbrillan and Lillan');
+}
+
+// ---------- 45. side quest: "Odjurets bild" (v1.14) – Nova's photo of Sjubyodjuret ----------
+{
+  console.log('Odjurets bild (sidouppdrag)');
+  const g = duckGame();
+  const m = g.mission, p = g.player;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'photo', 'hint', 'secret']);
+  check(ODJUR_MAX === 825 && ODJUR.film === 12 && ODJUR.need === 3, `twelve pictures, three good ones; up to ${fmt(ODJUR_MAX)} kr`);
+  const kinds = Array.from({ length: 30 }, (_, k) => surfacing(k).kind);
+  check(kinds[0] === 'odjur' && kinds.filter((k) => k === 'stock').length > 4 && kinds.filter((k) => k === 'odjur').length > 15, `the surfacings: mostly the monster, now and then a log (${kinds.filter((k) => k === 'stock').length} of 30)`);
+  check(upAt(surfacing(0), -1) === 0 && upAt(surfacing(0), ODJUR.rise + 0.3) === 1 && upAt(surfacing(0), ODJUR.rise + surfacing(0).hold + ODJUR.sink + 0.1) === 0, '  up, a while, and down again');
+  walkHere(g, -20, 60);
+  run(g, 63);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'odjuret') || [])[1];
+  check(sms && sms.from === WHO.nova && /PÅHITTAT/.test(sms.text), `Nova texts ("${sms && sms.text.slice(0, 40)}…")`);
+  m.accept('odjuret'); run(g, 0.5);
+  check(m.odjurNova && Math.hypot(m.odjurNova.x - ODJUR.nova.x, m.odjurNova.z - ODJUR.nova.z) < 0.1, 'Nova waits on the quay');
+  walkHere(g, ODJUR.mark.x, ODJUR.mark.z + 4); walkHere(g, ODJUR.mark.x, ODJUR.mark.z); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'odjuret' && lastTalk(ev, 'odjuret').pages.some((q) => /tolv bilder kvar/.test(q.text)), '"mammas gamla kamera. tolv bilder kvar."');
+  m.talkDone('odjuret'); run(g, 0.3);
+  check(job.stage === 'pier' && m.targets.some((t) => t.gps && Math.hypot(t.x - ODJUR.end.x, t.z - ODJUR.end.z) < 0.1), 'out to the end of the pier');
+  walkHere(g, ODJUR.end.x, -160); run(g, 0.1);
+  check(runToward(g, () => [ODJUR.end.x, ODJUR.end.z], 8, () => m.prompt === 'SIKTA'), '  walking straight out along the pier: SIKTA by the bench at the end');
+  walkHere(g, ODJUR.end.x, ODJUR.end.z); run(g, 0.1);
+  check(m.prompt === 'SIKTA', '  SIKTA'); press(g);
+  check(job.stage === 'shoot' && p.frozen && g.camFocus && g.camFocus.cam && job.viewfinder && job.viewfinder.film === 12 && job.film === 12, 'the viewfinder: a fixed view out over the harbour – the press that raised the camera took no picture');
+  run(g, 0.4);
+  // a picture of the water, a log, and a half-sunk monster: none count
+  let shot = { vatten: false, stock: false, suddig: false };
+  for (let i = 0; i < 60 * 60 && !(shot.vatten && shot.stock && shot.suddig); i++) {
+    const P = g.monsterPose, want = !shot.vatten && P.up === 0 ? 'vatten' : !shot.stock && P.kind === 'stock' && P.up > 0.5 ? 'stock' : !shot.suddig && P.kind === 'odjur' && P.up > 0.3 && P.up < 0.6 ? 'suddig' : null;
+    g.step(DT, { ...idle, action: !!want });
+    if (want) { check(job.last.kind === want && job.good === 0, `  FOTA: ${want === 'vatten' ? 'just water' : want === 'stock' ? 'a log' : 'half up – suddig'}`); shot[want] = true; }
+  }
+  // then like a careful player: only when the monster is all the way up
+  for (let i = 0; i < 60 * 90 && job.stage === 'shoot'; i++) { const P = g.monsterPose; g.step(DT, { ...idle, action: P && P.kind === 'odjur' && P.up >= 0.98 && !job.surf.shot }); }
+  check(job.good === 3 && g.stats.secrets.includes('monster') && ev.filter(([n, d]) => n === 'photo' && d.kind === 'snap').length === job.shots, `three sharp pictures in ${job.shots} – the monster counts as a secret`);
+  run(g, 1.6);
+  check(job.stage === 'back' && g.monsterPose === undefined && !p.frozen, 'back to Nova (the monster goes back to its own clock)');
+  walkHere(g, m.odjurNova.x + 1.2, m.odjurNova.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA'); press(g); run(g, 0.5);
+  check(lastTalk(ev, 'odjuret').pages.some((q) => /TITTAR in i kameran/.test(q.text)), '  "den TITTAR in i kameran."');
+  const money0 = g.money;
+  m.talkDone('odjuret'); run(g, 0.5);
+  check(m.done.has('odjuret') && g.money - money0 === ODJUR.pay.base + job.film * ODJUR.pay.film, `done: ${fmt(g.money - money0)} kr (${job.film} pictures left over)`);
+  run(g, 41);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.nova && /MVG/.test(d.text)), 'Nova texts: "jag fick MVG ändå"');
+  // running out of film: Nova throws another roll
+  const g2 = duckGame();
+  const m2 = g2.mission;
+  walkHere(g2, -20, 60); run(g2, 63); m2.accept('odjuret'); run(g2, 0.5);
+  walkHere(g2, ODJUR.mark.x, ODJUR.mark.z); run(g2, 1); m2.talkDone('odjuret'); run(g2, 0.3);
+  walkHere(g2, ODJUR.end.x, ODJUR.end.z); press(g2); run(g2, 0.5);
+  const j2 = m2.active;
+  for (let i = 0; i < 60 * 60 && j2.shots < 12; i++) { const P = g2.monsterPose, go = P.up === 0 && g2.time - (j2.last ? j2.last.t : -9) > 0.15; g2.step(DT, { ...idle, action: go }); }
+  check(j2.film === 12 && j2.refills === 1 && j2.good === 0, '  twelve wasted: a new roll from Nova (no failure)');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

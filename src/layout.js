@@ -712,6 +712,8 @@ export function createLayout(seed = 7) {
     }
     // the bun party's long table (v1.0): its collider is only up while the party is (render.js draws it)
     colliders.push({ t: 'box', x0: FEST.table.x0, z0: FEST.table.z0, x1: FEST.table.x1, z1: FEST.table.z1, h: 0, hUp: CURB_H + 0.8, fest: true });
+    // (v1.14) the bun championship's two bakers' stands, either side of it (up only while the championship is)
+    for (const x of [-12.6, 0.6]) colliders.push({ t: 'box', x0: x - 0.45, z0: 9.3, x1: x + 0.45, z1: 9.9, h: 0, hUp: CURB_H + 0.8, bm: true });
     // square with fountain
     const fx = b.cx - 3, fz = b.cz - 4;
     poly(ngon(fx, fz, 4.6, 16), COL.stone, M.STONE, CURB_H + 0.55);
