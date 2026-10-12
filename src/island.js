@@ -361,8 +361,16 @@ export function islandInto(H) {
     const af = (22.5 + 45 * k) * Math.PI / 180, ap = (3.3 - ((y - 0.9) / 8.9) * 1.0) * Math.cos(Math.PI / 8) + 0.04;
     P({ t: 'rbox', cx: Ml.x + Math.cos(af) * ap, cy: CURB_H + y, cz: Ml.z + Math.sin(af) * ap, sx: w, sy: h, sz: 0.08, rot: Math.PI / 2 - af, c, m });
   };
-  face(1, 2.0, 1.1, 1.9, 0x3b3027, M.BOARDS);
+  // (v1.13) the door stands on the stone base now (it hung two metres up the wall before), leaning with the wall
+  { const af = (22.5 + 45) * Math.PI / 180, ap = 3.3 * Math.cos(Math.PI / 8) + 0.05;
+    P({ t: 'rbox', cx: Ml.x + Math.cos(af) * ap, cy: CURB_H + 0.9, cz: Ml.z + Math.sin(af) * ap, sx: 1.1, sy: 1.95, sz: 0.08, rot: Math.PI / 2 - af, c: 0x3b3027, m: M.BOARDS, tiltX: -0.112 });
+    P({ t: 'rbox', cx: Ml.x + Math.cos(af) * (ap - 0.03), cy: CURB_H + 0.9, cz: Ml.z + Math.sin(af) * (ap - 0.03), sx: 1.3, sy: 2.1, sz: 0.05, rot: Math.PI / 2 - af, c: 0xeeeae0, tiltX: -0.112 }); }
   face(1, 6.6, 0.7, 0.9, 0xeeeae0); face(3, 3.4, 0.7, 0.9, 0xeeeae0); face(7, 7.2, 0.7, 0.9, 0xeeeae0); face(5, 5.2, 0.7, 0.9, 0xeeeae0);
+  // (v1.13) two stone steps up to the door ("Möss i kvarnen" – you can go in), no layout random numbers
+  {
+    const af = (22.5 + 45) * Math.PI / 180, cs = Math.cos(af), sn = Math.sin(af);
+    for (const [r, top] of [[4.3, 0.36], [3.95, 0.72]]) P({ t: 'rbox', cx: Ml.x + cs * r, cy: CURB_H, cz: Ml.z + sn * r, sx: 1.4 - (r - 3.95) * 0.6, sy: top, sz: 0.4, rot: Math.PI / 2 - af, c: 0x8f8a83, m: M.STONE });
+  }
   colCircle(Ml.x, Ml.z, 4.0, 20);
   H.casters.push({ t: 'pole', x: Ml.x, z: Ml.z, h: CURB_H + 12, w: 5.5 });
   H.footprints.push({ x0: Ml.x - 3, z0: Ml.z - 3, x1: Ml.x + 3, z1: Ml.z + 3, c: 0x8e2c20 });

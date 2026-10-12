@@ -1,7 +1,7 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
 import { Game, MILL } from '../src/game.js';
-import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY, HOMECOMING } from '../src/config.js';
+import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY, HOMECOMING, WHO } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
 import { HOUSE, SPOTS as HOUSE_SPOTS } from '../src/birger.js';
 import { ROOM as NOVA_ROOM, THINGS as NOVA_THINGS } from '../src/nova.js';
@@ -28,6 +28,10 @@ import { INT, inFlat } from '../src/interior.js';
 import { raceRoute, TOUCH_PACE } from '../src/race.js';
 import { clamp, wrapAngle, fmt } from '../src/rng.js';
 import { circleVs } from '../src/collide.js';
+import { RUSH, RUSH_MAX, MENU } from '../src/kitchen.js';
+import { PIZZA_ROOM, TOPPINGS, PIZZA_DOOR } from '../src/pizzeria.js';
+import { MICE, MICE_MAX } from '../src/mice.js';
+import { MILL_ROOM, HOLES, MILL_DOOR } from '../src/millroom.js';
 
 const DT = 1 / 60;
 const WHO_PIA = 'Polis-Pia';
@@ -350,7 +354,7 @@ function startRace(g) {
   g2.mission.checkAllDone();
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all sixteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.12/.test(d.text) && /Flaskposten kom fram/.test(d.text)), 'the last text: version 1.12, the message in the bottle got there');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.13/.test(d.text) && /Flaskposten kom fram/.test(d.text)), 'the last text: version 1.12, the message in the bottle got there');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -3524,7 +3528,7 @@ function dryDishes(g, job, drop = [], wait = 0.3) {
   check(m.done.has('flaskpost') && g.money - money0 === pay && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Flaskposten'), `main quest part 13 done: ${fmt(pay)} kr (5 000 + 10 plates; the glasses after Elsa's hint)`);
   check(g.stats.flaskDried === 10 && g.stats.flaskBroken === 2 && g.stats.flask.at === 6, '  stats for the end card');
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.12/.test(d.text)), 'all sixteen parts: the end card');
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.13/.test(d.text)), 'all sixteen parts: the end card');
   run(g, 16);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === 'Elsa' && /FYRA MINUTER/.test(d.text)), '  and Elsa texts: "…FYRA MINUTER!"');
   walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1); press(g); run(g, 1.4);
@@ -3563,6 +3567,257 @@ function dryDishes(g, job, drop = [], wait = 0.3) {
   const money0 = g3.money;
   g3.mission.talkDone('flaskpost'); run(g3, 0.5);
   check(g3.mission.done.has('flaskpost') && g3.money - money0 === FLASK_MAX, `loaded on Sunday, every plate dried and the glasses found without a hint: the full ${fmt(FLASK_MAX)} kr`);
+}
+
+// ---------- 41. side quest: "Fredagsrusningen" (v1.13) – baking in Pizzeria Sjuan's kitchen ----------
+function rushGame(seed = 7, opts = { traffic: 0, peds: 0 }) {
+  const g = new Game({ seed, ...opts });
+  g.mission.restore({ ...livsSave(['red', 'lasse', 'pizza']), money: 0 });
+  return g;
+}
+const TOP_BY = Object.fromEntries(TOPPINGS.map((t) => [t.id, t]));
+// bake the pizza for `pizza` from the dough bench to the oven; leave it in `bake` seconds, take it out
+function bakeOne(g, pizza, bake = RUSH.ready + 0.3, extra = []) {
+  const m = g.mission, R = PIZZA_ROOM;
+  walkHere(g, R.dough.x, R.dough.z); const a = m.prompt; press(g);
+  for (const t of [...MENU[pizza].top, ...extra]) { walkHere(g, TOP_BY[t].x, TOP_BY[t].z); press(g); }
+  walkHere(g, R.oven.x, R.oven.z); const b = m.prompt; press(g);
+  run(g, bake);
+  const c = m.prompt; press(g);
+  return [a, b, c];
+}
+{
+  console.log('Fredagsrusningen (sidouppdrag, Pizzeria Sjuan)');
+  const g = rushGame();
+  const m = g.mission, p = g.player, ind = g.indoors, R = PIZZA_ROOM;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'kitchen', 'hint']);
+  check(RUSH_MAX === 1280 && RUSH.orders.length === 6, `six orders, up to ${fmt(RUSH_MAX)} kr`);
+  walkHere(g, -40, -10);
+  run(g, 45);
+  check(!m.known.has('fredag'), 'no word yet');
+  run(g, 10);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'fredag') || [])[1];
+  check(sms && sms.from === WHO.sanna && /Pino har bränt handen/.test(sms.text), `50 s after Pizzabudet: Sanna texts ("${sms && sms.text.slice(0, 40)}…")`);
+  check(!reachable(g, { x: -38, z: -10 }, [PIZZA_DOOR], { x0: -45, z0: -30, x1: -30.9, z1: 0 }).length, '  you can walk up to the door from Kungsgatan');
+  m.accept('fredag'); run(g, 0.3);
+  check(m.objective === 'Gå till Pizzeria Sjuan (S)', `following it: "${m.objective}"`);
+  walkHere(g, -38, -22); walkHere(g, RUSH.mark.x, RUSH.mark.z); run(g, 2);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'fredag');
+  check(job && job.id === 'fredag' && ind.where === 'pizza' && job.stage === 'talk' && t1 && t1.pages.length === 6 && t1.pages.some((q) => q.who === 'Pino' && /utan handske/.test(q.text)), 'in through the door: Sanna, and Pino with his burnt hand');
+  check(job.sanna && job.pino && job.guests.length === 6, '  Sanna at the pass, Pino in the corner, six guests at four tables');
+  check(!reachable(g, R.spawn, [R.dough, R.oven, R.pass, R.bin, ...TOPPINGS], { x0: R.room.x0, z0: R.room.z0, x1: R.room.x1, z1: R.room.z1 }).length, '  you can walk round the counter into the kitchen and to every station');
+  m.talkDone('fredag'); run(g, 1.1);
+  check(job.stage === 'rush' && job.tickets && job.tickets.length === 1 && job.tickets[0].name === 'Vesuvio' && ev.some(([n, d]) => n === 'hint' && d.id === 'fredag'), 'the rush: the first slip, a Vesuvio');
+  check(m.objective === 'Pizzor ut: 0 av 6' && m.sub === 'Tomma händer', `"${m.objective}" · ${m.sub}`);
+  walkHere(g, R.pass.x, R.pass.z); run(g, 0.1);
+  check(!m.prompt, '  nothing to serve with empty hands');
+  // the first order, and a pizza with a topping nobody wants – served raw, then nowhere to go
+  const [a, b, c] = bakeOne(g, 'vesuvio');
+  check(a === 'DEG' && b === 'IN I UGNEN' && c === 'TA UT' && job.handState === 'baked' && ev.some(([n, d]) => n === 'kitchen' && d.kind === 'ready'), 'DEG, SKINKA, IN I UGNEN – golden after eight seconds – TA UT');
+  walkHere(g, R.pass.x, R.pass.z); run(g, 0.1);
+  check(m.prompt === 'SERVERA', '  SERVERA at the pass');
+  press(g); run(g, 0.2);
+  check(job.served === 1 && job.orders[0].tip > 0 && job.carried, '  served: Sanna takes it out, with a tip');
+  run(g, 6);
+  check(job.tablePizzas.length === 1 && job.tablePizzas[0].table === 1 && !job.carried, '  on table 1');
+  walkHere(g, R.dough.x, R.dough.z); press(g);
+  walkHere(g, TOP_BY.ananas.x, TOP_BY.ananas.z); run(g, 0.1);
+  const pr = m.prompt; press(g); run(g, 0.2);
+  check(pr === 'ANANAS' && ev.some(([n, d]) => n === 'say' && /Modigt/.test(d.text)), 'pineapple on nobody\'s slip: Pino has views');
+  walkHere(g, R.pass.x, R.pass.z); press(g); run(g, 0.2);
+  check(job.hand && ev.some(([n, d]) => n === 'say' && /rå/.test(d.text)), '  raw at the pass: "Den är ju rå!" – and you keep it');
+  walkHere(g, R.bin.x, R.bin.z); run(g, 0.1);
+  check(m.prompt === 'SLÄNG', '  SLÄNG at the bin'); press(g);
+  check(!job.hand, '  gone');
+  // burnt
+  bakeOne(g, 'capricciosa', RUSH.burnt + 0.2);
+  check(job.handState === 'burnt' && ev.some(([n, d]) => n === 'kitchen' && d.kind === 'burnt'), 'left too long: black ("Mamma mia")');
+  walkHere(g, R.pass.x, R.pass.z); press(g);
+  check(job.hand && job.served === 1, '  Sanna will not take it');
+  walkHere(g, R.bin.x, R.bin.z); press(g);
+  // the oven holds two
+  walkHere(g, R.dough.x, R.dough.z); press(g); walkHere(g, TOP_BY.skinka.x, TOP_BY.skinka.z); press(g); walkHere(g, TOP_BY.svamp.x, TOP_BY.svamp.z); press(g);
+  walkHere(g, R.oven.x, R.oven.z); press(g);
+  walkHere(g, R.dough.x, R.dough.z); press(g); walkHere(g, TOP_BY.skinka.x, TOP_BY.skinka.z); press(g); walkHere(g, TOP_BY.ananas.x, TOP_BY.ananas.z); press(g);
+  walkHere(g, R.oven.x, R.oven.z); run(g, 0.1);
+  check(job.orders.length === 3 && m.prompt === 'IN I UGNEN', 'the Hawaii slip has come in; two pizzas in the oven at once');
+  press(g);
+  walkHere(g, R.dough.x, R.dough.z); press(g); walkHere(g, R.oven.x, R.oven.z); run(g, 0.1);
+  check(m.prompt !== 'IN I UGNEN', '  but not three');
+  walkHere(g, R.bin.x, R.bin.z); press(g);
+  run(g, RUSH.ready);
+  for (let k = 0; k < 2; k++) { walkHere(g, R.oven.x, R.oven.z); press(g); walkHere(g, R.pass.x, R.pass.z); press(g); }
+  check(job.served === 3, 'both out of the oven and through the pass');
+  // the rest, as the slips come in
+  let guard = 0;
+  while (job.stage === 'rush' && guard++ < 200) {
+    const o = job.open[0];
+    if (!o) { run(g, 1); continue; }
+    bakeOne(g, o.pizza);
+    walkHere(g, R.pass.x, R.pass.z); press(g);
+  }
+  run(g, 3);
+  const t2 = lastTalk(ev, 'fredag');
+  check(job.stage === 'end' && job.served === 6 && job.pinoPizza && t2.pages.some((q) => /bättre än min/.test(q.text)), 'all six out: Pino gets up and tastes his special – "bättre än min"');
+  const amount = job.amount, money0 = g.money;
+  m.talkDone('fredag'); run(g, 0.5);
+  check(m.done.has('fredag') && g.money - money0 === amount && amount === job.earned + RUSH.pay.all && amount <= RUSH_MAX, `done: ${fmt(amount)} kr with the tips and the bonus`);
+  run(g, 41);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.sanna && /bandaget/.test(d.text)), 'Sanna texts afterwards');
+  walkHere(g, R.door.x, R.door.z); press(g); run(g, 1.5);
+  check(!g.indoor && Math.hypot(p.x - PIZZA_DOOR.x, p.z - PIZZA_DOOR.z) < 1.2 && !g.peds.list.some((q) => q.npc === 'sanna' || q.npc === 'pino' || q.npc === 'guest'), 'out on Kungsgatan; everyone inside is gone');
+}
+{
+  console.log('Fredagsrusningen: för få pizzor, och ut mitt i');
+  const g = rushGame();
+  const m = g.mission, R = PIZZA_ROOM;
+  const ev = record(g, ['sms', 'talk', 'banner', 'say', 'kitchen']);
+  walkHere(g, -40, -10); run(g, 56); m.accept('fredag');
+  walkHere(g, -38, -22); walkHere(g, RUSH.mark.x, RUSH.mark.z); run(g, 2);
+  const job = m.active;
+  m.talkDone('fredag'); run(g, 0.3);
+  bakeOne(g, 'vesuvio'); walkHere(g, R.pass.x, R.pass.z); press(g);
+  for (let i = 0; i < 60 * 220 && job.stage === 'rush'; i++) g.step(DT, idle);
+  run(g, 2.5);
+  const t = lastTalk(ev, 'fredag');
+  check(job.stage === 'end' && job.served === 1 && job.missed === 5 && ev.filter(([n, d]) => n === 'kitchen' && d.kind === 'miss').length === 5 && /halva matsalen/.test(t.pages[0].text), 'one pizza in a whole evening: the guests give up, one table after another');
+  m.talkDone('fredag'); run(g, 0.5);
+  check(!m.done.has('fredag') && m.isOpen('fredag') && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail'), '  failed – it can be done again');
+  walkHere(g, R.door.x, R.door.z); press(g); run(g, 1.5);
+  walkHere(g, -40, -22); run(g, 6); walkHere(g, RUSH.mark.x, RUSH.mark.z); run(g, 2);
+  const j2 = m.active, t3 = lastTalk(ev, 'fredag');
+  check(j2 && j2 !== job && j2.id === 'fredag' && t3.pages.length === 1, '  back in: "En ny fredagskväll" (short)');
+  m.talkDone('fredag'); run(g, 0.5);
+  walkHere(g, R.door.x, R.door.z); press(g); run(g, 1.5);
+  check(!m.active && m.isOpen('fredag') && ev.some(([n, d]) => n === 'sms' && /Pino försöker baka/.test(d.text)), 'walking out in the middle of it: Sanna texts, the quest waits');
+}
+{
+  console.log('Fredagsrusningen med trafik (fem frön)');
+  for (const seed of [1, 2, 3, 5, 8]) {
+    const g = rushGame(seed, {});
+    const m = g.mission, R = PIZZA_ROOM;
+    walkHere(g, -40, -10); run(g, 56); m.accept('fredag');
+    walkHere(g, -38, -22); walkHere(g, RUSH.mark.x, RUSH.mark.z); run(g, 2);
+    const job = m.active;
+    if (!job) { check(false, `  seed ${seed}: started`); continue; }
+    m.talkDone('fredag'); run(g, 0.3);
+    let guard = 0;
+    while (job.stage === 'rush' && guard++ < 200) { const o = job.open[0]; if (!o) { run(g, 1); continue; } bakeOne(g, o.pizza); walkHere(g, R.pass.x, R.pass.z); press(g); }
+    run(g, 3); m.talkDone('fredag'); run(g, 0.5);
+    check(m.done.has('fredag'), `  seed ${seed}: all six, done`);
+  }
+}
+
+// ---------- 42. side quest: "Möss i kvarnen" (v1.13) – inside the windmill on Norrholmen ----------
+function miceGame(stats = {}, known = null, tracked = null) {
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const s = livsSave(UP_TO_OPENING);
+  g.mission.restore({ ...s, money: 0, stats, known: known || s.known, tracked });
+  return g;
+}
+// chase the mice like a player: run at the nearest, slow down near it, press FÅNGA when you can
+function chaseMice(g, job, sec, slow = 0.35) {
+  const m = g.mission, p = g.player;
+  for (let i = 0; i < 60 * sec && job.stage === 'catch'; i++) {
+    if (m.prompt === 'FÅNGA') { g.step(DT, { ...idle, action: true }); continue; }
+    const L = job.mice.filter((q) => q.state !== 'caught' && q.state !== 'hole');
+    let best = null, bd = 1e9; for (const q of L) { const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < bd) { bd = d; best = q; } }
+    g.step(DT, best ? { ...idle, moveY: bd > 2.6 ? 1 : slow, camYaw: Math.atan2(best.x - p.x, best.z - p.z) } : idle);
+  }
+}
+{
+  console.log('Möss i kvarnen (sidouppdrag, väderkvarnen)');
+  const g = miceGame();
+  const m = g.mission, p = g.player, ind = g.indoors, R = MILL_ROOM;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'mice', 'hint']);
+  check(MICE_MAX === 850 && R.start.length === 7 && HOLES.length === 5, `seven mice, five holes, ${fmt(MICE_MAX)} kr`);
+  walkHere(g, -20, -365);
+  run(g, 75);
+  check(!m.known.has('moss'), 'no word yet');
+  run(g, 10);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'moss') || [])[1];
+  check(sms && sms.from === WHO.majken && /PIPER/.test(sms.text), `80 s after Nyöppningen: Majken texts ("${sms && sms.text.slice(0, 40)}…")`);
+  check(!reachable(g, { x: -20, z: -365 }, [MILL_DOOR], { x0: -30, z0: -380, x1: 15, z1: -340 }).length, '  you can walk round to the mill door');
+  m.accept('moss'); run(g, 0.3);
+  walkHere(g, MICE.mark.x + 3, MICE.mark.z + 3); walkHere(g, MICE.mark.x, MICE.mark.z); run(g, 2);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'moss');
+  check(job && job.id === 'moss' && ind.where === 'mill' && job.stage === 'talk' && t1.pages.length === 5 && t1.pages.some((q) => /Sotis/.test(q.text)), 'in through the door: Majken, and Sotis asleep on the sacks');
+  const B = { x0: R.room.x0, z0: R.room.z0, x1: R.room.x1, z1: R.room.z1 };
+  check(!reachable(g, R.spawn, HOLES.map((H) => ({ x: H.sx, z: H.sz })), B).length, '  you can walk to every hole');
+  m.talkDone('moss'); run(g, 1.1);
+  check(job.stage === 'catch' && m.objective === 'Täpp till hålen: 0 av 5' && ev.some(([n, d]) => n === 'hint' && d.id === 'moss'), `"${m.objective}" · ${m.sub}`);
+  // the mice stay on the floor, out of the furniture
+  run(g, 20);
+  const inside = job.mice.every((q) => q.state === 'hole' || (q.x > R.room.x0 && q.x < R.room.x1 && q.z > R.room.z0 && q.z < R.room.z1 && !g.world.query(q.x, q.z, 0.02).some((c) => c.h > R.y + 0.05 && circleVs(c, q.x, q.z, 0.02))));
+  check(inside, 'twenty seconds of mice running about: all on the floor, none in the walls or the furniture');
+  // running straight at one: it dashes off; with the holes open, into the wall
+  const q = job.mice.find((a) => !a.white && a.state !== 'hole');
+  { const cx = R.room.x0 + 4.5, cz = R.room.z0 + 7.5, d = Math.hypot(cx - q.x, cz - q.z); walkHere(g, q.x + (cx - q.x) / d * 3.6, q.z + (cz - q.z) / d * 3.6); }
+  for (let i = 0; i < 60 && q.state !== 'flee' && q.state !== 'hole'; i++) g.step(DT, { ...idle, moveY: 1, camYaw: Math.atan2(q.x - p.x, q.z - p.z) });
+  check(q.state === 'flee' || q.state === 'hole', 'run at a mouse: it dashes off (squeak)');
+  // plug them all
+  for (const H of HOLES) for (let k = 0; k < 10 && !job.holes[H.id - 1].plugged; k++) { walkHere(g, H.sx, H.sz); if (m.prompt === 'TÄPP') press(g); else press(g); run(g, 0.3); }
+  run(g, 8);
+  check(job.plugged === 5 && job.mice.every((a) => a.state !== 'hole') && m.objective.startsWith('Fånga mössen'), 'all five holes plugged: every mouse back out on the floor');
+  // sneak: a mouse that is sniffing does not notice you coming slowly
+  const w = job.mice.find((a) => !a.white && a.state !== 'caught');
+  w.state = 'freeze'; w.t = 0; w.freezeFor = 5;
+  walkHere(g, w.x + 1.1, w.z); g.player.vx = -1.2; g.step(DT, { ...idle, moveY: 0.2, camYaw: -Math.PI / 2 });
+  check(w.state === 'freeze' && m.prompt === 'FÅNGA', 'sneaking up on one that sniffs: FÅNGA');
+  const c0 = job.caught; press(g);
+  check(job.caught === c0 + 1 && w.state === 'caught' && ev.some(([n, d]) => n === 'mice' && d.kind === 'catch'), '  caught (pip!)');
+  chaseMice(g, job, 180);
+  check(job.caught === 7 && job.stage === 'caught', 'chasing the rest like a player: all seven');
+  run(g, 1.5);
+  const t2 = lastTalk(ev, 'moss');
+  check(t2.pages.some((a) => /KIMCHI – NOVA, SKOLGATAN/.test(a.text)) && t2.pages.some((a) => /Bullbilens gamla bageri/.test(a.text)), 'the white one has a collar: KIMCHI – NOVA, SKOLGATAN');
+  m.talkDone('moss'); run(g, 0.3);
+  check(job.stage === 'carry' && job.carry === 'crate' && g.stats.mice.at === 1 && m.objective === 'Bär ut lådan med mössen', 'the crate in your arms (saved)');
+  walkHere(g, R.door.x, R.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', '  GÅ UT'); press(g); run(g, 1.5);
+  check(!g.indoor && job.stage === 'release' && m.targets.some((t) => t.gps && Math.hypot(t.x - MICE.release.x, t.z - MICE.release.z) < 0.1), 'outside: the GPS to Bullbilen\'s old bakery');
+  check(!reachable(g, { x: 40, z: -296 }, [MICE.release], { x0: 30, z0: -320, x1: 110, z1: -265 }).length, '  you can walk to the loading dock');
+  walkHere(g, MICE.release.x, MICE.release.z); run(g, 0.1);
+  check(m.prompt === 'SLÄPP', '  SLÄPP'); press(g); run(g, 3);
+  check(job.stage === 'nova' && !job.carry && g.stats.mice.at === 2 && ev.some(([n, d]) => n === 'toast' && /under lastkajen/.test(d.text)), 'six grey mice under the loading dock; Kimchi stays in your pocket');
+  walkHere(g, 80, 50); run(g, 1);
+  check(job.nova && m.objective === 'Kimchi hem till Nova', 'Nova waits at her door behind Macken');
+  walkHere(g, MICE.nova.talk.x, MICE.nova.talk.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA'); press(g); run(g, 0.5);
+  const t3 = lastTalk(ev, 'moss');
+  check(t3.pages[0].text.includes('KIMCHI') && t3.pages.some((a) => /konsertbudget/.test(a.text)), '"Är det … KIMCHI?!"');
+  const money0 = g.money;
+  m.talkDone('moss'); run(g, 0.5);
+  check(m.done.has('moss') && g.money - money0 === MICE_MAX, `done: ${fmt(MICE_MAX)} kr`);
+  run(g, 31);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.nova && /kimchi/.test(d.text)), 'Nova texts afterwards');
+}
+{
+  console.log('Möss i kvarnen: ut mitt i, och omladdning');
+  const g = miceGame();
+  const m = g.mission, R = MILL_ROOM;
+  const ev = record(g, ['sms', 'talk', 'toast']);
+  walkHere(g, -20, -365); run(g, 86); m.accept('moss');
+  walkHere(g, MICE.mark.x + 3, MICE.mark.z + 3); walkHere(g, MICE.mark.x, MICE.mark.z); run(g, 2);
+  m.talkDone('moss'); run(g, 0.3);
+  walkHere(g, R.door.x, R.door.z); press(g); run(g, 1.5);
+  check(!m.active && m.isOpen('moss') && ev.some(([n, d]) => n === 'sms' && d.from === WHO.majken && /piper fortfarande/.test(d.text)), 'walking out while they run about: Majken texts, the quest waits');
+  const known = [...UP_TO_OPENING.filter((d) => d !== 'red'), 'moss'];
+  const g2 = miceGame({ mice: { at: 1 } }, known, 'moss');
+  const ev2 = record(g2, ['toast']);
+  run(g2, 1.5);
+  const j2 = g2.mission.active;
+  check(j2 && j2.stage === 'release' && j2.carry === 'crate' && ev2.some(([n, d]) => n === 'toast' && /Bullbilens gamla bageri/.test(d.text)), 'loaded with the crate: on to the old bakery');
+  const g3 = miceGame({ mice: { at: 2 } }, known, 'moss');
+  run(g3, 1.5);
+  const j3 = g3.mission.active;
+  walkHere(g3, 80, 50); run(g3, 1);
+  walkHere(g3, MICE.nova.talk.x, MICE.nova.talk.z); run(g3, 0.1); press(g3); run(g3, 0.5);
+  const money0 = g3.money;
+  g3.mission.talkDone('moss'); run(g3, 0.5);
+  check(j3 && g3.mission.done.has('moss') && g3.money - money0 === MICE_MAX, '  loaded with Kimchi: to Nova, and done');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

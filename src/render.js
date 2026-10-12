@@ -22,6 +22,7 @@ import { clamp, smooth, smoothAngle, wrapAngle } from './rng.js';
 import { makeBody } from './peds.js';
 import { buildTivoli } from './tivoli.js';
 import { MONSTER, monsterRise, DUCKS, duckAt, POND } from './secrets.js';
+import { InsideProps } from './insideview.js';
 
 const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
 const tmpM = new THREE.Matrix4(), tmpR = new THREE.Matrix4(), tmpS = new THREE.Matrix4(), tmpC = new THREE.Color();
@@ -136,6 +137,7 @@ export class View {
     this.makeIndoor();
     this.makeHunt();
     this.makeFlask();
+    this.inside = new InsideProps(this.scene, this.matStatic); // (v1.13) the pizzas in Pizzeria Sjuan, the mice in the mill
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -738,6 +740,7 @@ export class View {
     this.syncIndoor(game, dt);
     this.syncHunt(game);
     this.syncFlask(game);
+    this.inside.sync(game, this.indoor);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)

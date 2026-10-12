@@ -643,6 +643,17 @@ export function createLayout(seed = 7) {
       box(fx - 0.093, CURB_H + 1.66, dz - 0.4, fx - 0.09, CURB_H + 1.84, dz + 0.1, 0xd2342c);
       poly([[fx - 1.2, dz - 0.8], [fx, dz - 0.8], [fx, dz + 0.8], [fx - 1.2, dz + 0.8]], 0x3a3f46, M.PAVING, OVERLAY_H + 0.006);
     }
+    // Pizzeria Sjuan's door (v1.13): a glass door with a green frame under the green awning – Sanna is inside
+    {
+      const fx = b.x0 + 1, dz = -22;
+      box(fx - 0.06, CURB_H, dz - 0.75, fx, CURB_H + 2.5, dz + 0.75, 0x1f4a2e);
+      box(fx - 0.085, CURB_H, dz - 0.62, fx - 0.06, CURB_H + 2.36, dz + 0.62, 0x9fb7c4, M.GLASS);
+      box(fx - 0.13, CURB_H + 0.95, dz + 0.42, fx - 0.085, CURB_H + 1.35, dz + 0.47, 0xc9ccd0, M.CHROME);
+      box(fx - 0.09, CURB_H + 1.55, dz - 0.5, fx - 0.086, CURB_H + 1.95, dz + 0.2, 0xfff6e0);       // a menu in the glass
+      box(fx - 0.093, CURB_H + 1.85, dz - 0.46, fx - 0.09, CURB_H + 1.91, dz + 0.16, 0x2e7a46);
+      for (let k = 0; k < 4; k++) box(fx - 0.093, CURB_H + 1.62 + k * 0.055, dz - 0.4, fx - 0.09, CURB_H + 1.64 + k * 0.055, dz + 0.1, 0x8a8478);
+      poly([[fx - 1.2, dz - 0.8], [fx, dz - 0.8], [fx, dz + 0.8], [fx - 1.2, dz + 0.8]], 0x3a3f46, M.PAVING, OVERLAY_H + 0.006);
+    }
     // south building: brick with shops
     building({ x0: b.x0 + 18, z0: b.z1 - 13, x1: b.x1 - 1, z1: b.z1 - 1, h: 13.6, c: COL.brick, m: M.BRICKWIN, cell: [3.2, 3.4], mapC: 0x8a5a48 });
     sign('bibblan', { lines: ['BIBLIOTEK'], bg: '#f1ede2', fg: '#7c3c2b', font: 0.62 }, b.cx + 10, CURB_H + 3.6, b.z1 - 13.08, 5, 0.9, Math.PI);

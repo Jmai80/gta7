@@ -500,6 +500,30 @@ export class AudioFX {
     }
   }
 
+  // ---- (v1.13) Fredagsrusningen: dough slapped on the bench, toppings, the oven, the pass, a new slip
+  kitchen(kind) {
+    if (!this.ctx) return;
+    if (kind === 'dough') { this.burst(0.16, 500, 0.08, 'lowpass'); this.tone(140, 0.08, 'sine', 0.06, 0, 90); }
+    else if (kind === 'top') { for (let i = 0; i < 3; i++) this.burst(0.05, 2600 + i * 400, 0.04, 'bandpass', i * 0.05); }
+    else if (kind === 'in' || kind === 'out') { this.burst(0.12, kind === 'in' ? 900 : 1400, 0.22, 'bandpass'); this.tone(kind === 'in' ? 300 : 420, 0.12, 'triangle', 0.03, 0, kind === 'in' ? 200 : 520); }
+    else if (kind === 'ready') { this.tone(1568, 0.5, 'sine', 0.06); this.tone(2093, 0.6, 'sine', 0.04, 0.12); }
+    else if (kind === 'burnt') { this.burst(0.2, 700, 0.6, 'lowpass'); this.tone(220, 0.4, 'sawtooth', 0.025, 0, 150); }
+    else if (kind === 'serve') { this.tone(1046, 0.09, 'triangle', 0.05); this.tone(1318, 0.09, 'triangle', 0.05, 0.08); this.tone(1568, 0.16, 'triangle', 0.05, 0.16); }
+    else if (kind === 'ticket') { this.tone(2637, 0.12, 'sine', 0.05); this.tone(2637, 0.12, 'sine', 0.05, 0.16); }
+    else if (kind === 'bin') { this.burst(0.22, 400, 0.18, 'lowpass'); this.tone(180, 0.1, 'square', 0.02, 0.02); }
+    else if (kind === 'miss') { this.tone(392, 0.2, 'triangle', 0.05); this.tone(311, 0.3, 'triangle', 0.05, 0.18); }
+    else if (kind === 'nope') this.tone(240, 0.16, 'square', 0.025);
+  }
+
+  // ---- (v1.13) Möss i kvarnen: a squeak, the grab, a plug knocked in, the crate opened
+  mice(kind) {
+    if (!this.ctx) return;
+    if (kind === 'squeak' || kind === 'hole') { const f = 3200 + Math.random() * 900; this.tone(f, 0.06, 'sine', 0.035, 0, f * 1.25); this.tone(f * 1.1, 0.05, 'sine', 0.03, 0.08, f * 1.4); }
+    else if (kind === 'catch') { this.burst(0.12, 1200, 0.06, 'bandpass'); this.tone(3600, 0.09, 'sine', 0.04, 0.04, 4400); this.tone(3900, 0.07, 'sine', 0.03, 0.15, 4700); }
+    else if (kind === 'plug') for (let i = 0; i < 2; i++) { this.tone(200, 0.06, 'sine', 0.14, i * 0.14, 120); this.burst(0.12, 900, 0.04, 'bandpass', i * 0.14); }
+    else if (kind === 'release') { this.burst(0.1, 900, 0.15, 'bandpass'); for (let i = 0; i < 6; i++) this.tone(3400 + Math.random() * 900, 0.05, 'sine', 0.025, 0.1 + i * 0.07, 4200); }
+  }
+
   knock() {
     if (!this.ctx) return;
     for (let i = 0; i < 3; i++) { this.tone(120, 0.07, 'sine', 0.18, i * 0.22, 80); this.burst(0.14, 700, 0.05, 'bandpass', i * 0.22); }

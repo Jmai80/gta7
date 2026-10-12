@@ -42,6 +42,9 @@
 //                          riddles all over the map, and the secret that is not in the recipe (v1.11)
 //   G  Tant Gun:           "Flaskposten" – main quest, part 13: dry the dishes with Dahlgren, Ingvar's message in a
 //                          bottle, the lighthouse steps, Elsa's house by the chapel (inside), Sunday in the chapel (v1.12)
+//   S  Sanna (Pizzerian):  "Fredagsrusningen" – side quest inside Pizzeria Sjuan: bake six orders in the kitchen (v1.13)
+//   J  Mjölnar-Majken:     "Möss i kvarnen" – side quest inside the windmill: plug the holes, catch seven mice,
+//                          let the wild ones go at the old bakery and take the tame one home to Nova (v1.13)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -52,6 +55,8 @@ import { CO_STUCK_T } from './southisle.js';
 import { ChurchJob, churchWorld, KYRK, KYRK_MAX } from './kyrkkaffe.js';
 import { HuntJob, huntWorld, huntSave, HUNT_MAX } from './skattjakt.js';
 import { BottleJob, flaskWorld, flaskSave, FLASK_MAX } from './flaskpost.js';
+import { KitchenJob, RUSH, RUSH_MAX } from './kitchen.js';
+import { MiceJob, miceWorld, miceSave, MICE, MICE_MAX } from './mice.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -289,6 +294,20 @@ export const QUESTS = [
     text: 'Lilla vän! Dahlgren har diskat här varje morgon sedan klockan fem – du skulle se honom. Och Ingvar har börjat komma hit och köpa en bulle varje morgon. I dag frågade han efter dig. Ingvar! Som aldrig frågar efter någon. Kom till konditoriet!',
     reward: `upp till ${fmt(FLASK_MAX)} kr`, where: 'Sjuby Konditori vid torget – sedan Norrholmen och Söderholmen',
   },
+  {
+    // side quest (v1.13) inside Pizzeria Sjuan: Pino has burnt his hand on a Friday night – bake six orders
+    id: 'fredag', letter: 'S', who: WHO.sanna, title: 'Fredagsrusningen', color: '#46c96f', x: RUSH.mark.x, z: RUSH.mark.z, r: RUSH.mark.r, Job: KitchenJob,
+    side: true, sms: true, after: 'pizza', at: 50, needFoot: 'Kliv ur bilen – Sanna väntar inne på Pizzeria Sjuan.',
+    text: 'Sanna här! Katastrof: Pino har bränt handen på ugnen, och det är fredag – varenda bord är bokat. Du har kört ut mina pizzor, nu behöver jag någon som bakar dem! Kom in på Sjuan.',
+    reward: `upp till ${fmt(RUSH_MAX)} kr`, where: 'Pizzeria Sjuan på Kungsgatan',
+  },
+  {
+    // side quest (v1.13) inside the windmill on Norrholmen: mice in the flour – plug the holes, catch them alive
+    id: 'moss', letter: 'J', who: WHO.majken, title: 'Möss i kvarnen', color: '#c8a24a', x: MICE.mark.x, z: MICE.mark.z, r: MICE.mark.r, Job: MiceJob,
+    side: true, sms: true, after: 'konditori', at: 80, needFoot: 'Kliv ur bilen – Majken väntar inne i kvarnen.',
+    text: 'Majken på kvarnen här. Det PIPER i väggarna! Möss i mjölet, och på fredag ska Bengt hämta tjugo säckar. Katten Sotis bara sover. Kan du komma ut till kvarnen på Norrholmen och hjälpa mig fånga dem? Levande, tack.',
+    reward: `${fmt(MICE_MAX)} kr`, where: 'Väderkvarnen på Norrholmen',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
@@ -489,6 +508,8 @@ export class Missions {
       case 'kyrkkaffe': return 'Hämta söndagsbullarna hos tant Gun och cykla ut dem till kapellet';
       case 'skattjakt': { const S = huntSave(this.game); return S && S.at > 0 ? 'Fortsätt Arnes skattjakt där du var' : 'Möt tant Gun och Bagar-Bengt vid konditoriet'; }
       case 'flaskpost': { const S = flaskSave(this.game); return S && S.at > 0 ? 'Fortsätt Flaskposten där du var' : 'Möt tant Gun, Dahlgren och Ingvar vid konditoriet'; }
+      case 'fredag': return 'Baka pizzor i köket på Pizzeria Sjuan, Kungsgatan';
+      case 'moss': { const S = miceSave(this.game); return S && S.at === 1 ? 'Släpp mössen vid Bullbilens gamla bageri' : S && S.at === 2 ? 'Lämna Kimchi hos Nova bakom Macken' : 'Fånga mössen i kvarnen på Norrholmen'; }
     }
     return '';
   }
@@ -563,6 +584,7 @@ export class Missions {
     churchWorld(this);                // (v1.10) Arne's bike waits by Gun's gate for the church buns
     huntWorld(this);                  // (v1.11) Gun and Bengt wait at the konditori for the treasure hunt
     flaskWorld(this);                 // (v1.12) Gun, Dahlgren at his washing-up and Ingvar, for Flaskposten
+    miceWorld(this);                  // (v1.13) Möss i kvarnen goes on where you were
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
@@ -693,8 +715,8 @@ export class Missions {
     const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.12! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.12! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.13! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.13! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -755,6 +777,8 @@ export class Missions {
       case 'kyrkkaffe': return { text: 'Gå till tant Gun (I)', sub: this.game.player.inCar ? 'Parkera och gå in i hennes trädgård' : 'Trädgården på Storgatan – söndagsbullarna' };
       case 'skattjakt': return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Tant Gun och Bengt väntar vid dörren' };
       case 'flaskpost': return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Dahlgren diskar utanför dörren' };
+      case 'fredag': return { text: 'Gå till Pizzeria Sjuan (S)', sub: this.game.player.inCar ? 'Parkera och gå in' : 'Kungsgatan, under den gröna markisen' };
+      case 'moss': { const S = miceSave(this.game); if (S && S.at > 0) return { text: 'Möss i kvarnen', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Gå till kvarnen (J)', sub: this.game.player.z < -229 ? (this.game.player.inCar ? 'Parkera och gå in' : 'Dörren på kvarnens södra sida') : 'Över norra bron till Norrholmen' }; }
     }
     return null;
   }

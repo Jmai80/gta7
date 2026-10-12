@@ -221,6 +221,8 @@ function wire(g) {
   g.on('paper', () => audio.paper());
   g.on('plate', (e) => { audio.plate(e.kind); if (e.kind === 'crash') buzz([40, 30, 60]); else if (e.kind === 'dry') buzz(10); }); // (v1.12) the washing-up
   g.on('knock', () => audio.knock());
+  g.on('kitchen', (e) => { audio.kitchen(e.kind); if (e.kind === 'burnt' || e.kind === 'miss') buzz([40, 30, 40]); else if (e.kind === 'serve') buzz(15); }); // (v1.13) Fredagsrusningen
+  g.on('mice', (e) => { audio.mice(e.kind); if (e.kind === 'catch') buzz(20); }); // (v1.13) Möss i kvarnen
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -442,14 +444,14 @@ function pickQuest(q) {
 // waits meanwhile; only the camera keeps moving. The job is told when a page shows (fx) and when
 // the last one is done.
 // each speaker's voice pitch (v0.9) – everyone else gets one from their name
-const VOICES = { 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270, Birger: 125, 'Livräddar-Tove': 300, Alva: 380, Bosse: 340, Cleo: 390, Dante: 330, 'Direktör Dahlgren': 105, Köparen: 240, Hanna: 300, Ebbe: 420, 'Popcorn-Pelle': 170, 'Karusell-Kalle': 140, 'Maja vid Måsen': 330, 'Tivoli-Rut': 260, 'Kyrkoherde Inga': 235 };
+const VOICES = { Sanna: 300, Pino: 110, 'Tant Gun': 290, 'Någon på bänken': 250, Du: 205, Yasmin: 330, 'Fyrvaktaren Ingvar': 140, Melker: 185, 'Bagar-Bengt': 115, 'Lås-Leif': 155, 'Mjölnar-Majken': 270, Vera: 310, Jonte: 215, 'Polis-Pia': 250, Ronny: 135, Lasse: 150, Nova: 360, 'Novas mamma': 270, Birger: 125, 'Livräddar-Tove': 300, Alva: 380, Bosse: 340, Cleo: 390, Dante: 330, 'Direktör Dahlgren': 105, Köparen: 240, Hanna: 300, Ebbe: 420, 'Popcorn-Pelle': 170, 'Karusell-Kalle': 140, 'Maja vid Måsen': 330, 'Tivoli-Rut': 260, 'Kyrkoherde Inga': 235 };
 function voiceOf(who) {
   if (VOICES[who]) return VOICES[who];
   let h = 0; for (const ch of String(who)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { elsa: 280, 'flask-ingvar': 140, 'flask-dahl': 105, 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
+const NPC_VOICE = { sanna: 300, pino: 110, guest: 220, elsa: 280, 'flask-ingvar': 140, 'flask-dahl': 105, 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -642,6 +644,28 @@ function lockTurn(i, d) { const L = lockNow(); if (L) L.turn(i, d); }
 function lockType(n) { const L = lockNow(); if (L) L.type(n); }
 function lockTry() { const L = lockNow(); if (L) L.tryOpen(); }
 function lockStop() { const L = lockNow(); if (L) L.stop(); }
+// ---------------------------------------------------------------- the order slips (v1.13)
+// In Pizzeria Sjuan's kitchen ("Fredagsrusningen"): one paper slip per open order, with what goes on it
+// and how long the guest will wait. The job (kitchen.js) has the orders; this only draws them.
+let ticketsKey = null;
+function syncTickets() {
+  const job = state === 'play' && game && game.mission.active && game.mission.active.id === 'fredag' ? game.mission.active : null;
+  const T = job ? job.tickets : null;
+  const el = $('tickets');
+  if (!T || !T.length) { if (ticketsKey !== '') { ticketsKey = ''; el.hidden = true; el.innerHTML = ''; } return; }
+  const key = T.map((t) => t.id).join(',');
+  if (key !== ticketsKey) {
+    ticketsKey = key;
+    el.hidden = false;
+    el.innerHTML = T.map((t) => `<div class="tkt"><b>${t.name}</b><i>${t.top.length ? t.top.join(' · ') : 'bara ost och tomat'}</i><small>${t.who}</small><div class="bar"><span></span></div></div>`).join('');
+  }
+  T.forEach((t, i) => {
+    const d = el.children[i]; if (!d) return;
+    d.querySelector('.bar span').style.width = `${Math.round(t.k * 100)}%`;
+    d.classList.toggle('late', t.k < 0.5); d.classList.toggle('urgent', t.k < 0.22);
+  });
+}
+
 function syncLock() {
   const L = game && game.lock;
   const show = !!(L && L.open && state === 'play');
@@ -843,6 +867,7 @@ function frame(now) {
   }
   syncOrgan();
   syncLock();
+  syncTickets();
   view.render();
 }
 const tmpDir = new Vector3();

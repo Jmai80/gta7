@@ -289,6 +289,19 @@ kbd {
 .btn.small { width: 56px; height: 56px; font-size: 12px; }
 #bAction { background: var(--gold); color: #17130a; border-color: rgba(0,0,0,0.25); grid-column: 2; grid-row: 2; }
 #bAction.long { font-size: 13px; letter-spacing: 0.03em; line-height: 1.05; padding: 0 6px; }
+#bAction.xlong { font-size: 10.5px; letter-spacing: 0; }
+/* (v1.13) the order slips in Pizzeria Sjuan's kitchen ("Fredagsrusningen") */
+#tickets { position: absolute; top: calc(var(--sat) + 70px); right: calc(var(--sar) + 12px); display: flex; flex-direction: column; gap: 6px; width: 168px; pointer-events: none; }
+#tickets .tkt { background: #fffbe8; color: #2b2e35; border-radius: 4px 4px 10px 10px; padding: 6px 9px 7px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border-top: 4px solid #2e7a46; transform: rotate(-0.8deg); }
+#tickets .tkt:nth-child(2n) { transform: rotate(0.9deg); }
+#tickets .tkt b { display: block; font: 800 17px/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+#tickets .tkt i { display: block; font: 600 12px/1.25 var(--ui); font-style: normal; color: #5a5048; margin-top: 3px; }
+#tickets .tkt small { display: block; font: 700 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #8e2c20; margin-top: 4px; }
+#tickets .tkt .bar { height: 4px; border-radius: 2px; background: #e2dccb; margin-top: 5px; overflow: hidden; }
+#tickets .tkt .bar span { display: block; height: 100%; background: #46c96f; }
+#tickets .tkt.late .bar span { background: #e8833a; } #tickets .tkt.urgent .bar span { background: #d2342c; }
+#tickets .tkt.urgent { animation: tktpulse 0.8s ease-in-out infinite; }
+@keyframes tktpulse { 50% { box-shadow: 0 0 0 3px rgba(210,52,44,0.6), 0 4px 12px rgba(0,0,0,0.35); } }
 #bHand { grid-column: 2; grid-row: 2; }
 #bHorn { grid-column: 1; grid-row: 2; }
 #bExit { grid-column: 2; grid-row: 1; }
@@ -486,6 +499,9 @@ kbd {
 /* ---------------- portrait phones ---------------- */
 @media (orientation: portrait) {
   #objective { top: calc(var(--sat) + var(--map) + 24px); max-width: calc(100vw - 32px); left: 16px; right: 16px; width: fit-content; }
+  #tickets { top: calc(var(--sat) + var(--map) + 88px); left: 16px; right: 16px; width: auto; flex-direction: row; gap: 5px; }
+  #tickets .tkt { flex: 1 1 0; min-width: 0; padding: 5px 7px 6px; }
+  #tickets .tkt b { font-size: 14px; } #tickets .tkt i { font-size: 11px; }
   #phone { top: calc(var(--sat) + var(--map) + 76px); }
   #street { top: calc(var(--sat) + 104px); }
   #hint { bottom: calc(var(--sab) + 150px); max-width: calc(100vw - 32px); }
@@ -584,6 +600,11 @@ kbd {
 <link rel="modulepreload" href="src/rides.js">
 <link rel="modulepreload" href="src/tivolijobs.js">
 <link rel="modulepreload" href="src/secrets.js">
+<link rel="modulepreload" href="src/pizzeria.js">
+<link rel="modulepreload" href="src/kitchen.js">
+<link rel="modulepreload" href="src/millroom.js">
+<link rel="modulepreload" href="src/mice.js">
+<link rel="modulepreload" href="src/insideview.js">
 <script type="module" src="src/main.js"></script>
 </head>
 <body>
@@ -593,7 +614,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 1.12 · Sjuby, Norrholmen och Söderholmen</div>
+    <div class="ver">Version 1.13 · Sjuby, Norrholmen och Söderholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -627,6 +648,7 @@ kbd {
     </div>
     <div id="street" hidden></div>
     <div id="objective" class="tap" hidden role="button" aria-label="Uppdrag"><div class="ob"><span id="objText"></span><span id="objSub" hidden></span></div><span class="chev">›</span></div>
+    <div id="tickets" hidden aria-label="Beställningar"></div>
     <div id="phone" hidden><div class="av">L</div><div class="who"></div><div class="msg"></div><div class="act" hidden></div></div>
     <div id="banner" hidden></div>
     <div id="toast" hidden></div>
@@ -740,9 +762,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 1.12 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.13 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma med Sjuby Spider, Dahlgrens bilder av receptet är raderade, och Arnes sista skattjakt ledde hela vägen till det som aldrig stod i receptet. Nu doftar hela Sjuby kardemumma, Dahlgren diskar – och Ingvars flaskpost kom fram till Elsa, femtio år för sent. Det var version 1.12. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma med Sjuby Spider, Dahlgrens bilder av receptet är raderade, och Arnes sista skattjakt ledde hela vägen till det som aldrig stod i receptet. Nu doftar hela Sjuby kardemumma, Dahlgren diskar – och Ingvars flaskpost kom fram till Elsa, femtio år för sent. Det var version 1.13. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>
