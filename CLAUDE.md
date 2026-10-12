@@ -194,7 +194,7 @@ Allt som syns i spelet ska använda de nya namnen.
 3. Versionen är höjd på alla ställen (`X.Y` för nytt innehåll, `X.Y.Z` för en buggfix):
    - `package.json`: `"version": "X.Y.Z"`,
    - `index.html`:
-     - `<div class="ver">Version X.Y · Sjuby, Norrholmen och Söderholmen</div>`,
+     - `<div class="ver">Version X.Y · Sjuby, Norrholmen och Söderholmen</div>` – med hela numret `X.Y.Z` vid en buggfix (användaren läser versionen på startskärmen för att se att uppdateringen kommit),
      - slutskärmen `#endcard`: `aria-label="Version X.Y klar"` och "Det var version X.Y." i `.note`,
    - `src/mission.js` `checkAllDone()`: två sms med "Det var allt i version X.Y!",
    - `test/missions.mjs`: de två regexarna `/version X\.Y/` som hör till sms:en,
