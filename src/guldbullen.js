@@ -424,7 +424,7 @@ export class GoldenBunJob {
     const g = this.game, m = this.mgr, p = g.player, D = this.dahl;
     this.stage = 'photoTalk';
     p.frozen = true; p.vx = p.vz = 0;
-    p.x = KOND.photo.x + 0.15; p.z = KOND.photo.z + 0.55; p.h = -Math.PI / 2;   // (to the side of the shot)
+    p.x = KOND.photo.x + 0.25; p.z = KOND.photo.z + 1.1; p.h = -Math.PI / 2 - 0.5;   // (out of the shot, beside it)
     if (D && !D.arrived) stand(g, D, KOND.room.x0 + 1.65, KOND.room.z0 + 2.95, -Math.PI / 2 - 0.4);
     g.emit('paper', {});
     g.camFocus = { ...KOND.camPhoto, owner: 'guld' };
@@ -564,11 +564,13 @@ export class GoldenBunJob {
   takeBun() {
     const g = this.game, m = this.mgr, p = g.player, A = this.bunAt;
     this.stage = 'bunTalk'; this.carry = 'pokal'; this.bunAt = null;
-    p.frozen = true; p.vx = p.vz = 0; p.h = Math.atan2(A.x - p.x, A.z - p.z);
+    p.frozen = true; p.vx = p.vz = 0;
     g.emit('keys', { item: 'goldbun' });
-    // a fixed shot from out in the open, away from the spruce it fell under (not from inside its branches)
-    const T = this.magpie && this.magpie.tree, ax = T ? p.x - T.x : 1, az = T ? p.z - T.z : 0, al = Math.hypot(ax, az) || 1;
-    g.camFocus = { x: p.x, y: p.y + 0.9, z: p.z, owner: 'guld', cam: { x: p.x + (ax / al) * 4.2, y: p.y + 2.6, z: p.z + (az / al) * 4.2, fov: 55 } };
+    // you turn round with it, away from the spruce it fell under – and a fixed shot from out in the open, of your
+    // front and the trophy (not from inside its branches)
+    const T = this.magpie && this.magpie.tree, ax = T ? p.x - T.x : p.x - A.x, az = T ? p.z - T.z : p.z - A.z, al = Math.hypot(ax, az) || 1;
+    p.h = Math.atan2(ax, az);
+    g.camFocus = { x: p.x, y: p.y + 1.0, z: p.z, owner: 'guld', cam: { x: p.x + (ax / al) * 3.4 + (az / al) * 0.9, y: p.y + 2.0, z: p.z + (az / al) * 3.4 - (ax / al) * 0.9, fov: 55 } };
     m.later(0.5, () => g.emit('talk', { id: this.id, pages: bunPages() }), this);
   }
 

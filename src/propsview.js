@@ -21,9 +21,10 @@ const WHITE = 0xffffff;
 
 // the golden bun: a gilded knot with a swirl, local origin at its bottom middle (about 0.3 m across)
 function goldBunInto(B, y = 0, s = 1) {
-  B.ico(0, y + 0.08 * s, 0, 0.16 * s, 0.52, 0xd9a520, M.CHROME, 3);
-  B.ico(0, y + 0.13 * s, 0, 0.11 * s, 0.5, 0xf2c21b, M.CHROME, 5);
-  for (let i = 0; i < 7; i++) { const a = i * 0.9, r = 0.035 + i * 0.012; B.box(Math.cos(a) * r - 0.012, y + 0.155 * s, Math.sin(a) * r - 0.012, Math.cos(a) * r + 0.012, y + 0.17 * s, Math.sin(a) * r + 0.012, 0xfff4c0, M.CHROME); }
+  // (plain material: chrome mirrors the sky and turns gold silvery-blue)
+  B.ico(0, y + 0.08 * s, 0, 0.16 * s, 0.52, 0xd99a18, M.PLAIN, 3);
+  B.ico(0, y + 0.13 * s, 0, 0.11 * s, 0.5, 0xf2c21b, M.PLAIN, 5);
+  for (let i = 0; i < 7; i++) { const a = i * 0.9, r = 0.035 + i * 0.012; B.box(Math.cos(a) * r - 0.012, y + 0.155 * s, Math.sin(a) * r - 0.012, Math.cos(a) * r + 0.012, y + 0.17 * s, Math.sin(a) * r + 0.012, 0xfff0a0, M.LIGHT); }
 }
 // the oak foot with its brass plate (local: bottom middle, the plate facing +z)
 function footInto(B) {

@@ -55,7 +55,7 @@ export const KOND = {
   shelf: { x: X + 0.17, y: Y + 1.28, z: Z + 2.6 },          // where the trophy stood – and stands again
   // cameras: over the café towards the bakery, and the photo up close
   camRoom: { x: X + 4.6, y: 0.9, z: Z + 5.3, cam: { x: X + 9.4, y: Y + 3.9, z: Z + 0.7, fov: 60 } },
-  camPhoto: { x: X + 0.02, y: Y + 1.52, z: Z + 1.3, cam: { x: X + 2.9, y: Y + 1.56, z: Z + 1.3, fov: 46 } },
+  camPhoto: { x: X + 0.02, y: Y + 1.52, z: Z + 1.3, cam: { x: X + 2.9, y: Y + 1.56, z: Z + 1.3, fov: 38 } },
   camTaste: { x: X + 3.6, y: 1.0, z: Z + 4.9, cam: { x: X + 6.6, y: Y + 3.3, z: Z + 1.2, fov: 58 } },
   room: { x0: X, x1: X + 11, z0: Z, z1: Z + 8 },
   bakery: { x0: X, x1: X + 11, z0: Z + 4.1, z1: Z + 8 },

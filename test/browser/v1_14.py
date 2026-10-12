@@ -98,6 +98,8 @@ async def main(name, w, h, mobile):
         await pg.wait_for_function('window.__gta && window.__gta.state === "title"', timeout=120000)
         done = ['red', 'lasse', 'pizza', 'race', 'flag', 'samuel', 'overlamning', 'cykel', 'livs', 'nycklar', 'kassaskap', 'verkstad', 'konditori', 'syltburken', 'fabriken',
                 'cykelretur', 'hemleverans', 'bullfest', 'konsert', 'cykelgomman', 'birger', 'ebbe', 'utsikten', 'skattjakt', 'flaskpost']
+        if SIDE:
+            done = done + ['guldbullen']
         save = {'v': 2, 'money': 12400, 'done': done, 'known': [d for d in done if d != 'red'] + ['guldbullen', 'ankor', 'odjuret'], 'seen': [d for d in done if d != 'red'], 'stats': {}}
         await pg.evaluate('s => localStorage.setItem("gta7-progress", JSON.stringify(s))', save)
         await pg.evaluate('window.__gta.start()')
@@ -113,118 +115,121 @@ async def main(name, w, h, mobile):
         x0, z0 = K['room']['x0'], K['room']['z0']
         BEHIND = [[x0 + 9.4, z0 + 2.6], [x0 + 9.4, z0 + 5.0]]   # round the east end of the counter, into the bakery
         steps = {}
-        # ---------------- 1. Den gyllene bullen: the konditori
-        await pg.evaluate(TO, [KO['door']['x'] + 1.5, KO['door']['z'] - 9, 0])
-        await pg.evaluate(STEP, [0.5, None])
-        await shot(pg, name, '01_konditori_door')
-        await pg.evaluate("() => window.__gta.game.mission.accept('guldbullen')")
-        t = await pg.evaluate(GO, [[[G['mark']['x'], G['mark']['z']]], 12, None, 'intro'])
-        steps['enter'] = t >= 0
-        await pg.evaluate(STEP, [1.2, None])
-        await talk_through(pg, at=[(1, '02_dahlgren_bakes', 300)])
-        await pg.evaluate(STEP, [0.6, None])
-        await pg.evaluate(GO, [BEHIND, 10, None, None])
-        await shot(pg, name, '03_bakery', 6)
-        ok = True
-        for i, iid in enumerate(GU['order']):
-            if iid == 'kardemumma':
-                ok = ok and await at_prompt(pg, [[K['mortar']['x'], K['mortar']['z']]], 'STÖT')
-                for _ in range(G['pound'] - 1):
-                    await press(pg)
-                    if _ == 2:
-                        await shot(pg, name, '05_mortar', 2)
-            else:
-                ok = ok and await at_prompt(pg, [[JAR[iid]['x'], JAR[iid]['z']]], JAR[iid]['label'])
-                if i == 1:
-                    await shot(pg, name, '04_jars', 4)
-            ok = ok and await at_prompt(pg, [[K['give']['x'], K['give']['z']]], 'GE')
-            await pg.evaluate(STEP, [1.8, None])
-        i1 = await pg.evaluate(INFO)
-        steps['bake'] = ok and i1['stage'] in ('knead', 'tray')
-        await pg.evaluate(STEP, [G['knead'] + 0.3, None])
-        ok = await at_prompt(pg, [[K['give']['x'], K['give']['z']]], 'PLÅTEN')
-        ok = ok and await at_prompt(pg, [[K['oven']['x'], K['oven']['z']]], 'IN I UGNEN')
-        await pg.evaluate(STEP, [G['ready'] + 0.4, None])
-        await shot(pg, name, '06_oven', 4)
-        ok = ok and await at_prompt(pg, [[K['oven']['x'], K['oven']['z']]], 'TA UT')
-        ok = ok and await at_prompt(pg, [[K['serve']['x'], K['serve']['z']]], 'BJUD')
-        steps['oven'] = ok
-        await pg.evaluate(STEP, [1.0, None])
-        await talk_through(pg, at=[(1, '07_taste', 300)])
-        await pg.evaluate(STEP, [0.4, None])
-        ok = await at_prompt(pg, [[x0 + 9.4, z0 + 5.0], [x0 + 9.4, z0 + 2.6], [K['photo']['x'], K['photo']['z']]], 'TITTA', 20)
-        await pg.evaluate(STEP, [0.8, None])
-        await talk_through(pg, at=[(0, '08_photo', 400), (6, '09_confession', 300)])
-        steps['photo'] = ok and (await pg.evaluate(INFO))['stage'] == 'gnome'
-        await at_prompt(pg, [[K['door']['x'], K['door']['z'] + 0.6], [K['door']['x'], K['door']['z']]], 'GÅ UT', 14)
-        await pg.evaluate(STEP, [1.6, None])
-        # the gnome by the allotments
-        N = G['gnome']
-        await pg.evaluate(TO, [N['x'] + 5, N['z'] + 2, -1.9])
-        await pg.evaluate(STEP, [0.6, None])
-        ok = await at_prompt(pg, [[N['x'], N['z']]], 'UNDERSÖK')
-        await pg.evaluate(STEP, [0.6, None])
-        await talk_through(pg, at=[(1, '10_gnome', 300), (2, '11_note', 300)])
-        await pg.evaluate(STEP, [1.6, None])
-        steps['gnome'] = ok and (await pg.evaluate(INFO))['stage'] == 'stone'
-        # the spruces: the magpie by the stone, and after it
-        S = G['stone']
-        await pg.evaluate(TO, [S['x'] - 2, S['z'] + 22, math.pi])
-        await pg.evaluate(STEP, [0.8, None])
-        await pg.evaluate(GO, [[[S['x'] - 1, S['z'] + 17]], 6, None, None])
-        await shot(pg, name, '12_stone', 6)
-        r = await pg.evaluate(MAGPIE, [20, 2])
-        await shot(pg, name, '13_magpie', 2)
-        r = await pg.evaluate(MAGPIE, [150, None])
-        steps['magpie'] = r == 'pick'
-        await pg.evaluate(STEP, [0.8, None])
-        await shot(pg, name, '14_dropped', 4)
-        bun = await pg.evaluate("() => window.__gta.game.mission.active.bunAt")
-        ok = await at_prompt(pg, [[bun['x'] + 0.6, bun['z']]], 'TA')
-        await pg.evaluate(STEP, [0.6, None])
-        await talk_through(pg, at=[(1, '15_trophy', 300)])
-        await pg.evaluate(STEP, [3.0, None])
-        steps['bun'] = ok and (await pg.evaluate(INFO))['stage'] == 'fest'
-        # the championship on the square
-        F = G['fest']
-        await pg.evaluate(TO, [F['mark']['x'] + 2, F['mark']['z'] - 12, 0])
-        await pg.evaluate(STEP, [0.6, None])
-        await shot(pg, name, '16_square', 6)
-        t = await pg.evaluate(GO, [[[F['mark']['x'], F['mark']['z']]], 14, None, 'festTalk'])
-        await pg.evaluate(STEP, [1.0, None])
-        await talk_through(pg, at=[(4, '17_judges', 300)])
-        await pg.evaluate(STEP, [0.4, None])
-        ok = t >= 0
-        sb, sd = F['stands'][0], F['stands'][1]
-        ok = ok and await at_prompt(pg, [[sb['taste']['x'], sb['taste']['z']]], 'SMAKA', 14)
-        await pg.evaluate(STEP, [0.4, None])
-        await shot(pg, name, '18_taste', 4)
-        ok = ok and await at_prompt(pg, [[sd['taste']['x'], sd['taste']['z']]], 'SMAKA', 18)
-        await pg.evaluate(STEP, [0.3, None])
-        ok = ok and await at_prompt(pg, [[sd['taste']['x'], sd['taste']['z']]], 'RÖSTA', 4)
-        await pg.evaluate(STEP, [1.0, None])
-        await talk_through(pg, at=[(3, '19_trophy_to_gun', 300)])
-        await pg.evaluate(STEP, [1.5, None])
-        i2 = await pg.evaluate(INFO)
-        steps['fest'] = ok and i2['guld']
-        print(name, 'guld money', i2['money'], i2['secrets'])
-        # the konditori now: the trophy on its shelf
-        await pg.evaluate(STEP, [16, None])
-        await frames(pg, 6)
-        steps['endcard'] = await pg.evaluate('() => !document.getElementById("endcard").hidden')
-        await shot(pg, name, '19b_endcard', 4)
-        await pg.evaluate('window.__gta.resume()')
-        await pg.evaluate(TO, [KO['door']['x'], KO['door']['z'] - 3, math.pi])
-        await pg.evaluate(STEP, [0.4, None])
-        ok = await at_prompt(pg, [[KO['door']['x'], KO['door']['z']]], 'GÅ IN', 8)
-        await pg.evaluate(STEP, [1.4, None])
-        await pg.evaluate(GO, [[[x0 + 1.4, z0 + 2.4]], 8, None, None])
-        await pg.evaluate(TO, [x0 + 1.5, z0 + 2.6, -math.pi / 2])
-        await pg.evaluate(STEP, [0.5, None])
-        await shot(pg, name, '20_shelf', 8)
-        steps['shelf'] = ok and (await pg.evaluate(INFO))['where'] == 'konditori'
-        await at_prompt(pg, [[K['door']['x'], K['door']['z'] + 0.5], [K['door']['x'], K['door']['z']]], 'GÅ UT', 14)
-        await pg.evaluate(STEP, [1.6, None])
+        if not SIDE:
+            # ---------------- 1. Den gyllene bullen: the konditori
+            await pg.evaluate(TO, [KO['door']['x'] + 1.5, KO['door']['z'] - 9, 0])
+            await pg.evaluate(STEP, [0.5, None])
+            await shot(pg, name, '01_konditori_door')
+            await pg.evaluate("() => window.__gta.game.mission.accept('guldbullen')")
+            t = await pg.evaluate(GO, [[[G['mark']['x'], G['mark']['z']]], 12, None, 'intro'])
+            steps['enter'] = t >= 0
+            await pg.evaluate(STEP, [1.2, None])
+            await talk_through(pg, at=[(1, '02_dahlgren_bakes', 300)])
+            await pg.evaluate(STEP, [0.6, None])
+            await pg.evaluate(GO, [BEHIND, 10, None, None])
+            await shot(pg, name, '03_bakery', 6)
+            ok = True
+            for i, iid in enumerate(GU['order']):
+                if iid == 'kardemumma':
+                    ok = ok and await at_prompt(pg, [[K['mortar']['x'], K['mortar']['z']]], 'STÖT')
+                    for _ in range(G['pound'] - 1):
+                        await press(pg)
+                        if _ == 2:
+                            await shot(pg, name, '05_mortar', 2)
+                else:
+                    ok = ok and await at_prompt(pg, [[JAR[iid]['x'], JAR[iid]['z']]], JAR[iid]['label'])
+                    if i == 1:
+                        await shot(pg, name, '04_jars', 4)
+                ok = ok and await at_prompt(pg, [[K['give']['x'], K['give']['z']]], 'GE')
+                await pg.evaluate(STEP, [1.8, None])
+            i1 = await pg.evaluate(INFO)
+            steps['bake'] = ok and i1['stage'] in ('knead', 'tray')
+            await pg.evaluate(STEP, [G['knead'] + 0.3, None])
+            ok = await at_prompt(pg, [[K['give']['x'], K['give']['z']]], 'PLÅTEN')
+            ok = ok and await at_prompt(pg, [[K['oven']['x'], K['oven']['z']]], 'IN I UGNEN')
+            await pg.evaluate(STEP, [G['ready'] + 0.4, None])
+            await shot(pg, name, '06_oven', 4)
+            ok = ok and await at_prompt(pg, [[K['oven']['x'], K['oven']['z']]], 'TA UT')
+            ok = ok and await at_prompt(pg, [[K['serve']['x'], K['serve']['z']]], 'BJUD')
+            steps['oven'] = ok
+            await pg.evaluate(STEP, [1.0, None])
+            await talk_through(pg, at=[(1, '07_taste', 300)])
+            await pg.evaluate(STEP, [0.4, None])
+            ok = await at_prompt(pg, [[x0 + 9.4, z0 + 5.0], [x0 + 9.4, z0 + 2.6], [K['photo']['x'], K['photo']['z']]], 'TITTA', 20)
+            await pg.evaluate(STEP, [0.8, None])
+            await talk_through(pg, at=[(0, '08_photo', 400), (6, '09_confession', 300)])
+            steps['photo'] = ok and (await pg.evaluate(INFO))['stage'] == 'gnome'
+            await at_prompt(pg, [[K['door']['x'], K['door']['z'] + 0.6], [K['door']['x'], K['door']['z']]], 'GÅ UT', 14)
+            await pg.evaluate(STEP, [1.6, None])
+            # the gnome by the allotments
+            N = G['gnome']
+            await pg.evaluate(TO, [N['x'] + 5, N['z'] + 2, -1.9])
+            await pg.evaluate(STEP, [0.6, None])
+            ok = await at_prompt(pg, [[N['x'], N['z']]], 'UNDERSÖK')
+            await pg.evaluate(STEP, [0.6, None])
+            await talk_through(pg, at=[(1, '10_gnome', 300), (2, '11_note', 300)])
+            await pg.evaluate(STEP, [1.6, None])
+            steps['gnome'] = ok and (await pg.evaluate(INFO))['stage'] == 'stone'
+            # the spruces: the magpie by the stone, and after it
+            S = G['stone']
+            await pg.evaluate(TO, [S['x'] - 2, S['z'] + 22, math.pi])
+            await pg.evaluate(STEP, [0.8, None])
+            await pg.evaluate(GO, [[[S['x'] - 1, S['z'] + 17]], 6, None, None])
+            await shot(pg, name, '12_stone', 6)
+            r = await pg.evaluate(MAGPIE, [20, 2])
+            await shot(pg, name, '13_magpie', 2)
+            r = await pg.evaluate(MAGPIE, [150, None])
+            steps['magpie'] = r == 'pick'
+            await pg.evaluate(STEP, [0.8, None])
+            await shot(pg, name, '14_dropped', 4)
+            bun = await pg.evaluate("() => window.__gta.game.mission.active.bunAt")
+            ok = await at_prompt(pg, [[bun['x'] + 0.6, bun['z']]], 'TA')
+            await pg.evaluate(STEP, [0.6, None])
+            await talk_through(pg, at=[(1, '15_trophy', 300)])
+            await pg.evaluate(STEP, [3.0, None])
+            steps['bun'] = ok and (await pg.evaluate(INFO))['stage'] == 'fest'
+            # the championship on the square
+            F = G['fest']
+            await pg.evaluate(TO, [F['mark']['x'] + 2, F['mark']['z'] - 12, 0])
+            await pg.evaluate(STEP, [0.6, None])
+            await shot(pg, name, '16_square', 6)
+            t = await pg.evaluate(GO, [[[F['mark']['x'], F['mark']['z']]], 14, None, 'festTalk'])
+            await pg.evaluate(STEP, [1.0, None])
+            await talk_through(pg, at=[(4, '17_judges', 300)])
+            await pg.evaluate(STEP, [0.4, None])
+            ok = t >= 0
+            sb, sd = F['stands'][0], F['stands'][1]
+            ok = ok and await at_prompt(pg, [[sb['taste']['x'], sb['taste']['z']]], 'SMAKA', 14)
+            await pg.evaluate(STEP, [0.4, None])
+            await shot(pg, name, '18_taste', 4)
+            ok = ok and await at_prompt(pg, [[sd['taste']['x'], sd['taste']['z']]], 'SMAKA', 18)
+            await pg.evaluate(STEP, [0.3, None])
+            ok = ok and await at_prompt(pg, [[sd['taste']['x'], sd['taste']['z']]], 'RÖSTA', 4)
+            await pg.evaluate(STEP, [1.0, None])
+            await talk_through(pg, at=[(3, '19_trophy_to_gun', 300)])
+            await pg.evaluate(STEP, [1.5, None])
+            i2 = await pg.evaluate(INFO)
+            steps['fest'] = ok and i2['guld']
+            print(name, 'guld money', i2['money'], i2['secrets'])
+            # the konditori now: the trophy on its shelf
+            await pg.evaluate(STEP, [16, None])
+            await frames(pg, 6)
+            steps['endcard'] = await pg.evaluate('() => !document.getElementById("endcard").hidden')
+            await shot(pg, name, '19b_endcard', 4)
+            await pg.evaluate('window.__gta.resume()')
+            await pg.evaluate(TO, [KO['door']['x'], KO['door']['z'] - 3, math.pi])
+            await pg.evaluate(STEP, [0.4, None])
+            ok = await at_prompt(pg, [[KO['door']['x'], KO['door']['z']]], 'GÅ IN', 8)
+            await pg.evaluate(STEP, [1.4, None])
+            await pg.evaluate(GO, [[[x0 + 1.4, z0 + 2.4]], 8, None, None])
+            await pg.evaluate(TO, [x0 + 1.9, z0 + 2.2, -math.pi / 2])
+            await pg.evaluate("([x, y, z]) => { window.__gta.game.camFocus = { x, y, z, owner: 'test', cam: { x: x + 2.4, y: y + 0.5, z: z - 1.0, fov: 50 } }; }", [K['shelf']['x'], K['shelf']['y'] + 0.1, K['shelf']['z'] - 0.6])
+            await pg.evaluate(STEP, [0.5, None])
+            await shot(pg, name, '20_shelf', 8)
+            await pg.evaluate("() => { window.__gta.game.camFocus = null; }")
+            steps['shelf'] = ok and (await pg.evaluate(INFO))['where'] == 'konditori'
+            await at_prompt(pg, [[K['door']['x'], K['door']['z'] + 0.5], [K['door']['x'], K['door']['z']]], 'GÅ UT', 14)
+            await pg.evaluate(STEP, [1.6, None])
         # ---------------- 2. Ankorna i dammen
         await pg.evaluate(TO, [AN['mark']['x'] - 3, AN['mark']['z'] + 12, math.pi])
         await pg.evaluate(STEP, [1.0, None])
@@ -241,7 +246,7 @@ async def main(name, w, h, mobile):
         ok = await at_prompt(pg, [[fx, fzz]], 'TA')
         await shot(pg, name, '22_fountain', 4)
         Y = AN['yasmin']
-        await pg.evaluate(TO, [Y['x'] + 4, Y['z'] + 1, -math.pi / 2])
+        await pg.evaluate(TO, [Y['x'] + 7, Y['z'] + 0.5, -math.pi / 2])
         await pg.evaluate(STEP, [0.6, None])
         await shot(pg, name, '23_yasmin', 6)
         ok = ok and await at_prompt(pg, [[Y['x'] + 1.0, Y['z']]], 'PRATA')
@@ -255,8 +260,8 @@ async def main(name, w, h, mobile):
             if close:
                 break
             await pg.evaluate(STEP, [0.1, None])
+        await press(pg)                                  # (at once: the real game loop runs on while a picture is taken)
         await shot(pg, name, '24_pier_net', 2)
-        await press(pg)
         Wd = AN['wash']
         await pg.evaluate(TO, [Wd['drop']['x'] + 3, Wd['drop']['z'] + 3, -2.3])
         await pg.evaluate(STEP, [0.5, None])
@@ -315,6 +320,7 @@ async def main(name, w, h, mobile):
         print(name, 'logs', json.dumps(logs[:20], ensure_ascii=False, indent=1))
         await b.close()
 name_g = ''
+SIDE = len(sys.argv) > 2 and sys.argv[2] == 'side'   # (only the two side quests: quicker)
 which = sys.argv[1] if len(sys.argv) > 1 else 'phone'
 cfg = {'desk': (1280, 760, False), 'phone': (390, 844, True), 'land': (844, 390, True)}[which]
 asyncio.run(main(which, *cfg))
