@@ -10,6 +10,7 @@ import { SALON, SALON_WALLS, SALON_FURN } from './salon.js';
 import { HOUSE, HOUSE_WALLS, HOUSE_FURN } from './birger.js';
 import { ROOM as NOVA_ROOM, ROOM_WALLS as NOVA_WALLS, ROOM_FURN as NOVA_FURN } from './nova.js';
 import { CHAPEL, CHAPEL_WALLS, CHAPEL_FURN } from './chapel.js';
+import { ELSA_HOUSE, ELSA_WALLS, ELSA_FURN } from './elsa.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
@@ -17,7 +18,7 @@ import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -242,6 +243,15 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of CHAPEL_WALLS) g.fillRect(X(Ch.x0 + x0), Zs(Ch.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#5b4636'; g.fillRect(X(Ch.x0 + 3.4), Zs(Ch.z0 - 0.2), 1.2 * IN_PX, 0.2 * IN_PX);
+    // Elsa's house (v1.12): pine floor, the kitchen corner, the furniture, the door in the east wall
+    const El = ELSA_HOUSE.room;
+    rect(El.x0, El.z0, El.x1, El.z1, '#6f5a44');
+    rect(El.x0 + 5.7, El.z0, El.x1, El.z0 + 2.9, '#6e7468');
+    g.fillStyle = '#2b3037';
+    for (const [x0, z0, x1, z1] of ELSA_FURN.slice(0, -1)) g.fillRect(X(El.x0 + x0), Zs(El.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of ELSA_WALLS) g.fillRect(X(El.x0 + x0), Zs(El.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#3b4148'; g.fillRect(X(El.x0 + 8), Zs(El.z0 + 3.0), 0.2 * IN_PX, 1.0 * IN_PX);
     return c;
   }
 
@@ -303,7 +313,7 @@ export class HUD {
       const c = job.current;
       if (c && c.ped) dot(c.ped.x, c.ped.z, c.def.color);
     }
-    if (job && job.id === 'cykelgomman' && game.indoors.where === 'birger' && job.spots) { // (v1.2) the places left to search in Birger's house
+    if (job && job.spots && ((job.id === 'cykelgomman' && game.indoors.where === 'birger') || (job.id === 'flaskpost' && game.indoors.where === 'elsa'))) { // (v1.2) the places left to search in Birger's house ((v1.12) and in Elsa's)
       const pulse = 1 + 0.25 * Math.sin(performance.now() / 160);
       for (const s of job.spots()) {
         const [x, z] = P(s.x, s.z);
@@ -609,7 +619,8 @@ export class HUD {
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
         'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret',
         'BÄR IN': 'Bär in bullarna i kapellet', RINGA: 'Ring i kyrkklockan', SPELA: 'Sätt dig vid orgeln', // (v1.10)
-        BROMSA: 'Håll inne för att bromsa kvarnen', 'STÖT': 'Stöt kardemumman' }; // (v1.11)
+        BROMSA: 'Håll inne för att bromsa kvarnen', 'STÖT': 'Stöt kardemumman', // (v1.11)
+        TORKA: 'Torka tallriken', KNACKA: 'Knacka på dörren', GE: 'Ge Elsa glasögonen' }; // (v1.12)
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

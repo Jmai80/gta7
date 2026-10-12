@@ -289,7 +289,12 @@ export function southInto(H) {
     const fx = west ? x : x + 8, dz = z + 3.5, s = west ? -1 : 1;
     box(fx + s * 0.06, CURB_H, dz - 0.55, fx, CURB_H + 2.1, dz + 0.55, 0x3b4148, M.BOARDS);
     box(fx + s * 0.5, CURB_H, dz - 0.8, fx, CURB_H + 0.12, dz + 0.8, 0x8f8a83, M.STONE);
-    if (!west) woodFence(x + 11, z - 1, x + 11, z + 8, 0.9, COL.trim);
+    if (!west) {                                           // the garden fence, with an opening (v1.12) in line with the door
+      woodFence(x + 11, z - 1, x + 11, dz - 0.9, 0.9, COL.trim);
+      woodFence(x + 11, dz + 0.9, x + 11, z + 8, 0.9, COL.trim);
+      for (const gz of [dz - 0.9, dz + 0.9]) box(x + 10.92, CURB_H, gz - 0.08, x + 11.08, CURB_H + 1.15, gz + 0.08, COL.trim);
+      H.area(x + 8.5, dz - 0.55, x + 11, dz + 0.55, COL.gravel, M.DIRT, PATCH_Y);
+    }
     if (i % 2 === 0) tree(west ? x + 4 : x - 2.2, z + 9.5, i % 4 ? 'oak' : 'birch', 0.8);
   });
   const Ch = SOUTH.chapel;

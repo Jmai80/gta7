@@ -14,6 +14,7 @@ import { SALON } from './salon.js';
 import { HOUSE } from './birger.js';
 import { ROOM as NOVA_ROOM } from './nova.js';
 import { CHAPEL, CHAPEL_DOOR, CHAPEL_KAFFE as CK } from './chapel.js';
+import { ELSA_HOUSE, ELSA_DOOR } from './elsa.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { spawnPed, removePed } from './hideout.js';
@@ -27,6 +28,7 @@ export const PLACES = {
   nova: { inside: NOVA_ROOM, out: { x: NOVA_DOOR.x, z: NOVA_DOOR.z + 0.6, h: 0 } },                // Nova's room → Skolgatan, facing the street (v1.4)
   birger: { inside: HOUSE, out: { x: BIRGER.door.x, z: BIRGER.door.z + 0.5, h: 0 } },               // Birger's house → his garden path, facing the street (v1.2)
   chapel: { inside: CHAPEL, out: { x: CHAPEL_DOOR.x, z: CHAPEL_DOOR.z - 0.7, h: Math.PI } },         // the chapel → the gravel path, facing north (v1.9)
+  elsa: { inside: ELSA_HOUSE, out: { x: ELSA_DOOR.x + 0.3, z: ELSA_DOOR.z, h: Math.PI / 2 } },        // Elsa's house → her front step, facing the road (v1.12)
 };
 
 // the people in the chapel: Inga in black with a white collar, and three in the pews

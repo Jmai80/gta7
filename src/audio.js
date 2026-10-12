@@ -489,6 +489,22 @@ export class AudioFX {
     this.burst(0.08, 2400, 0.06, 'bandpass');
   }
 
+  // ---- (v1.12) "Flaskposten": a plate held out, dried with a squeak, or smashed on the cobbles; a knock
+  plate(kind) {
+    if (!this.ctx) return;
+    if (kind === 'offer') { this.burst(0.05, 1800, 0.12, 'bandpass'); this.tone(1400, 0.05, 'sine', 0.02); }
+    else if (kind === 'dry') { this.tone(2200 + Math.random() * 300, 0.08, 'sine', 0.03, 0, 2900); this.tone(3300, 0.12, 'triangle', 0.02, 0.06); this.burst(0.06, 3000, 0.1, 'highpass'); }
+    else if (kind === 'crash') {
+      for (let i = 0; i < 5; i++) this.tone(2400 + Math.random() * 2400, 0.12 + Math.random() * 0.1, 'triangle', 0.035, i * 0.02 + Math.random() * 0.03);
+      this.burst(0.3, 3600, 0.25, 'highpass'); this.burst(0.18, 900, 0.12, 'bandpass', 0.02);
+    }
+  }
+
+  knock() {
+    if (!this.ctx) return;
+    for (let i = 0; i < 3; i++) { this.tone(120, 0.07, 'sine', 0.18, i * 0.22, 80); this.burst(0.14, 700, 0.05, 'bandpass', i * 0.22); }
+  }
+
   // a sheet of old paper unfolded
   paper() {
     if (!this.ctx) return;

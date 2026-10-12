@@ -370,15 +370,20 @@ export function islandInto(H) {
   H.millSails.push(...millSails());
   bench(Ml.x + 7.5, Ml.z + 6.5, Math.PI * 0.85);
   // (v1.11) the brake for the sails: a lever on a post among the rocks south of them ("Arnes skattjakt").
+  // (v1.12) a sturdier post with an iron pivot on its side and the arm on it – it floated before.
   // No layout random numbers here.
   {
-    const bx = Ml.x + 1.0, bz = Ml.z + 8.5;
-    box(bx - 0.08, CURB_H, bz - 0.08, bx + 0.08, CURB_H + 1.0, bz + 0.08, 0x5a4636, M.PLANKS);
-    box(bx - 0.1, CURB_H + 0.95, bz - 0.1, bx + 0.1, CURB_H + 1.02, bz + 0.1, 0x3a3c41);
-    P({ t: 'rbox', cx: bx, cy: CURB_H + 1.32, cz: bz + 0.12, sx: 0.06, sy: 0.7, sz: 0.06, rot: 0, c: 0x6b4a2a, tiltX: 0.35 });
-    P({ t: 'rbox', cx: bx, cy: CURB_H + 1.63, cz: bz + 0.235, sx: 0.09, sy: 0.16, sz: 0.09, rot: 0, c: 0xc0302a, tiltX: 0.35 });
-    sign('broms', { lines: ['BROMS'], bg: '#f2efe6', fg: '#8e2c20', font: 0.7, border: '#8e2c20' }, bx, CURB_H + 0.62, bz + 0.085, 0.42, 0.16, 0);
-    colCircle(bx, bz, 0.14, 1.1);
+    const bx = Ml.x + 1.0, bz = Ml.z + 8.5, Y = CURB_H, IRON = 0x2d3238;
+    box(bx - 0.1, Y, bz - 0.1, bx + 0.1, Y + 1.05, bz + 0.1, 0x5a4636, M.PLANKS);           // the post
+    box(bx - 0.12, Y + 1.05, bz - 0.12, bx + 0.12, Y + 1.1, bz + 0.12, IRON);                // its iron cap
+    box(bx - 0.13, Y, bz - 0.13, bx + 0.13, Y + 0.12, bz + 0.13, 0x8f8a83, M.STONE);       // a stone at its foot
+    P({ t: 'hcyl', x: bx + 0.1, y: Y + 0.88, z: bz, len: 0.16, r: 0.06, axis: 'x', n: 8, c: IRON });  // the pivot
+    P({ t: 'tube', a: [bx + 0.19, Y + 0.88, bz], b: [bx + 0.19, Y + 1.5, bz + 0.3], r: 0.032, c: 0x3f4247, m: 0, n: 6 }); // the arm
+    P({ t: 'tube', a: [bx + 0.19, Y + 1.46, bz + 0.28], b: [bx + 0.19, Y + 1.66, bz + 0.38], r: 0.05, c: 0xc0302a, m: 0, n: 8 }); // the red grip
+    P({ t: 'tube', a: [bx + 0.19, Y + 0.88, bz], b: [bx + 0.19, Y + 0.98, bz - 0.12], r: 0.03, c: IRON, m: 0, n: 6 });  // the short end
+    P({ t: 'tube', a: [bx + 0.19, Y + 0.98, bz - 0.12], b: [Ml.x + 0.6, Y + 1.0, Ml.z + 3.98], r: 0.012, c: 0x6f757c, m: 0, n: 4 }); // the wire to the mill
+    sign('broms', { lines: ['BROMS'], bg: '#f2efe6', fg: '#8e2c20', font: 0.7, border: '#8e2c20', ppm: 220 }, bx, Y + 0.68, bz + 0.105, 0.34, 0.13, 0);
+    colCircle(bx, bz, 0.16, 1.1);
   }
 
   // ---- the lighthouse on the north-east point, and the keeper's cottage
@@ -394,7 +399,26 @@ export function islandInto(H) {
   P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 14.2, y1: CURB_H + 15.2, r: 0.5, n: 8, c: 0xfff1c9, m: M.LIGHT });
   P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 15.7, y1: CURB_H + 17.0, r: 1.55, r1: 0.12, n: 12, c: 0xc0302a, cap: true });
   P({ t: 'ico', x: L.x, y: CURB_H + 17.15, z: L.z, r: 0.22, sy: 1, c: 0x2d3238 });
-  P({ t: 'rbox', cx: L.x - 1.66, cy: CURB_H + 1.95, cz: L.z + 1.66, sx: 1.0, sy: 1.9, sz: 0.1, rot: -Math.PI / 4, c: 0x2f5d3a, m: M.BOARDS });
+  // (v1.12) the door on the east side, up a flight of stone steps ("titta under fyrens trappa"): the
+  // steps stand on loose stones, and under the bottom ones there is a hollow (Ingvar's tin, "Flaskposten")
+  {
+    const nx = Math.cos(-Math.PI / 12), nz = Math.sin(-Math.PI / 12), rot = Math.atan2(nx, nz); // a face of the 12-sided tower
+    const at = (d, t = 0) => [L.x + nx * d - nz * t, L.z + nz * d + nx * t];
+    const [dx, dz] = at(2.25);
+    P({ t: 'rbox', cx: dx, cy: CURB_H + 1.85, cz: dz, sx: 1.0, sy: 1.9, sz: 0.1, rot, c: 0x2f5d3a, m: M.BOARDS });
+    const [hx, hz] = at(2.27);
+    P({ t: 'rbox', cx: hx, cy: CURB_H + 2.85, cz: hz, sx: 1.15, sy: 0.1, sz: 0.12, rot, c: 0x2d3238 });
+    for (const [k, top] of [[0, 0.8], [1, 0.6], [2, 0.4], [3, 0.2]]) {
+      const [x, z] = at(3.02 + k * 0.34);
+      P({ t: 'rbox', cx: x, cy: CURB_H + top - 0.06, cz: z, sx: 1.3, sy: 0.12, sz: 0.36, rot, c: 0x9a948c, m: M.STONE });  // the tread
+      if (k < 3) P({ t: 'rbox', cx: x - nz * 0.55, cy: CURB_H + (top - 0.12) / 2, cz: z + nx * 0.55, sx: 0.2, sy: top - 0.12, sz: 0.34, rot, c: 0x8a847c, m: M.STONE }); // a stone under it (north side)
+    }
+    const [ox, oz] = at(3.36, 0.5);
+    P({ t: 'rbox', cx: ox, cy: CURB_H + 0.24, cz: oz, sx: 0.32, sy: 0.4, sz: 0.62, rot, c: 0x1a1b1e });  // the hollow under the steps (south side)
+    const [sx, sz] = at(3.75, 0.62);
+    P({ t: 'rbox', cx: sx, cy: CURB_H + 0.1, cz: sz, sx: 0.34, sy: 0.2, sz: 0.3, rot: rot + 0.4, c: 0x8f8a83, m: M.STONE }); // the loose stone, moved aside
+    for (const d of [3.05, 3.55, 4.0]) { const [cx, cz] = at(d); colCircle(cx, cz, 0.5, CURB_H + 0.6); }
+  }
   colCircle(L.x, L.z, 3.0, 20);
   H.casters.push({ t: 'pole', x: L.x, z: L.z, h: CURB_H + 17, w: 4.2 });
   H.footprints.push({ x0: L.x - 2.4, z0: L.z - 2.4, x1: L.x + 2.4, z1: L.z + 2.4, c: 0xd8d4cc });

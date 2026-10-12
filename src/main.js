@@ -219,6 +219,8 @@ function wire(g) {
   g.on('mill', (e) => { audio.mill(e.kind); if (e.kind === 'stop') { buzz(40); view.rig.shake = 0.25; } });
   g.on('pestle', () => { audio.pestle(); buzz(12); });
   g.on('paper', () => audio.paper());
+  g.on('plate', (e) => { audio.plate(e.kind); if (e.kind === 'crash') buzz([40, 30, 60]); else if (e.kind === 'dry') buzz(10); }); // (v1.12) the washing-up
+  g.on('knock', () => audio.knock());
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -447,7 +449,7 @@ function voiceOf(who) {
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
+const NPC_VOICE = { elsa: 280, 'flask-ingvar': 140, 'flask-dahl': 105, 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -569,6 +571,7 @@ function showEnd(s) {
     ['Badhyttsgåtan', s.hutTries != null ? `${s.hutTries} försök` : '–'],
     ['Kyrkkaffet', s.churchBuns != null ? `${s.churchBuns} bullar · ${s.psalmWrong ? `${s.psalmWrong} fel` : 'felfri psalm'}` : '–'],
     ['Arnes skattjakt', s.huntSolo != null ? `${s.huntSolo} av 4 gåtor utan tips${s.huntOnTime ? ', i tid till telefonen' : ''}` : '–'],
+    ['Flaskposten', s.flaskDried != null ? `${s.flaskDried} tallrikar torkade, ${s.flaskBroken || 0} sönder` : '–'],
     ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],
   ];
   const grid = $('endStats');

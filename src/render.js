@@ -5,6 +5,7 @@ import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, n
 import { buildWorld } from './worldmesh.js';
 import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, buildBunTray, buildTin, buildButterBox, buildMortar, buildLadder } from './models.js';
 import { HUNT, LADDER } from './skattjakt.js';
+import { FLASK } from './flaskpost.js';
 import { CHAPEL, CHAPEL_KAFFE, ropeInto } from './chapel.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
@@ -134,6 +135,7 @@ export class View {
     this.makeCarWash();
     this.makeIndoor();
     this.makeHunt();
+    this.makeFlask();
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -493,6 +495,67 @@ export class View {
     for (const o of [this.huntTin, this.huntLadder, this.carryBox, this.carryMortar, this.trayOut]) { o.visible = false; this.scene.add(o); }
   }
 
+  // ------------------------------------------------------------------ (v1.12) "Flaskposten"
+  // Dahlgren's washing-up table outside the konditori: a zinc tub with suds, the dirty plates going down and
+  // the clean stack going up as you dry, the plate he holds out, bits of the ones he dropped – and Ingvar's
+  // tin in the hollow under the lighthouse steps.
+  makeFlask() {
+    const mat = this.matStatic, B = new GeomBuilder(), WOOD = 0x9a6a3e;
+    B.box(-0.65, 0.76, -0.3, 0.65, 0.8, 0.3, 0xc9b48a, M.PLANKS, { skipBottom: false });          // the table (local, y up from the ground)
+    for (const [x, z] of [[-0.6, -0.25], [0.56, -0.25], [-0.6, 0.21], [0.56, 0.21]]) B.box(x, 0, z, x + 0.04, 0.76, z + 0.04, WOOD);
+    B.cyl(0.05, 0, 0.8, 1.0, 0.27, 0.3, 14, 0xb9bec4, M.CHROME, true);                             // the zinc tub
+    B.cyl(0.05, 0, 0.97, 0.975, 0.28, 0.28, 14, 0x9fc4d8, 0, true);                                // water
+    for (let i = 0; i < 9; i++) { const a = i * 0.7, r = 0.08 + (i % 3) * 0.06; B.ico(0.05 + Math.cos(a) * r, 0.985, Math.sin(a) * r, 0.05 + (i % 2) * 0.02, 0.6, 0xffffff); } // suds
+    B.box(0.5, 0.8, -0.27, 0.62, 0.86, 0.25, 0x2f6fb5, M.FABRIC);                                    // a folded towel
+    B.cyl(-0.55, 0.26, 0.8, 0.95, 0.04, 0.035, 8, 0xe8833a, 0, true);                               // the washing-up liquid
+    this.dishTable = new THREE.Mesh(B.toGeometry(THREE), mat);
+    const P = new GeomBuilder();
+    P.cyl(0, 0, 0, 0.016, 0.13, 0.12, 16, 0xf8f8f4, 0, true);
+    P.cyl(0, 0, 0.0165, 0.017, 0.105, 0.105, 16, 0x3a6fb5, 0, true);                                // a blue rim pattern
+    P.cyl(0, 0, 0.017, 0.0175, 0.09, 0.09, 16, 0xf8f8f4, 0, true);
+    const plateGeo = P.toGeometry(THREE);
+    this.plates = [];
+    for (let i = 0; i < 25; i++) { const o = new THREE.Mesh(plateGeo, mat); o.visible = false; this.scene.add(o); this.plates.push(o); }
+    const S = new GeomBuilder();
+    for (const [x, z, r] of [[0, 0, 0.3], [0.09, 0.05, 1.2], [-0.07, 0.06, 2.4]]) S.rbox(x, 0.005, z, 0.07, 0.01, 0.05, r, 0xf8f8f4);
+    const shardGeo = S.toGeometry(THREE);
+    this.shards = [];
+    for (let i = 0; i < 8; i++) { const o = new THREE.Mesh(shardGeo, mat); o.visible = false; this.scene.add(o); this.shards.push(o); }
+    this.stairTin = new THREE.Mesh(buildTin(), mat);
+    this.stairTin.position.set(FLASK.hollow.x, CURB_H + 0.02, FLASK.hollow.z);
+    this.stairTin.rotation.y = 1.0;
+    for (const o of [this.dishTable, this.stairTin]) { o.visible = false; this.scene.add(o); }
+  }
+
+  syncFlask(game) {
+    const m = game.mission, job = m && m.active && m.active.id === 'flaskpost' ? m.active : null, out = !this.indoor, T = FLASK.table;
+    const up = !!(m && m.flaskDishes) && out;
+    this.dishTable.visible = up;
+    this.stairTin.visible = !!(job && job.tinShown) && out;
+    let k = 0;
+    const plate = (x, y, z) => { const o = this.plates[k++]; if (!o) return; o.visible = true; o.position.set(x, y, z); o.rotation.set(0, 0, 0); return o; };
+    if (up) {
+      const y0 = game.world.groundHeight(T.x, T.z);
+      this.dishTable.position.set(T.x, y0, T.z);
+      const n = FLASK.plates, dried = job ? job.dried : 0, broken = job ? job.broken : 0;
+      const offer = job && job.stage === 'dishes' && job.plate === 'offer';
+      const dirty = job && job.stage !== 'intro' ? Math.max(0, n - dried - broken - (offer ? 1 : 0)) : n;
+      for (let i = 0; i < dirty; i++) plate(T.x - 0.38, y0 + 0.8 + i * 0.018, T.z - 0.05);                           // the dirty ones, by the tub
+      for (let i = 0; i < dried; i++) plate(T.x + 0.56, y0 + 0.86 + i * 0.018, T.z + 0.02);                          // the clean stack, on the towel
+      const Dg = m.flaskDahl;
+      if (offer && Dg) { // held out to you, tilting a little more the longer he holds it
+        const o = plate(Dg.x + Math.sin(Dg.h) * 0.42 + Math.cos(Dg.h) * 0.12, Dg.y + 1.08, Dg.z + Math.cos(Dg.h) * 0.42 - Math.sin(Dg.h) * 0.12);
+        if (o) { o.rotation.x = 1.2; o.rotation.y = Dg.h; o.rotation.z = Math.min(0.6, job.plateT * 0.5); }
+      }
+      for (let i = 0; i < this.shards.length; i++) {
+        const sh = this.shards[i], on = i < Math.min(broken, this.shards.length);
+        sh.visible = on;
+        if (on) { sh.position.set(T.x + 0.4 + ((i * 37) % 7) * 0.09 - 0.25, y0 + 0.003, T.z + 0.45 + ((i * 53) % 5) * 0.08); sh.rotation.y = i * 1.3; }
+      }
+    } else for (const sh of this.shards) sh.visible = false;
+    for (; k < this.plates.length; k++) this.plates[k].visible = false;
+  }
+
   syncHunt(game) {
     const m = game.mission, job = m && m.active && m.active.id === 'skattjakt' ? m.active : null, p = game.player, out = !this.indoor;
     // (the tin has hung on the yellow sail for thirty years – until Majken takes it down)
@@ -674,6 +737,7 @@ export class View {
     this.syncFx(game, dt);
     this.syncIndoor(game, dt);
     this.syncHunt(game);
+    this.syncFlask(game);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)

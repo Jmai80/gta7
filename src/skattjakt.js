@@ -193,14 +193,14 @@ export function tastePages(amount) {
 
 // the checkpoint in the save (stats are saved): { at, solo, onTime }
 export function huntSave(g) { return g.stats.hunt && typeof g.stats.hunt === 'object' ? g.stats.hunt : null; }
-const hidden = (g, x, z) => { const p = g.player, d = Math.hypot(x - p.x, z - p.z); return d > 70 || (d > 35 && !g.visible(x, z)); };
-function stand(g, q, x, z, h) {
+export const hidden = (g, x, z) => { const p = g.player, d = Math.hypot(x - p.x, z - p.z); return d > 70 || (d > 35 && !g.visible(x, z)); };
+export function stand(g, q, x, z, h) {
   q.x = x; q.z = z; q.y = g.world.groundHeight(x, z); q.state = 'stand';
   q.h = q.standH = h; q.vx = q.vz = 0;
   q.body.x = q.x; q.body.y = q.y; q.body.z = q.z; q.body.h = q.h; q.body.pose = 0;
 }
 
-function pinGun(g, flag) {
+export function pinGun(g, flag) {
   const gun = flag.gun;
   flag.huntPin = true; flag.pinned = true; flag.hush = true;
   gun.away = true; gun.konditori = true; gun.disguised = false; gun.wave = false;
@@ -227,7 +227,7 @@ export function huntWorld(mgr) {
   }
   if (job) return;
   // done (or not yet offered): back to normal out of sight
-  if (flag.huntPin && hidden(g, gun.x, gun.z)) { flag.huntPin = false; flag.pinned = false; flag.hush = false; }
+  if (flag.huntPin && hidden(g, gun.x, gun.z) && !mgr.flaskHoldsGun) { flag.huntPin = false; flag.pinned = false; flag.hush = false; } // ((v1.12) Flaskposten keeps her there)
   const B = mgr.huntBengt;
   if (B && hidden(g, B.x, B.z)) { removePed(g, B); mgr.huntBengt = null; }
   const M = mgr.huntMajken;

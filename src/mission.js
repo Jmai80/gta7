@@ -40,6 +40,8 @@
 //                          Söderholmen, the church bell, and the psalm on the organ (v1.10)
 //   G  Tant Gun:           "Arnes skattjakt" – main quest, part 12: Arne's last wedding-day treasure hunt for Gun,
 //                          riddles all over the map, and the secret that is not in the recipe (v1.11)
+//   G  Tant Gun:           "Flaskposten" – main quest, part 13: dry the dishes with Dahlgren, Ingvar's message in a
+//                          bottle, the lighthouse steps, Elsa's house by the chapel (inside), Sunday in the chapel (v1.12)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
 // Lasse's job and Gun's flag count whenever you do them, followed or not. Stunt jumps and the car
 // wash always work. A quest with `after` is offered only once that quest is done.
@@ -49,6 +51,7 @@ import { ViewJob, EbbeJob, CoasterJob, southWorld, coasterStuck, UTSIKT, EBBE, M
 import { CO_STUCK_T } from './southisle.js';
 import { ChurchJob, churchWorld, KYRK, KYRK_MAX } from './kyrkkaffe.js';
 import { HuntJob, huntWorld, huntSave, HUNT_MAX } from './skattjakt.js';
+import { BottleJob, flaskWorld, flaskSave, FLASK_MAX } from './flaskpost.js';
 import {
   DELIVERY, CARWASH, RED_REWARD, DELIVERY_REWARD, WHO, PIZZERIA, PIZZA_CAR, MACKEN, GUN, TOWER_DOOR, SAMUEL_REWARD,
   PIER_MEET, HANDOVER_REWARD, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, LIVS_REWARD, EGG_BONUS,
@@ -279,11 +282,18 @@ export const QUESTS = [
     text: 'Lilla vän! Bengt har bakat efter Arnes recept i en hel vecka. Goda bullar – men inte ARNES. Något fattas. Och i natt hittade jag ett gammalt kuvert i Arnes receptlåda, med hans handstil … Kom till konditoriet!',
     reward: `upp till ${fmt(HUNT_MAX)} kr – och Arnes sista hemlighet`, where: 'Sjuby Konditori vid torget – sedan över hela Sjuby',
   },
+  {
+    // main quest, part 13 (v1.12): Dahlgren washes up, Ingvar's message in a bottle, Elsa in the green house by the chapel
+    id: 'flaskpost', letter: 'G', who: WHO.gun, title: 'Flaskposten', color: '#c58be0', x: KONDITORI.x, z: KONDITORI.z, r: KONDITORI.r, Job: BottleJob, main: true,
+    after: 'skattjakt', at: 30, needFoot: 'Kliv ur – tant Gun, Dahlgren och Ingvar väntar utanför konditoriet.',
+    text: 'Lilla vän! Dahlgren har diskat här varje morgon sedan klockan fem – du skulle se honom. Och Ingvar har börjat komma hit och köpa en bulle varje morgon. I dag frågade han efter dig. Ingvar! Som aldrig frågar efter någon. Kom till konditoriet!',
+    reward: `upp till ${fmt(FLASK_MAX)} kr`, where: 'Sjuby Konditori vid torget – sedan Norrholmen och Söderholmen',
+  },
 ];
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt']; // all fifteen → the end card; the side quests are a bonus
+const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost']; // all sixteen → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -377,6 +387,9 @@ export class Missions {
     if (!q || q.soon || this.known.has(id) || this.done.has(id) || (q.after && !this.done.has(q.after))) return;
     this.known.add(id);
     if (id === 'nycklar') this.ensureLeif();
+    // (v1.12) standing on its marker when the text comes (the hunt ends where Flaskposten starts): step off first
+    const c = this.jobs.find((j) => j.id === id), p = g.player;
+    if (c && q.main && Math.hypot(p.x - c.x, p.z - c.z) < c.r + 1.5) c.armed = false;
     if (how === 'sms') {
       g.emit('sms', { from: q.who, text: q.text, color: q.color, offer: id });
       if (!this.flags.answerHint) {
@@ -475,6 +488,7 @@ export class Missions {
       case 'masen': return 'Möt Tivoli-Rut vid Måsens station på tivolit';
       case 'kyrkkaffe': return 'Hämta söndagsbullarna hos tant Gun och cykla ut dem till kapellet';
       case 'skattjakt': { const S = huntSave(this.game); return S && S.at > 0 ? 'Fortsätt Arnes skattjakt där du var' : 'Möt tant Gun och Bagar-Bengt vid konditoriet'; }
+      case 'flaskpost': { const S = flaskSave(this.game); return S && S.at > 0 ? 'Fortsätt Flaskposten där du var' : 'Möt tant Gun, Dahlgren och Ingvar vid konditoriet'; }
     }
     return '';
   }
@@ -548,6 +562,7 @@ export class Missions {
     southWorld(this);
     churchWorld(this);                // (v1.10) Arne's bike waits by Gun's gate for the church buns
     huntWorld(this);                  // (v1.11) Gun and Bengt wait at the konditori for the treasure hunt
+    flaskWorld(this);                 // (v1.12) Gun, Dahlgren at his washing-up and Ingvar, for Flaskposten
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
     this.shopCheck();
     if (this.holdObj > 0) this.holdObj -= dt;
@@ -675,11 +690,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.11! Arnes sista hemlighet är hittad – och hela Sjuby doftar kardemumma. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.11! Arnes sista hemlighet är hittad – och hela Sjuby doftar kardemumma. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.12! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.12! Flaskposten kom fram till slut – och Ingvar sitter inte längst bak längre. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -739,6 +754,7 @@ export class Missions {
       case 'kassaskap': return { text: 'Till bagerikontoret (G)', sub: this.game.player.z < -229 ? 'Sidodörren på bageriets västra vägg' : 'Över norra bron till Norrholmen' };
       case 'kyrkkaffe': return { text: 'Gå till tant Gun (I)', sub: this.game.player.inCar ? 'Parkera och gå in i hennes trädgård' : 'Trädgården på Storgatan – söndagsbullarna' };
       case 'skattjakt': return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Tant Gun och Bengt väntar vid dörren' };
+      case 'flaskpost': return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Dahlgren diskar utanför dörren' };
     }
     return null;
   }

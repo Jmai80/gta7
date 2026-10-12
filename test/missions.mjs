@@ -20,6 +20,8 @@ import { KYRK, KYRK_MAX, kyrkPay, GUESTS } from '../src/kyrkkaffe.js';
 import { Organ, ORGAN, PSALM, VERSES } from '../src/organ.js';
 import { HUNT, HUNT_MAX, RIDDLES, LADDER } from '../src/skattjakt.js';
 import { CodeLock, LOCK } from '../src/lock.js';
+import { FLASK, FLASK_MAX } from '../src/flaskpost.js';
+import { ELSA_HOUSE, ELSA_SPOTS, ELSA_DOOR } from '../src/elsa.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
@@ -343,8 +345,12 @@ function startRace(g) {
   g2.mission.done.add('skattjakt');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all fifteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.11/.test(d.text) && /Arnes sista hemlighet/.test(d.text)), 'the last text: version 1.11, Arne\'s last secret is found');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while Ingvar's message in a bottle is left");
+  g2.mission.done.add('flaskpost');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all sixteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.12/.test(d.text) && /Flaskposten kom fram/.test(d.text)), 'the last text: version 1.12, the message in the bottle got there');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -3298,16 +3304,18 @@ const typeCode = (L, code) => { for (let i = 0; i < L.n; i++) L.select(i), L.typ
   check(m.done.has('skattjakt') && !m.active && g.money - money0 === pay && pay === 6000 && ev.some(([nn, d]) => nn === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Arnes skattjakt'), `main quest part 12 done: ${fmt(pay)} kr (5 000 + 2 riddles without a tip + on time at the phone)`);
   check(g.stats.huntSolo === 2 && g.stats.huntOnTime === 1 && g.stats.hunt.at === 7, '  stats for the end card');
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.11/.test(d.text) && /Arnes sista hemlighet/.test(d.text)), 'all fifteen parts: the last text and the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'all fifteen parts – but no end card yet: part 13 is to come (v1.12)');
   run(g, 16);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === 'Fyrvaktaren Ingvar' && d.text === 'Bra.'), '  and a text from Ingvar: "Bra."');
   check(flag.huntPin && m.prompt !== 'STÖT', '  Gun and Bengt are still by the door');
-  walkHere(g, KONDITORI.x, KONDITORI.z - 1.6); run(g, 0.1);
-  check(m.prompt === 'PRATA', '  PRATA with Gun');
+  check(!m.active, '  (standing in the G when Flaskposten texts does not start it)');
+  walkHere(g, KONDITORI.x + 2.0, KONDITORI.z + 0.2); run(g, 0.1);
+  check(m.prompt === 'PRATA' && !m.active, `  PRATA with Gun (${m.prompt}, ${m.active && m.active.id}, ${m.active && m.active.stage})`);
   press(g);
   check(ev.some(([nn, d]) => nn === 'say' && d.who === gun && /Arnes bullar … äntligen/.test(d.text)), '  "Arnes bullar … äntligen."');
   walkHere(g, 60, -20); run(g, 2);
-  check(!flag.huntPin && !m.huntBengt && !m.huntDahl && !m.huntMajken && !g.peds.list.includes(Dg) && !g.peds.list.includes(M), 'out of sight they all go back to normal');
+  check(!m.huntBengt && !m.huntDahl && !m.huntMajken && !g.peds.list.includes(Dg) && !g.peds.list.includes(M), 'out of sight they all go back to normal');
+  check(m.known.has('flaskpost') && flag.huntPin && m.flaskHoldsGun && m.flaskDahl && m.flaskDishes, '  (and Gun stays at the konditori: Flaskposten – Dahlgren is at his washing-up)');
   const saved = m.progress();
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
   check(g2.mission.restore(saved) && g2.mission.done.has('skattjakt') && g2.stats.huntSolo === 2, 'saved and loaded: done, with its stats');
@@ -3377,6 +3385,184 @@ const typeCode = (L, code) => { for (let i = 0; i < L.n; i++) L.select(i), L.typ
   check(m.active && m.active.id === 'kyrkkaffe' && Math.hypot(gun.x - GUN.x, gun.z - GUN.z) < 0.1, '  and the church coffee starts with her there');
   m.accept('skattjakt'); run(g, 0.2);
   check(m.active.id === 'kyrkkaffe' && m.prevTracked === 'skattjakt', '  (the treasure hunt waits until the church coffee is done)');
+}
+
+// ---------- 40. main quest, part 13: "Flaskposten" (v1.12) – Dahlgren's washing-up, Ingvar's bottle, Elsa ----------
+const UP_TO_HUNT = [...UP_TO_UTSIKT, 'skattjakt'];
+function flaskGame(stats = {}, known = null, tracked = null, extra = []) {
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const s = livsSave([...UP_TO_HUNT, ...extra]);
+  g.mission.restore({ ...s, money: 0, stats, known: known || s.known, tracked });
+  return g;
+}
+// dry the dishes: take every plate after `wait` s, but let the ones in `drop` (by number) slip
+function dryDishes(g, job, drop = [], wait = 0.3) {
+  let n = 0;
+  for (let i = 0; i < 60 * 60 && job.stage === 'dishes'; i++) {
+    const offer = job.plate === 'offer', take = offer && job.plateT >= wait && !drop.includes(n);
+    g.step(DT, { ...idle, action: take });
+    if (take || (offer && job.plate !== 'offer')) n++;
+  }
+}
+{
+  console.log('Flaskposten (huvuduppdrag del 13): hela vägen');
+  const g = flaskGame();
+  const m = g.mission, p = g.player, ind = g.indoors, flag = m.flag;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'plate', 'knock', 'secret', 'hint', 'endcard', 'keys', 'churchBell', 'lock']);
+  check(FLASK_MAX === 5500 && FLASK.code === '1974', `up to ${fmt(FLASK_MAX)} kr; the code 1974`);
+  walkHere(g, 60, -20);
+  run(g, 25);
+  check(!m.known.has('flaskpost'), 'no word yet');
+  run(g, 6);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'flaskpost') || [])[1];
+  check(sms && sms.from === GUN_FROM && /Dahlgren har diskat/.test(sms.text) && /Ingvar/.test(sms.text), `30 s after the treasure hunt: Gun texts ("${sms && sms.text.slice(0, 46)}…")`);
+  run(g, 1);
+  check(flag.huntPin && m.flaskDahl && m.flaskIngvar && m.flaskDishes && Math.hypot(m.flaskDahl.x - FLASK.dahl.x, m.flaskDahl.z - FLASK.dahl.z) < 0.05, 'Gun, Dahlgren at his washing-up table and Ingvar wait outside the konditori');
+  check(!reachable(g, { x: -6, z: 34 }, [KONDITORI, FLASK.you], { x0: -30, z0: 8, x1: 20, z1: 45 }).length, '  you can walk up to them');
+  m.accept('flaskpost'); run(g, 0.3);
+  check(m.objective === 'Till konditoriet (G)' && m.sub === 'Dahlgren diskar utanför dörren', `following it: "${m.objective}" · ${m.sub}`);
+  walkHere(g, KONDITORI.x, KONDITORI.z - 4); walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 1);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'flaskpost');
+  check(job && job.id === 'flaskpost' && job.stage === 'intro' && t1.pages.length === 7 && t1.pages.some((q) => /fel knapp/.test(q.text)) && t1.pages.at(-1).last === 'JAG TORKAR', 'Dahlgren has washed up since five (he broke the dishwasher), and Ingvar asked for you');
+  m.talkDone('flaskpost'); run(g, 0.7);
+  check(job.stage === 'dishes' && p.frozen && ev.some(([n, d]) => n === 'hint' && d.id === 'torka'), 'the washing-up: dry what Dahlgren holds out');
+  // wait for the first plate: TORKA only while he holds it out
+  for (let i = 0; i < 60 * 3 && job.plate !== 'offer'; i++) g.step(DT, idle);
+  g.step(DT, idle);
+  check(m.prompt === 'TORKA' && ev.some(([n, d]) => n === 'plate' && d.kind === 'offer'), '  TORKA when he holds out a plate');
+  dryDishes(g, job, [2, 7]);
+  run(g, 1.2);
+  check(job.dried === 10 && job.broken === 2 && ev.filter(([n, d]) => n === 'plate' && d.kind === 'crash').length === 2 && ev.some(([n, d]) => n === 'say' && d.who === m.flaskDahl && /Hoppsan/.test(d.text)), 'twelve plates: ten dried, two slipped ("Hoppsan.")');
+  const t2 = lastTalk(ev, 'flaskpost');
+  check(job.stage === 'after' && /Bara 2 sönder/.test(t2.pages[0].text) && t2.pages.some((q) => q.text === 'Flaskposten.') && t2.pages.some((q) => /Södra klipporna/.test(q.text)), '  Gun: "Bara 2 sönder." – Ingvar: "Flaskposten." (you have not found it: the south cliffs)');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  check(job.stage === 'bottle' && g.stats.flask.at === 1 && m.targets.some((t) => t.gps && Math.hypot(t.x - FLASK.bottle.x, t.z - FLASK.bottle.z) < 0.1), 'to the bottle on Söderholmen (saved; the GPS shows the way)');
+  run(g, 3);
+  check(!g.peds.list.includes(m.flaskIngvar) || Math.hypot(m.flaskIngvar.x - FLASK.ingvar.x, m.flaskIngvar.z - FLASK.ingvar.z) > 0.5, '  Ingvar walks off with his bun');
+  walkHere(g, FLASK.bottle.x, FLASK.bottle.z); run(g, 0.1);
+  check(m.prompt === 'UNDERSÖK', 'UNDERSÖK by the bottle among the stones');
+  press(g); run(g, 0.7);
+  const t3 = lastTalk(ev, 'flaskpost');
+  check(t3.pages[1].note && /titta under fyrens trappa/.test(t3.pages[1].text) && /1974/.test(t3.pages[1].text), '  "Den som hittar det här – titta under fyrens trappa. /I. 1974"');
+  m.talkDone('flaskpost'); run(g, 1.6);
+  check(job.stage === 'stairs' && g.stats.secrets.includes('bottle') && g.stats.flask.at === 2 && m.ingvar, '  on to the lighthouse – and the bottle counts as a secret');
+  check(!reachable(g, { x: 98, z: -377 }, [FLASK.stair, { x: FLASK.stair.x + 0.25, z: FLASK.stair.z + 0.35 }], { x0: 85, z0: -400, x1: 125, z1: -366 }).length, '  you can walk round to the steps on the east side');
+  walkHere(g, FLASK.stair.x, FLASK.stair.z); run(g, 0.1);
+  check(m.prompt === 'UNDERSÖK' && m.targets.some((t) => t.kind === 'zone' && Math.hypot(t.x - FLASK.stair.x, t.z - FLASK.stair.z) < 0.1), 'UNDERSÖK under the lighthouse steps');
+  press(g);
+  let L = g.lock;
+  check(L && L.code === '1974' && L.n === 4 && p.frozen && g.camFocus && g.camFocus.cam && Math.hypot(g.camFocus.cam.x - g.camFocus.x, g.camFocus.cam.z - g.camFocus.z) < 9, '  a rusty tin in the hollow – a four-digit lock (a fixed shot of the steps)');
+  typeCode(L, '1947'); L.tryOpen(); run(g, 0.6);
+  check(L.tries === 1 && /\/I\./.test(L.line), `  1947: wrong – "${L.line}"`);
+  typeCode(L, '1974'); L.tryOpen(); run(g, 1.4);
+  const t4 = lastTalk(ev, 'flaskpost');
+  check(!g.lock && job.carry === 'letter' && !job.tinShown && /Till Elsa/.test(t4.pages[0].text), '  1974: open! "Till Elsa. Söderholmen." and a dried sea pink');
+  m.talkDone('flaskpost');
+  let n = 0; while (job.stage === 'ingvarWalk' && n++ < 60 * 14) g.step(DT, idle);
+  run(g, 0.6);
+  const t5 = lastTalk(ev, 'flaskpost');
+  check(job.stage === 'ingvarTalk' && Math.hypot(m.ingvar.x - FLASK.ingvarStair.x, m.ingvar.z - FLASK.ingvarStair.z) < 0.4 && t5.pages[0].text === 'Elsa.' && t5.pages.some((q) => /grön klänning/.test(q.text)) && t5.pages.some((q) => /tredje raden/.test(q.text)), `Ingvar comes over from his cottage (${(n / 60).toFixed(1)} s): "Elsa." – the dance in 1974`);
+  m.talkDone('flaskpost'); run(g, 0.3);
+  check(job.stage === 'elsa' && g.stats.flask.at === 3 && /gröna huset/.test(m.sub), `to Elsa: "${m.objective}" · ${m.sub}`);
+  check(!reachable(g, { x: SOUTH.landing.x + 2, z: SOUTH.landing.z + 4 }, [ELSA_DOOR], { x0: -125, z0: 182, x1: 124, z1: 290 }).length, '  you can walk to her door');
+  walkHere(g, ELSA_DOOR.x, ELSA_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'KNACKA', 'KNACKA at the green house by the chapel');
+  press(g); run(g, 3.5);
+  check(g.indoor && ind.where === 'elsa' && job.elsa && job.elsa.state === 'lounge' && ev.some(([nn]) => nn === 'knock'), '  "Det är öppet!" – in: Elsa in her rocking chair');
+  const t6 = lastTalk(ev, 'flaskpost');
+  check(t6.pages.some((q) => /glasögon/.test(q.text)) && t6.pages.at(-1).last === 'JAG LETAR', '  she cannot read without her glasses');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  const H = ELSA_HOUSE;
+  check(!reachable(g, H.spawn, [...ELSA_SPOTS, H.talk, H.door], H.bounds).length, '  you can walk to every place to look, and to her chair');
+  check(reachable(g, H.spawn, [{ x: H.room.x0 + 4, z: H.room.z0 - 1.2 }], { x0: H.bounds.x0, z0: H.bounds.z0 - 2, x1: H.bounds.x1, z1: H.bounds.z1 }).length === 1, '  but not out through the walls');
+  check(m.targets.filter((t) => t.kind === 'item').length === ELSA_SPOTS.length, `  ${ELSA_SPOTS.length} arrows`);
+  for (const sp of ELSA_SPOTS.filter((q) => !q.find).slice(0, 3)) {
+    walkHere(g, sp.x, sp.z); run(g, 0.1);
+    const pr = m.prompt; press(g); run(g, 1.0);
+    check(pr === 'LETA' && job.stage === 'read' && lastTalk(ev, 'flaskpost').pages[0].text === sp.text, `  LETA (${sp.id}): "${sp.text.slice(0, 44)}…"`);
+    m.talkDone('flaskpost'); run(g, 0.5);
+  }
+  check(job.hinted && ev.some(([nn, d]) => nn === 'say' && d.who === job.elsa && /Måns korg/.test(d.text)), 'three places: Elsa – "Har du tittat i Måns korg?"');
+  const korg = ELSA_SPOTS.find((q) => q.find);
+  walkHere(g, korg.x, korg.z); run(g, 0.1); press(g); run(g, 1.0);
+  check(job.carry === 'glasses' && !job.solo && /glasögon/.test(lastTalk(ev, 'flaskpost').pages[0].text), '  in the cat basket: her glasses, under Måns');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  walkHere(g, H.talk.x, H.talk.z); run(g, 0.1);
+  check(job.stage === 'give' && m.prompt === 'GE', 'GE her the glasses');
+  press(g); run(g, 0.6);
+  const t7 = lastTalk(ev, 'flaskpost');
+  check(t7.pages.filter((q) => q.note && /Ingvars brev/.test(q.who)).length === 3 && t7.pages.some((q) => /Ingvar Lund/.test(q.text)) && t7.pages.some((q) => /I femtio år/.test(q.text)), '  she reads it: Ingvar\'s letter from 1974 – "I femtio år!"');
+  for (const pg of t7.pages) if (pg.fx) m.talkFx('flaskpost', pg.fx);
+  check((job.elsa.body.look.style & 8) && job.carry === 'reply', '  glasses on; she writes an answer');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  check(job.stage === 'reply' && g.stats.flask.at === 4 && m.sub === 'Gå ut ur huset', `"${m.objective}" · ${m.sub}`);
+  walkHere(g, H.door.x, H.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', '  GÅ UT');
+  press(g); run(g, 1.4);
+  check(!g.indoor && Math.hypot(p.x - ELSA_DOOR.x, p.z - ELSA_DOOR.z) < 1.2 && !job.elsa && m.targets.some((t) => t.ref === m.ingvar && t.gps), '  out on her step; the GPS to Ingvar');
+  walkHere(g, INGVAR.x, INGVAR.z + 1.3); run(g, 0.1);
+  check(m.prompt === 'PRATA', 'PRATA with Ingvar by his cottage');
+  press(g); run(g, 0.6);
+  const t8 = lastTalk(ev, 'flaskpost');
+  check(t8.pages.some((q) => q.note && /Tredje raden/.test(q.text)) && t8.pages.some((q) => q.text === 'Söndag.'), '  Elsa\'s answer: "Tredje raden. Söndag." – Ingvar: "Söndag."');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  check(job.stage === 'sunday' && g.stats.flask.at === 5 && m.targets.some((t) => t.gps && Math.hypot(t.x - CHAPEL_DOOR.x, t.z - CHAPEL_DOOR.z) < 0.1), 'Sunday: to the chapel (he takes his boat)');
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'GÅ IN' && !g.peds.list.includes(m.ingvar), 'GÅ IN at the chapel (Ingvar is not at the lighthouse now)');
+  press(g); run(g, 1.6);
+  check(g.indoor && ind.where === 'chapel' && job.stage === 'church' && ev.some(([nn]) => nn === 'churchBell') && job.churchFolk.length === 3 && job.churchFolk.every((q) => q.state === 'lounge'), '  inside: Elsa on the third row, Gun and Dahlgren in front');
+  n = 0; while (job.stage === 'church' && n++ < 60 * 25) g.step(DT, idle);
+  run(g, 1.2);
+  const I = job.ingvarIn, C = FLASK.church;
+  check(job.stage === 'finale' && I && I.state === 'lounge' && Math.hypot(I.x - C.ingvar.x, I.z - C.ingvar.z) < 0.05, `  Ingvar walks up the aisle and sits down beside her (${(n / 60).toFixed(1)} s)`);
+  const t9 = lastTalk(ev, 'flaskpost');
+  const pay = FLASK.pay.base + 10 * FLASK.pay.plate;
+  check(t9.pages.some((q) => q.text === 'Hej, Elsa.') && t9.pages.some((q) => /Arne var också alltid sen/.test(q.text)) && t9.pages.at(-1).text.includes(`${fmt(pay)} kronorna`) && /2 tallrikar/.test(t9.pages.at(-1).text), '  "Hej, Elsa." – "Arne var också alltid sen."');
+  const money0 = g.money;
+  m.talkDone('flaskpost'); run(g, 0.5);
+  check(m.done.has('flaskpost') && g.money - money0 === pay && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Flaskposten'), `main quest part 13 done: ${fmt(pay)} kr (5 000 + 10 plates; the glasses after Elsa's hint)`);
+  check(g.stats.flaskDried === 10 && g.stats.flaskBroken === 2 && g.stats.flask.at === 6, '  stats for the end card');
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.12/.test(d.text)), 'all sixteen parts: the end card');
+  run(g, 16);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === 'Elsa' && /FYRA MINUTER/.test(d.text)), '  and Elsa texts: "…FYRA MINUTER!"');
+  walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1); press(g); run(g, 1.4);
+  check(!g.indoor && !g.peds.list.includes(I) && !job.churchFolk.some((q) => g.peds.list.includes(q)), 'out of the chapel: they stay behind');
+  walkHere(g, 60, -20); run(g, 2);
+  check(m.ingvar && Math.hypot(m.ingvar.x - INGVAR.x, m.ingvar.z - INGVAR.z) < 0.1 && !m.flaskDishes && !m.flaskDahl && !flag.huntPin, 'out of sight: Ingvar is back at the lighthouse, the washing-up table gone, Gun at home');
+}
+{
+  console.log('Flaskposten: flaskan redan hittad, och att fortsätta efter en omladdning');
+  const g = flaskGame({ secrets: ['bottle'] });
+  const m = g.mission;
+  const ev = record(g, ['talk', 'toast']);
+  walkHere(g, 60, -20); run(g, 32);
+  m.accept('flaskpost');
+  walkHere(g, KONDITORI.x, KONDITORI.z - 4); walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 1);
+  const job = m.active;
+  m.talkDone('flaskpost'); run(g, 0.3);
+  dryDishes(g, job, []); run(g, 1.2);
+  const t = lastTalk(ev, 'flaskpost');
+  check(job.dried === 12 && /Inte en enda sönder/.test(t.pages[0].text) && t.pages.some((q) => /Utom du/.test(q.text)), 'all twelve dried ("Inte en enda sönder!") – and you found the bottle long ago: "Utom du."');
+  m.talkDone('flaskpost'); run(g, 0.3);
+  check(job.stage === 'stairs', '  straight to the lighthouse steps');
+  // a reload with Elsa's answer in your pocket
+  const known = [...UP_TO_HUNT.filter((d) => d !== 'red'), 'flaskpost'];
+  const g2 = flaskGame({ flask: { at: 4, dried: 12, broken: 0, solo: true } }, known, 'flaskpost');
+  const ev2 = record(g2, ['toast']);
+  run(g2, 1.5);
+  const j2 = g2.mission.active;
+  check(j2 && j2.stage === 'reply' && j2.carry === 'reply' && ev2.some(([n, d]) => n === 'toast' && /Elsas svar till Ingvar/.test(d.text)), 'loaded with Elsa\'s answer: to Ingvar with it');
+  const g3 = flaskGame({ flask: { at: 5, dried: 12, broken: 0, solo: true } }, known, 'flaskpost');
+  run(g3, 1.5);
+  const j3 = g3.mission.active;
+  walkHere(g3, CHAPEL_DOOR.x, CHAPEL_DOOR.z); run(g3, 0.1); press(g3); run(g3, 1.6);
+  let n = 0; while (j3.stage === 'church' && n++ < 60 * 25) g3.step(DT, idle);
+  run(g3, 1.2);
+  const money0 = g3.money;
+  g3.mission.talkDone('flaskpost'); run(g3, 0.5);
+  check(g3.mission.done.has('flaskpost') && g3.money - money0 === FLASK_MAX, `loaded on Sunday, every plate dried and the glasses found without a hint: the full ${fmt(FLASK_MAX)} kr`);
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');
