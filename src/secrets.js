@@ -185,18 +185,44 @@ export function secretsInto(H) {
     colCircle(x, z, 0.55, 0.6);
   }
 
-  // the gnome by the allotments' car park, with a fishing rod and no water
+  // the gnome by the allotments' car park, with a fishing rod and no water. (v1.14.2) Made properly: boots,
+  // brown breeches, a blue coat with a belt and a brass buckle, mittens round the rod, a round face with a red
+  // nose, rosy cheeks and eyes, a big white beard and moustache, a tall red cap that flops over at the tip, a
+  // rod with a reel, a line and a red-and-white float lying in the gravel – and an empty bucket beside him.
+  // (He is hollow: in "Den gyllene bullen" the trophy's foot is inside.)
   {
-    const s = BY.gnome, x = s.x - 0.9, z = s.z, h = Math.PI / 2;
-    P({ t: 'cyl', x, z, y0: CURB_H, y1: CURB_H + 0.08, r: 0.22, n: 8, c: 0x6f6a62, cap: true });
-    P({ t: 'cyl', x, z, y0: CURB_H + 0.08, y1: CURB_H + 0.38, r: 0.17, r1: 0.14, n: 8, c: 0x2c62a8, cap: true });
-    P({ t: 'ico', x, y: CURB_H + 0.45, z, r: 0.12, sy: 1, c: 0xf0c8a8 });
-    P({ t: 'ico', x: x + 0.08, y: CURB_H + 0.37, z, r: 0.11, sy: 1.1, c: 0xf4f1ea });
-    P({ t: 'cyl', x, z, y0: CURB_H + 0.52, y1: CURB_H + 0.85, r: 0.13, r1: 0.01, n: 8, c: 0xd2342c, cap: true });
-    tube([x + 0.1, CURB_H + 0.3, z + 0.05], [x + 0.9, CURB_H + 0.95, z + 0.2], 0.012, 0x5a4430, 0, 4);
-    tube([x + 0.9, CURB_H + 0.95, z + 0.2], [x + 0.95, CURB_H + 0.12, z + 0.22], 0.004, 0xe8e2d0, 0, 3);
-    colCircle(x, z, 0.22, 0.9);
-    void h;
+    const s = BY.gnome, gx = s.x - 0.9, gz = s.z, S = 1.3, Y0 = CURB_H;
+    // local → world: f forward (towards +x, where the rod points), u up, w sideways (+z)
+    const L = (f, u, w = 0) => [gx + f * S, Y0 + u * S, gz + w * S];
+    const ico = (f, u, w, r, sy, c) => { const [x, y, z] = L(f, u, w); P({ t: 'ico', x, y, z, r: r * S, sy, c }); };
+    const cyl = (f, w, u0, u1, r0, r1, c, n = 10, cap = true, m = 0) => { const [x, , z] = L(f, 0, w); P({ t: 'cyl', x, z, y0: Y0 + u0 * S, y1: Y0 + u1 * S, r: r0 * S, r1: r1 * S, n, c, m, cap }); };
+    const tb = (a, b2, r0, r1, c, n = 6, m = 0) => P({ t: 'tube', a: L(...a), b: L(...b2), r: r0 * S, r1: r1 * S, n, c, m });
+    const SKIN = 0xf0c8a8, BLUE = 0x2c62a8, RED = 0xd2342c, WHITE = 0xf6f3ec, BROWN = 0x6b4426;
+    cyl(0, 0, 0, 0.05, 0.24, 0.22, 0x7f7a72, 12);                                   // a round stone to stand on
+    for (const w of [-0.07, 0.07]) { ico(0.03, 0.085, w, 0.06, 0.65, 0x3a2418); cyl(0, w, 0.08, 0.17, 0.05, 0.055, BROWN, 8, false); } // boots, breeches
+    cyl(0, 0, 0.15, 0.2, 0.17, 0.165, BLUE, 14, false);                              // the coat's hem …
+    cyl(0, 0, 0.2, 0.4, 0.165, 0.12, BLUE, 14, true);                                // … and the coat
+    cyl(0, 0, 0.255, 0.285, 0.155, 0.15, 0x2a2420, 14, false);                       // the belt
+    { const [x, y, z] = L(0.15, 0.27, 0); P({ t: 'box', x0: x - 0.012 * S, y0: y - 0.03 * S, z0: z - 0.035 * S, x1: x + 0.015 * S, y1: y + 0.03 * S, z1: z + 0.035 * S, c: 0xd8b45a, m: M.CHROME }); }
+    for (const w of [-0.12, 0.12]) tb([0.0, 0.37, w], [0.15, 0.3, w * 0.35], 0.045, 0.038, BLUE);   // arms, round the rod
+    ico(0.16, 0.3, -0.035, 0.042, 1, 0x3d7a5a); ico(0.16, 0.3, 0.035, 0.042, 1, 0x3d7a5a);          // green mittens
+    ico(0, 0.48, 0, 0.115, 1.0, SKIN);                                              // the head
+    ico(0.075, 0.37, 0, 0.115, 1.25, WHITE); ico(0.1, 0.29, 0, 0.075, 1.2, WHITE);   // the beard, down over the belt
+    for (const w of [-0.04, 0.04]) ico(0.1, 0.445, w, 0.038, 0.7, WHITE);           // the moustache
+    ico(0.112, 0.47, 0, 0.034, 1, 0xe0705e);                                        // a red nose
+    for (const w of [-0.06, 0.06]) { ico(0.085, 0.47, w, 0.026, 0.8, 0xf2a0a0); ico(0.098, 0.505, w * 0.65, 0.013, 1, 0x1d1f22); ico(0.093, 0.53, w * 0.7, 0.016, 0.45, WHITE); } // cheeks, eyes, brows
+    cyl(0, 0, 0.53, 0.56, 0.125, 0.122, 0xb02a24, 14, false);                        // the cap's band …
+    cyl(0, 0, 0.56, 0.78, 0.122, 0.05, RED, 14, false);                              // … the tall red cap …
+    tb([0, 0.78, 0], [-0.07, 0.86, 0.02], 0.05, 0.03, RED, 8); tb([-0.07, 0.86, 0.02], [-0.16, 0.83, 0.03], 0.03, 0.012, RED, 8); // … flopping over
+    ico(-0.17, 0.825, 0.03, 0.025, 1, WHITE);                                       // a little white bobble
+    // the rod, the reel, the line and the float lying in the gravel
+    tb([0.12, 0.27, 0], [0.8, 0.86, 0.06], 0.014, 0.007, 0x5a4430, 6);
+    cyl(0.2, -0.04, 0.3, 0.33, 0.03, 0.03, 0x9aa0a6, 8, true, M.CHROME);
+    tb([0.8, 0.86, 0.06], [0.86, 0.06, 0.1], 0.0035, 0.0035, 0xe8e2d0, 3);
+    ico(0.86, 0.045, 0.1, 0.032, 1, RED); ico(0.86, 0.075, 0.1, 0.022, 0.8, WHITE);
+    // an empty bucket for the catch, on its side
+    { const [x, y, z] = L(0.12, 0.0, -0.32); P({ t: 'hcyl', x, y: y + 0.07 * S, z, len: 0.16 * S, r: 0.07 * S, axis: 'z', n: 10, c: 0x9aa0a6, m: M.CHROME }); }
+    colCircle(gx, gz, 0.3, 0.9);
   }
 
   // the message in a bottle among the rocks on Söderholmen's south cliffs

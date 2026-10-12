@@ -714,16 +714,45 @@ export function createLayout(seed = 7) {
     colliders.push({ t: 'box', x0: FEST.table.x0, z0: FEST.table.z0, x1: FEST.table.x1, z1: FEST.table.z1, h: 0, hUp: CURB_H + 0.8, fest: true });
     // (v1.14) the bun championship's two bakers' stands, either side of it (up only while the championship is)
     for (const x of [-12.6, 0.6]) colliders.push({ t: 'box', x0: x - 0.45, z0: 9.3, x1: x + 0.45, z1: 9.9, h: 0, hUp: CURB_H + 0.8, bm: true });
-    // square with fountain
-    const fx = b.cx - 3, fz = b.cz - 4;
-    poly(ngon(fx, fz, 4.6, 16), COL.stone, M.STONE, CURB_H + 0.55);
-    poly(ngon(fx, fz, 4.0, 16), 0x3a7a8a, M.WATER, CURB_H + 0.4);
+    // square with fountain. (v1.14.2) The stone rim is a ring – like the park pond's before v1.8.1 it used to be
+    // a whole stone disc lying over the water, so the basin looked dry. Water in the basin and in the bowl on top,
+    // and streams falling from the bowl's lip.
+    const fx = b.cx - 3, fz = b.cz - 4, FY = CURB_H;
+    for (let k = 0; k < 24; k++) {
+      const a0 = (k / 24) * Math.PI * 2, a1 = ((k + 1) / 24) * Math.PI * 2;
+      poly([[fx + Math.cos(a0) * 4.6, fz + Math.sin(a0) * 4.6], [fx + Math.cos(a1) * 4.6, fz + Math.sin(a1) * 4.6], [fx + Math.cos(a1) * 4.0, fz + Math.sin(a1) * 4.0], [fx + Math.cos(a0) * 4.0, fz + Math.sin(a0) * 4.0]], k % 2 ? COL.stone : 0x8a857c, M.STONE, FY + 0.55);
+    }
+    poly(ngon(fx, fz, 4.05, 24), 0x3d7f8a, M.WATER, FY + 0.4);
     for (let k = 0; k < 16; k++) {
       const a0 = (k / 16) * Math.PI * 2, a1 = ((k + 1) / 16) * Math.PI * 2;
-      P({ t: 'wall', x0: fx + Math.cos(a0) * 4.6, z0: fz + Math.sin(a0) * 4.6, x1: fx + Math.cos(a1) * 4.6, z1: fz + Math.sin(a1) * 4.6, y0: CURB_H, y1: CURB_H + 0.55, c: COL.stone, m: M.STONE });
+      P({ t: 'wall', x0: fx + Math.cos(a0) * 4.6, z0: fz + Math.sin(a0) * 4.6, x1: fx + Math.cos(a1) * 4.6, z1: fz + Math.sin(a1) * 4.6, y0: FY, y1: FY + 0.55, c: COL.stone, m: M.STONE });
+      P({ t: 'wall', x0: fx + Math.cos(a1) * 4.0, z0: fz + Math.sin(a1) * 4.0, x1: fx + Math.cos(a0) * 4.0, z1: fz + Math.sin(a0) * 4.0, y0: FY + 0.4, y1: FY + 0.55, c: COL.stone, m: M.STONE });
     }
-    P({ t: 'cyl', x: fx, z: fz, y0: CURB_H + 0.4, y1: CURB_H + 2.2, r: 0.45, r1: 0.3, n: 8, c: COL.stone });
-    P({ t: 'cyl', x: fx, z: fz, y0: CURB_H + 2.2, y1: CURB_H + 2.45, r: 1.4, n: 10, c: COL.stone, cap: true });
+    // the column, the big bowl (its underside flaring out, its lip, the water in it), a small bowl and a spout on top
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 0.38, y1: FY + 0.5, r: 0.7, r1: 0.55, n: 12, c: 0x8a857c, cap: true });
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 0.5, y1: FY + 1.95, r: 0.36, r1: 0.26, n: 10, c: COL.stone });
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 1.95, y1: FY + 2.2, r: 0.3, r1: 1.4, n: 16, c: 0x8a857c });
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 2.2, y1: FY + 2.42, r: 1.4, r1: 1.42, n: 16, c: COL.stone });
+    poly(ngon(fx, fz, 1.3, 16), 0x4f95a0, M.WATER, FY + 2.38);
+    for (let k = 0; k < 16; k++) {
+      const a0 = (k / 16) * Math.PI * 2, a1 = ((k + 1) / 16) * Math.PI * 2;
+      poly([[fx + Math.cos(a0) * 1.42, fz + Math.sin(a0) * 1.42], [fx + Math.cos(a1) * 1.42, fz + Math.sin(a1) * 1.42], [fx + Math.cos(a1) * 1.28, fz + Math.sin(a1) * 1.28], [fx + Math.cos(a0) * 1.28, fz + Math.sin(a0) * 1.28]], 0xa39e94, M.STONE, FY + 2.43);
+      P({ t: 'wall', x0: fx + Math.cos(a1) * 1.28, z0: fz + Math.sin(a1) * 1.28, x1: fx + Math.cos(a0) * 1.28, z1: fz + Math.sin(a0) * 1.28, y0: FY + 2.38, y1: FY + 2.43, c: COL.stone, m: M.STONE });
+    }
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 2.38, y1: FY + 2.95, r: 0.14, r1: 0.11, n: 8, c: COL.stone });
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 2.95, y1: FY + 3.12, r: 0.12, r1: 0.48, n: 12, c: 0x8a857c });
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 3.12, y1: FY + 3.18, r: 0.48, n: 12, c: COL.stone });
+    poly(ngon(fx, fz, 0.42, 12), 0x5aa2ad, M.WATER, FY + 3.16);
+    P({ t: 'cyl', x: fx, z: fz, y0: FY + 3.16, y1: FY + 3.42, r: 0.05, r1: 0.03, n: 6, c: 0xb08a3a, m: M.CHROME, cap: true });   // the brass spout
+    // water: a little jet out of the spout, a fringe falling from the small bowl, and streams from the big bowl's lip
+    P({ t: 'tube', a: [fx, FY + 3.42, fz], b: [fx, FY + 3.7, fz], r: 0.035, r1: 0.012, n: 6, c: 0xa8d8e4, m: M.WATER });
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 + 0.2; P({ t: 'tube', a: [fx + Math.cos(a) * 0.48, FY + 3.14, fz + Math.sin(a) * 0.48], b: [fx + Math.cos(a) * 0.62, FY + 2.42, fz + Math.sin(a) * 0.62], r: 0.02, r1: 0.016, n: 4, c: 0xa8d8e4, m: M.WATER }); }
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * Math.PI * 2, r0 = 1.43, r1 = 1.62, r2 = 1.75;
+      P({ t: 'tube', a: [fx + Math.cos(a) * r0, FY + 2.42, fz + Math.sin(a) * r0], b: [fx + Math.cos(a) * r1, FY + 1.6, fz + Math.sin(a) * r1], r: 0.022, r1: 0.02, n: 4, c: 0xa8d8e4, m: M.WATER });
+      P({ t: 'tube', a: [fx + Math.cos(a) * r1, FY + 1.6, fz + Math.sin(a) * r1], b: [fx + Math.cos(a) * r2, FY + 0.41, fz + Math.sin(a) * r2], r: 0.02, r1: 0.026, n: 4, c: 0xa8d8e4, m: M.WATER });
+      if (k % 2 === 0) P({ t: 'ico', x: fx + Math.cos(a) * r2, y: FY + 0.42, z: fz + Math.sin(a) * r2, r: 0.14, sy: 0.22, c: 0xe8f6fa });   // where it splashes down
+    }
     colCircle(fx, fz, 4.6, 0.6);
     zones.fountain = { x: fx, y: CURB_H + 2.5, z: fz };
     for (const [x, z] of [[fx - 9, fz - 7], [fx + 7, fz - 9], [fx - 8, fz + 9], [fx + 9, fz + 8]]) {

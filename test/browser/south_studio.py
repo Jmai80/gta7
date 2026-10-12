@@ -36,6 +36,9 @@ SHOTS = {
   'stump':    ((70.6, 1.4, -57.6), (70.0, 0.5, -60.0), 50),
   'goldbun':  ((80.2, 1.5, -357.0), (79.0, 0.5, -359.9), 50),
   'gnome':    ((32.0, 1.0, -329.4), (30.3, 0.5, -330.5), 50),
+  'gnomeside':((30.9, 0.9, -328.4), (30.4, 0.55, -330.5), 46),    # (v1.14.2) the new gnome from his left
+  'fountain': ((4.5, 4.0, 6.5), (-3.0, 1.2, -4.0), 55),          # (v1.14.2) the fountain on the square, with water
+  'fountainnear': ((0.6, 1.7, 1.2), (-3.0, 1.2, -4.0), 55),
   'bottle':   ((-39.6, 0.8, 285.6), (-40.0, 0.1, 287.2), 50),
   'phonebox': ((-111.5, 2.0, -135.5), (-114.5, 1.3, -140.6), 55),
 }
@@ -69,7 +72,10 @@ async def main():
         await pg.evaluate('window.__gta.pause()')
         await pg.add_style_tag(content='#pausemenu, #hud { display: none !important; }')
         await pg.evaluate('window.__gta.view.setDpr(1); window.__gta.perf.apply("pretty")')
+        only = os.environ.get('ONLY')
         for name, (c, l, f) in SHOTS.items():
+            if only and name not in only.split(','):
+                continue
             await pg.evaluate('''([c, l, f]) => { const v = window.__gta.view; v.camera.position.set(c[0], c[1], c[2]); v.camera.fov = f; v.camera.updateProjectionMatrix(); v.camera.lookAt(l[0], l[1], l[2]); }''', [c, l, f])
             await frames(pg, 5)
             await pg.screenshot(path=f'test/shots/south_{TAG}_{name}.png')
