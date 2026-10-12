@@ -297,8 +297,13 @@ const PAINTERS = {
     g.strokeStyle = 'rgba(255,250,235,0.35)'; g.lineWidth = 1;
     for (const [a, b, c2, e] of [[0.2, 0.1, 0.25, 0.6], [0.8, 0.3, 0.76, 0.9], [0.6, 0.05, 0.62, 0.3]]) { g.beginPath(); g.moveTo(px + pw * a, py + ph * b); g.lineTo(px + pw * c2, py + ph * e); g.stroke(); }
     // the caption, in ink on the white border
-    g.fillStyle = '#2a3a6a'; g.font = `italic 600 ${h * 0.09}px Georgia, serif`;
-    g.fillText('Arne vinner! Sjuby, juni 1985', x + w / 2, y + h * 0.9);
+    // ((v1.14.1) shrunk to fit inside the white border: on a phone the serif font is often wider than Georgia)
+    const cap = 'Arne vinner! Sjuby, juni 1985';
+    let fs = h * 0.09;
+    g.font = `italic 600 ${fs}px Georgia, serif`;
+    while (fs > 4 && g.measureText(cap).width > w * 0.82) { fs *= 0.92; g.font = `italic 600 ${fs}px Georgia, serif`; }
+    g.fillStyle = '#2a3a6a';
+    g.fillText(cap, x + w / 2, y + h * 0.9);
   },
   // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
   lyckoland(g, d, x, y, w, h) {
