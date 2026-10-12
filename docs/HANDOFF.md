@@ -1,6 +1,6 @@
 # GTA 7 – överlämning till nästa chatt
 
-Senast uppdaterad: 12 oktober 2026, efter version 1.13 (två nya sidouppdrag inomhus i byggnader vi aldrig varit inne i: **Fredagsrusningen** i köket på Pizzeria Sjuan – Pino har bränt handen, du bakar sex beställningar från lapparna med deg, pålägg, vedugn och luckan – och **Möss i kvarnen** inne i Mjölnar-Majkens väderkvarn – täpp till mushålen, smyg ikapp sju möss, släpp de vilda vid Bullbilens tomma bageri och lämna den tama, Kimchi, hos Nova). Version 1.12 gav (huvuduppdragets del 13 **Flaskposten**: Dahlgren diskar för hand utanför konditoriet och du torkar – ett tryckminispel med tolv tallrikar; Ingvars flaskpost från 1974 på Söderholmens södra klippor leder till en plåtask med kodlås under fyrens nya stentrappa; brevet han aldrig vågade ge till Elsa; Elsas gröna hus bredvid kapellet inifrån, där du letar efter hennes glasögon (katten Måns ligger på dem); hennes svar; och söndagen i kapellet, när Ingvar inte sätter sig längst bak. Plus en ny bromsspak vid kvarnen, fyrens dörr på östra sidan och en grind i staketen vid husen på Söderholmens västsida). Version 1.11 gav (huvuduppdragets del 12 **Arnes skattjakt**: Arnes sista bröllopsdagsskattjakt till tant Gun, med rimmade gåtor från lapp till lapp – ekstubben i parken och ett kodlås, väderkvarnen på Norrholmen där vingen med det gula seglet ska bromsas rakt ner, Ingvar vid fyren, telefonkiosken på kajen mot klockan och kapellet med psalmtavlan – och till sist det som inte stod i receptet: stött kardemumma; plus en läsbar psalmtavla och skarpare skyltar för närbilder). Version 1.10 gav (kyrkoherde Ingas sidouppdrag Kyrkkaffet: tant Guns söndagsbullar i lådan på Arnes cykel ut till kapellet på Söderholmen, kyrkklockan som ringer in gästerna, och orgeln – ett nytt minispel där Inga sjunger en vers och du spelar efter; plus att altartavlans text syns igen). Version 1.9 gav (Söderholmens kapell går att gå in i: bänkrader med en mittgång, altare och kyrkoherde Inga). Version 1.8.2 gav nya blomsterplanteringar inne på tivolit. Version 1.8.1 gav (dammen i parken visar sitt vatten igen och gummiankorna är nya, detaljerade och simmar runt). Version 1.8 gav (åtta hemligheter/påskägg, bland annat en skateboard man kan åka på fotbollsplanen och en telefonkiosk som ringer och ger ledtrådar). Version 1.7 gav (tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten, där du spanar efter Dahlgren från pariserhjulet och springer ikapp honom, och sidouppdragen Var är Ebbe? och Måsen har fastnat). Version 1.6 gav en ny stadsdel: ön Söderholmen söder om stan, över södra bron från Kungsgatan, med Tivoli Lyckoland – pariserhjul som man kan åka, karusell, berg-och-dalbana, radiobilar – i stället för en strand). Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med den nya bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. Version 1.4.1 var en buggfix i Cykelgömman: en cykel i köket stod framför badrumsdörren, så badkaret med Veras sadel gick inte att nå. Version 1.4 gav sidouppdraget Konsertbiljetten i Novas rum och en tystare bilradio, av från början. Version 1.3 gav bilradio och tydligt besked när ljudet är av. Version 1.2 gav huvuduppdragets del 9 Cykelgömman inne i tant Guns granne Birgers hus, och sidouppdraget Cyklarna hem. Version 1.1.2 var underhåll av testmiljön och dokumenten. Version 1.1.1 var en buggfix: Långhoppets K startar nu ett försök när man kör in i det med bil, och det står där satsen räcker). Version 1.1 gav tre nya namn (Melker, Jonte, Vera), nya cykelhjul och en ny badplats.
+Senast uppdaterad: 12 oktober 2026, efter version 1.13.1 (överlämning inför huvudäventyrets del 14 – se **avsnitt 10**: lösa trådar, tre förslag med ett rekommenderat, checklistan för en ny huvuddel, lediga platser för interiörer och lärdomar). Version 1.13 gav (två nya sidouppdrag inomhus i byggnader vi aldrig varit inne i: **Fredagsrusningen** i köket på Pizzeria Sjuan – Pino har bränt handen, du bakar sex beställningar från lapparna med deg, pålägg, vedugn och luckan – och **Möss i kvarnen** inne i Mjölnar-Majkens väderkvarn – täpp till mushålen, smyg ikapp sju möss, släpp de vilda vid Bullbilens tomma bageri och lämna den tama, Kimchi, hos Nova). Version 1.12 gav (huvuduppdragets del 13 **Flaskposten**: Dahlgren diskar för hand utanför konditoriet och du torkar – ett tryckminispel med tolv tallrikar; Ingvars flaskpost från 1974 på Söderholmens södra klippor leder till en plåtask med kodlås under fyrens nya stentrappa; brevet han aldrig vågade ge till Elsa; Elsas gröna hus bredvid kapellet inifrån, där du letar efter hennes glasögon (katten Måns ligger på dem); hennes svar; och söndagen i kapellet, när Ingvar inte sätter sig längst bak. Plus en ny bromsspak vid kvarnen, fyrens dörr på östra sidan och en grind i staketen vid husen på Söderholmens västsida). Version 1.11 gav (huvuduppdragets del 12 **Arnes skattjakt**: Arnes sista bröllopsdagsskattjakt till tant Gun, med rimmade gåtor från lapp till lapp – ekstubben i parken och ett kodlås, väderkvarnen på Norrholmen där vingen med det gula seglet ska bromsas rakt ner, Ingvar vid fyren, telefonkiosken på kajen mot klockan och kapellet med psalmtavlan – och till sist det som inte stod i receptet: stött kardemumma; plus en läsbar psalmtavla och skarpare skyltar för närbilder). Version 1.10 gav (kyrkoherde Ingas sidouppdrag Kyrkkaffet: tant Guns söndagsbullar i lådan på Arnes cykel ut till kapellet på Söderholmen, kyrkklockan som ringer in gästerna, och orgeln – ett nytt minispel där Inga sjunger en vers och du spelar efter; plus att altartavlans text syns igen). Version 1.9 gav (Söderholmens kapell går att gå in i: bänkrader med en mittgång, altare och kyrkoherde Inga). Version 1.8.2 gav nya blomsterplanteringar inne på tivolit. Version 1.8.1 gav (dammen i parken visar sitt vatten igen och gummiankorna är nya, detaljerade och simmar runt). Version 1.8 gav (åtta hemligheter/påskägg, bland annat en skateboard man kan åka på fotbollsplanen och en telefonkiosk som ringer och ger ledtrådar). Version 1.7 gav (tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten, där du spanar efter Dahlgren från pariserhjulet och springer ikapp honom, och sidouppdragen Var är Ebbe? och Måsen har fastnat). Version 1.6 gav en ny stadsdel: ön Söderholmen söder om stan, över södra bron från Kungsgatan, med Tivoli Lyckoland – pariserhjul som man kan åka, karusell, berg-och-dalbana, radiobilar – i stället för en strand). Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med den nya bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. Version 1.4.1 var en buggfix i Cykelgömman: en cykel i köket stod framför badrumsdörren, så badkaret med Veras sadel gick inte att nå. Version 1.4 gav sidouppdraget Konsertbiljetten i Novas rum och en tystare bilradio, av från början. Version 1.3 gav bilradio och tydligt besked när ljudet är av. Version 1.2 gav huvuduppdragets del 9 Cykelgömman inne i tant Guns granne Birgers hus, och sidouppdraget Cyklarna hem. Version 1.1.2 var underhåll av testmiljön och dokumenten. Version 1.1.1 var en buggfix: Långhoppets K startar nu ett försök när man kör in i det med bil, och det står där satsen räcker). Version 1.1 gav tre nya namn (Melker, Jonte, Vera), nya cykelhjul och en ny badplats.
 Det här dokumentet är skrivet så att en ny Claude-session (eller en människa) kan fortsätta utan att läsa den gamla chatten. Börja med `CLAUDE.md` i repots rot (den läses in automatiskt av Claude Code och har snabbstarten, reglerna och leveranschecklistan); här finns detaljerna.
 
 ---
@@ -246,3 +246,115 @@ Förslag på fortsättning som användaren kan vilja ha: Dahlgren som diskare p�
 - v1.11: huvuduppdragets del 12 **Arnes skattjakt** (`skattjakt.js`, `lock.js`; användaren: "ett till uppdrag i liknande stil – rörelse över hela staden och en blandning av åka och klura – den här gången en del av main quest"). Bengt har bakat efter Arnes recept i en vecka utan att bullarna blir som Arnes; Gun hittar Arnes sista bröllopsdagsskattjakt (1995) i receptlådan. Fyra rimmade gåtor utan GPS (tips från Gun efter 40 s eller med ett tryck på uppdragsrutan, +250 kr per gåta utan tips): ekstubben i parken med ett kodlås (1971, året i hjärtat – nu läsbart), kvarnen på Norrholmen där vingen med det gula seglet ska bromsas rakt ner (`MILL` i game.js, bromsspak i island.js, fast kamera på hela hjulet, Majken på en stege), fyren där Ingvar avslöjar att det var han i telefonkiosken, ett samtal i kiosken på kajen (bilfärd på 90 s för +500 kr), och kapellet där koden till altarlådan (287) har hängt på psalmtavlan sedan bröllopet. Smörlådan med A + G till Gun: Arnes brev – han stötte kardemumman själv i Guns mammas mortel – och du stöter första satsen (STÖT ×30). Dahlgren följer doften över torget och får diska. Upp till 6 500 kr. Nytt: kodlåset (`#lock` i index.html, sifferhjul, tangenter på datorn), Arnes lappar som papper i samtalsrutan, uppdragsrutans frågetecken och tips, `camFocus.dist/height/cam`, skyltar med `rows` och `ppm`, en läsbar psalmtavla (PSALM / 12 / 287 / 649) och välkomstskyltens år, ljud för låset, kvarnbromsen, morteln och papperet, och en rad på slutskärmen. `MAIN` har 15 delar. Kontrollpunkter i `stats.hunt` (fortsätter vid lappen du var på). Testsektion 39, `v1_11.py` (phone och land).
 - v1.12: huvuduppdragets del 13 **Flaskposten** (`flaskpost.js`, `elsa.js`; användaren: "nästa del, använd Ingvars flaskpost på något sätt och låt Dahlgren börja diska – och gärna en interiör i något av husen bredvid kapellet"). Dahlgren diskar för hand utanför konditoriet (diskmaskinen gick sönder första dagen) och du torkar: ett tryckminispel med tolv tallrikar (25 kr styck, tappade dras inte av). Ingvars flaskpost (hemligheten från v1.8) leder till en plåtask med kodlås 1974 under fyrens nya stentrappa, med ett brev till Elsa som han aldrig vågade ge henne. Elsas gröna hus bredvid kapellet inifrån: knacka, leta efter glasögonen på sex ställen (katten Måns ligger på dem; +200 kr utan tips), hon läser brevet och skriver svar. Ingvar svarar "Söndag.", och i kapellet sätter han sig bredvid Elsa i stället för längst bak. Upp till 5 500 kr. `MAIN` har 16 delar, kontrollpunkter i `stats.flask`. Också: kvarnens bromsspak gjord om (användaren skickade en bild – armen svävade och skylten gick inte att läsa), fyrens dörr flyttad till östra sidan med en stentrappa, en grind i staketen vid husen på Söderholmens västsida, ett huvuduppdrags markör desarmeras om du står i den när sms:et kommer, ljud för tallrikar och knackningar, en rad på slutskärmen. Testsektion 40, `v1_12.py` (phone och land).
 - v1.13: två sidouppdrag inomhus i byggnader vi aldrig varit inne i (användaren: "två side quests som båda utspelar sig på insidan av byggnader där vi ännu inte har varit"). **Fredagsrusningen** (`pizzeria.js`, `kitchen.js`): Pizzeria Sjuan inifrån – matsal med gäster, disk med lucka, kök med vedugn, degbänk och fem pålägglådor; Pino har bränt handen och du bakar sex beställningar efter lapparna (ny HUD-del `#tickets`), Sanna bär ut, Pino smakar sin special. **Möss i kvarnen** (`millroom.js`, `mice.js`): väderkvarnen inifrån – kvarnstenar, axel, säckar, katten Sotis; täpp till fem hål och fånga sju möss som rusar iväg när du springer men stannar och nosar; den vita, Kimchi, är Novas och följer med hem efter att de vilda släppts vid Bullbilens tomma bageri. Också: en glasdörr på pizzerians fasad, kvarnens dörr ner på stenfoten med två trappsteg, `insideview.js` för pizzorna och mössen, `job.mapDots()` på minikartan, knappen `xlong` för CHAMPINJONER, ljud (`audio.kitchen`, `audio.mice`), röster för Sanna och Pino. Testsektion 41–42, `v1_13.py` (phone och land).
+- v1.13.1: bara dokument. Avsnitt 10 i den här filen ("Nästa del av äventyret") och ett nytt avsnitt överst i CLAUDE.md om vad nästa chatt ska göra. Inget i spelet ändrat.
+
+## 10. Nästa del av äventyret – förslag och byggbeskrivning (skrivet efter v1.13)
+
+Användaren vill att nästa chatt tar itu med **nästa del av huvudäventyret (del 14)**. Huvuduppdraget slutade i v1.12 med Flaskposten; v1.13 gav bara sidouppdrag. Användaren har hittills beställt i stora drag ("nästa del, använd Ingvars flaskpost på något sätt", "en interiör i något av husen bredvid kapellet", "rörelse över hela staden och en blandning av åka och klura") och låtit oss hitta på resten. Har användaren inte sagt vad del 14 ska handla om: välj förslag A nedan, säg kort vilket du valde, och bygg. Fråga bara om användaren uttryckligen vill välja.
+
+### 10.1 Lösa trådar i berättelsen
+
+- **Dahlgren** diskar hos Gun sedan del 12–13 och har erkänt att han aldrig lyckats baka Arnes bullar. Han har inte fått baka själv än.
+- **Konditoriet inifrån** finns inte. Allt vid konditoriet har hänt på trottoaren utanför (`KONDITORI` (−6; 17,4), dörren `KONDITORI_DOOR` (−6; 19) i tegelhusets norra fasad mot torget).
+- **Hemligheter som inte är knutna till berättelsen:** den gyllene bullen (`goldbun`, (79; −359) bland granarna nära fyren: "Vem har gjort den – och varför?"), Dahlgrens trädgårdstomte (`gnome`, (31,2; −330,5) vid kolonilotternas parkering: "Tillhör Dahlgren") och gummiankan med krona i parkdammen. Ingvar (telefonkiosken), hjärtat i stubben och flaskposten är redan knutna.
+- **Ingvar och Elsa** sitter ihop på tredje raden sedan del 13. Fyren inifrån finns inte.
+- **Bullbilens bageri** på Norrholmen står tomt, med sex möss under lastkajen (v1.13).
+- **Birger** har bjudit på kaffe och vill höra historien om cyklarna, och åtta stulna cyklar har inte kommit hem (sidouppdragstrådar).
+- **Västra bron** (`BRIDGES[1]`) är stängd: ett möjligt nytt område, men stort.
+
+### 10.2 Förslag A (rekommenderat): del 14 "Den gyllene bullen"
+
+Knyter ihop Dahlgren, den gyllene bullen och tomten, och ger konditoriet en interiör. Mönstret från del 12–13 – rörelse över hela kartan, en blandning av åka och klura – passar.
+
+1. **Sms från tant Gun** (G, 25–30 s efter `flaskpost`): Dahlgren har diskat i tre veckor utan att klaga och fått baka sin första sats på riktigt. Möt dem **inne i konditoriet** (ny interiör: disk med bullar i glasmontern, bageriet bakom med stenugnen, Arnes gamla receptlåda, ett fotografi på väggen).
+2. **Bakningen inne i konditoriet:** ett kort minispel. Återanvänd stationsmönstret från Fredagsrusningen (`kitchen.js`: deg → … → ugn, gyllene i tid), eller morteln från Arnes skattjakt (STÖT). Bullarna blir nästan som Arnes – men inte riktigt.
+3. **Fotografiet:** Sjubys bullmästerskap 1985. Arne höll upp pokalen **Den gyllene bullen**; Dahlgren står längst ut och surar. Pokalen försvann samma natt. Gun har aldrig vetat vart.
+4. **Dahlgren erkänner** (motvilligt, kanske först efter att du hittat något): han tog den av avund och gömde den på Norrholmen. Han minns inte exakt var – men hans tomte "vaktar" en ledtråd. Tomten (`gnome`) har en lapp eller nyckel under sig, kanske med ett kodlås (`lock.js`) eller en gåta (som `RIDDLES` i skattjakt.js).
+5. **Den gyllene bullen** ligger bland granarna (`goldbun`). Räkna hemligheten om den inte redan är hittad (som flaskposten i del 13: `secret(id)`). Ett moment att åka eller kluras med: en ekorre som flyttat den, en jakt mot klockan innan någon annan tar den, eller ett kodlås på en låda.
+6. **Tillbaka till torget:** ett nytt bullmästerskap (Bullfestens bord finns i render.js, `FEST`, `game.festUp`). Dahlgren mot Bengt, och domare som Inga, Gun och Ingvar (eller Elsa). Dahlgren vinner inte – eller vinner och ger pokalen till Gun. Pokalen hamnar på hyllan i konditoriet.
+
+**Personer:** Gun, Dahlgren, Bengt, kanske Inga, Ingvar och Elsa som publik.
+
+**Det tekniska:**
+
+- **Ny interiör `konditori`:** fil, `PLACES.konditori`, en ny plats i `INDOOR`-området (se 10.5) och planen i hud.js.
+- **Nytt jobb:** till exempel `src/bullmastare.js`. Kontrollpunkter i `stats.<namn>` som `flaskSave`/`miceSave`.
+- **`MAIN`:** blir 17 delar (se 10.4).
+
+### 10.3 Andra förslag
+
+- **B. Fyren inifrån – Ingvar och Elsa.**
+  - Ingvar vill visa Elsa fyren, men lampan har slocknat inför en storm.
+  - Fyren är rund och hög. Interiörerna är ett plan med väggar på högst ~2,6 m, så bygg varje våning som ett eget rum och kliv mellan dem med en knapp, som hissen i höghuset (`HISS` i indoors.js).
+  - Ett elpussel för lampan (kablar att koppla, kanske med kodlåsets sifferhjul) och en åktur genom stormen för att hämta Elsa.
+  - Båtar går inte att köra: `boat` är bara en statisk prim. Ett körbart fordon på vatten vore ett stort nytt system.
+- **C. Bullbilens tomma bageri inifrån.**
+  - Dahlgren vill sälja bageriet. Någon köpare snokar (Kexfabriken från del 11?).
+  - Du letar efter något Arne lämnade där för 30 år sedan.
+  - Mössen från v1.13 bor där nu, och Kimchi kan återkomma.
+- **D. Västra bron och ett nytt område.**
+  - Störst. Kräver ny mark i `onIsland`/kollisionsgridden (−440..320) och ny GPS-graf.
+  - Bara om användaren ber om ett nytt område.
+
+### 10.4 Så lägger du till en ny huvuddel (checklista från v1.11–v1.12)
+
+1. **Jobbfil `src/<namn>.js`:**
+   - en klass med `start/update/targets/cleanup`, samtalssidor som funktioner (`introPages()` …) och en konstant med alla platser (`FLASK`, `HUNT`),
+   - kontrollpunkter i `g.stats.<namn> = { at, … }` och `resume()`,
+   - en `<namn>World(mgr)` som sätter `startOnAccept` när `at > 0` och sätter ut eller tar bort personerna utom synhåll (`hidden()`),
+   - `camFocus` nollställs i `cleanup`.
+2. **`src/mission.js`:**
+   - import, en post i `QUESTS` (`main: true, after: 'flaskpost', at: 25–30, needFoot`), id:t sist i `MAIN`,
+   - `questLine` och `objectiveFor`,
+   - anropet till `<namn>World(this)` i `update()`,
+   - id:t i `checkAllDone`s `wait`-lista och nya sms-texter där ("Det var allt i version X.Y! …").
+3. **`src/main.js`:** en rad på slutskärmen (sök `'Flaskposten'`), röster i `VOICES`/`NPC_VOICE` och nya händelser till ljud (`audio.js`).
+4. **`index.html`:** modulepreload för nya filer, och slutskärmens text och version.
+5. **`test/missions.mjs`:**
+   - avsnitt 6 ("Progress and the end card") får en rad till: `no end card while <del 14> is left`, och den sista raden säger hur många delar det är,
+   - sektion 40 (Flaskposten) slutar i dag med `'all sixteen parts: the end card'` – ändra den till "ingen slutskärm än",
+   - lägg sedan en ny sektion 43 för del 14 i stilen `check(ok, 'beskrivning')` med `reachable()` till varje ställe, omladdning vid varje kontrollpunkt och en körning med trafik på flera frön.
+6. **`test/browser/v1_14.py`:** gör den på v1_12.py (huvuddel, sparat spel med `flaskpost` klar) eller v1_13.py (stationer, jakter). Kör `phone` och `land`, kräv `logs []` och titta på bilderna.
+7. **Version 1.14 överallt** (CLAUDE.md avsnitt 6), dokumenten, commit, push, Pages, skärmdumpsarket.
+
+### 10.5 Ny interiör: lediga platser och mönster
+
+- **Upptagna rutor i `INDOOR`-området** (världskoordinater, x × z):
+  - höghuset: 199–216 × 199–211,
+  - Birgers hus: 199,5–211,5 × 175,5–185,5,
+  - Novas rum: 219,5–227,5 × 175,5–182,5,
+  - kapellet: 241,5–250,5 × 175,5–190,5,
+  - Elsas hus: 177,5–186,5 × 201,5–209,5,
+  - Salong Saxen: 227,5–238,5 × 203,5–211,5,
+  - bagerikontoret: 199,5–209,5 × 225,5–233,5,
+  - Hörnlivs: 227,5–237,5 × 225,5–233,5,
+  - pizzerian: 177,5–189,5 × 225,5–234,5,
+  - kvarnen: 251,5–261,5 × 203,5–213,5.
+- **Lediga, till exempel:**
+  - `INDOOR.x + 52, INDOOR.z + 26` (252–264 × 226–236),
+  - `INDOOR.x − 22, INDOOR.z − 24` (178–190 × 176–186),
+  - `INDOOR.x + 28, INDOOR.z + 46` (228–240 × 246–256).
+  - Allt måste ligga inom kollisionsgridden (x/z ≤ 320).
+- **Filmönster:** `elsa.js`, `pizzeria.js` och `millroom.js`:
+  - `ROOM` med `spawn`, `door`, `room` och `bounds`,
+  - `WALLS` och `FURN` (dörren sist), `SIGNS`,
+  - `xxxLayout()` (kolliderare, golv, skyltar) och `xxxInto(B)` (geometrin),
+  - kopplas in i `interior.js` (två ställen), `PLACES` i indoors.js, `IN_ALL` och planen i hud.js.
+- **Rörliga saker inomhus** ritas i `insideview.js` (`InsideProps.sync`) och läser jobbets tillstånd. Egna prickar på inomhuskartan: `job.mapDots()`.
+- **Kameran:** inget tak, väggar ≤ 2,6 m. För samtal i små rum: fasta kameror (`camFocus.cam = { x, y, z, fov }`) högt uppe i rummet. Titta alltid på skärmdumpen.
+- **Folk:**
+  - `spawnPed(g, look, x, z, h, npc)` och `removePed` (hideout.js),
+  - sittande med `seat(ped, S, npc)` (barber.js),
+  - `ped.goto(points, speed, faceH)` med `arrived`,
+  - folk krockar med statiska kolliderare som är högre än 0,5 m, så lägg aldrig en kolliderare där en person står (Pino fastnade i sin egen ruta i v1.13).
+
+### 10.6 Lärdomar från v1.12–v1.13 som är lätta att glömma
+
+- **Uppdragsmarkörer** startar `armed`. Står spelaren i markören när sms:et kommer startar uppdraget direkt. Sedan v1.12 desarmerar `Missions.offer` ett huvuduppdrags markör om du står på den.
+- **`fail` ger markören 6 s nedkylning**, `quit` 3 s. Tester som går in igen direkt efter ett misslyckande måste vänta.
+- **Tips och hints** kommer ofta med `m.later(1.0, …)`. Kontrollera dem efter minst en sekund i testerna, inte efter 0,3.
+- **Knappen (`prompt`)** sätts i jobbets `update`, alltså ett steg efter att tillståndet ändrats. Stega en gång till innan du kontrollerar den.
+- **Testslingor som väntar på händelser** (lappar, kunder) behöver gott om varv. `guard < 200`, inte 40.
+- **Riktiga spelloopen i webbläsartesterna** går vidare medan skärmdumpen tas (rAF). Tidskritiska saker (en tallrik som hålls fram, en pizza i ugnen) hinner ändras. Räkna inte exakt i webbläsartesterna.
+- **Mössens jakt behövde finjusteras** med en bot (`chaseMice` i missions.mjs) innan den kändes rätt. Gör samma sak för nya minispel: mät hur lång tid en bot tar, och se till att det går att klara även med tangentbordets fasta gångfart (2,9 m/s inomhus).
+- **Rörliga saker** som syns (pizzor, möss) har egen geometri i `insideview.js`. Saker som simuleringen bryr sig om ska fortfarande ligga i simuleringsfilerna.
