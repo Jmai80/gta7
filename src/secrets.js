@@ -104,7 +104,7 @@ export class Secrets {
     if (p.state !== 'foot' || p.frozen || g.indoor) return;
     // the phone box rings when you come near (again and again until you answer, and after a while again)
     const P = BY.phone, dp = Math.hypot(p.x - P.x, p.z - P.z);
-    this.ringing = dp < 30 && g.time >= (this.quietUntil || 0) && !(m.active && m.active.holdsPhone); // ((v1.11) Ingvar's call in the treasure hunt)
+    this.ringing = dp < 30 && g.time >= (this.quietUntil || 0) && !(m.active && m.active.holdsPhone) && !g.stats.phoneLast; // ((v1.11) Ingvar's call in the treasure hunt; (v1.15) never again after his last call)
     if (this.ringing && (this.ringT -= dt) <= 0) { this.ringT = 2.6; g.emit('ring', { x: P.x, z: P.z }); if (!this.toldRing) { this.toldRing = true; g.emit('toast', { text: 'Det ringer i telefonkiosken på kajen …' }); } }
     if (this.ringing && dp < P.r) { this.prompt = 'SVARA'; this.near = P; return; }
     // the sea monster: seen from the end of the pier while it is up
@@ -131,6 +131,7 @@ export class Secrets {
     const g = this.game, F = found(g);
     this.quietUntil = g.time + 150;
     this.ringing = false;
+    if (this.mgr.done.has('skatbo') && !g.stats.phoneLast) { this.lastCall(); return; }
     const first = !F.includes('phone');
     const left = SECRETS.filter((s) => s.hint && !F.includes(s.id));
     const pick = left.length ? left[(this.calls = (this.calls || 0) + 1) % left.length] : null;
@@ -142,6 +143,22 @@ export class Secrets {
     if (first) this.mgr.later(0.2, () => this.find('phone', 'quiet'));
   }
 }
+
+// (v1.15) after "Skatans bo": Ingvar rings from the lighthouse one last time – and then never again
+Secrets.prototype.lastCall = function lastCall() {
+  const g = this.game, F = found(g);
+  const V = { who: 'Rösten i telefonen', letter: '?', color: '#5a5f6b' };
+  const I = { who: 'Fyrvaktaren Ingvar', letter: 'I', color: '#5b8fd6' };
+  g.stats.phoneLast = true;
+  g.emit('talk', { id: 'secret-phone', pages: [
+    { ...V, text: '…Hallå. Det är jag. För sista gången.' },
+    { ...I, text: 'Du vet vem jag är. Jag har ringt hit från fyren i tjugo år. När jag såg någon gå förbi i kikaren. Jag hade ingen annan att prata med.' },
+    { ...I, text: 'Nu har jag det. Hon sitter här bredvid mig och dricker kaffe.' },
+    { ...I, text: 'Så jag behöver inte ringa mer. Tack. /I.', last: 'LÄGG PÅ' },
+  ] });
+  if (!F.includes('phone')) this.mgr.later(0.2, () => this.find('phone', 'quiet'));
+  this.mgr.later(0.5, () => g.emit('progress', {}));
+};
 
 // ---------------------------------------------------------------- the props (layout)
 // H: the helpers of createLayout. No random numbers here (and it comes last anyway).

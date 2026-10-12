@@ -24,6 +24,8 @@ import { buildTivoli } from './tivoli.js';
 import { MONSTER, monsterRise, DUCKS, duckAt, POND } from './secrets.js';
 import { InsideProps } from './insideview.js';
 import { PropsView } from './propsview.js';
+import { FyrView } from './fyrview.js';
+import { FYR, fyrFloor } from './fyren.js';
 import { duckPlace } from './ankor.js';
 
 const MAX_HUMANS = 112; // (v1.0: the bun party and the hair salon brought a few more; v1.6: the tivoli many more)
@@ -141,6 +143,7 @@ export class View {
     this.makeFlask();
     this.inside = new InsideProps(this.scene, this.matStatic); // (v1.13) the pizzas in Pizzeria Sjuan, the mice in the mill
     this.props = new PropsView(this.scene, this.matStatic, this.atlas); // (v1.14) the golden bun, the magpie, the trays, the championship, the log
+    this.fyr = new FyrView(this.scene, this.matStatic); // (v1.15) the magpie in the lantern, her nest, the lamp and its beams
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -749,6 +752,7 @@ export class View {
     this.syncFlask(game);
     this.inside.sync(game, this.indoor);
     this.props.sync(game, this.indoor);
+    this.fyr.sync(game, this.indoor);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)
@@ -1134,7 +1138,7 @@ export class CameraRig {
     const place = game.indoor && PLACES[game.indoors.where];
     this.shopK = place ? smooth(this.shopK || 0, 1, 2.5, dt) : 0; // (gone at once outside)
     if (this.shopK > 0.001 && place) {
-      const S = place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35);
+      const S = game.indoors.where === 'fyren' ? (FYR.floors[fyrFloor(p.x, p.z)] || FYR.room) : place.inside.room, k = this.shopK * (portrait ? 0.45 : 0.35); // ((v1.15) the lighthouse: the floor you are on)
       tx += ((S.x0 + S.x1) / 2 - tx) * k; tz += ((S.z0 + S.z1) / 2 + 0.4 - tz) * k;
       // while Yasmin talks, the room slides up the screen so the dialogue box does not hide you
       const j = game.mission.active, talking = j && (((j.stage === 'talk' || j.stage === 'verdict') && (j.id === 'livs' || j.id === 'kassaskap' || j.id === 'salong')) || (j.id === 'cykelgomman' && j.stage === 'read') || (j.id === 'konsert' && (j.stage === 'talk' || j.stage === 'verdict'))) ? 1 : 0;

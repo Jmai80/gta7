@@ -234,6 +234,9 @@ function wire(g) {
   g.on('mice', (e) => { audio.mice(e.kind); if (e.kind === 'catch') buzz(20); }); // (v1.13) Möss i kvarnen
   g.on('bun', (e) => { audio.bun(e.kind); if (e.kind === 'wrong') buzz([30, 30, 30]); else if (e.kind === 'drop') { buzz(40); view.rig.shake = 0.2; } else if (e.kind === 'give') buzz(12); }); // (v1.14) Den gyllene bullen
   g.on('ducks', (e) => { audio.ducks(e.kind); if (e.kind === 'take') buzz(15); });   // (v1.14) Ankorna i dammen
+  g.on('skata', (e) => { audio.skata(e.kind); if (e.kind === 'hit') { buzz([40, 30, 40]); view.rig.shake = 0.25; } else if (e.kind === 'dive') buzz(20); }); // (v1.15) Skatans bo
+  g.on('stairs', (e) => audio.stairs(e.up));
+  g.on('lamp', () => { audio.lamp(); buzz([20, 40, 60]); });
   g.on('photo', (e) => { audio.photo(e.kind); if (e.kind === 'snap') { flashPhoto(e.good); buzz(e.good ? [20, 30, 20] : 15); } }); // (v1.14) Odjurets bild
   g.on('endcard', (e) => showEnd(e.stats));
 }
@@ -463,7 +466,7 @@ function voiceOf(who) {
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { 'fest-gun': 290, 'fest-ingvar': 140, fest: 220, sanna: 300, pino: 110, guest: 220, elsa: 280, 'flask-ingvar': 140, 'flask-dahl': 105, 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
+const NPC_VOICE = { 'fest-gun': 290, 'fest-ingvar': 140, fest: 220, sanna: 300, pino: 110, guest: 220, elsa: 280, 'flask-ingvar': 140, 'flask-dahl': 105, 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260, kim: 200 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -587,6 +590,7 @@ function showEnd(s) {
     ['Arnes skattjakt', s.huntSolo != null ? `${s.huntSolo} av 4 gåtor utan tips${s.huntOnTime ? ', i tid till telefonen' : ''}` : '–'],
     ['Flaskposten', s.flaskDried != null ? `${s.flaskDried} tallrikar torkade, ${s.flaskBroken || 0} sönder` : '–'],
     ['Den gyllene bullen', s.guldVote ? `${s.guldVote === 'dahl' ? 'Dahlgren' : 'Bengt'} vann${s.guldCrushed ? ', stött kardemumma' : ''}` : '–'],
+    ['Skatans bo', s.skatDives != null ? (s.skatDives ? `skatan dök ${s.skatDives} ${s.skatDives === 1 ? 'gång' : 'gånger'}` : 'skatan dök aldrig') : '–'],
     ['Ankorna i dammen', s.ankor && s.ankor.done ? 'Alla fem hemma' : '–'],
     ['Odjurets bild', s.odjur ? `3 bra bilder på ${s.odjur.shots} försök` : '–'],
     ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],

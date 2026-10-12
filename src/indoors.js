@@ -18,6 +18,7 @@ import { ELSA_HOUSE, ELSA_DOOR } from './elsa.js';
 import { PIZZA_ROOM, PIZZA_DOOR } from './pizzeria.js';
 import { MILL_ROOM, MILL_DOOR } from './millroom.js';
 import { KOND, KOND_DOOR } from './konditori.js';
+import { FYR, FYR_DOOR, FYR_OUT, fyrFloor } from './fyren.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { spawnPed, removePed } from './hideout.js';
@@ -25,6 +26,8 @@ import { seat } from './barber.js';
 import { GUN_LOOK } from './flag.js';
 import { BENGT_LOOK } from './opening.js';
 import { BAKE_LOOK } from './guldbullen.js';
+import { INGVAR_LOOK } from './livs.js';
+import { ELSA_GLASSES } from './skatbo.js';
 
 // the places with a door you walk through (the tower has its lift): inside, and where you come out
 export const PLACES = {
@@ -38,6 +41,7 @@ export const PLACES = {
   pizza: { inside: PIZZA_ROOM, out: { x: PIZZA_DOOR.x - 0.3, z: PIZZA_DOOR.z, h: -Math.PI / 2 } },     // Pizzeria Sjuan → Kungsgatan, facing the street (v1.13)
   mill: { inside: MILL_ROOM, out: { x: MILL_DOOR.x, z: MILL_DOOR.z, h: MILL_DOOR.h } },                // the windmill → out on its rocks (v1.13)
   konditori: { inside: KOND, out: { x: KOND_DOOR.x, z: KOND_DOOR.z - 0.6, h: Math.PI } },             // Sjuby Konditori → the square, facing north (v1.14)
+  fyren: { inside: FYR, out: { x: FYR_OUT.x, z: FYR_OUT.z, h: FYR_OUT.h } },                          // the lighthouse → down the steps (v1.15)
 };
 
 // the people in the chapel: Inga in black with a white collar, and three in the pews
@@ -58,6 +62,25 @@ const GUN_KOND = [
   'Kardemumman ska stötas, inte malas. Det står inte i receptet, lilla vän. Det står i hjärtat.',
 ];
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
+// (v1.15) Ingvar at his kitchen table after "Skatans bo" (Elsa beside him): one thing each time
+const INGVAR_T = { who: 'Fyrvaktaren Ingvar', letter: 'I', color: '#5b8fd6' };
+const ELSA_T = { who: 'Elsa', letter: 'E', color: '#5f9a6a' };
+const FYR_TALK = [
+  [ELSA_T, 'Han har tänt lampan varje kväll sedan dess. Och sedan sitter vi här och tittar på den. Det är det bästa jag vet.'],
+  [INGVAR_T, 'Skatan bor i holken nu. Hon har bytt kapsylen mot en sked. Jag vet inte varifrån.'],
+  [ELSA_T, 'Han läste högt ur loggböckerna för mig i går. Tre timmar. Det var mest väder. Jag somnade lyckligt.'],
+  [INGVAR_T, 'Kaffe?'],
+  [ELSA_T, 'Inga har bett oss om hjälp med något stort på Söderholmen. Hon vill inte säga vad än. Det har varit för tyst bland husen vid kapellet, säger hon.'],
+];
+// (v1.15) the logbook in the watch room, open at a different page each time
+const LOG_PAGES = [
+  '2 jan 1977. Storm. Båten\nfrån Söderholmen kom fram.\nKaffe till besättningen.',
+  '17 juni 1985. Bullmästerskap\npå torget. Arne vann.\nD. ser sur ut. Hela kvällen.',
+  '4 sep 1995. Arne ringde från\nkiosken. Skattjakt till Gun.\nJag lovade att läsa sista\nlappen. Inte tala om det.',
+  '30 maj 2026. Ungdom i röd bil\nkör fort på bron. Ska\nhålla ögonen på den.',
+  '9 aug 2026. Elsa i fyren.\nLampan tänd. Inget mer\natt skriva i dag.',
+];
+const LOG = { who: 'Ingvars loggbok', letter: 'L', color: '#2c4a6a', note: true };
 // what Inga says when you come back (one each time, in turn)
 const INGA_AGAIN = [
   'Gun skickar fortfarande en påse bullar till kyrkkaffet varje söndag. Ingen vet hur hon får dem så goda.',
@@ -82,7 +105,8 @@ export class Indoors {
     this.door = game.layout.colliders.find((c) => c.door === 'samuel') || null; // Melker's front door
     this.chapelFolk = [];  // Inga first, then the three in the pews (only while you are in there)
     this.kondFolk = [];    // (v1.14) Gun behind the counter and a baker at the table, after "Den gyllene bullen"
-    this.goIn = null;      // which door GÅ IN is at: 'chapel' | 'konditori'
+    this.fyrFolk = [];     // (v1.15) Ingvar and Elsa at the kitchen table, after "Skatans bo"
+    this.goIn = null;      // which door GÅ IN is at: 'chapel' | 'konditori' | 'fyren'
     this.organ = new Organ(game); // (v1.10) the chapel organ: the psalm in "Kyrkkaffet", free play afterwards
     this.chapelBuns = 0;   // (v1.10) buns on the coffee table by the door (render.js draws them)
     this.ropeAt = -9;      // (v1.10) when the bell rope was last pulled (render.js swings it)
@@ -113,6 +137,7 @@ export class Indoors {
       } else { const S = PLACES[where].inside.spawn; this.place(S.x, S.z, S.h); }
       if (where === 'chapel') this.fillChapel();
       if (where === 'konditori' && !g.mission.active) this.fillKonditori();
+      if (where === 'fyren' && !g.mission.active) this.fillFyren();
       g.emit('indoor', { on: true });
       if (done) done();
     });
@@ -132,6 +157,9 @@ export class Indoors {
       this.chapelFolk = [];
       for (const q of this.kondFolk) removePed(g, q);
       this.kondFolk = [];
+      for (const q of this.fyrFolk) removePed(g, q);
+      this.fyrFolk = [];
+      this.noExit = false;
       if (this.organ.open) this.organ.stop();
       this.chapelBuns = 0;
       const P = PLACES[this.where];
@@ -169,6 +197,8 @@ export class Indoors {
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && Math.hypot(p.x - CHAPEL_DOOR.x, p.z - CHAPEL_DOOR.z) < CHAPEL_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'chapel'; }
       // (v1.14) the konditori, once the trophy is back on its shelf
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('guldbullen') && Math.hypot(p.x - KOND_DOOR.x, p.z - KOND_DOOR.z) < KOND_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'konditori'; }
+      // (v1.15) the lighthouse, once the lamp is lit again
+      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('skatbo') && Math.hypot(p.x - FYR_DOOR.x, p.z - FYR_DOOR.z) < FYR_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'fyren'; }
       return;
     }
     if (this.samuel) this.samuel.update(dt);
@@ -182,6 +212,14 @@ export class Indoors {
     }
     if (this.where === 'konditori' && this.kondFolk[0] && Math.hypot(p.x - KOND.talk.x, p.z - KOND.talk.z) < KOND.talk.r) { this.prompt = 'PRATA'; return; }
     if (this.where === 'tower' && Math.hypot(p.x - INT.lift.x, p.z - INT.lift.z) < INT.lift.r) this.prompt = 'HISS';
+    // (v1.15) the lighthouse: the stairs between the floors, Ingvar at his table, the logbook
+    if (this.where === 'fyren') {
+      const f = fyrFloor(p.x, p.z), S = FYR.stairs[f];
+      if (S && S.up && Math.hypot(p.x - S.up.x, p.z - S.up.z) < S.up.r) { this.prompt = 'UPP'; this.stair = { to: S.upTo, up: true }; return; }
+      if (S && S.down && Math.hypot(p.x - S.down.x, p.z - S.down.z) < S.down.r) { this.prompt = 'NER'; this.stair = { to: S.downTo, up: false }; return; }
+      if (!job && f === 0 && this.fyrFolk[0] && Math.hypot(p.x - FYR.give.x, p.z - FYR.give.z) < FYR.give.r) { this.prompt = 'PRATA'; return; }
+      if (!job && f === 1 && Math.hypot(p.x - FYR.desk.x, p.z - FYR.desk.z) < FYR.desk.r) { this.prompt = 'LÄS'; return; }
+    }
     const P = PLACES[this.where];
     if (P && !this.noExit && Math.hypot(p.x - P.inside.door.x, p.z - P.inside.door.z) < P.inside.door.r) this.prompt = 'GÅ UT';
   }
@@ -192,6 +230,9 @@ export class Indoors {
     if (this.prompt === 'GÅ IN') { this.enter(null, this.goIn || 'chapel'); return true; }
     if (this.prompt === 'PRATA' && this.where === 'chapel') { this.talkToInga(); return true; }
     if (this.prompt === 'PRATA' && this.where === 'konditori') { this.talkToGun(); return true; }
+    if (this.prompt === 'PRATA' && this.where === 'fyren') { this.talkToIngvar(); return true; }
+    if (this.prompt === 'LÄS' && this.where === 'fyren') { this.readLog(); return true; }
+    if ((this.prompt === 'UPP' || this.prompt === 'NER') && this.stair) { this.climb(this.stair); return true; }
     if (this.prompt === 'RINGA') { this.ringBell(); return true; }
     if (this.prompt === 'SPELA') { this.sitAtOrgan(); this.organ.begin('free'); return true; }
     return false;
@@ -294,8 +335,46 @@ export class Indoors {
     g.emit('talk', { id: 'kond-gun', pages: [{ ...GUN_T, text: GUN_KOND[(n - 1) % GUN_KOND.length], last: 'TACK, GUN' }] });
   }
 
+  // ---- (v1.15) the lighthouse: up and down the stairs (a fade, like the lift), Ingvar and Elsa, the logbook
+  climb(S) {
+    if (this.busy) return;
+    const g = this.game;
+    this.busy = true;
+    g.emit('fade', { on: true });
+    g.emit('stairs', { up: S.up });
+    this.after(0.4, () => { this.place(S.to.x, S.to.z, S.to.h); });
+    this.after(0.7, () => { g.emit('fade', { on: false }); this.busy = false; });
+  }
+
+  fillFyren() {
+    const g = this.game;
+    for (const q of this.fyrFolk) removePed(g, q);
+    this.fyrFolk = [spawnPed(g, { ...INGVAR_LOOK }, FYR.ingvar.x, FYR.ingvar.z, FYR.ingvar.h, 'ingvar'), spawnPed(g, { ...ELSA_GLASSES }, FYR.elsa.x, FYR.elsa.z, FYR.elsa.h, 'elsa')];
+    if (!g.stats.fyrVisit) g.emit('toast', { text: 'Fyren. Det luktar kaffe och mässingsputs – och Elsa sitter vid köksbordet.' });
+  }
+
+  talkToIngvar() {
+    const g = this.game, p = g.player;
+    const n = g.stats.fyrVisit = (g.stats.fyrVisit || 0) + 1;
+    p.vx = p.vz = 0;
+    p.h = Math.atan2(FYR.table.x - p.x, FYR.table.z - p.z);
+    g.camFocus = { ...FYR.camKitchen, owner: 'fyr-talk' };
+    const [who, text] = FYR_TALK[(n - 1) % FYR_TALK.length];
+    g.emit('talk', { id: 'fyr-talk', pages: [{ ...who, text, last: 'TACK' }] });
+  }
+
+  readLog() {
+    const g = this.game, p = g.player;
+    const n = g.stats.fyrLog = (g.stats.fyrLog || 0) + 1;
+    p.vx = p.vz = 0;
+    p.h = Math.atan2(FYR.book.x - p.x, FYR.book.z - p.z);
+    g.emit('paper', {});
+    g.emit('talk', { id: 'fyr-log', pages: [{ ...LOG, text: LOG_PAGES[(n - 1) % LOG_PAGES.length], last: 'STÄNG' }] });
+  }
+
   // the dialogue is closed: Inga turns back to the pews
   talkDone(id) {
+    if (id === 'fyr-talk') { const g = this.game; if (g.camFocus && g.camFocus.owner === 'fyr-talk') g.camFocus = null; return; }
     if (id === 'kond-gun') {
       const g = this.game, q = this.kondFolk[0];
       if (q) q.standH = q.h = q.body.h = KOND.gun.h;

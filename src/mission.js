@@ -47,6 +47,8 @@
 //                          let the wild ones go at the old bakery and take the tame one home to Nova (v1.13)
 //   G  Tant Gun:           "Den gyllene bullen" – main quest, part 14: Dahlgren bakes inside the konditori, the photo
 //                          from 1985, the trophy he stole (the gnome, a magpie in the spruces), a championship (v1.14)
+//   E  Elsa:               "Skatans bo" – main quest, part 15: the lighthouse inside, a magpie's nest on the lens, the
+//                          things in it home to their owners all over the map, the lamp lit again (v1.15)
 //   H  Hanna:              "Ankorna i dammen" – side quest: four rubber ducks blown out of the park pond (v1.14)
 //   N  Nova:               "Odjurets bild" – side quest: photograph Sjubyodjuret from the end of the pier (v1.14)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
@@ -62,6 +64,7 @@ import { BottleJob, flaskWorld, flaskSave, FLASK_MAX } from './flaskpost.js';
 import { KitchenJob, RUSH, RUSH_MAX } from './kitchen.js';
 import { MiceJob, miceWorld, miceSave, MICE, MICE_MAX } from './mice.js';
 import { GoldenBunJob, guldWorld, guldSave, GULD, GULD_MAX } from './guldbullen.js';
+import { NestJob, skatWorld, skatSave, SKAT, SKAT_MAX } from './skatbo.js';
 import { DucksJob, ankorWorld, ankorSave, ANKOR } from './ankor.js';
 import { MonsterJob, odjurWorld, ODJUR, ODJUR_MAX } from './odjuret.js';
 import {
@@ -323,6 +326,13 @@ export const QUESTS = [
     reward: `upp till ${fmt(GULD_MAX)} kr`, where: 'Inne i Sjuby Konditori vid torget – sedan Norrholmen',
   },
   {
+    // main quest, part 15 (v1.15): the lighthouse from the inside, the magpie's nest in the lantern, the lamp lit
+    id: 'skatbo', letter: 'E', who: WHO.elsa, title: 'Skatans bo', color: '#5f9a6a', x: SKAT.mark.x, z: SKAT.mark.z, r: SKAT.mark.r, Job: NestJob, main: true,
+    after: 'guldbullen', at: 30, needFoot: 'Kliv ur – Ingvar och Elsa väntar inne i fyren.',
+    text: 'Hej, det är Elsa! Ingvar har lovat att visa mig fyren – i dag blir det av. Men lampan lyser inte, och han vill inte säga varför. Han muttrar något om en skata. Kan du komma ut till fyren på Norrholmen? Dörren uppför stentrappan. /Elsa',
+    reward: `upp till ${fmt(SKAT_MAX)} kr`, where: 'Fyren på Norrholmen – sedan hela Sjuby',
+  },
+  {
     // side quest (v1.14) with the secret "Gummiankorna": the storm blew four of Ebbe's ducks out of the park pond
     id: 'ankor', letter: 'H', who: WHO.hanna, title: 'Ankorna i dammen', color: '#2fb3a8', x: ANKOR.mark.x, z: ANKOR.mark.z, r: ANKOR.mark.r, Job: DucksJob,
     side: true, sms: true, after: 'ebbe', at: 60, needFoot: 'Kliv ur – Hanna och Ebbe står vid dammen i parken.',
@@ -340,7 +350,7 @@ export const QUESTS = [
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-export const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen']; // all seventeen → the end card; the side quests are a bonus
+export const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo']; // all eighteen → the end card; the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -540,6 +550,7 @@ export class Missions {
       case 'moss': { const S = miceSave(this.game); return S && S.at === 1 ? 'Släpp mössen vid Bullbilens gamla bageri' : S && S.at === 2 ? 'Lämna Kimchi hos Nova bakom Macken' : 'Fånga mössen i kvarnen på Norrholmen'; }
       case 'ankor': { const S = ankorSave(this.game); const n = S && S.home ? S.home.length : 0; return n ? `Hitta resten av ankorna (${n} av 4 hemma)` : 'Möt Hanna och Ebbe vid dammen i parken'; }
       case 'odjuret': return 'Möt Nova på kajen vid bryggan i hamnen';
+      case 'skatbo': { const S = skatSave(this.game); return S && S.at === 1 ? 'Dela ut sakerna ur skatboet till sina ägare' : S && S.at === 2 ? 'Tillbaka till fyren – Ingvar och Elsa väntar' : 'Möt Ingvar och Elsa inne i fyren på Norrholmen'; }
       case 'guldbullen': { const S = guldSave(this.game); return S && S.at === 1 ? 'Leta i Dahlgrens tomte vid kolonilotterna' : S && S.at === 2 ? 'Hämta den gyllene bullen bland granarna nära fyren' : S && S.at === 3 ? 'Till bullmästerskapet på torget' : 'Hjälp Dahlgren att baka inne i konditoriet'; }
     }
     return '';
@@ -617,6 +628,7 @@ export class Missions {
     flaskWorld(this);                 // (v1.12) Gun, Dahlgren at his washing-up and Ingvar, for Flaskposten
     miceWorld(this);                  // (v1.13) Möss i kvarnen goes on where you were
     guldWorld(this);                  // (v1.14) Den gyllene bullen: where you were, the championship on the square
+    skatWorld(this);                  // (v1.15) Skatans bo: where you were, Ingvar away from his cottage, the lamp
     ankorWorld(this);                 // (v1.14) Hanna and Ebbe by the pond, the ducks out in the town
     odjurWorld(this);                 // (v1.14) Nova on the quay
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
@@ -746,11 +758,11 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo'].includes(last) ? 4.3 : 0; // after the last talk and the texts
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
     this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.14! Den gyllene bullen står på sin hylla igen – efter fyrtio år. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.14! Den gyllene bullen står på sin hylla igen – efter fyrtio år. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+      ? `Det var allt i version 1.15! Fyren lyser igen över Sjuby – och Elsa har fått tillbaka sitt örhänge. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
+      : 'Det var allt i version 1.15! Fyren lyser igen över Sjuby – och Elsa har fått tillbaka sitt örhänge. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -816,6 +828,7 @@ export class Missions {
       case 'ankor': return { text: 'Gå till dammen (H)', sub: this.game.player.inCar ? 'Parkera vid parken' : 'Hanna och Ebbe står vid dammen i parken' };
       case 'odjuret': return { text: 'Möt Nova (N)', sub: this.game.player.inCar ? 'Parkera vid hamnen' : 'Kajen vid bryggan i hamnen' };
       case 'guldbullen': { const S = guldSave(this.game); if (S && S.at > 0) return { text: 'Den gyllene bullen', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Gå in genom dörren mot torget' }; }
+      case 'skatbo': { const S = skatSave(this.game); if (S && S.at > 0) return { text: 'Skatans bo', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till fyren (E)', sub: this.game.player.z < -229 ? (this.game.player.inCar ? 'Parkera och gå uppför stentrappan' : 'Den gröna dörren på fyrens östra sida') : 'Över norra bron till Norrholmen' }; }
     }
     return null;
   }

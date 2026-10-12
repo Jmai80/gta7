@@ -14,6 +14,7 @@ import { ELSA_HOUSE, ELSA_WALLS, ELSA_FURN } from './elsa.js';
 import { PIZZA_ROOM, PIZZA_WALLS, PIZZA_FURN } from './pizzeria.js';
 import { MILL_ROOM, MILL_WALLS, MILL_FURN } from './millroom.js';
 import { KOND, KOND_WALLS, KOND_FURN } from './konditori.js';
+import { FYR, FYR_WALLS, FYR_FURN } from './fyren.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
@@ -21,7 +22,7 @@ import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds, FYR.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -281,6 +282,16 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of KOND_WALLS) g.fillRect(X(Ko.x0 + x0), Zs(Ko.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#9fb7c4'; g.fillRect(X(Ko.x0 + 5.0), Zs(Ko.z0 - 0.2), 1.0 * IN_PX, 0.2 * IN_PX);
+    // the lighthouse (v1.15): three round floors – the kitchen, the watch room, the lantern
+    FYR.floors.forEach((F, k) => {
+      rect(F.x0, F.z0, F.x1, F.z1, k === 2 ? '#4a4e54' : '#6a543e');
+      g.fillStyle = '#2b3037';
+      for (const [x0, z0, x1, z1] of FYR_FURN[k].slice(0, k === 0 ? -1 : undefined)) g.fillRect(X(F.x0 + x0), Zs(F.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+      g.fillStyle = k === 2 ? '#9fb7c4' : '#ece5d6';
+      for (const [x0, z0, x1, z1] of FYR_WALLS[k]) g.fillRect(X(F.x0 + x0), Zs(F.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+      for (const [x0, z0, x1, z1] of [[0, 0, 1.2, 0.6], [0, 0.6, 0.6, 1.2], [6.8, 0, 8, 0.6], [7.4, 0.6, 8, 1.2], [0, 7.4, 1.2, 8], [0, 6.8, 0.6, 7.4], [6.8, 7.4, 8, 8], [7.4, 6.8, 8, 7.4]]) g.fillRect(X(F.x0 + x0), Zs(F.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    });
+    g.fillStyle = '#2f5d3a'; g.fillRect(X(FYR.floors[0].x0 + 3.5), Zs(FYR.floors[0].z0 + 8), 1.0 * IN_PX, 0.2 * IN_PX);
     return c;
   }
 
@@ -664,7 +675,8 @@ export class HUD {
         'TÄPP': 'Täpp till mushålet', 'FÅNGA': 'Fånga musen', 'SLÄPP': 'Släpp dem', // (v1.13)
         'MJÖLK': 'Ta mjölken', 'SMÖR': 'Ta smöret', SOCKER: 'Ta sockret', 'MJÖL': 'Ta mjölet', KARDEMUMMA: 'Ta påsen med malen kardemumma',
         'PLÅTEN': 'Ta plåten med bullar', BJUD: 'Bjud tant Gun på bullarna', SMAKA: 'Smaka på bullen', 'RÖSTA': 'Rösta på den här bagaren', // (v1.14)
-        'HÅVA': 'Fånga ankan med håven', SIKTA: 'Sikta med kameran', FOTA: 'Ta en bild' };
+        'HÅVA': 'Fånga ankan med håven', SIKTA: 'Sikta med kameran', FOTA: 'Ta en bild',
+        'TA BOET': 'Ta skatans bo', 'LÄS': 'Läs loggboken', UPP: 'Gå uppför trappan', NER: 'Gå nerför trappan', 'TÄND': 'Tänd fyren' }; // (v1.15)
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest

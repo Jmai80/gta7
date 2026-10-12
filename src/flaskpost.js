@@ -202,7 +202,7 @@ export function flaskWorld(mgr) {
   if (mgr.flaskDishes && hidden(g, T.x, T.z)) mgr.flaskDishes = false;
   for (const k of ['flaskDahl', 'flaskIngvar']) { const q = mgr[k]; if (q && hidden(g, q.x, q.z)) { removePed(g, q); mgr[k] = null; } }
   // Ingvar is out in his boat on Sunday; afterwards he is back at the lighthouse (out of sight)
-  if (mgr.done.has('livs') && (!mgr.ingvar || !g.peds.list.includes(mgr.ingvar)) && !(job && job.ingvarAway) && hidden(g, INGVAR.x, INGVAR.z)) mgr.ingvar = spawnIngvar(g);
+  if (mgr.done.has('livs') && (!mgr.ingvar || !g.peds.list.includes(mgr.ingvar)) && !(job && job.ingvarAway) && !mgr.ingvarAway && hidden(g, INGVAR.x, INGVAR.z)) mgr.ingvar = spawnIngvar(g);
 }
 
 export class BottleJob {

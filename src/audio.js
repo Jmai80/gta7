@@ -539,6 +539,26 @@ export class AudioFX {
     else if (kind === 'fanfare') { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, i === 3 ? 0.5 : 0.14, 'square', 0.03, i * 0.13)); }
   }
 
+  // ---- (v1.15) Skatans bo: the magpie (chatter, looking up, the dive, the hit, flying off), the stairs, the lamp
+  skata(kind) {
+    if (!this.ctx) return;
+    const chak = (at, n = 4) => { for (let i = 0; i < n; i++) { const f = 1500 + ((i * 377) % 500); this.tone(f, 0.05, 'sawtooth', 0.02, at + i * 0.075, f * 0.8); this.burst(0.05, 3200, 0.045, 'bandpass', at + i * 0.075); } };
+    if (kind === 'chatter') chak(0, 5);
+    else if (kind === 'look') { this.tone(1900, 0.06, 'sawtooth', 0.02, 0, 2300); this.tone(2100, 0.05, 'sawtooth', 0.016, 0.1, 2400); }
+    else if (kind === 'dive') { this.burst(0.12, 900, 0.4, 'bandpass'); chak(0.05, 6); }
+    else if (kind === 'hit') { this.burst(0.18, 600, 0.12, 'lowpass'); this.tone(160, 0.2, 'sine', 0.1, 0, 90); chak(0.15, 3); }
+    else if (kind === 'flee') { for (let i = 0; i < 6; i++) this.burst(0.06, 700, 0.06, 'bandpass', i * 0.09); chak(0.4, 6); }
+  }
+  stairs(up) {
+    if (!this.ctx) return;
+    for (let i = 0; i < 5; i++) { this.tone(up ? 140 + i * 8 : 180 - i * 8, 0.05, 'sine', 0.09, i * 0.08, 90); this.burst(0.06, 1400, 0.03, 'bandpass', i * 0.08); }
+  }
+  lamp() {
+    if (!this.ctx) return;
+    this.burst(0.1, 3000, 0.06, 'highpass'); this.tone(80, 1.2, 'sawtooth', 0.025, 0.05, 60);
+    [392, 494, 587, 784].forEach((f, i) => this.tone(f, i === 3 ? 0.9 : 0.25, 'triangle', 0.045, 0.3 + i * 0.18));
+  }
+
   // ---- (v1.14) Ankorna i dammen: a squeak, a splash with the net, the ducks let go in the pond
   ducks(kind) {
     if (!this.ctx) return;

@@ -404,7 +404,7 @@ export function islandInto(H) {
   P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 14.55, y1: CURB_H + 14.65, r: 2.3, n: 12, c: 0x2d3238 });
   for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; P({ t: 'cyl', x: L.x + Math.cos(a) * 2.28, z: L.z + Math.sin(a) * 2.28, y0: CURB_H + 13.85, y1: CURB_H + 14.6, r: 0.035, n: 4, c: 0x2d3238 }); }
   P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 13.85, y1: CURB_H + 15.7, r: 1.25, n: 12, c: 0xd8e4ea, m: M.GLASS });
-  P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 14.2, y1: CURB_H + 15.2, r: 0.5, n: 8, c: 0xfff1c9, m: M.LIGHT });
+  P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 14.2, y1: CURB_H + 15.2, r: 0.5, n: 8, c: 0x6b6f75 });   // ((v1.15) dark until "Skatans bo": render.js lights it)
   P({ t: 'cyl', x: L.x, z: L.z, y0: CURB_H + 15.7, y1: CURB_H + 17.0, r: 1.55, r1: 0.12, n: 12, c: 0xc0302a, cap: true });
   P({ t: 'ico', x: L.x, y: CURB_H + 17.15, z: L.z, r: 0.22, sy: 1, c: 0x2d3238 });
   // (v1.12) the door on the east side, up a flight of stone steps ("titta under fyrens trappa"): the

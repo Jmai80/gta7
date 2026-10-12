@@ -37,6 +37,8 @@ import { GULD, GULD_MAX, ORDER } from '../src/guldbullen.js';
 import { ANKOR, kvackeAt, duckPlace } from '../src/ankor.js';
 import { ODJUR, ODJUR_MAX, surfacing, upAt } from '../src/odjuret.js';
 import { POND } from '../src/secrets.js';
+import { FYR, FYR_DOOR, fyrFloor } from '../src/fyren.js';
+import { SKAT, SKAT_MAX, OWNERS, BIRD } from '../src/skatbo.js';
 import { CARWASH } from '../src/config.js';
 
 const DT = 1 / 60;
@@ -363,8 +365,12 @@ function startRace(g) {
   g2.mission.done.add('guldbullen');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all seventeen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.14/.test(d.text) && /gyllene bullen står på sin hylla/.test(d.text)), 'the last text: version 1.14, the golden bun is back on its shelf');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while the lighthouse is dark");
+  g2.mission.done.add('skatbo');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eighteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.15/.test(d.text) && /Fyren lyser igen/.test(d.text)), 'the last text: version 1.15, the lighthouse shines again');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -3961,7 +3967,7 @@ function chaseMagpie(g, job, sec = 120) {
   m.talkDone('guldbullen'); run(g, 0.5);
   check(m.done.has('guldbullen') && g.money - money0 === 5800 - GULD.pay.perError, `done: ${fmt(g.money - money0)} kr (crushed and golden, one mistake)`);
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.14/.test(d.text)), 'all seventeen parts: the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'seventeen of eighteen parts: no end card yet');
   run(g, 16);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === GUN_FROM && /tisdag/.test(d.text)), '  and Gun texts: Dahlgren bakes on Tuesdays now');
   walkHere(g, 60, -20); run(g, 2);
@@ -4197,6 +4203,187 @@ function duckGame(stats = {}, known = null, tracked = null, opts = { traffic: 0,
   const j2 = m2.active;
   for (let i = 0; i < 60 * 60 && j2.shots < 12; i++) { const P = g2.monsterPose, go = P.up === 0 && g2.time - (j2.last ? j2.last.t : -9) > 0.15; g2.step(DT, { ...idle, action: go }); }
   check(j2.film === 12 && j2.refills === 1 && j2.good === 0, '  twelve wasted: a new roll from Nova (no failure)');
+}
+
+// ---------- 46. main quest, part 15: "Skatans bo" (v1.15) – the lighthouse inside, the magpie's nest ----------
+const UP_TO_GULD = [...UP_TO_FLASK, 'guldbullen'];
+function skatGame(stats = {}, opts = { traffic: 0, peds: 0 }, seed = 7, fresh = false) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_GULD);
+  g.mission.restore({ ...s, money: 0, stats, known: fresh ? s.known : [...s.known, 'skatbo'] });
+  return g;
+}
+// up or down the stairs from the spot you are on (UPP / NER): stand there, press, wait for the fade
+function stairs(g, k, dir) { const S = FYR.stairs[k][dir]; walkHere(g, S.x, S.z); const ok = g.mission.prompt === (dir === 'up' ? 'UPP' : 'NER'); press(g); run(g, 1.0); return ok; }
+// sneak up on the nest like a careful player: walk while she preens (and just as she looks up), stand still otherwise
+function sneak(g, job, careful = true, sec = 60) {
+  const x2 = FYR.floors[2].x0, z2 = FYR.floors[2].z0;
+  const pts = [[x2 + 3.0, z2 + 1.95], [x2 + 6.15, z2 + 2.0], [x2 + 6.1, z2 + 4.0], [FYR.take.x, FYR.take.z]];
+  let i = 0;
+  for (let k = 0; k < 60 * sec && job.stage === 'sneak'; k++) {
+    const p = g.player, B = job.bird, [x, z] = pts[Math.min(i, pts.length - 1)];
+    if (Math.hypot(x - p.x, z - p.z) < 0.35 && i < pts.length - 1) i++;
+    const go = !careful || B.state === 'preen' || (B.state === 'look' && B.t < 0.35);
+    const there = g.mission.prompt === 'TA BOET' && B.state === 'preen';
+    g.step(DT, there ? { ...idle, action: true } : { ...idle, camYaw: Math.atan2(x - p.x, z - p.z), moveY: go && Math.hypot(x - p.x, z - p.z) > 0.2 ? 0.55 : 0 });
+  }
+}
+{
+  console.log('Skatans bo (huvuduppdrag del 15): hela vägen');
+  const g = skatGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'skata', 'hint', 'endcard', 'secret', 'stairs', 'lamp']);
+  check(SKAT_MAX === 5400 && OWNERS.length === 4, `up to ${fmt(SKAT_MAX)} kr; four things to hand out`);
+  walkHere(g, 60, -20);
+  run(g, 25);
+  check(!m.known.has('skatbo') || !ev.some(([n, d]) => n === 'sms' && d.offer === 'skatbo'), 'no word from Elsa at once');
+  run(g, 12);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'skatbo') || [])[1];
+  check(sms && sms.from === WHO.elsa && /skata/.test(sms.text), 'Elsa texts: the lamp is dark, Ingvar mutters about a magpie');
+  m.accept('skatbo'); run(g, 0.3);
+  // the lighthouse is dark – and the nest is up there, seen from outside
+  check(m.nestGone === false && m.lampLit === false, 'outside: the lamp is dark, the nest is in the lantern');
+  walkHere(g, FYR_DOOR.x, FYR_DOOR.z); run(g, 1.6);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'skatbo');
+  check(job && job.id === 'skatbo' && ind.inside && ind.where === 'fyren' && fyrFloor(p.x, p.z) === 0 && job.ingvar && job.elsa, 'inside the lighthouse: Ingvar and Elsa at the kitchen table');
+  check(t1 && t1.pages.length === 8 && t1.pages.at(-1).last === 'UPP I FYREN' && t1.pages.some((q) => /putsar fjädrarna/.test(q.text)), '  Ingvar: go while she preens, stand still while she looks');
+  m.talkDone('skatbo'); run(g, 0.3);
+  check(job.stage === 'up' && !p.frozen, 'up the lighthouse');
+  // every floor: everything can be walked to from where you come in
+  const F = FYR.floors, St = FYR.stairs;
+  const r0 = reachable(g, FYR.spawn, [St[0].up, FYR.give, FYR.door], F[0]);
+  const r1 = reachable(g, St[0].upTo, [St[1].down, St[1].up, FYR.desk], F[1]);
+  const r2 = reachable(g, St[1].upTo, [St[2].down, FYR.take, FYR.light], F[2]);
+  check(!r0.length && !r1.length && !r2.length, `every floor: the stairs, the table, the desk, the nest and the lamp can be walked to (${r0.length + r1.length + r2.length} cut off)`);
+  check(stairs(g, 0, 'up') && fyrFloor(p.x, p.z) === 1 && ev.some(([n]) => n === 'stairs'), 'UPP: the spiral stairs to the watch room');
+  check(job.stage === 'up' && m.objective === 'Upp till lanternan', '  "Upp till lanternan"');
+  check(stairs(g, 1, 'down') && fyrFloor(p.x, p.z) === 0, 'NER: and down again');
+  stairs(g, 0, 'up');
+  check(stairs(g, 1, 'up') && fyrFloor(p.x, p.z) === 2 && job.stage === 'sneak' && job.bird && job.bird.state === 'preen', 'UPP: the ladder to the lantern – the magpie on her nest, preening');
+  // moving while she watches: she dives, and you are back by the hatch
+  for (let i = 0; i < 60 * 12 && !(job.bird.state === 'watch' && job.bird.t > BIRD.grace + 0.1); i++) g.step(DT, idle);
+  const x2 = F[2].x0, z2 = F[2].z0;
+  runToward(g, () => [x2 + 6, z2 + 2], 1.0, () => job.dives > 0);
+  run(g, 0.1);
+  check(job.dives === 1 && ev.some(([n, d]) => n === 'skata' && d.kind === 'dive') && Math.hypot(p.x - St[1].upTo.x, p.z - St[1].upTo.z) < 0.3, 'moving while she keeps watch: she dives, back by the hatch');
+  run(g, 1.0);
+  check(job.bird.state === 'preen' && Math.hypot(job.bird.x - FYR.nest.x, job.bird.z - FYR.nest.z) < 0.01, '  and back on her nest');
+  // standing still while she watches is fine – and a careful sneak gets there without another dive
+  const t0 = g.time;
+  sneak(g, job);
+  check(job.dives === 1 && job.nestTaken && job.stage === 'nestTalk', `sneaking (walk while she preens): the nest taken, no more dives (${(g.time - t0).toFixed(1)} s)`);
+  run(g, 1.6);
+  check(job.bird.state === 'gone' && lastTalk(ev, 'skatbo').pages.some((q) => /grönt örhänge/.test(q.text)), '  she flies out through the open pane; in the nest: a thimble, a stopwatch, scissors, a key, a green earring');
+  m.talkDone('skatbo'); run(g, 0.3);
+  check(job.stage === 'read' && job.carry === 'nest', 'down with the nest');
+  check(stairs(g, 2, 'down') && fyrFloor(p.x, p.z) === 1, '  NER through the hatch');
+  walkHere(g, FYR.desk.x, FYR.desk.z); run(g, 0.1);
+  check(m.prompt === 'LÄS', 'the logbook on the desk: LÄS'); press(g); run(g, 0.8);
+  const tl = lastTalk(ev, 'skatbo');
+  check(tl.pages.length === 7 && tl.pages.some((q) => /1974/.test(q.text)) && tl.pages.some((q) => /klockstapeln/.test(q.text)), '  fifty years of magpies: 1974, the mill, the chapel, Macken, Skolgatan');
+  m.talkDone('skatbo'); run(g, 0.3);
+  stairs(g, 1, 'down');
+  walkHere(g, FYR.door.x, FYR.door.z); run(g, 0.1);
+  check(m.prompt !== 'GÅ UT', '  no way out with the nest in your arms');
+  walkHere(g, FYR.give.x, FYR.give.z); run(g, 0.1);
+  check(job.stage === 'give' && m.prompt === 'GE', 'the kitchen: GE'); press(g); run(g, 0.8);
+  const te = lastTalk(ev, 'skatbo');
+  check(te.pages.some((q) => /Då hade jag fått prata med dig/.test(q.text)) && te.pages.at(-1).last === 'JAG DELAR UT', '  the earring is Elsa\'s: "Då hade jag fått prata med dig."');
+  m.talkDone('skatbo'); run(g, 0.3);
+  check(job.stage === 'deliver' && g.stats.skatbo && g.stats.skatbo.at === 1 && g.stats.skatbo.left.length === 4, 'checkpoint: four things to hand out');
+  walkHere(g, FYR.door.x, FYR.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', '  GÅ UT'); press(g); run(g, 1.4);
+  check(!g.indoor && !job.ingvar && !job.elsa && Object.keys(job.owners).length === 4, 'outside: the four owners are waiting');
+  check(m.targets.filter((t) => t.kind === 'zone' && t.gps).length === 1, '  the GPS goes to the nearest one');
+  run(g, 3);
+  check(!m.ingvar || !g.peds.list.includes(m.ingvar), '  (and Ingvar is not outside his cottage – he is polishing the glass)');
+  for (const O of OWNERS) {
+    const q = job.owners[O.id];
+    runToward(g, () => [q.x, q.z], 1.5, () => m.prompt === 'GE');
+    if (m.prompt !== 'GE') { walkHere(g, q.x + 1.0, q.z + 0.3); run(g, 0.1); }
+    const ok = m.prompt === 'GE';
+    press(g); run(g, 0.7);
+    const to = lastTalk(ev, 'skatbo');
+    m.talkDone('skatbo'); run(g, 0.3);
+    check(ok && to && to.pages.length >= 3 && !job.left.includes(O.id), `${O.who}: ${O.item} – ${to.pages[1].text.slice(0, 40)}…`);
+    if (O.id === 'vera') {
+      const g2 = skatGame({ skatbo: { ...g.stats.skatbo } });
+      g2.mission.accept('skatbo'); run(g2, 0.6);
+      check(g2.mission.active && g2.mission.active.stage === 'deliver' && g2.mission.active.left.join() === 'inga', '  a reload here: only Inga\'s key is left');
+    }
+  }
+  check(job.stage === 'back' && g.stats.skatbo.at === 2, 'all handed out: back to the lighthouse');
+  run(g, 3);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.elsa && /kikaren/.test(d.text)), '  Elsa texts: he has been looking out for you in the telescope');
+  walkHere(g, FYR_DOOR.x, FYR_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'GÅ IN', '  GÅ IN at the green door'); press(g); run(g, 1.4);
+  check(ind.inside && job.stage === 'climb' && job.ingvar && fyrFloor(job.ingvar.x, job.ingvar.z) === 2, 'inside: Ingvar and Elsa are up in the lantern');
+  stairs(g, 0, 'up'); stairs(g, 1, 'up'); run(g, 0.8);
+  check(job.stage === 'lampTalk' && lastTalk(ev, 'skatbo').pages.at(-1).last === 'JAG TÄNDER', 'the lantern: "Tänd du."');
+  m.talkDone('skatbo'); run(g, 0.3);
+  walkHere(g, FYR.light.x, FYR.light.z); run(g, 0.1);
+  check(m.prompt === 'TÄND', '  TÄND'); press(g); run(g, 2);
+  check(job.lit && m.lampLit && ev.some(([n]) => n === 'lamp'), 'the lamp is lit');
+  m.talkDone('skatbo'); run(g, 2.5);
+  check(!g.indoor && job.stage === 'finale' && job.ingvar && job.elsa && lastTalk(ev, 'skatbo').pages.some((q) => /för din skull, Elsa/.test(q.text)), 'outside on the rocks: "I kväll tände jag den för din skull, Elsa."');
+  const money0 = g.money;
+  m.talkDone('skatbo'); run(g, 0.5);
+  check(m.done.has('skatbo') && g.money - money0 === 5000 + 400 - 100, `done: ${fmt(g.money - money0)} kr (one dive)`);
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.15/.test(d.text)), 'all eighteen parts: the end card');
+  run(g, 20);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.elsa && /telefonkiosken/.test(d.text)), '  Elsa: go past the phone box one last time');
+  // the phone box rings one last time
+  const PH = SECRETS.find((s) => s.id === 'phone');
+  m.secrets.quietUntil = 0;
+  walkHere(g, PH.x, PH.z); run(g, 0.4);
+  check(m.secrets.ringing && m.prompt === 'SVARA', 'the phone box rings'); press(g); run(g, 0.4);
+  const tp = lastTalk(ev, 'secret-phone');
+  check(tp && /Tack\. \/I\./.test(tp.pages.at(-1).text) && g.stats.phoneLast, '  "Tack. /I."');
+  m.talkDone('secret-phone'); m.secrets.quietUntil = 0; run(g, 3);
+  check(!m.secrets.ringing, '  and it never rings again');
+  // afterwards: the lighthouse is open – Ingvar and Elsa at the table, the logbook, the lamp lit
+  walkHere(g, FYR_DOOR.x, FYR_DOOR.z); run(g, 0.2);
+  check(m.prompt === 'GÅ IN', 'afterwards: GÅ IN at the lighthouse'); press(g); run(g, 1.4);
+  check(ind.inside && ind.fyrFolk.length === 2 && m.lampLit && m.nestGone, '  Ingvar and Elsa at the kitchen table');
+  walkHere(g, FYR.give.x, FYR.give.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA'); press(g); run(g, 0.3);
+  check(lastTalk(ev, 'fyr-talk'), '  one thing each time'); m.talkDone('fyr-talk');
+  stairs(g, 0, 'up'); walkHere(g, FYR.desk.x, FYR.desk.z); run(g, 0.1);
+  check(m.prompt === 'LÄS', '  the logbook'); press(g); run(g, 0.3); m.talkDone('fyr-log');
+  check(lastTalk(ev, 'fyr-log'), '  a page from the logbook');
+}
+{
+  console.log('Skatans bo: gå ut för tidigt, ladda om, trafik');
+  // out of the door before the nest is down: Elsa texts, and it starts over
+  const g = skatGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, ev = record(g, ['sms']);
+  walkHere(g, 60, -20); run(g, 40); m.accept('skatbo');
+  walkHere(g, FYR_DOOR.x, FYR_DOOR.z); run(g, 1.6); m.talkDone('skatbo'); run(g, 0.3);
+  walkHere(g, FYR.door.x, FYR.door.z); press(g); run(g, 1.4);
+  run(g, 3);
+  check(!m.active && m.isOpen('skatbo') && !g.indoor && ev.some(([n, d]) => n === 'sms' && d.from === WHO.elsa && /skatan sitter kvar/.test(d.text)), 'out before the nest: Elsa texts, the quest waits');
+  // a reload at the last step: back to the lighthouse
+  const g2 = skatGame({ skatbo: { at: 2, left: [], dives: 0 } });
+  g2.mission.accept('skatbo'); run(g2, 0.5);
+  check(g2.mission.active && g2.mission.active.stage === 'back' && g2.mission.nestGone, 'a reload: back to the lighthouse');
+  // handing out with traffic, on a few seeds
+  for (const seed of [3, 11, 19]) {
+    const g3 = skatGame({ skatbo: { at: 1, left: OWNERS.map((o) => o.id), dives: 0 } }, {}, seed);
+    const m3 = g3.mission;
+    m3.accept('skatbo'); run(g3, 1.0);
+    const j = m3.active;
+    let ok = true;
+    for (const O of OWNERS) {
+      const q = j.owners[O.id];
+      if (!q) { ok = false; break; }
+      walkHere(g3, q.x + 1.0, q.z + 0.3); run(g3, 0.1);
+      if (m3.prompt !== 'GE') { ok = false; break; }
+      press(g3); run(g3, 0.7); m3.talkDone('skatbo'); run(g3, 0.3);
+    }
+    check(ok && j.stage === 'back', `seed ${seed} with traffic: all four handed out`);
+  }
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

@@ -41,7 +41,7 @@ function trophyGeo(full) {
   return B.toGeometry(THREE);
 }
 // a magpie, facing +z, feet at the origin: black head and back, white belly and shoulders, a long tail
-function magpieParts() {
+export function magpieParts() {
   const B = new GeomBuilder(), BLK = 0x16181c, IRI = 0x1d3a4a;
   B.ico(0, 0.16, 0, 0.11, 0.8, BLK, 0, 1);                     // the body …
   B.ico(0, 0.12, 0.02, 0.085, 0.75, WHITE, 0, 2);              // … and the white belly
