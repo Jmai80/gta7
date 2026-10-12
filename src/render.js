@@ -211,15 +211,11 @@ export class View {
       this.scene.add(m);
       return m;
     });
-    // (v1.8) Sjubyodjuret: three green humps and a head on a long neck, out in the harbour
-    const Mn = new GeomBuilder(), GREEN = 0x2f5d3a, BELLY = 0x6b8f5a;
-    for (const [z, r] of [[3.4, 1.05], [0.6, 1.25], [-2.3, 0.95], [-4.6, 0.55]]) { Mn.ico(0, 0, z, r, 0.85, GREEN, 0, Math.round(z * 10) + 50); Mn.ico(0.15, -0.25, z, r * 0.8, 0.6, BELLY, 0, Math.round(z * 7) + 9); }
-    Mn.tube([0, 0.2, 5.0], [0, 2.6, 6.6], 0.42, 0.3, 8, GREEN);
-    Mn.ico(0, 2.85, 7.0, 0.55, 0.75, GREEN, 0, 77);
-    Mn.ico(0, 2.7, 7.55, 0.32, 0.6, BELLY, 0, 78);
-    for (const s of [-1, 1]) { Mn.ico(s * 0.32, 3.05, 7.25, 0.09, 1, 0xfff4c0, 0, 80); Mn.ico(s * 0.35, 3.07, 7.32, 0.045, 1, 0x1d1f22, 0, 81); }
-    for (let k = 0; k < 5; k++) Mn.rbox(0, 0.95 + (k === 2 ? 0.1 : 0), 3.4 - k * 1.6, 0.06, 0.35, 0.3, 0, 0x7a2f2a, 0, 0.3);
-    this.monster = new THREE.Mesh(Mn.toGeometry(THREE), this.matStatic);
+    // (v1.8) Sjubyodjuret, out in the harbour. (v1.14.3) Rebuilt as one long serpent body that arches in and out of
+    // the water – the humps are loops of the body now, not balls with fins floating over them – a neck rising
+    // to a head with a snout, a jaw, eyes, nostrils and little horns, and a fin along the back of every arch.
+    const Mn = monsterGeometry();
+    this.monster = new THREE.Mesh(Mn, this.matStatic);
     this.monster.position.set(MONSTER.x, -4, MONSTER.z);
     this.monster.rotation.y = 0.7;
     this.monster.scale.setScalar(1.5);
@@ -1322,3 +1318,54 @@ function mergeGeos(geos) {
   g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
   return g;
 }
+
+// ------------------------------------------------------------------ Sjubyodjuret (v1.14.3)
+// Local: the head towards +z, y = 0 a little above the water line (the mesh sits 0.3 higher than the water when
+// it is all the way up). The body is a chain of tubes along a wave: what dips below y ≈ −0.3 is under water.
+function monsterGeometry() {
+  const B = new GeomBuilder(), GREEN = 0x2f6b3e, DARK = 0x234f2e, BELLY = 0x86a86a, FIN = 0x9a3a2a;
+  // the spine of the body, tail (−z) to the base of the neck (+z): two arches and a tail tip curling up
+  const N = 46, pts = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, z = -8.6 + t * 12.4;
+    const wave = Math.sin(t * Math.PI * 4.0 - 0.5);                         // up – down – up – down
+    const y = -0.45 + wave * 1.25 + (t < 0.1 ? (0.1 - t) * 9 : 0);          // the tail tip lifts out at the end
+    const r = 0.18 + 0.52 * Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.95); // thin tail, thick middle
+    pts.push({ x: Math.sin(t * 5.2) * 0.25, y, z, r });
+  }
+  // the neck: from the last body point up and forward to under the head
+  const P0 = pts[N], H = { x: 0, y: 3.0, z: 6.2 };
+  for (let i = 1; i <= 12; i++) {
+    const t = i / 12, e = 1 - (1 - t) * (1 - t);
+    pts.push({ x: P0.x * (1 - t), y: P0.y + (H.y - P0.y) * e, z: P0.z + (H.z - P0.z) * t, r: 0.58 - 0.24 * t });
+  }
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    B.tube([a.x, a.y, a.z], [b.x, b.y, b.z], a.r, b.r, 10, GREEN, 0, i === 0);
+    B.ico(b.x, b.y, b.z, b.r * 1.0, 1, GREEN, 0, i);                           // (smooth joints)
+    // the lighter belly: a slightly smaller tube under the body
+    B.tube([a.x, a.y - a.r * 0.32, a.z], [b.x, b.y - b.r * 0.32, b.z], a.r * 0.82, b.r * 0.82, 8, BELLY);
+    // a fin along the back on the top of every arch (only where the body is well out of the water)
+    if (i % 2 === 0 && a.y > 0.35 && i < N) {
+      const dz = b.z - a.z, dy = b.y - a.y, l = Math.hypot(dz, dy) || 1;
+      B.rbox(a.x, a.y + a.r * 0.75, a.z, 0.07, 0.28 + a.r * 0.35, 0.36, 0, FIN, 0, -Math.atan2(dy, dz) * 0.8 + (dz / l) * 0);
+    }
+  }
+  for (let k = 0; k < 6; k++) { const q = pts[N + 1 + k * 2]; if (q) B.rbox(q.x, q.y + q.r * 0.7, q.z - 0.1, 0.06, 0.26, 0.3, 0, FIN, 0, -0.9); } // a crest up the neck
+  // the head: a skull, a long snout, a lighter jaw, nostrils, eyes with whites, brows and two small horns
+  B.ico(0, 3.25, 6.35, 0.62, 0.78, GREEN, 0, 90);
+  B.ico(0, 3.08, 7.05, 0.44, 0.62, GREEN, 0, 91);
+  B.ico(0, 2.86, 6.95, 0.38, 0.45, BELLY, 0, 92);
+  B.tube([0, 2.98, 6.75], [0, 2.98, 7.4], 0.04, 0.03, 4, 0x1d1f22);           // the mouth line
+  for (const sx of [-1, 1]) {
+    B.ico(sx * 0.13, 3.24, 7.42, 0.05, 0.7, 0x1d1f22, 0, 93);                 // nostrils
+    B.ico(sx * 0.36, 3.46, 6.62, 0.16, 1, 0xfff6d8, 0, 94);                   // eye whites …
+    B.ico(sx * 0.4, 3.48, 6.72, 0.085, 1, 0x1d1f22, 0, 95);                   // … pupils …
+    B.ico(sx * 0.42, 3.51, 6.78, 0.03, 1, 0xffffff, 0, 96);                   // … and a glint
+    B.ico(sx * 0.34, 3.62, 6.6, 0.17, 0.4, DARK, 0, 97);                      // a heavy brow
+    B.tube([sx * 0.24, 3.7, 6.2], [sx * 0.38, 4.15, 5.9], 0.08, 0.02, 6, 0xd9c79a); // little horns
+    B.rbox(sx * 0.6, 3.3, 6.1, 0.05, 0.36, 0.42, sx * 0.5, FIN, 0, -0.5);     // fins like ears
+  }
+  return B.toGeometry(THREE);
+}
+

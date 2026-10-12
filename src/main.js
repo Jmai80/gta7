@@ -11,6 +11,7 @@ import { createLayout } from './layout.js';
 import { CAR_TYPES } from './vehicle.js';
 import { stationFor } from './radio.js';
 import { fmt, mmss } from './rng.js';
+import { QUESTS, MAIN } from './mission.js';
 
 const $ = (id) => document.getElementById(id);
 const FIXED = 1 / 60;
@@ -51,8 +52,14 @@ function saveProgress() {
 function clearProgress() {
   try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* storage blocked */ }
 }
-const JOBS = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken'];
-const JOBS_DONE = (d) => JOBS.filter((id) => d.done.includes(id)).length;
+// (v1.14.3) the saved game on the title screen: the main adventure and the side quests, counted from the quest
+// list itself (it used to be a fixed list of the ten jobs from v0.9 – "10 av 10" for ever after)
+const SIDE_IDS = QUESTS.filter((q) => q.side && !q.soon).map((q) => q.id);
+const saveLine = (d) => {
+  const done = new Set(d.done || []);
+  const main = MAIN.filter((id) => done.has(id)).length, side = SIDE_IDS.filter((id) => done.has(id)).length;
+  return [`Sparat spel · ${fmt(d.money || 0)} kr`, `Huvudäventyret ${main} av ${MAIN.length} · sidouppdrag ${side} av ${SIDE_IDS.length}`];
+};
 
 // ---------------------------------------------------------------- performance
 const perf = {
@@ -137,7 +144,9 @@ async function boot(hot) {
     const saved = loadProgress();
     const info = $('saveInfo');
     if (saved && info) {
-      info.textContent = `Sparat spel: ${JOBS_DONE(saved)} av ${JOBS.length} uppdrag klara · ${fmt(saved.money)} kr`;
+      const [l1, l2] = saveLine(saved);
+      info.textContent = '';
+      info.append(l1, document.createElement('br'), l2);
       info.hidden = false;
     }
     view.setFog(170, 520);

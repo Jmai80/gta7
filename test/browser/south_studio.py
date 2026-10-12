@@ -24,6 +24,8 @@ SHOTS = {
   'stuck':    ((34.0, 2.2, 239.5), (56.0, 10.5, 245.0), 62),    # Måsen up the lift hill (v1.7: pass the time 'stuck')
   # (v1.8) the Easter eggs
   'monster':  ((-75.0, 2.4, -166.0), (-73.0, 0.5, -201.0), 55),
+  'monsterwide': ((-54.0, 5.0, -172.0), (-71.0, 1.6, -192.0), 55),   # (v1.14.3) the whole serpent, head and all
+  'monsterhead': ((-62.0, 4.2, -184.0), (-68.5, 3.4, -189.0), 50),
   'skateb':   ((-29.5, 1.2, 101.2), (-27.5, 0.1, 99.0), 50),
   'ducks':    ((96.0, 2.0, -84.0), (96.5, 0.2, -90.5), 50),
   'beds':     ((20.0, 2.6, 241.0), (34.0, 0.3, 252.0), 55),        # (v1.8.2) the flower beds in the coaster's oval
