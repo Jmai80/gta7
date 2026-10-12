@@ -45,7 +45,8 @@ export class HUD {
       const m = this.smsShown;
       if (m && m.offer && this.onOffer) { this.smsT = Math.min(this.smsT, 0.01); this.onOffer(m.offer); }
     });
-    this.el.objective.addEventListener('click', (e) => { e.preventDefault(); if (this.onLog) this.onLog(); });
+    this.el.objective.addEventListener('click', (e) => { e.preventDefault(); if (this.onObjective) this.onObjective(); else if (this.onLog) this.onLog(); });
+    this.onObjective = null; // (v1.11) () → a tip for one of Arne's riddles, or else the quest log
     this.el.quests.addEventListener('click', (e) => { e.preventDefault(); if (this.onLog) this.onLog(); });
     this.layout = layout;
     this.ctx = this.el.map.getContext('2d');
@@ -607,7 +608,8 @@ export class HUD {
       const what = { 'STJÄL': 'Stjäl bilen', 'KLIV IN': 'Kliv in', PRATA: 'Prata', 'GÅ UT': 'Gå ut', TITTA: 'Titta', 'ÖPPNA': 'Öppna kassaskåpet', HISSA: 'Håll inne för att hissa flaggan', TA: 'Ta', HISS: 'Ta hissen ner', 'GÅ IN': 'Gå in i kapellet', CYKLA: 'Cykla', 'LÅS UPP': 'Lås upp cykeln med Melkers nycklar',
         SAX: 'Ta saxen', RAKHYVEL: 'Ta rakhyveln', 'BLÅ FÄRG': 'Ta den blå färgen', 'ROSA FÄRG': 'Ta den rosa färgen', BLONDERING: 'Ta blonderingen',
         'ÅKA': 'Åk skateboard', SVARA: 'Svara i telefonen', 'UNDERSÖK': 'Undersök', KLIPP: 'Klipp håret', RAKA: 'Raka av skägget', 'FÄRGA': 'Färga håret',
-        'BÄR IN': 'Bär in bullarna i kapellet', RINGA: 'Ring i kyrkklockan', SPELA: 'Sätt dig vid orgeln' }; // (v1.10)
+        'BÄR IN': 'Bär in bullarna i kapellet', RINGA: 'Ring i kyrkklockan', SPELA: 'Sätt dig vid orgeln', // (v1.10)
+        BROMSA: 'Håll inne för att bromsa kvarnen', 'STÖT': 'Stöt kardemumman' }; // (v1.11)
       this.el.keyhint.innerHTML = label ? `<kbd>E</kbd> ${what[label] || label}` : '';
     }
     // quest log: badge with new offers, and the objective box asks you to pick a quest
@@ -615,6 +617,14 @@ export class HUD {
     if (nNew !== this.badgeN) { this.badgeN = nNew; this.el.qBadge.textContent = nNew; this.el.qBadge.hidden = !nNew; }
     const choose = game.missionActive && game.mission.choose;
     if (choose !== this.chooseShown) { this.chooseShown = choose; this.el.objective.classList.toggle('choose', choose); }
+    // (v1.11) one of Arne's riddles: a question mark on the box – tapping it asks Gun for a tip
+    const tip = !!(game.missionActive && game.mission.tipReady);
+    if (tip !== this.tipShown) {
+      this.tipShown = tip;
+      this.el.objective.classList.toggle('tip', tip);
+      const ch = this.el.objective.querySelector('.chev');
+      if (ch) ch.textContent = tip ? '?' : '›';
+    }
     // speed + condition
     if (car) {
       const kmh = Math.round(car.speed * 3.6);

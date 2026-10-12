@@ -96,7 +96,7 @@ export class Secrets {
     if (p.state !== 'foot' || p.frozen || g.indoor) return;
     // the phone box rings when you come near (again and again until you answer, and after a while again)
     const P = BY.phone, dp = Math.hypot(p.x - P.x, p.z - P.z);
-    this.ringing = dp < 30 && g.time >= (this.quietUntil || 0);
+    this.ringing = dp < 30 && g.time >= (this.quietUntil || 0) && !(m.active && m.active.holdsPhone); // ((v1.11) Ingvar's call in the treasure hunt)
     if (this.ringing && (this.ringT -= dt) <= 0) { this.ringT = 2.6; g.emit('ring', { x: P.x, z: P.z }); if (!this.toldRing) { this.toldRing = true; g.emit('toast', { text: 'Det ringer i telefonkiosken på kajen …' }); } }
     if (this.ringing && dp < P.r) { this.prompt = 'SVARA'; this.near = P; return; }
     // the sea monster: seen from the end of the pier while it is up
@@ -164,7 +164,7 @@ export function secretsInto(H) {
     P({ t: 'cyl', x, z, y0: CURB_H - 0.05, y1: CURB_H + 0.75, r: 0.62, r1: 0.52, n: 10, c: 0x5d4330, cap: true });
     P({ t: 'cyl', x, z, y0: CURB_H + 0.74, y1: CURB_H + 0.78, r: 0.47, n: 10, c: 0xc49a6a, cap: true });
     for (const a of [0.4, 2.2, 3.9, 5.2]) P({ t: 'cyl', x: x + Math.cos(a) * 0.55, z: z + Math.sin(a) * 0.55, y0: CURB_H - 0.05, y1: CURB_H + 0.22, r: 0.2, r1: 0.06, n: 5, c: 0x4a3626 });
-    sign('hjarta', { kind: 'carving' }, x, CURB_H + 0.42, z + 0.585, 0.46, 0.46, 0);
+    sign('hjarta', { kind: 'carving', ppm: 300 }, x, CURB_H + 0.42, z + 0.585, 0.46, 0.46, 0);   // ((v1.11) read up close: a code)
     colCircle(x, z, 0.62, 0.8);
   }
 

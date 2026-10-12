@@ -1,6 +1,6 @@
 // Missions: the quest log (accept, wait, follow), the pizza job, the street race, tant Gun's flag,
 // failing, saving and the end card.
-import { Game } from '../src/game.js';
+import { Game, MILL } from '../src/game.js';
 import { PIZZERIA, MACKEN, DELIVERY, PIZZA_CAR, GUN, TOWER_DOOR, SAMUEL_REWARD, PIER_BENCH, PIER_MEET, HANDOVER_REWARD, CURB_H, ISLAND, GUN_GATE, GUN_BIKE, BIKE_REWARD, LIVS_DOOR, INGVAR, LIVS_REWARD, EGG_BONUS, EGGS, OFFICE_DOOR, SAFE_TIME, SAFE_REWARD, LEIF, LEIF_MARK, SAMUEL_WAIT, KEY_TIME, KEY_REWARD, KONDITORI, PICKUPS, OPENING_REWARD, LASSE_SHOP, JUMP_GOAL, JUMP_REWARD, JUMP_START, JAR, FACTORY_START, TAIL, SITE_OFFICE, FACTORY_REWARD, BIKE_RETURN, HOME_DELIVERY, SALON_DOOR, SALON_PAY, FEST, BIRGER, BIKES_HOME, BIKE_HOME_PAY, BIKES_HOME_BONUS, NOVA_DOOR, NOVA_PAY, HOMECOMING } from '../src/config.js';
 import { SALON, TOOLS as SALON_TOOLS } from '../src/salon.js';
 import { HOUSE, SPOTS as HOUSE_SPOTS } from '../src/birger.js';
@@ -18,6 +18,8 @@ import { SECRETS, SECRET_COUNT, monsterRise, DUCKS, duckAt } from '../src/secret
 import { CHAPEL, CHAPEL_DOOR, PEWS, CHAPEL_KAFFE } from '../src/chapel.js';
 import { KYRK, KYRK_MAX, kyrkPay, GUESTS } from '../src/kyrkkaffe.js';
 import { Organ, ORGAN, PSALM, VERSES } from '../src/organ.js';
+import { HUNT, HUNT_MAX, RIDDLES, LADDER } from '../src/skattjakt.js';
+import { CodeLock, LOCK } from '../src/lock.js';
 import { routePoints, landOf } from '../src/route.js';
 import { CHASE, ESCAPE_BONUS } from '../src/bikejob.js';
 import { INT, inFlat } from '../src/interior.js';
@@ -337,8 +339,12 @@ function startRace(g) {
   g2.mission.done.add('utsikten');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all fourteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.10/.test(d.text) && /Dahlgren/.test(d.text)), 'the last text: version 1.10, Dahlgren\'s photos are gone');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while Arne's treasure hunt is left");
+  g2.mission.done.add('skattjakt');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all fifteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.11/.test(d.text) && /Arnes sista hemlighet/.test(d.text)), 'the last text: version 1.11, Arne\'s last secret is found');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -2541,7 +2547,8 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   m.talkDone('utsikten'); run(g, 1);
   check(m.done.has('utsikten') && g.money - money0 === UTSIKT.reward && ev.some(([nn, d]) => nn === 'banner' && d.sub === 'Utsikten'), `main quest part 11 done: ${UTSIKT.reward} kr`);
   run(g, 16);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.10/.test(d.text)), 'all fourteen done: the end card (version 1.10)');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'all fourteen done – but no end card now: part 12 is still to come (v1.11)');
+  check(m.nextMain() && m.nextMain().id === 'skattjakt', '  next: "Arnes skattjakt" (Gun texts in a little while)');
 
   // he gets away when you only walk
   const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
@@ -3031,6 +3038,345 @@ const lastTalk = (ev, id) => { const t = ev.filter(([n, d]) => n === 'talk' && d
   check(t2 !== t1 && t2.pages.length === 1 && /Kyrkkaffet väntar/.test(t2.pages[0].text), `talk to her again: "${t2 && t2.pages[0].text.slice(0, 40)}…"`);
   m.talkDone('inga'); run(g, 0.1);
   check(m.prompt !== 'SPELA' && (() => { g.player.x = CHAPEL_KAFFE.organ.x; g.player.z = CHAPEL_KAFFE.organ.z; ind.update(0); return ind.prompt !== 'SPELA'; })(), '  (the organ is the cantor\'s until you have played the psalm)');
+}
+
+// ---------- 39. main quest, part 12: "Arnes skattjakt" (v1.11) – riddles all over the map ----------
+const UP_TO_UTSIKT = [...UP_TO_HIDEOUT, 'birger', 'utsikten'];
+const GUN_FROM = 'Tant Gun (Storgatan)';
+function huntGame(stats = {}, known = null, tracked = null) {
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const s = livsSave(UP_TO_UTSIKT);
+  g.mission.restore({ ...s, money: 0, stats, known: known || s.known, tracked });
+  return g;
+}
+// stand by the brake lever and hold BROMSA once the yellow sail is between lo and hi (radians from straight
+// down, minus: still on its way down), with the sails at full speed; let go when they have stopped
+function brakeAt(g, job, lo, hi) {
+  for (let k = 0; k < 60 * 25; k++) {
+    if (Math.abs(g.millW - MILL.w) < 1e-6 && job.sailOff() > lo && job.sailOff() < hi) break;
+    g.step(DT, idle);
+  }
+  const miss0 = job.brakeMiss;
+  for (let k = 0; k < 60 * 3 && job.stage === 'brake' && job.brakeMiss === miss0; k++) g.step(DT, { ...idle, actionHeld: true });
+}
+const typeCode = (L, code) => { for (let i = 0; i < L.n; i++) L.select(i), L.type(+code[i]); };
+{
+  console.log('Arnes skattjakt: kodlåset och kvarnbromsen');
+  const g = new Game({ seed: 7, traffic: 0, peds: 0 });
+  const ev = record(g, ['lock']);
+  let opened = 0, stopped = 0;
+  const L = new CodeLock(g, { code: '1971', hint: 'Fyra siffror.', help: 'Titta på hjärtat.', onOpen: () => opened++, onStop: () => stopped++ });
+  check(L.n === 4 && L.value === '0000' && L.line === 'Fyra siffror.', 'a lock with four wheels, all at 0');
+  L.turn(0, 1); L.turn(1, -1);
+  check(L.value === '1900' && ev.filter(([, d]) => d.kind === 'tick').length === 2, 'turning the wheels up and down (below 0 comes 9)');
+  L.select(2); L.type(7); L.type(2);
+  check(L.value === '1972' && L.sel === 3, 'typing digits: onto the chosen wheel, then on to the next');
+  check(!L.tryOpen() && L.tries === 1 && L.state === 'wrong' && L.line === 'Titta på hjärtat.' && ev.some(([, d]) => d.kind === 'wrong'), 'a wrong code rattles – and the help line comes up');
+  for (let i = 0; i < 40; i++) L.update(DT);
+  check(L.state === 'idle', `  the wheels settle after ${LOCK.wrongT} s`);
+  L.turn(3, -1);
+  check(L.tryOpen() && L.state === 'right' && ev.some(([, d]) => d.kind === 'open') && !L.turn(0, 1) && !L.type(5), '1971: it springs (and the wheels cannot be turned now)');
+  for (let i = 0; i < 30; i++) L.update(DT);
+  check(opened === 0 && L.open, '  …');
+  for (let i = 0; i < 15; i++) L.update(DT);
+  check(opened === 1 && !L.open, `  the lid comes up after ${LOCK.springT} s`);
+  const L2 = new CodeLock(g, { code: '287', onStop: () => stopped++ });
+  L2.stop();
+  check(stopped === 1 && !L2.open && !L2.tryOpen() && L2.n === 3, 'SLUTA: away from a three-wheel lock');
+  // the windmill's brake
+  run(g, 2);
+  check(Math.abs(g.millW - MILL.w) < 1e-9, `the sails turn at ${MILL.w} rad/s – a round in ${(2 * Math.PI / MILL.w).toFixed(0)} s`);
+  const a0 = g.millA;
+  g.millHold = true;
+  let t = 0;
+  while (g.millW > 0 && t < 5) { g.step(DT, idle); t += DT; }
+  check(t > 0.9 && t < 1.25 && g.millA - a0 > 0.18 && g.millA - a0 < 0.3, `brake on: they roll on for ${t.toFixed(2)} s (${(g.millA - a0).toFixed(2)} rad) before they stop`);
+  const a1 = g.millA; run(g, 2);
+  check(g.millA === a1, '  and stay still while it is held');
+  g.millHold = false; run(g, 1.6);
+  check(Math.abs(g.millW - MILL.w) < 1e-9, '  let go: up to speed again in a second and a half');
+}
+{
+  console.log('Arnes skattjakt (huvuduppdrag del 12): hela vägen');
+  const g = huntGame();
+  const m = g.mission, p = g.player, ind = g.indoors, flag = m.flag, R = CHAPEL.room;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'say', 'lock', 'mill', 'ring', 'pestle', 'secret', 'hint', 'endcard', 'paper', 'keys', 'churchBell', 'fade']);
+  check(HUNT_MAX === 6500 && HUNT.codes.stump === '1971' && HUNT.codes.altar === '287', `up to ${fmt(HUNT_MAX)} kr; the codes 1971 and 287`);
+  run(g, 20);
+  check(!m.known.has('skattjakt'), 'no word from Gun yet');
+  run(g, 7);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'skattjakt') || [])[1];
+  check(sms && sms.from === GUN_FROM && /kuvert/.test(sms.text), `about 25 s after Utsikten: Gun texts ("${sms && sms.text.slice(0, 48)}…")`);
+  check(m.quest('skattjakt').reward === `upp till ${fmt(HUNT_MAX)} kr – och Arnes sista hemlighet`, `  reward: ${m.quest('skattjakt').reward}`);
+  walkHere(g, 60, -20); run(g, 1);
+  const gun = flag.gun, B = m.huntBengt;
+  check(flag.huntPin && Math.hypot(gun.x - HUNT.gun.x, gun.z - HUNT.gun.z) < 0.05 && B && Math.hypot(B.x - HUNT.bengt.x, B.z - HUNT.bengt.z) < 0.05 && g.peds.list.includes(B), 'tant Gun and Bagar-Bengt wait outside the konditori (put there out of sight)');
+  m.accept('skattjakt'); run(g, 0.3);
+  check(m.tracked === 'skattjakt' && m.objective === 'Till konditoriet (G)', `following it: "${m.objective}" · ${m.sub}`);
+  check(!reachable(g, { x: -6, z: 34 }, [KONDITORI, HUNT.you, { x: HUNT.dahl.to[0], z: HUNT.dahl.to[1] }], { x0: -30, z0: 8, x1: 20, z1: 45 }).length, '  you can walk across the square to the G by the door (and where you and Dahlgren will stand)');
+  // in a car: get out first
+  g.makeRoom('sedan');
+  const car0 = g.addVehicle('sedan', 'blue', KONDITORI.x + 4, 32, Math.PI);
+  check(enterCar(g, car0), '  (into a car)');
+  car0.x = KONDITORI.x; car0.z = KONDITORI.z; car0.h = Math.PI / 2; car0.vx = car0.vz = 0; run(g, 0.4);
+  check(!m.active && ev.some(([n, d]) => n === 'toast' && /Kliv ur – tant Gun och Bengt/.test(d.text)), '  driving up to it: "Kliv ur – tant Gun och Bengt väntar utanför konditoriet."');
+  p.exitCar(); run(g, 0.5); car0.x = KONDITORI.x + 8; car0.z = 30; run(g, 0.2);
+  walkHere(g, KONDITORI.x, KONDITORI.z + 0.4); run(g, 1);
+  const job = m.active;
+  check(job && job.id === 'skattjakt' && job.stage === 'intro' && p.frozen && g.camFocus && g.camFocus.owner === 'hunt', 'on foot: it starts, Gun and Bengt turn to you');
+  const t1 = lastTalk(ev, 'skattjakt');
+  check(t1 && t1.pages.length === 8 && t1.pages[1].fx === 'envelope' && /bröllopsdag 1995/.test(t1.pages[1].text) && /Det viktigaste står inte i receptet/.test(t1.pages[3].text), '  the envelope: "Till min Gun, på vår bröllopsdag 1995" – "Det viktigaste står inte i receptet"');
+  check(t1 && t1.pages[6].note && t1.pages[6].text === RIDDLES[0].verse && t1.pages[7].last === 'JAG KLURAR', `  Arne's first note: "${RIDDLES[0].verse.replace('\n', ' ')}"`);
+  check(!t1.pages.some((q) => /kyrkkaffe/.test(q.text)), '  (no word about the church coffee – you have not been there)');
+  m.talkDone('skattjakt'); run(g, 1.2);
+  check(job.stage === 'seek' && job.k === 0 && m.objective === RIDDLES[0].obj[0] && m.sub === RIDDLES[0].obj[1] && !p.frozen, `the riddle in the objective box: "${m.objective}" · ${m.sub}`);
+  check(!m.targets.some((t) => t.gps) && m.tipReady && g.stats.hunt.at === 1, '  no GPS, no arrow – work it out (a tip can be asked for)');
+  check(ev.some(([n, d]) => n === 'hint' && d.id === 'hunttip'), '  a hint: tap the objective box for a tip');
+  // 1. the oak stump in the park – no tip
+  walkHere(g, 70, -50); run(g, 0.3);
+  check(job.stage === 'stump' && job.solo === 1 && ev.some(([n, d]) => n === 'toast' && /utan tips! \+250 kr/.test(d.text)), 'the oak stump in the park, without a tip: +250 kr at the end');
+  check(!reachable(g, { x: 70, z: -40 }, [HUNT.stump.look, HUNT.stump.kneel], { x0: 40, z0: -80, x1: 100, z1: -35 }).length, '  you can walk up to the carved heart (and to the side of the stump)');
+  check(m.targets.some((t) => t.kind === 'item' && Math.hypot(t.x - HUNT.stump.x, t.z - HUNT.stump.z) < 1.2), '  an arrow over the stump');
+  walkHere(g, 70, -58.75); run(g, 0.1);
+  check(m.prompt === 'UNDERSÖK', 'UNDERSÖK by the heart (the lock – not the secret)');
+  press(g);
+  let L = g.lock;
+  check(L && L.code === '1971' && L.n === 4 && p.frozen && g.camFocus && g.camFocus.dist < 2.5 && ev.some(([n, d]) => n === 'toast' && /kodlås/.test(d.text)), '  a tin box under the roots – with a four-digit lock (close up on the carving)');
+  typeCode(L, '1972'); L.tryOpen(); run(g, 0.6);
+  check(L.tries === 1 && L.line === 'Titta på hjärtat i stubben.' && g.lock === L && job.stage === 'stumpLock', '  1972: wrong – "Titta på hjärtat i stubben."');
+  L.stop(); run(g, 0.1);
+  check(!g.lock && !p.frozen && job.stage === 'stump' && !g.camFocus, '  SLUTA: up again');
+  press(g);
+  L = g.lock;
+  typeCode(L, '1971'); L.tryOpen(); run(g, 1.4);
+  const t2 = lastTalk(ev, 'skattjakt');
+  check(!g.lock && !job.stumpTin && t2 && t2 !== t1 && t2.pages[1].note && t2.pages[1].text === RIDDLES[1].verse, `  1971: open! The second note: "${RIDDLES[1].obj[0]}…"`);
+  check(!(g.stats.secrets || []).includes('heart'), '  (the secret of the stump is not taken yet)');
+  m.talkDone('skattjakt'); run(g, 1.8);
+  check(job.stage === 'seek' && job.k === 1 && g.stats.hunt.at === 2 && g.stats.hunt.solo === 1 && m.objective === RIDDLES[1].obj[0], `on to riddle two (saved): "${m.objective}"`);
+  check(g.stats.secrets.includes('heart') && ev.some(([n, d]) => n === 'banner' && d.title === 'HEMLIGHET!' && /Hjärtat i stubben/.test(d.sub)), '  and the heart in the stump counts as a secret: HEMLIGHET!');
+  const M = m.huntMajken;
+  check(M && g.peds.list.includes(M) && Math.hypot(M.x - HUNT.mill.majken.x, M.z - HUNT.mill.majken.z) < 0.05, '  Mjölnar-Majken is at the mill already');
+  // 2. the windmill – after a tip (standing still)
+  run(g, HUNT.tipAt + 1.5);
+  const tip1 = ev.filter(([n, d]) => n === 'sms' && d.from === GUN_FROM).pop();
+  check(job.tip && tip1 && /kvarnen på Norrholmen/.test(tip1[1].text) && m.sub === RIDDLES[1].where, `no closer in ${HUNT.tipAt} s: Gun texts a tip ("${tip1 && tip1[1].text.slice(0, 40)}…")`);
+  check(m.targets.some((t) => t.kind === 'zone' && t.gps && Math.hypot(t.x - HUNT.mill.x, t.z - HUNT.mill.z) < 1) && !m.tipReady, '  and the GPS shows the way to the mill');
+  walkHere(g, -20, -365); run(g, 0.3);
+  check(job.stage === 'meet' && job.solo === 1 && job.millTin && /Prata med Mjölnar-Majken/.test(m.objective), `by the mill (no bonus – there was a tip): "${m.objective}"`);
+  check(m.targets.some((t) => t.kind === 'contact' && t.ref === M), '  her M over her head');
+  check(!reachable(g, { x: -20, z: -365 }, [{ x: -2.9, z: -351.1 }, HUNT.mill.lever], { x0: -32, z0: -378, x1: 16, z1: -338 }).length, '  you can walk to Majken and to the brake lever');
+  walkHere(g, -2.85, -351.15); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA by Majken');
+  press(g); run(g, 0.8);
+  const t3 = lastTalk(ev, 'skattjakt');
+  check(job.stage === 'majken' && t3.pages.length === 4 && t3.pages.some((q) => /gult segel/.test(q.text)) && t3.pages[3].last === 'TILL BROMSEN', '  Majken: her father tied a tin to the sail with the yellow cloth – stop it pointing straight down');
+  m.talkDone('skattjakt'); run(g, 0.8);
+  check(job.stage === 'brake' && ev.some(([n, d]) => n === 'hint' && d.id === 'millbrake'), 'to the brake (a hint: hold BROMSA)');
+  walkHere(g, HUNT.mill.lever.x, HUNT.mill.lever.z); run(g, 0.1);
+  check(m.prompt === 'BROMSA' && g.camFocus && g.camFocus.owner === 'hunt' && g.camFocus.cam && g.camFocus.y > 9, '  BROMSA at the lever – the camera stands back: the whole wheel of sails');
+  brakeAt(g, job, 0.4, 0.5);
+  check(job.brakeMiss === 1 && ev.some(([n, d]) => n === 'say' && d.who === M && /För sent/.test(d.text)) && ev.some(([n, d]) => n === 'mill' && d.kind === 'stop'), `  braked too late: "För sent – den har redan passerat!" (stopped ${job.sailOff().toFixed(2)} rad past the bottom)`);
+  run(g, 0.5);
+  check(!g.millHold && g.millW > 0, '  Majken lets the brake go – round again');
+  brakeAt(g, job, -0.3, -0.2);
+  check(job.stage === 'millWait' && Math.abs(job.sailOff()) < HUNT.mill.window && g.millHold && ev.some(([n, d]) => n === 'say' && d.who === M && /Perfekt/.test(d.text)), `  in time: the yellow sail stops pointing down (${job.sailOff().toFixed(2)} rad off) – "Perfekt! Håll i!"`);
+  let top = 0, n = 0;
+  const ground = g.world.groundHeight(LADDER.x, LADDER.z);
+  while (job.stage === 'millWait' && n++ < 60 * 12) { g.step(DT, idle); top = Math.max(top, M.y - ground); }
+  check(job.stage === 'millNote' && top > 1.9 && !job.millTin && ev.some(([nn]) => nn === 'paper') && g.millW === 0, `  Majken climbs the ladder ${top.toFixed(1)} m up and comes down with the tin (${(n / 60).toFixed(1)} s)`);
+  run(g, 0.7);
+  const t4 = lastTalk(ev, 'skattjakt');
+  check(t4.pages[1].note && t4.pages[1].text === RIDDLES[2].verse, `  the third note: "${RIDDLES[2].obj[0]}…"`);
+  m.talkDone('skattjakt'); run(g, 0.3);
+  check(job.stage === 'seek' && job.k === 2 && !g.millHold && g.stats.hunt.at === 3 && m.ingvar, 'on to riddle three; the sails turn again');
+  run(g, 3);
+  check(g.millW > 0.44, '  …');
+  // 3. the lighthouse – a tip at once (tapping the objective box)
+  check(m.askTip() && !m.tipReady, 'tap the objective box: a tip right away');
+  run(g, 0.2);
+  const tip2 = ev.filter(([nn, d]) => nn === 'sms' && d.from === GUN_FROM).pop();
+  check(/fyren/.test(tip2[1].text) && /Ingvar/.test(tip2[1].text) && m.targets.some((t) => t.kind === 'contact' && t.ref === m.ingvar && t.gps), `  "${tip2[1].text.slice(0, 44)}…" – the GPS to Ingvar`);
+  walkHere(g, 98, -377); run(g, 0.3);
+  check(job.stage === 'meet' && job.solo === 1 && m.objective === 'Prata med Ingvar', `at the lighthouse: "${m.objective}"`);
+  check(!reachable(g, { x: 98, z: -377 }, [{ x: INGVAR.x, z: INGVAR.z + 1.3 }], { x0: 80, z0: -400, x1: 122, z1: -362 }).length, '  you can walk up to him');
+  walkHere(g, INGVAR.x, INGVAR.z + 1.3); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA');
+  press(g); run(g, 0.8);
+  const t5 = lastTalk(ev, 'skattjakt');
+  check(job.stage === 'ingvar' && t5.pages[0].text === '…' && t5.pages.some((q) => /kiosken på kajen/.test(q.text)) && /ringa dit/.test(t5.pages[5].text), '  Ingvar: "…" – Arne wanted the last note read on the phone, in the box on the quay');
+  m.talkDone('skattjakt'); run(g, 0.2);
+  check(job.stage === 'phone' && job.timed && m.objective === 'Till telefonkiosken på kajen' && /Ingvar ringer om 1:2\d/.test(m.sub) && g.stats.hunt.at === 4, `a minute and a half: "${m.objective}" · ${m.sub}`);
+  check(m.targets.some((t) => t.kind === 'zone' && t.gps && Math.hypot(t.x - HUNT.booth.x, t.z - HUNT.booth.z) < 0.1), '  the GPS to the phone box');
+  // drive there: down to a car by his cottage, over the north bridge and through town
+  const path = routePoints(g.layout.gps, p.x, p.z, HUNT.booth.x, HUNT.booth.z);
+  g.makeRoom('sedan');
+  const car = g.addVehicle('sedan', 'red', path[1][0], path[1][1], Math.atan2(path[2][0] - path[1][0], path[2][1] - path[1][1]));
+  const tc = g.time;
+  check(enterCar(g, car), '  into a car by the cottage');
+  const left = driveTo2(g, car, HUNT.booth.x, HUNT.booth.z, 120, 13);
+  check(job.ringing && job.onTime && ev.some(([nn, d]) => nn === 'toast' && /I tid!/.test(d.text)) && ev.some(([nn]) => nn === 'ring'), `drove to the quay in ${(g.time - tc).toFixed(0)} s (${left.toFixed(0)} m short): it rings – "I tid!"`);
+  check(m.objective === 'Svara i telefonen' && /Kliv ur/.test(m.sub), `  "${m.objective}" · ${m.sub}`);
+  p.exitCar(); run(g, 0.6);
+  check(!reachable(g, { x: -114.5, z: -125 }, [HUNT.booth, { x: HUNT.booth.x, z: HUNT.booth.z - 0.95 }], { x0: -135, z0: -150, x1: -95, z1: -112 }).length, '  you can walk to the phone box (and into it)');
+  walkHere(g, HUNT.booth.x, HUNT.booth.z); run(g, 0.1);
+  check(m.prompt === 'SVARA', '  SVARA in the phone box');
+  press(g); run(g, 0.6);
+  const t6 = lastTalk(ev, 'skattjakt');
+  check(job.stage === 'call' && t6.pages[0].text === '…Hallå. Det är Ingvar.' && t6.pages[1].text === 'I tid. Bra.' && t6.pages[3].note && t6.pages[3].text === RIDDLES[3].verse, '  "…Hallå. Det är Ingvar." – "I tid. Bra." – and he reads the last note');
+  m.talkDone('skattjakt'); run(g, 1.8);
+  check(job.stage === 'seek' && job.k === 3 && g.stats.hunt.at === 5 && g.stats.hunt.onTime === true && g.stats.secrets.includes('phone'), 'on to riddle four – and the phone box counts as a secret (it was Ingvar all along)');
+  const rings0 = ev.filter(([nn]) => nn === 'ring').length;
+  run(g, 5);
+  check(ev.filter(([nn]) => nn === 'ring').length === rings0 && !m.secrets.ringing, '  (and the box stays quiet now, though you stand right by it)');
+  // 4. the chapel – no tip
+  walkHere(g, CHAPEL_DOOR.x + 4, CHAPEL_DOOR.z - 8); run(g, 0.3);
+  check(job.stage === 'chapel' && job.solo === 2 && !g.indoor, 'the chapel on Söderholmen without a tip: +250 kr');
+  walkHere(g, CHAPEL_DOOR.x, CHAPEL_DOOR.z); run(g, 0.1);
+  check(m.prompt === 'GÅ IN', '  GÅ IN at the tower door');
+  press(g); run(g, 1.6);
+  const inga = ind.priest;
+  check(g.indoor && ind.where === 'chapel' && job.stage === 'chapel' && inga && Math.hypot(inga.x - HUNT.ingaAside.x, inga.z - HUNT.ingaAside.z) < 0.05, '  inside: Inga has stepped aside from the altar');
+  const altarSpot = { x: HUNT.altar.x, z: HUNT.altar.z }, boardSpot = { x: HUNT.board.x, z: HUNT.board.z }, ingaSpot = { x: R.x0 + 4.9, z: R.z0 + 11.6 };
+  check(!reachable(g, CHAPEL.spawn, [altarSpot, boardSpot, ingaSpot, HUNT.altar.stand, HUNT.board.stand], CHAPEL.bounds).length, '  you can walk to the altar, the psalm board and Inga');
+  check(m.targets.filter((t) => t.kind === 'item').length === 2, '  arrows over the altar and the psalm board');
+  walkHere(g, altarSpot.x, altarSpot.z); run(g, 0.1);
+  check(m.prompt === 'UNDERSÖK', 'UNDERSÖK at the altar');
+  press(g);
+  L = g.lock;
+  check(L && L.code === '287' && L.n === 3 && ev.some(([nn, d]) => nn === 'toast' && /Bakom altarduken/.test(d.text)), '  behind the altar cloth: a little wooden box – a three-digit lock');
+  typeCode(L, '649'); L.tryOpen(); run(g, 0.6);
+  check(L.tries === 1 && /Ta den mittersta/.test(L.line), `  649: wrong – "${L.line}"`);
+  L.stop(); run(g, 0.1);
+  walkHere(g, boardSpot.x, boardSpot.z); run(g, 0.1);
+  check(m.prompt === 'TITTA', 'TITTA by the psalm board');
+  press(g);
+  check(p.frozen && g.camFocus && g.camFocus.dist > 2 && ev.some(([nn, d]) => nn === 'toast' && /12 · 287 · 649/.test(d.text)), '  "Psalmtavlan: 12 · 287 · 649" (close up)');
+  run(g, 3.2);
+  check(!p.frozen && !g.camFocus && m.targets.filter((t) => t.kind === 'item').length === 1, '  (and you can move again)');
+  walkHere(g, ingaSpot.x, ingaSpot.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', 'PRATA with Inga');
+  press(g); run(g, 0.5);
+  const t7 = lastTalk(ev, 'skattjakt');
+  check(t7.pages.length === 2 && /psalmtavlan/.test(t7.pages[1].text) && /bröllop/.test(t7.pages[1].text), '  the board has shown the same three numbers since Arne and Gun\'s wedding');
+  m.talkDone('skattjakt'); run(g, 0.2);
+  walkHere(g, CHAPEL_KAFFE.rope.x + 0.25, CHAPEL_KAFFE.rope.z + 0.5); run(g, 0.1);
+  check(m.prompt === 'RINGA', 'the bell rope still rings');
+  press(g);
+  check(ev.some(([nn]) => nn === 'churchBell'), '  DONG');
+  walkHere(g, altarSpot.x, altarSpot.z); run(g, 0.1); press(g);
+  L = g.lock;
+  typeCode(L, '287'); L.tryOpen(); run(g, 1.5);
+  const t8 = lastTalk(ev, 'skattjakt');
+  check(job.carry === 'box' && job.altarOpen && ev.some(([nn, d]) => nn === 'keys' && d.item === 'box') && t8.pages.some((q) => /smörlåda/.test(q.text) && /A och G/.test(q.text)), '287: open! Arne\'s old butter box, A and G on the lid');
+  m.talkDone('skattjakt'); run(g, 0.3);
+  check(job.stage === 'deliver' && g.stats.hunt.at === 6 && m.objective === 'Ta Arnes låda till Gun' && m.sub === 'Gå ut ur kapellet' && p.body.pose === 3, `to Gun with it (carried in both hands): "${m.objective}" · ${m.sub}`);
+  walkHere(g, CHAPEL.door.x, CHAPEL.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', '  GÅ UT by the door');
+  press(g); run(g, 1.5);
+  check(!g.indoor && m.sub === 'Konditoriet vid torget' && m.targets.some((t) => t.kind === 'zone' && t.gps && Math.hypot(t.x - KONDITORI.x, t.z - KONDITORI.z) < 0.1), '  outside: the GPS to the konditori');
+  // 5. the konditori: Arne's letter, the mortar, the first batch – and Dahlgren
+  walkHere(g, KONDITORI.x + 0.3, KONDITORI.z - 3); run(g, 0.3);
+  walkHere(g, KONDITORI.x, KONDITORI.z); run(g, 1.2);
+  const t9 = lastTalk(ev, 'skattjakt');
+  check(job.stage === 'gun' && t9.pages.length === 8 && t9.pages.filter((q) => q.who === 'Arnes brev' && q.note).length === 3 && t9.pages.some((q) => /stöter kardemumman själv/.test(q.text)) && t9.pages[7].fx === 'mortar', 'Gun opens it: Arne\'s letter – he crushed the cardamom himself, in her mother\'s mortar');
+  for (const pg of t9.pages) if (pg.fx) m.talkFx('skattjakt', pg.fx);
+  check(job.carry === 'mortar', '  the mortar in your hands');
+  m.talkDone('skattjakt'); run(g, 0.5);
+  check(job.stage === 'pestle' && m.prompt === 'STÖT' && p.frozen && m.objective === 'Stöt kardemumman', `"${m.objective}" · ${m.sub}`);
+  for (let i = 0; i < HUNT.pestle && job.stage === 'pestle'; i++) { g.step(DT, { ...idle, action: true }); run(g, 0.08); }
+  check(job.stage === 'baking' && ev.filter(([nn]) => nn === 'pestle').length === HUNT.pestle && ev.some(([nn, d]) => nn === 'say' && d.who === m.huntBengt && /Hårdare/.test(d.text)), `${HUNT.pestle} pounds of the pestle ("Hårdare! Arne hördes ända till torget.")`);
+  const tb = g.time;
+  n = 0; while (job.stage === 'baking' && n++ < 60 * 12) g.step(DT, idle);
+  const Dg = m.huntDahl;
+  check(job.stage === 'taste' && job.tray && !job.carry && Dg && Dg.arrived && Math.hypot(Dg.x - HUNT.dahl.to[0], Dg.z - HUNT.dahl.to[1]) < 0.3 && ev.some(([nn, d]) => nn === 'fade'), `an hour later (${(g.time - tb).toFixed(1)} s): Bengt with a tray of buns, and Dahlgren has followed his nose across the square`);
+  const pay = HUNT.pay.base + 2 * HUNT.pay.solo + HUNT.pay.phone;
+  const t10 = lastTalk(ev, 'skattjakt');
+  check(t10.pages.some((q) => q.who === 'Direktör Dahlgren' && /TRETTIO ÅR/.test(q.text)) && t10.pages.some((q) => /disken/.test(q.text)) && t10.pages.at(-1).text.includes(`${fmt(pay)} kronorna`), `  "Det är Arnes bullar." – Dahlgren gets the washing-up – ${fmt(pay)} kr`);
+  const money0 = g.money;
+  m.talkDone('skattjakt'); run(g, 0.5);
+  check(m.done.has('skattjakt') && !m.active && g.money - money0 === pay && pay === 6000 && ev.some(([nn, d]) => nn === 'banner' && d.title === 'HUVUDUPPDRAG KLART' && d.sub === 'Arnes skattjakt'), `main quest part 12 done: ${fmt(pay)} kr (5 000 + 2 riddles without a tip + on time at the phone)`);
+  check(g.stats.huntSolo === 2 && g.stats.huntOnTime === 1 && g.stats.hunt.at === 7, '  stats for the end card');
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.11/.test(d.text) && /Arnes sista hemlighet/.test(d.text)), 'all fifteen parts: the last text and the end card');
+  run(g, 16);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === 'Fyrvaktaren Ingvar' && d.text === 'Bra.'), '  and a text from Ingvar: "Bra."');
+  check(flag.huntPin && m.prompt !== 'STÖT', '  Gun and Bengt are still by the door');
+  walkHere(g, KONDITORI.x, KONDITORI.z - 1.6); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA with Gun');
+  press(g);
+  check(ev.some(([nn, d]) => nn === 'say' && d.who === gun && /Arnes bullar … äntligen/.test(d.text)), '  "Arnes bullar … äntligen."');
+  walkHere(g, 60, -20); run(g, 2);
+  check(!flag.huntPin && !m.huntBengt && !m.huntDahl && !m.huntMajken && !g.peds.list.includes(Dg) && !g.peds.list.includes(M), 'out of sight they all go back to normal');
+  const saved = m.progress();
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  check(g2.mission.restore(saved) && g2.mission.done.has('skattjakt') && g2.stats.huntSolo === 2, 'saved and loaded: done, with its stats');
+}
+{
+  console.log('Arnes skattjakt: för sent till telefonen, och att fortsätta efter en omladdning');
+  const known = [...UP_TO_UTSIKT.filter((d) => d !== 'red'), 'skattjakt'];
+  const g = huntGame({ hunt: { at: 3, solo: 1, onTime: false } }, known, 'skattjakt');
+  const m = g.mission, p = g.player;
+  const ev = record(g, ['talk', 'toast', 'sms', 'banner']);
+  run(g, 1.5);
+  const job = m.active;
+  const t1 = lastTalk(ev, 'skattjakt');
+  check(job && job.id === 'skattjakt' && job.stage === 'reread' && job.k === 2 && job.solo === 1 && t1 && t1.pages.length === 1 && t1.pages[0].text === RIDDLES[2].verse, 'loaded while following it: it goes on at once – the note you were on');
+  m.talkDone('skattjakt'); run(g, 0.2);
+  check(job.stage === 'seek' && m.objective === RIDDLES[2].obj[0], `  "${m.objective}"`);
+  walkHere(g, 98, -377); run(g, 0.3);
+  walkHere(g, INGVAR.x, INGVAR.z + 1.3); run(g, 0.1); press(g); run(g, 0.8);
+  m.talkDone('skattjakt'); run(g, 0.2);
+  check(job.stage === 'phone' && job.timed, 'Ingvar: "Kör."');
+  run(g, HUNT.phoneTime + 1);
+  check(!job.timed && ev.some(([n, d]) => n === 'toast' && /Tiden har gått ut/.test(d.text)) && m.sub === 'Ingvar ringer när han ser dig där', `a minute and a half on the island: "${m.sub}"`);
+  walkHere(g, HUNT.booth.x, HUNT.booth.z + 10); run(g, 0.3);
+  check(job.ringing && !job.onTime && !ev.some(([n, d]) => n === 'toast' && /I tid!/.test(d.text)), 'at the quay at last: it rings anyway');
+  walkHere(g, HUNT.booth.x, HUNT.booth.z); run(g, 0.1); press(g); run(g, 0.6);
+  const t2 = lastTalk(ev, 'skattjakt');
+  check(/Du är sen/.test(t2.pages[1].text), `  "${t2.pages[1].text}"`);
+  m.talkDone('skattjakt'); run(g, 0.3);
+  check(g.stats.hunt.at === 5 && g.stats.hunt.onTime === false && g.stats.hunt.solo === 2, '  saved: riddle four, two of them without a tip (the lighthouse too), late');
+  const g2 = new Game({ seed: 7, traffic: 0, peds: 0 });
+  g2.mission.restore(m.progress());
+  const ev2 = record(g2, ['talk', 'toast']);
+  run(g2, 1.5);
+  check(g2.mission.active && g2.mission.active.stage === 'reread' && lastTalk(ev2, 'skattjakt').pages[0].text === RIDDLES[3].verse, 'saved and loaded: Arne\'s fourth note again');
+  // a save at the phone box, and one with the butter box
+  const g3 = huntGame({ hunt: { at: 4, solo: 2, onTime: false } }, known, 'skattjakt');
+  const ev3 = record(g3, ['toast']);
+  run(g3, 1.5);
+  check(g3.mission.active && g3.mission.active.stage === 'phone' && !g3.mission.active.timed && ev3.some(([n, d]) => n === 'toast' && /telefonkiosken på kajen/.test(d.text)), 'loaded at the phone step: "…kör till telefonkiosken på kajen" (no clock now)');
+  const g4 = huntGame({ hunt: { at: 6, solo: 4, onTime: true } }, known, 'skattjakt');
+  const m4 = g4.mission, ev4 = record(g4, ['talk', 'toast']);
+  run(g4, 1.5);
+  const j4 = m4.active;
+  check(j4 && j4.stage === 'deliver' && j4.carry === 'box' && ev4.some(([n, d]) => n === 'toast' && /ta Arnes låda till Gun/.test(d.text)), 'loaded with the butter box: to Gun with it');
+  walkHere(g4, KONDITORI.x + 0.3, KONDITORI.z - 3); run(g4, 0.3);
+  walkHere(g4, KONDITORI.x, KONDITORI.z); run(g4, 1.2);
+  m4.talkFx('skattjakt', 'mortar'); m4.talkDone('skattjakt'); run(g4, 0.3);
+  for (let i = 0; i < HUNT.pestle; i++) { g4.step(DT, { ...idle, action: true }); run(g4, 0.08); }
+  let n = 0; while (j4.stage === 'baking' && n++ < 60 * 12) g4.step(DT, idle);
+  const money0 = g4.money;
+  m4.talkDone('skattjakt'); run(g4, 0.5);
+  check(m4.done.has('skattjakt') && g4.money - money0 === HUNT_MAX, `all four riddles without a tip and on time: the full ${fmt(HUNT_MAX)} kr`);
+}
+{
+  console.log('Arnes skattjakt och Kyrkkaffet samtidigt');
+  const g = huntGame();
+  const m = g.mission, flag = m.flag, gun = flag.gun;
+  run(g, 50);
+  check(m.known.has('skattjakt') && m.known.has('kyrkkaffe'), 'both texts have come (Gun\'s envelope and Inga\'s church coffee)');
+  walkHere(g, 60, -20); run(g, 1);
+  check(flag.huntPin && Math.hypot(gun.x - HUNT.gun.x, gun.z - HUNT.gun.z) < 0.05, 'Gun waits at the konditori');
+  m.accept('kyrkkaffe'); run(g, 0.5);
+  walkHere(g, 80, 100); run(g, 1);
+  check(!flag.huntPin && !m.huntBengt && Math.hypot(gun.x - GUN.x, gun.z - GUN.z) < 0.05, 'following Kyrkkaffet: she has gone home to her garden (out of sight)');
+  walkHere(g, -97.5, -45.8);
+  walkPath(g, [[-97.5, -48.6], [KYRK.mark.x, KYRK.mark.z]], () => m.active, 10);
+  check(m.active && m.active.id === 'kyrkkaffe' && Math.hypot(gun.x - GUN.x, gun.z - GUN.z) < 0.1, '  and the church coffee starts with her there');
+  m.accept('skattjakt'); run(g, 0.2);
+  check(m.active.id === 'kyrkkaffe' && m.prevTracked === 'skattjakt', '  (the treasure hunt waits until the church coffee is done)');
 }
 
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');

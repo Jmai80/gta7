@@ -2,7 +2,7 @@
 
 Det här är startpunkten för en ny Claude Code-session, i molnet (claude.ai/code) eller lokalt. Claude Code läser in filen automatiskt när en session startar i repot. Läs hela filen och sedan `docs/HANDOFF.md`, som har alla detaljer: arkitektur, varje uppdrag, platser och koordinater, tester, fallgropar och versionshistorik.
 
-Senast uppdaterad 12 oktober 2026, efter version 1.10 (kyrkoherde Ingas sidouppdrag Kyrkkaffet: tant Guns söndagsbullar på Arnes cykel ut till kapellet, kyrkklockan, gästerna – och orgeln, ett nytt minispel där du spelar efter det Inga sjunger). Version 1.9 gav Söderholmens kapell inifrån: bänkrader med mittgång, altare och kyrkoherde Inga. Version 1.8.2 gav nya blomsterplanteringar på tivolit. Version 1.8.1 gav (parkdammen visar sitt vatten igen – stenkanten var en hel skiva över vattnet – och gummiankorna är nya och simmar runt). Version 1.8 gav åtta hemligheter/påskägg, bland annat en skateboard och en telefonkiosk som ringer. Version 1.7 gav tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten och sidouppdragen Var är Ebbe? och Måsen har fastnat. Version 1.6 gav ön Söderholmen med Tivoli Lyckoland. Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. I v1.10 rättades också altartavlan i kapellet: texten FRID VARE MED ER låg inuti sin förgyllda ram och syntes inte. Den senaste buggfixen (1.8.2) gjorde om tivolits blommor och (1.8.1) parkdammen; den förra (1.4.1) en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
+Senast uppdaterad 12 oktober 2026, efter version 1.11 (huvuduppdragets del 12 **Arnes skattjakt**: Arnes sista bröllopsdagsskattjakt till tant Gun – rimmade gåtor utan GPS från lapp till lapp över hela kartan, två kodlås, en kvarnvinge som ska bromsas rakt ner, ett telefonsamtal mot klockan och till sist det som inte stod i receptet: stött kardemumma). Version 1.10 gav kyrkoherde Ingas sidouppdrag Kyrkkaffet (tant Guns söndagsbullar på Arnes cykel ut till kapellet, kyrkklockan, gästerna – och orgeln, ett minispel där du spelar efter det Inga sjunger). Version 1.9 gav Söderholmens kapell inifrån: bänkrader med mittgång, altare och kyrkoherde Inga. Version 1.8.2 gav nya blomsterplanteringar på tivolit. Version 1.8.1 gav (parkdammen visar sitt vatten igen – stenkanten var en hel skiva över vattnet – och gummiankorna är nya och simmar runt). Version 1.8 gav åtta hemligheter/påskägg, bland annat en skateboard och en telefonkiosk som ringer. Version 1.7 gav tre uppdrag på Söderholmens tivoli: huvuduppdragets del 11 Utsikten och sidouppdragen Var är Ebbe? och Måsen har fastnat. Version 1.6 gav ön Söderholmen med Tivoli Lyckoland. Version 1.5 gav huvuduppdragets del 10 Birger kommer hem med bilen Sjuby Spider, och pusslet Badhyttsgåtan på stranden. I v1.10 rättades också altartavlan i kapellet: texten FRID VARE MED ER låg inuti sin förgyllda ram och syntes inte. I v1.11 fick psalmtavlan i kapellet sina tre nummer (den tredje raden ritades aldrig). Den senaste buggfixen (1.8.2) gjorde om tivolits blommor och (1.8.1) parkdammen; den förra (1.4.1) en cykel som spärrade badrumsdörren i Birgers hus, se HANDOFF avsnitt 9; Långhoppet i 1.1.1 står i avsnitt 4. Det finns ingen känd öppen bugg just nu.
 
 ---
 
@@ -29,8 +29,8 @@ Senast uppdaterad 12 oktober 2026, efter version 1.10 (kyrkoherde Ingas sidouppd
 - three.js 0.184 laddas från jsDelivr via `src/three.js`. Det finns **inget byggsteg**, bara vanliga ES-moduler. Allt är procedurellt: inga bild-, modell- eller ljudfiler (ljudet syntetiseras i Web Audio, typsnitten ligger i `fonts/`).
 - **Simuleringen** (fysik, trafik, folk, spelare, uppdrag) är ren JavaScript utan three.js. Den kör i fast 60 Hz och testas i Node. **Renderingen** (`render.js`, `shaders.js`, `worldmesh.js`, `models.js` med flera) är separat.
 - Spelet ligger på **https://jmai80.github.io/gta7/**. GitHub Pages byggs från `main`, repots rot.
-- Version 1.10 innehåller:
-  - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma, del 10 där Birger kommer hem och del 11 Utsikten på tivolit (v1.7),
+- Version 1.11 innehåller:
+  - huvudäventyret om receptet på Sjubybullen i åtta delar, plus del 9 om Jontes cykelgömma, del 10 där Birger kommer hem, del 11 Utsikten på tivolit (v1.7) och del 12 Arnes skattjakt (v1.11, `skattjakt.js`, kodlåsen i `lock.js`),
   - **Sjuby Spider -62**, en exklusiv öppen bil (`spider`) som finns att låna efter del 10,
   - fjorton sidouppdrag (senast Kyrkkaffet i Söderholmens kapell, v1.10, och Var är Ebbe? och Måsen har fastnat på tivolit, v1.7),
   - åtta hemligheter (påskägg, v1.8, `secrets.js`): skateboarden man kan åka på, telefonkiosken som ringer, gummiankorna, hjärtat i stubben, den gyllene bullen, trädgårdstomten, flaskposten och Sjubyodjuret,
@@ -68,13 +68,14 @@ Stå i repots rot för alla kommandon. I claude.ai/code är repot redan klonat. 
 ```sh
 git log --oneline -3                         # överst: v1.10 eller senare
 npm install --no-save three@0.184.0          # three.js lokalt – bara för webbläsartesterna
-npm test                                     # ~970 kontroller, 1–2 min. Ska sluta med:
+npm test                                     # ~1 090 kontroller, 1–2 min. Ska sluta med:
                                              #   All checks passed / All extras passed / All mission checks passed
 (nohup python3 -m http.server 8765 --directory "$PWD" > /dev/null 2>&1 &)   # server för webbläsartesterna
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8765/index.html   # ska ge 200
 mkdir -p test/shots                          # skärmdumparna hamnar här (gitignorerad)
 python3 test/browser/v12.py phone            # en genomgång (Cykelgömman): ska sluta med "V12 ok" och "logs []"
 python3 test/browser/v1_10.py phone          # Kyrkkaffet och orgeln (~3 min): "V1_10 ok" och "logs []"
+python3 test/browser/v1_11.py phone          # Arnes skattjakt (~5 min): "V1_11 ok" och "logs []"
 ```
 
 **Webbläsartesterna** (`test/browser/*.py`) använder Python, Playwright och Chromium med SwiftShader (mjukvaru-WebGL). Kör dem från repots rot. Webbläsaren hittas på något av tre sätt:
@@ -156,6 +157,7 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/secrets.js` | (v1.8) Hemligheterna: platser, texter, telefonens ledtrådar, rekvisitan (`secretsInto`) och sjöodjurets rörelse. Skateboarden är fordonstypen `skate` i vehicle.js. |
 | `src/chapel.js` | (v1.9) Söderholmens kapell inifrån: `CHAPEL` (spawn, dörr, Inga, bänkfolket), `CHAPEL_DOOR` utanför, `PEWS`, `chapelLayout`/`chapelInto`. Dörren, Inga och samtalen sköts av `Indoors` i indoors.js. (v1.10) `CHAPEL_KAFFE` (kaffebordet, klockrepet, orgelbänken, var Inga står), `pewSeat(rad, x)` och `ropeInto`. |
 | `src/kyrkkaffe.js`, `src/organ.js` | (v1.10) Sidouppdraget Kyrkkaffet (`ChurchJob`, `churchWorld` som håller Arnes cykel vid Guns grind, `KYRK`, `GUESTS`) och orgeln (`Organ`, `PSALM`, `VERSES`, `ORGAN`): ren simulering. Orgeln bor i `Indoors` (`indoors.organ`), main.js ritar tangenterna (`#organ`). |
+| `src/skattjakt.js`, `src/lock.js` | (v1.11) Huvuduppdragets del 12 Arnes skattjakt (`HuntJob`, `HUNT` med alla platser och kameror, `RIDDLES`, `huntWorld` som håller Gun och Bengt vid konditoriet, kontrollpunkten `stats.hunt`) och kodlåset `CodeLock` (ligger i `game.lock` medan det visas; main.js ritar `#lock`). Kvarnens vingar snurrar i simuleringen (`MILL`, `game.millA/millW/millHold` i game.js). |
 | `src/tivolijobs.js` | (v1.7) Uppdragen på tivolit: Utsikten (`ViewJob`), Var är Ebbe? (`EbbeJob`), Måsen har fastnat (`CoasterJob`) och `southWorld`, som sätter ut personerna medan du korsar södra bron. |
 | `src/southisle.js`, `tivoli.js`, `rides.js` | (v1.6) Söderholmen och Tivoli Lyckoland som data (`SOUTH`, `onSouth`, `WHEEL`, `COASTER` …, och de rörliga delarnas rörelse som funktioner av `game.time`), de rörliga delarnas grafik (`buildTivoli`) och åkturen i pariserhjulet (`Rides`, spelarläget `'ride'`). |
 | `src/game.js` | `Game`: fordon, trafik, folk, spelaren, `step()`, `spawnBike`, `spawnRedBike` och norra brons grind. |
@@ -164,7 +166,7 @@ Användaren rapporterade: "Långhoppet visar en blå lysande cirkel på parkerin
 | `src/vehicle.js`, `traffic.js`, `peds.js`, `player.js`, `collide.js`, `route.js` | Fordonsfysik, trafik-AI, fotgängare och människornas stilar, spelaren, kollisioner och `groundHeight`, kortaste väg för GPS-linjen. |
 | `src/render.js`, `shaders.js`, `worldmesh.js`, `models.js`, `beach.js`, `trees.js`, `geom.js`, `textures.js`, `hud.js`, `audio.js`, `radio.js` | Grafik, modeller (bilar, cyklar, människomodellen), badplatsens saker, `GeomBuilder`, skuggkarta och skyltatlas, HUD med minikarta och GPS-linje, ljud och bilradions kanaler. |
 | `test/sim.mjs`, `test/extras.mjs`, `test/missions.mjs` | Node-testerna (`npm test`). Följ stilen `check(ok, 'beskrivning')`. Varje uppdrag har en egen sektion i `missions.mjs`. |
-| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan, `v16.py` för Söderholmen och pariserhjulet, `v17.py` för uppdragen på tivolit, `v18.py` för hemligheterna, `v19.py` för kapellet, `v1_10.py` för Kyrkkaffet och orgeln) och studioskript. |
+| `test/browser/` | Webbläsargenomgångar per version (`v02.py` … `v11.py`, `v111.py`, `v12.py`, `v13.py` för ljud och bilradio, `v14.py` för Konsertbiljetten, `v15.py` för Birger kommer hem och Badhyttsgåtan, `v16.py` för Söderholmen och pariserhjulet, `v17.py` för uppdragen på tivolit, `v18.py` för hemligheterna, `v19.py` för kapellet, `v1_10.py` för Kyrkkaffet och orgeln, `v1_11.py` för Arnes skattjakt) och studioskript. |
 | `docs/HANDOFF.md` | Den långa överlämningen. Håll den uppdaterad. |
 
 **Namn i koden kontra i spelet:** Melker hette Samuel, Jonte hette Sander och Vera hette Fia (bytt i v1.1). Koden behåller de gamla id:na så att sparade spel fungerar:
@@ -217,6 +219,7 @@ Allt som syns i spelet ska använda de nya namnen.
 - **Ljud:** M på tangentbordet stänger av allt ljud och sparas. Säger användaren att ljudet försvunnit: fråga först om skylten LJUD AV syns. Ljudet går inte att höra i sandlådan; `v13.py` mäter spelets utgång med en analysator.
 - **Samtal** öppnas en bildruta efter `talk`-händelsen. I webbläsartester: vänta några bildrutor innan `nextTalk()`.
 - **Kameran inomhus** (`camFocus` med `near`) står 6,2 m bakom fokuspunkten i stående mobilläge. I ett litet rum hamnar den annars bakom en vägg: i kapellet tittar den söderut (`yaw` nära 0) mot altaret och orgeln, eller norrut (`yaw` nära π) mot dörren. Räkna ut var kameran hamnar och titta på skärmdumpen.
+- **Närbilder (v1.11):** `camFocus` kan få `dist`/`height` (med `near`) eller en fast kamera `cam: { x, y, z, fov }`. Ställ spelaren bredvid det som ska synas – annars står kameran i spelarens rygg. En skylt man ska läsa på nära håll behöver `ppm` (atlasen ger annars högst 72 pixlar per meter), och textskyltar har högst tre rader (`rows: true` för rubrik + rader).
 - **Knappens ordning:** `Missions.prompt` är inomhusets knapp, sedan jobbets, sedan tant Guns, pariserhjulets och hemligheternas. Står en cykel nära Gun vinner hennes PRATA över CYKLA – därför ger Kyrkkaffet-jobbet själv CYKLA när du står vid Arnes cykel.
 
 ## 8. Berättelsen och vad som kan komma
@@ -225,7 +228,8 @@ Allt som syns i spelet ska använda de nya namnen.
 - **Del 8, Bullfesten:** cykeltjuven **Jonte** snor Arnes cykel med bullarna och Polis-Pia tar honom.
 - **Del 9, Cykelgömman (v1.2):** Jonte ljög om båthuset. Cyklarna finns hos tant Guns granne **Birger** (på kryssning sedan maj). Du letar inne i huset och stoppar sedan **Ronny**, Jontes kusin, i en skåpbil. Sidouppdraget **Cyklarna hem** följer.
 - **Del 10, Birger kommer hem (v1.5):** Birger vann **Sjuby Spider -62** på bingon. Du kör honom runt stan och hem, och sedan får du låna bilen.
-- **Del 11, Utsikten (v1.7):** Dahlgren säljer sina bilder av receptet till Kexfabriken på tivolit. Du ser honom från pariserhjulet, springer ikapp honom och raderar bilderna. Han erkänner att han aldrig lyckats baka Arnes bullar. Slutskärmen visas när alla 14 uppdrag i `MAIN` är klara.
+- **Del 11, Utsikten (v1.7):** Dahlgren säljer sina bilder av receptet till Kexfabriken på tivolit. Du ser honom från pariserhjulet, springer ikapp honom och raderar bilderna. Han erkänner att han aldrig lyckats baka Arnes bullar.
+- **Del 12, Arnes skattjakt (v1.11):** Bengts bullar efter receptet blir inte som Arnes. Gun hittar Arnes sista bröllopsdagsskattjakt (1995, aldrig öppnad). Gåtorna leder till ekstubben i parken (kodlås 1971), kvarnen (Majken; bromsa det gula seglet rakt ner), fyren (Ingvar – han var rösten i telefonkiosken), kiosken på kajen (Ingvar läser sista lappen i telefon) och kapellet (altarlådan, koden 287 från psalmtavlan). I smörlådan med A + G: Guns mammas mortel och Arnes brev – han stötte kardemumman själv, aldrig malen ur påse. Dahlgren följer doften och får diska hos Gun. Slutskärmen visas när alla 15 uppdrag i `MAIN` är klara.
 - **Personer:**
   - tant Gun,
   - Melker,
@@ -247,9 +251,9 @@ Allt som syns i spelet ska använda de nya namnen.
   - Ronny (Jontes kusin),
   - på tivolit (v1.7): Tivoli-Rut (ägaren), Hanna och sonen Ebbe (5), Popcorn-Pelle, Karusell-Kalle och Maja vid Måsen,
   - kyrkoherde Inga i Söderholmens kapell (v1.9). Hon minns tant Guns och Arnes bröllop där 1972 – hon satt längst bak, femton år gammal (v1.10). Kantorn (sjuk i v1.10) har vi aldrig sett.
-- **Nästa naturliga del:** Birger har bjudit på kaffe och vill höra hela historien om cyklarna; de övriga åtta cyklarna ska till sina ägare; Spidern kunde få en egen trimning hos Lasse.
+- **Nästa naturliga del:** Dahlgren börjar diska hos Gun klockan fem (en morgon på konditoriet?); Ingvar och flaskposten ("titta under fyrens trappa /I. 1974"); Birger har bjudit på kaffe och vill höra hela historien om cyklarna; de övriga åtta cyklarna ska till sina ägare; Spidern kunde få en egen trimning hos Lasse. Kodlåset (`lock.js`) och den fasta kameran går att återanvända.
 - **Bilradion:** användaren tyckte att midimusiken lät för mycket glassbil/party. Den är av från början sedan v1.4. Användaren tänker ladda ner en mjuk radioslinga att spela i stället – då läggs en ljudfil in (den första i projektet).
-- **Hemligheterna (v1.8)** är påskägg tills vidare men är tänkta att kunna knytas till berättelsen: flaskposten ("titta under fyrens trappa /I. 1974" – Ingvar?), rösten i telefonkiosken, den gyllene bullen, Dahlgrens tomte, "A + G 1971" (Arne och Gun).
+- **Hemligheterna (v1.8)** är påskägg men knyts så sakta till berättelsen: i Arnes skattjakt (v1.11) blev "A + G 1971" i stubben koden till Arnes första plåtask, och rösten i telefonkiosken visade sig vara Ingvar (han har en kikare i fyren). Kvar att knyta: flaskposten ("titta under fyrens trappa /I. 1974"), den gyllene bullen och Dahlgrens tomte.
 - **Kapellet** (v1.9) fick Ingas sidouppdrag Kyrkkaffet i v1.10: Guns söndagsbullar på Arnes cykel, klockan, gästerna och orgeln. "Psalmen" var Beethovens Ode till glädjen, Arnes önskan till bröllopet 1972. Ingvar sitter fortfarande längst bak och säger bara "Amen." – det kan knytas till flaskposten ("titta under fyrens trappa /I. 1974"). Orgeln (`organ.js`) kan få fler melodier (ett eget minispel, en låt till Bullfesten).
 - **Tivolit** kan få mer att göra: åka berg-och-dalbanan eller radiobilarna, ett lyckohjul att snurra.
 - **Andra idéer användaren kan vilja ha:**

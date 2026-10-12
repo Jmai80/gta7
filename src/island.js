@@ -369,6 +369,17 @@ export function islandInto(H) {
   H.zones.mill = { x: Ml.x, y: Ml.hubY, z: Ml.z + 4.05 };
   H.millSails.push(...millSails());
   bench(Ml.x + 7.5, Ml.z + 6.5, Math.PI * 0.85);
+  // (v1.11) the brake for the sails: a lever on a post among the rocks south of them ("Arnes skattjakt").
+  // No layout random numbers here.
+  {
+    const bx = Ml.x + 1.0, bz = Ml.z + 8.5;
+    box(bx - 0.08, CURB_H, bz - 0.08, bx + 0.08, CURB_H + 1.0, bz + 0.08, 0x5a4636, M.PLANKS);
+    box(bx - 0.1, CURB_H + 0.95, bz - 0.1, bx + 0.1, CURB_H + 1.02, bz + 0.1, 0x3a3c41);
+    P({ t: 'rbox', cx: bx, cy: CURB_H + 1.32, cz: bz + 0.12, sx: 0.06, sy: 0.7, sz: 0.06, rot: 0, c: 0x6b4a2a, tiltX: 0.35 });
+    P({ t: 'rbox', cx: bx, cy: CURB_H + 1.63, cz: bz + 0.235, sx: 0.09, sy: 0.16, sz: 0.09, rot: 0, c: 0xc0302a, tiltX: 0.35 });
+    sign('broms', { lines: ['BROMS'], bg: '#f2efe6', fg: '#8e2c20', font: 0.7, border: '#8e2c20' }, bx, CURB_H + 0.62, bz + 0.085, 0.42, 0.16, 0);
+    colCircle(bx, bz, 0.14, 1.1);
+  }
 
   // ---- the lighthouse on the north-east point, and the keeper's cottage
   const L = ISLE.lighthouse;
@@ -464,7 +475,8 @@ function millSails() {
       rb(sn * d + px, cs * d + py, 0.06, 0.07, w + 0.08, a, 0xe9e2d2);
     }
     const cm = (s0 + 0.4 + L1) / 2;                                        // the sail cloth, a little behind the lattice
-    out.push({ cx: sn * cm + px, cy: cs * cm + py, cz: -0.06, sx: 0.025, sy: L1 - s0 - 0.6, sz: w - 0.25, rot: Math.PI / 2, tilt: a, c: 0xd6cfbf });
+    // (v1.11) one of them yellow: Majken's father marked the sail with Arne's tin on it ("Arnes skattjakt")
+    out.push({ cx: sn * cm + px, cy: cs * cm + py, cz: -0.06, sx: 0.025, sy: L1 - s0 - 0.6, sz: w - 0.25, rot: Math.PI / 2, tilt: a, c: k === 0 ? 0xf2c21b : 0xd6cfbf });
   }
   return out;
 }

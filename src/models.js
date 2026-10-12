@@ -978,6 +978,54 @@ export function buildFest(T, groundY, bannerUV) {
 }
 
 // buns heaped in the cargo box of Arne's bike (bike-local: the box is x ±0.29, y up to 0.92, z 0.5–1.04)
+// ---- (v1.11) "Arnes skattjakt": the tin box under the oak stump, Arne's butter box with A + G on the lid,
+// Gun's mother's brass mortar (the pestle is its own mesh, it pounds) and Majken's ladder up to the sail.
+// All local to their middle at the bottom (y = 0), facing +z.
+export function buildTin() {
+  const B = new GeomBuilder();
+  B.box(-0.13, 0, -0.08, 0.13, 0.085, 0.08, 0x9aa0a6, M.CHROME, { skipBottom: false });
+  B.box(-0.135, 0.075, -0.085, 0.135, 0.1, 0.085, 0x8a7a62, M.CHROME);                // a rusty lid
+  for (const [x, z, r] of [[-0.06, 0.02, 0.025], [0.05, -0.03, 0.03], [0.09, 0.05, 0.02]]) B.cyl(x, z, 0.1, 0.103, r, r, 6, 0x8a4a22, M.PLAIN);
+  B.box(-0.03, 0.02, 0.085, 0.03, 0.07, 0.1, 0xd8b45a, M.CHROME);                     // the padlock …
+  B.box(-0.022, 0.07, 0.088, -0.014, 0.1, 0.097, 0xc9ccd0, M.CHROME); B.box(0.014, 0.07, 0.088, 0.022, 0.1, 0.097, 0xc9ccd0, M.CHROME);
+  B.box(-0.022, 0.095, 0.088, 0.022, 0.103, 0.097, 0xc9ccd0, M.CHROME);
+  return B.toGeometry(THREE);
+}
+export function buildButterBox() {
+  const B = new GeomBuilder(), W = 0x9a6a3e, DK = 0x6b4426, BR = 0xd8b45a;
+  B.box(-0.19, 0, -0.12, 0.19, 0.13, 0.12, W, M.PLANKS, { skipBottom: false });
+  B.box(-0.2, 0.13, -0.13, 0.2, 0.165, 0.13, DK, M.PLANKS);                              // the lid
+  for (const x of [-0.19, 0.17]) for (const z of [-0.12, 0.1]) B.box(x, 0, z, x + 0.02, 0.16, z + 0.02, BR, M.CHROME);   // brass corners
+  // "A + G" in brass on the lid: an A, a little cross, a G (blocky, like Arne carved it)
+  const y = 0.166;
+  B.box(-0.12, y, -0.04, -0.105, y + 0.004, 0.05, BR, M.CHROME); B.box(-0.065, y, -0.04, -0.05, y + 0.004, 0.05, BR, M.CHROME);
+  B.box(-0.12, y, 0.04, -0.05, y + 0.004, 0.055, BR, M.CHROME); B.box(-0.12, y, 0.0, -0.05, y + 0.004, 0.015, BR, M.CHROME);
+  B.box(-0.01, y, -0.005, 0.03, y + 0.004, 0.01, BR, M.CHROME); B.box(0.0025, y, -0.02, 0.0175, y + 0.004, 0.025, BR, M.CHROME);
+  B.box(0.06, y, -0.04, 0.075, y + 0.004, 0.05, BR, M.CHROME); B.box(0.06, y, 0.04, 0.13, y + 0.004, 0.055, BR, M.CHROME);
+  B.box(0.06, y, -0.04, 0.13, y + 0.004, -0.025, BR, M.CHROME); B.box(0.115, y, -0.04, 0.13, y + 0.004, 0.01, BR, M.CHROME);
+  B.box(0.095, y, -0.005, 0.13, y + 0.004, 0.01, BR, M.CHROME);
+  B.box(-0.025, 0.06, 0.12, 0.025, 0.115, 0.135, BR, M.CHROME);                            // the little lock on the front
+  return B.toGeometry(THREE);
+}
+export function buildMortar() {
+  const B = new GeomBuilder(), BR = 0xc9a24a;
+  B.cyl(0, 0, 0, 0.03, 0.085, 0.09, 12, 0xa8843a, M.CHROME, true);
+  B.cyl(0, 0, 0.03, 0.16, 0.09, 0.115, 12, BR, M.CHROME);
+  B.cyl(0, 0, 0.16, 0.175, 0.125, 0.12, 12, 0xa8843a, M.CHROME);
+  B.cyl(0, 0, 0.12, 0.15, 0.085, 0.085, 10, 0x6b4a2a, M.PLAIN, true);                      // the cardamom inside
+  for (let k = 0; k < 8; k++) { const a = k * 0.8, r = 0.04 + (k % 3) * 0.015; B.ico(Math.cos(a) * r, 0.155, Math.sin(a) * r, 0.012, 1, 0x7a8a3a, M.PLAIN); }
+  const P = new GeomBuilder();
+  P.cyl(0, 0, 0, 0.2, 0.022, 0.017, 8, BR, M.CHROME, true);
+  P.ico(0, 0.21, 0, 0.032, 1.1, 0xa8843a, M.CHROME);
+  return { bowl: B.toGeometry(THREE), pestle: P.toGeometry(THREE) };
+}
+export function buildLadder(len = 3.3) {
+  const B = new GeomBuilder(), WD = 0x8a6a48;
+  for (const x of [-0.22, 0.22]) B.box(x - 0.03, 0, -0.025, x + 0.03, len, 0.025, WD, M.PLANKS);
+  for (let y = 0.3; y < len - 0.1; y += 0.3) B.box(-0.22, y, -0.02, 0.22, y + 0.04, 0.02, WD, M.PLANKS);
+  return B.toGeometry(THREE);
+}
+
 // (v1.10) church coffee in the chapel: a tray on the coffee table, and the 24 buns on it in four rows of
 // six (row i shows while there are more than 6·i buns). Local to the middle of the tray, y = the table top.
 export function buildBunTray() {

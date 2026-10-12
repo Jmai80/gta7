@@ -113,6 +113,7 @@ async function boot(hot) {
   hud.onSms = () => audio.ping();
   hud.onOffer = (id) => openOffer(id);
   hud.onLog = () => openLog();
+  hud.onObjective = () => { if (state === 'play' && game.missionActive && game.mission.askTip()) return; openLog(); }; // (v1.11) a tip for Arne's riddles
   wire(game);
   perf.apply(settings.quality);
   refreshMenu();
@@ -213,6 +214,11 @@ function wire(g) {
   g.on('buns', (e) => view.bunBurst(e.x, e.z));    // Jonte comes off Arne's bike (v1.0) – or you, with the church buns (v1.10)
   g.on('organ', (e) => { if (e.kind === 'wrong') { audio.organWrong(e.k); buzz([40, 30, 40]); } else audio.organ(e.k, e.len, e.kind === 'demo' ? 0.075 : 0.09); }); // (v1.10) the chapel organ
   g.on('churchBell', () => { audio.churchBell(); buzz(25); });
+  // (v1.11) Arnes skattjakt: the combination lock, the windmill's brake, the mortar, Arne's notes
+  g.on('lock', (e) => { audio.lock(e.kind); if (e.kind === 'wrong') buzz([50, 40, 50]); else if (e.kind === 'open') buzz(30); });
+  g.on('mill', (e) => { audio.mill(e.kind); if (e.kind === 'stop') { buzz(40); view.rig.shake = 0.25; } });
+  g.on('pestle', () => { audio.pestle(); buzz(12); });
+  g.on('paper', () => audio.paper());
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -441,7 +447,7 @@ function voiceOf(who) {
   return 150 + (h % 160);
 }
 
-const NPC_VOICE = { inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
+const NPC_VOICE = { 'bengt-hunt': 115, inga: 235, 'church-gun': 290, 'church-yasmin': 330, 'church-bengt': 115, 'church-ingvar': 140, gun: 290, yasmin: 330, 'yasmin-out': 330, ingvar: 140, samuel: 185, 'samuel-out': 185, bengt: 115, 'bengt-out': 115, leif: 155, majken: 270, fia: 310, sander: 215, pia: 250, ronny: 135, 'lasse-out': 150, nova: 360, 'nova-mom': 270, birger: 125, tove: 300, 'kid-alva': 380, 'kid-bosse': 340, 'kid-cleo': 390, 'kid-dante': 330, 'kund-kim': 200, 'kund-bengt': 115, 'kund-lasse': 150, 'bengt-gate': 115, dahlgren: 105, buyer: 240, hanna: 300, ebbe: 420, pelle: 170, kalle: 140, maja: 330, rut: 260 };
 function npcVoice(ped) { return NPC_VOICE[ped.npc] || voiceOf(ped.npc); }
 
 function openTalk(e) {
@@ -462,6 +468,7 @@ function showPage(i) {
   talk.at = performance.now();
   const card = $('tkCard');
   card.classList.toggle('you', !!p.you);
+  card.classList.toggle('note', !!p.note);   // (v1.11) Arne's notes and his letter: on old paper, in his hand
   const av = $('tkAv');
   av.textContent = p.letter; av.style.background = p.color;
   $('tkWho').textContent = p.who;
@@ -471,7 +478,8 @@ function showPage(i) {
   $('tkStep').textContent = `${i + 1} / ${talk.pages.length}`;
   card.classList.remove('turn'); void card.offsetWidth; card.classList.add('turn');
   if (p.fx) game.mission.talkFx(talk.id, p.fx);
-  audio.voice(voiceOf(p.who), p.text);
+  if (p.note) { audio.voice(0, ''); audio.paper(); }   // (a note is read, not spoken)
+  else audio.voice(voiceOf(p.who), p.text);
 }
 
 function nextTalk() {
@@ -560,6 +568,7 @@ function showEnd(s) {
     ['Spidern hem', s.spiderCond != null ? `${s.spiderCond} % hel` : '–'],
     ['Badhyttsgåtan', s.hutTries != null ? `${s.hutTries} försök` : '–'],
     ['Kyrkkaffet', s.churchBuns != null ? `${s.churchBuns} bullar · ${s.psalmWrong ? `${s.psalmWrong} fel` : 'felfri psalm'}` : '–'],
+    ['Arnes skattjakt', s.huntSolo != null ? `${s.huntSolo} av 4 gåtor utan tips${s.huntOnTime ? ', i tid till telefonen' : ''}` : '–'],
     ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],
   ];
   const grid = $('endStats');
@@ -619,6 +628,56 @@ function syncOrgan() {
     el.classList.toggle('mine', O.lit === i && (O.litKind === 'play' || O.litKind === 'final'));
   }
   $('organ').classList.toggle('turn', O.phase === 'turn' || free);
+}
+
+// ---------------------------------------------------------------- the combination lock (v1.11)
+// Number wheels at the bottom of the screen while you stand at one of Arne's locks. The lock itself
+// (lock.js) is in the simulation (game.lock); this draws it and passes your taps on.
+let lockShown = false, lockDraw = '', lockObj = null;
+function lockNow() { return state === 'play' && game && game.lock && game.lock.open ? game.lock : null; }
+function lockTurn(i, d) { const L = lockNow(); if (L) L.turn(i, d); }
+function lockType(n) { const L = lockNow(); if (L) L.type(n); }
+function lockTry() { const L = lockNow(); if (L) L.tryOpen(); }
+function lockStop() { const L = lockNow(); if (L) L.stop(); }
+function syncLock() {
+  const L = game && game.lock;
+  const show = !!(L && L.open && state === 'play');
+  if (show !== lockShown) {
+    lockShown = show;
+    $('lock').hidden = !show;
+    $('game').classList.toggle('locking', show);
+    lockDraw = '';
+  }
+  if (!show) return;
+  if (L !== lockObj || $('lkWheels').childElementCount !== L.n) {
+    lockObj = L;
+    const box = $('lkWheels');
+    box.innerHTML = '';
+    for (let i = 0; i < L.n; i++) {
+      const w = document.createElement('div');
+      w.className = 'lk-wheel';
+      const up = document.createElement('button'); up.type = 'button'; up.textContent = '▲'; up.setAttribute('aria-label', `Hjul ${i + 1} upp`);
+      const dn = document.createElement('button'); dn.type = 'button'; dn.textContent = '▼'; dn.setAttribute('aria-label', `Hjul ${i + 1} ned`);
+      const b = document.createElement('b');
+      up.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); lockTurn(i, 1); });
+      dn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); lockTurn(i, -1); });
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); lockTurn(i, 1); });
+      w.append(up, b, dn);
+      box.append(w);
+    }
+    lockDraw = '';
+  }
+  const key = `${L.value}|${L.sel}|${L.state}|${L.tries}|${input.lastKind}`;
+  if (key === lockDraw) return;
+  lockDraw = key;
+  $('lkKick').textContent = L.kicker;
+  $('lkTitle').textContent = L.state === 'right' ? 'DEN GICK UPP!' : L.state === 'wrong' ? 'FEL KOD' : L.title;
+  $('lkHint').textContent = L.line + (input.lastKind === 'touch' ? '' : ' (Siffertangenterna, Enter öppnar.)');
+  const ws = $('lkWheels').children;
+  for (let i = 0; i < ws.length; i++) { ws[i].querySelector('b').textContent = L.wheels[i]; ws[i].classList.toggle('sel', i === L.sel && input.lastKind !== 'touch'); }
+  const el = $('lock');
+  el.classList.toggle('wrong', L.state === 'wrong');
+  el.classList.toggle('right', L.state === 'right');
 }
 
 // ---------------------------------------------------------------- UI
@@ -695,11 +754,22 @@ function bindUi() {
     $('ogKeys').append(b);
   });
   on('ogStop', organStop);
+  on('lkOpen', lockTry);
+  on('lkStop', lockStop);
   window.addEventListener('keydown', (e) => {
     if (state === 'offer' && e.code === 'Escape') { e.preventDefault(); answerOffer(false); }
     if (state === 'shop' && e.code === 'Escape') { e.preventDefault(); closeShop(); }
     else if (state === 'log' && (e.code === 'Escape' || e.code === 'KeyU')) { e.preventDefault(); closeLog(); }
     else if (state === 'talk' && !e.repeat && ['Enter', 'NumpadEnter', 'Space', 'KeyE', 'KeyF', 'KeyJ', 'ArrowRight'].includes(e.code)) { e.preventDefault(); nextTalk(); }
+    else if (lockShown && state === 'play' && !e.repeat) {
+      const L = lockNow(), d = /^(?:Digit|Numpad)([0-9])$/.exec(e.code);
+      if (!L) return;
+      if (d) { e.preventDefault(); L.type(+d[1]); }
+      else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); L.tryOpen(); }
+      else if (e.code === 'Backspace') { e.preventDefault(); L.stop(); }
+      else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); L.select(L.sel + (e.code === 'ArrowRight' ? 1 : -1)); lockDraw = ''; }
+      else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { e.preventDefault(); L.turn(L.sel, e.code === 'ArrowUp' ? 1 : -1); }
+    }
     else if (organShown && state === 'play' && !e.repeat) {
       const d = /^(?:Digit|Numpad)([1-5])$/.exec(e.code);
       if (d) { e.preventDefault(); organKey(+d[1] - 1); }
@@ -769,6 +839,7 @@ function frame(now) {
     hud.update(simDt, game, view, camYaw, st ? `${perf.fps} fps · ${view.dpr.toFixed(2)}x · ${st.calls} dc · ${(st.tris / 1000).toFixed(0)}k tri` : null);
   }
   syncOrgan();
+  syncLock();
   view.render();
 }
 const tmpDir = new Vector3();
@@ -777,7 +848,7 @@ const tmpDir = new Vector3();
 window.__gta = {
   get game() { return game; }, get view() { return view; }, get state() { return state; }, get perf() { return perf; },
   start: () => startPlay(), pause, resume, restart, openLog, openOffer, nextTalk, openShop, buyItem, closeShop, get hud() { return hud; }, get talk() { return talk; },
-  organKey, organStop,
+  organKey, organStop, lockTurn, lockType, lockTry, lockStop, askTip: () => game.mission.askTip(),
 };
 
 const start = (data) => boot(data || {}).catch((e) => console.error(e));

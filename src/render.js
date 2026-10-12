@@ -3,7 +3,8 @@ import * as THREE from './three.js';
 import { makeUniforms, worldMaterial, skyMaterial } from './shaders.js';
 import { makeShadowMap, makeSignAtlas, blobTexture, fenceTexture, softTexture, noiseTexture, DISPLAY_FONT } from './textures.js';
 import { buildWorld } from './worldmesh.js';
-import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, buildBunTray } from './models.js';
+import { buildCarGeometry, buildHumanGeometry, buildRoofSign, buildFlag, buildPhone, buildKeys, buildBike, buildBikeBuns, buildFest, buildBunTray, buildTin, buildButterBox, buildMortar, buildLadder } from './models.js';
+import { HUNT, LADDER } from './skattjakt.js';
 import { CHAPEL, CHAPEL_KAFFE, ropeInto } from './chapel.js';
 import { INT, doorInto, inFlat } from './interior.js';
 import { SHOP, bagInto } from './shop.js';
@@ -132,6 +133,7 @@ export class View {
     this.particles = new Particles(this.scene, 160);
     this.makeCarWash();
     this.makeIndoor();
+    this.makeHunt();
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -454,6 +456,66 @@ export class View {
     this.outFog = [this.fog.near, this.fog.far];
   }
 
+  // ------------------------------------------------------------------ (v1.11) "Arnes skattjakt"
+  // Arne's tin on the windmill's yellow sail (it turns with the sails), the tin box at the oak stump,
+  // Majken's ladder, and what you carry: Arne's butter box, Gun's mother's mortar (its pestle pounds), and
+  // the tray of fresh buns in Bengt's hands at the end.
+  makeHunt() {
+    const mat = this.matStatic;
+    if (this.world.mill) {
+      // Arne's tin on the sail with the yellow cloth (sail 0 in island.js, millSails), tied to the tip of
+      // its stock with a red band
+      const S = new GeomBuilder(), a = HUNT.mill.sail, sn = Math.sin(a), cs = Math.cos(a);
+      const L1 = 7.6, d = L1 - 0.45;
+      S.rbox(sn * d, cs * d, 0.2, 0.36, 0.26, 0.24, Math.PI / 2, 0x9aa0a6, 0, a);
+      S.rbox(sn * d, cs * d, 0.2, 0.38, 0.06, 0.26, Math.PI / 2, 0xc0302a, 0, a);
+      this.huntSail = new THREE.Mesh(S.toGeometry(THREE), mat);
+      this.huntSail.visible = false;
+      this.world.mill.add(this.huntSail);
+    }
+    this.huntTin = new THREE.Mesh(buildTin(), mat);
+    this.huntTin.position.set(HUNT.stump.tin.x, CURB_H + 0.02, HUNT.stump.tin.z);
+    this.huntTin.rotation.y = 0.4;
+    this.huntLadder = new THREE.Mesh(buildLadder(LADDER.len), mat);
+    this.huntLadder.position.set(LADDER.x, CURB_H, LADDER.z);
+    this.huntLadder.rotation.x = -LADDER.lean;
+    this.carryBox = new THREE.Mesh(buildButterBox(), mat);
+    const MO = buildMortar();
+    this.carryMortar = new THREE.Group();
+    this.carryMortar.add(new THREE.Mesh(MO.bowl, mat));
+    this.pestle = new THREE.Mesh(MO.pestle, mat);
+    this.pestle.position.set(0.02, 0.12, 0);
+    this.carryMortar.add(this.pestle);
+    const T = buildBunTray();
+    this.trayOut = new THREE.Group();
+    this.trayOut.add(new THREE.Mesh(T.tray, mat));
+    for (const geo of T.rows) this.trayOut.add(new THREE.Mesh(geo, mat));
+    for (const o of [this.huntTin, this.huntLadder, this.carryBox, this.carryMortar, this.trayOut]) { o.visible = false; this.scene.add(o); }
+  }
+
+  syncHunt(game) {
+    const m = game.mission, job = m && m.active && m.active.id === 'skattjakt' ? m.active : null, p = game.player, out = !this.indoor;
+    // (the tin has hung on the yellow sail for thirty years – until Majken takes it down)
+    const HS = game.stats.hunt, taken = (m && m.done.has('skattjakt')) || (HS && HS.at >= 3) || (job && job.tinTaken);
+    if (this.huntSail) this.huntSail.visible = !taken;
+    this.huntTin.visible = !!(job && job.stumpTin) && out;
+    this.huntLadder.visible = !!(job && job.stage === 'millWait') && out;
+    const carry = job ? job.carry : null, onFoot = p.state === 'foot' || p.state === 'down';
+    this.carryBox.visible = carry === 'box' && onFoot;
+    this.carryMortar.visible = carry === 'mortar' && onFoot;
+    const hold = (o, who, fwd, up) => { o.position.set(who.x + Math.sin(who.h) * fwd, who.y + up, who.z + Math.cos(who.h) * fwd); o.rotation.y = who.h; };
+    if (this.carryBox.visible) hold(this.carryBox, p, 0.5, 1.1);
+    if (this.carryMortar.visible) {
+      hold(this.carryMortar, p, 0.48, 1.02);
+      const k = game.time - (job.poundAt ?? -9);
+      this.pestle.position.y = 0.12 + (k < 0.14 ? -0.07 * (1 - k / 0.14) : 0.03);
+      this.pestle.rotation.z = k < 0.14 ? 0.05 : 0.18;
+    }
+    const B = m && m.huntBengt;
+    this.trayOut.visible = !!(job && job.tray && B && out);
+    if (this.trayOut.visible) hold(this.trayOut, B, 0.52, 1.12);
+  }
+
   // inside the tower the town is hidden, the light is softer and everything far away is dark
   setIndoor(on) {
     if (on === this.indoor) return;
@@ -611,9 +673,10 @@ export class View {
     this.syncMarkers(game);
     this.syncFx(game, dt);
     this.syncIndoor(game, dt);
+    this.syncHunt(game);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
-    if (this.world.mill) this.world.mill.rotation.z = -this.time * 0.45;  // the windmill on Norrholmen
+    if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)
     if (this.gateW && game.gateN) {
       const a = game.gateN.k * Math.PI / 2 * 0.98;
       this.gateW.rotation.y = a; this.gateE.rotation.y = -a;
@@ -960,7 +1023,7 @@ export class CameraRig {
     // you from the side (yaw), low enough that the dialogue box does not cover anyone
     const F = game.camFocus;
     if (F) {
-      this.fNear = !!F.near;
+      this.fNear = !!F.near; this.fDist = F.dist; this.fHeight = F.height; this.fCam = F.cam || null;
       if ((this.fk || 0) < 0.02) this.fPos.set(F.x, F.y, F.z);
       else { this.fPos.x = smooth(this.fPos.x, F.x, 3, dt); this.fPos.y = smooth(this.fPos.y, F.y, 3, dt); this.fPos.z = smooth(this.fPos.z, F.z, 3, dt); }
     }
@@ -969,7 +1032,8 @@ export class CameraRig {
     if (this.fk > 0.01) {
       const k = this.fk;
       if (near) {
-        dist += ((portrait ? 6.2 : 4.6) - dist) * k; height += ((portrait ? 3.6 : 2.1) - height) * k;
+        const nd = this.fDist ?? (portrait ? 6.2 : 4.6), nh = this.fHeight ?? (portrait ? 3.6 : 2.1); // (v1.11: a close-up can ask for its own distance)
+        dist += (nd - dist) * k; height += (nh - height) * k;
         lookH += (this.fPos.y - lookH) * k; ahead *= 1 - k; fov += ((portrait ? 58 : 48) - fov) * k;
       } else { dist += 3.4 * k; height += 0.6 * k; }
       if (F) { target = F.yaw ?? Math.atan2(F.x - p.x, F.z - p.z); rate = near ? 3 : 2.2; }
@@ -1017,6 +1081,13 @@ export class CameraRig {
       this.look.x += (P.x - this.look.x) * 0.4 * k;
       this.look.y += (P.y - this.look.y) * 0.55 * k;
       this.look.z += (P.z - this.look.z) * 0.4 * k;
+    }
+    // (v1.11) a fixed shot: the camera put at F.cam, looking at the focus point (the windmill's sails)
+    if (this.fCam && this.fk > 0.01) {
+      const k = this.fk, C = this.fCam, P = this.fPos;
+      this.pos.x += (C.x - this.pos.x) * k; this.pos.y += (C.y - this.pos.y) * k; this.pos.z += (C.z - this.pos.z) * k;
+      this.look.x += (P.x - this.look.x) * k; this.look.y += (P.y - this.look.y) * k; this.look.z += (P.z - this.look.z) * k;
+      if (C.fov) fov += (C.fov - fov) * k;
     }
     // shake
     if (this.shake > 0.001) {

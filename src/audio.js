@@ -462,6 +462,39 @@ export class AudioFX {
     this.burst(0.12 * k, 2400, 0.06, 'bandpass');
   }
 
+  // ---- (v1.11) "Arnes skattjakt": the combination lock, the windmill's brake, the mortar and Arne's notes
+  lock(kind) {
+    if (!this.ctx) return;
+    if (kind === 'tick') { this.burst(0.07, 4200, 0.025, 'highpass'); this.tone(2400, 0.02, 'square', 0.012); }
+    else if (kind === 'wrong') { this.tone(150, 0.16, 'square', 0.05, 0, 120); this.burst(0.14, 900, 0.12, 'bandpass'); this.burst(0.1, 900, 0.1, 'bandpass', 0.13); }
+    else if (kind === 'open') {
+      this.burst(0.22, 2600, 0.05, 'bandpass'); this.tone(240, 0.08, 'triangle', 0.08, 0, 180);
+      this.tone(1318.5, 0.14, 'triangle', 0.05, 0.12); this.tone(1975.5, 0.3, 'triangle', 0.05, 0.22);
+    }
+  }
+
+  // the sails' brake: a wooden groan and a squeal while it bites, a thump when the sails stop
+  mill(kind) {
+    if (!this.ctx) return;
+    if (kind === 'brake') { this.burst(0.12, 700, 0.25, 'bandpass'); this.tone(95, 0.3, 'sawtooth', 0.04, 0, 70); }
+    else if (kind === 'creak') { this.tone(180 + Math.random() * 60, 0.22, 'sawtooth', 0.022, 0, 140); this.burst(0.05, 1500 + Math.random() * 500, 0.18, 'bandpass'); }
+    else if (kind === 'stop') { this.tone(70, 0.3, 'sine', 0.2, 0, 45); this.burst(0.16, 400, 0.22); }
+  }
+
+  // a brass pestle in a brass mortar
+  pestle() {
+    if (!this.ctx) return;
+    this.tone(1650 + Math.random() * 120, 0.12, 'triangle', 0.035);
+    this.tone(110, 0.09, 'sine', 0.12, 0, 70);
+    this.burst(0.08, 2400, 0.06, 'bandpass');
+  }
+
+  // a sheet of old paper unfolded
+  paper() {
+    if (!this.ctx) return;
+    for (let i = 0; i < 3; i++) this.burst(0.045 + Math.random() * 0.03, 3800 + Math.random() * 2400, 0.07 + Math.random() * 0.05, 'highpass', i * 0.07 + Math.random() * 0.03);
+  }
+
   // ---- Salong Saxen (v1.0): picking up a tool, the scissors, the razor, the dye, and what the customer thinks
   salon(kind) {
     if (!this.ctx) return;

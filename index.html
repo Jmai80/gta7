@@ -412,6 +412,36 @@ kbd {
 .og-key.wrong { background: linear-gradient(#ff6f5f, #fde3de 88%); transform: translateY(5px); animation: ogshake 0.32s; }
 .og-hint { margin: 0; color: var(--muted); font-size: 14px; text-align: center; min-height: 1.4em; }
 #game.organing #touch, #game.organing #hint, #game.organing #keyhint, #game.organing #carinfo { display: none !important; }
+/* (v1.11) a combination lock on one of Arne's boxes: brass number wheels at the bottom, the clue in view above */
+#lock { place-items: end center; pointer-events: none; touch-action: none; background: linear-gradient(to top, rgba(8,10,14,0.82) 0%, rgba(8,10,14,0.4) 30%, rgba(8,10,14,0) 52%); }
+#lock .panel { pointer-events: auto; }
+.panel.lk { width: min(440px, 100%); gap: 10px; padding: 14px 16px 14px; animation: rise 0.35s both; }
+.lk-wheels { display: flex; justify-content: center; gap: 12px; padding: 2px 0; }
+.lk-wheel { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.lk-wheel b {
+  width: 62px; height: 68px; display: grid; place-items: center; border-radius: 10px; cursor: pointer; touch-action: none;
+  background: linear-gradient(#ecd38e, #b8913f 46%, #d9ba6c 54%, #a07a32); color: #2a1d0c; font: 900 46px/1 var(--display);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -3px 0 rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.35); transition: background 0.15s;
+}
+.lk-wheel.sel b { outline: 3px solid var(--gold); outline-offset: 3px; }
+.lk-wheel button { width: 62px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--line); font: 900 17px/1 var(--display); color: var(--paper); touch-action: none; }
+.lk-wheel button:active { background: rgba(255,207,51,0.35); }
+#lock.wrong .lk-wheels { animation: ogshake 0.32s; }
+#lock.wrong .lk-wheel b { background: linear-gradient(#ffb0a4, #c0302a); color: #fff; }
+#lock.right .lk-wheel b { background: linear-gradient(#c8f5cf, #4fae62); color: #10301a; }
+#lock.right h2 { color: var(--cash); }
+#lock.wrong h2 { color: var(--alert); }
+.panel.lk .row.primary { padding: 12px; font-size: 20px; }
+#game.locking #touch, #game.locking #hint, #game.locking #keyhint, #game.locking #carinfo { display: none !important; }
+#game.locking #toast { top: 25%; }   /* (above the wheels, not behind them) */
+/* (v1.11) Arne's notes in the dialogue box: old paper, his hand */
+.panel.tk.note { background: #f3ead2; border-color: #c8b48a; color: #2a2318; box-shadow: 0 24px 60px rgba(0,0,0,0.5), inset 0 0 40px rgba(160,120,60,0.18); }
+.tk.note .tk-who { color: #8a5a2a; }
+.tk.note .tk-text { font: italic 600 18px/1.45 Georgia, "Times New Roman", serif; white-space: pre-line; }
+.tk.note .tk-foot span { color: #8a7a62; }
+/* (v1.11) a riddle in the objective box: a question mark – tap it for a tip */
+#objective.tip { border-color: rgba(200,162,74,0.9); }
+#objective.tip .chev { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #c8a24a; color: #17130a; font-size: 17px; margin-left: 4px; }
 @keyframes ogshake { 25% { translate: -5px 0; } 75% { translate: 5px 0; } }
 #logMsg { margin: 0; color: var(--gold); font-weight: 650; font-size: 14px; }
 /* short landscape screens: two columns so the menu fits without scrolling */
@@ -443,6 +473,14 @@ kbd {
   .og-key { padding-bottom: 6px; }
   .og-key span { font-size: 20px; } .og-key i { width: 18px; height: 18px; margin-left: -9px; top: 6px; }
   .og-key small { display: none; }
+  .panel.lk { width: min(560px, 100%); padding: 8px 12px 8px; gap: 6px; }
+  .panel.lk h2 { font-size: 22px; margin-top: 2px; }
+  .lk-wheels { gap: 8px; }
+  .lk-wheel { flex-direction: row; gap: 4px; }
+  .lk-wheel b { width: 46px; height: 50px; font-size: 34px; }
+  .lk-wheel button { width: 32px; height: 50px; }
+  .panel.lk .row.primary { padding: 8px; font-size: 17px; }
+  .tk.note .tk-text { font-size: 16px; }
 }
 
 /* ---------------- portrait phones ---------------- */
@@ -523,6 +561,8 @@ kbd {
 <link rel="modulepreload" href="src/chapel.js">
 <link rel="modulepreload" href="src/organ.js">
 <link rel="modulepreload" href="src/kyrkkaffe.js">
+<link rel="modulepreload" href="src/skattjakt.js">
+<link rel="modulepreload" href="src/lock.js">
 <link rel="modulepreload" href="src/concert.js">
 <link rel="modulepreload" href="src/homecoming.js">
 <link rel="modulepreload" href="src/beachhuts.js">
@@ -551,7 +591,7 @@ kbd {
   <div id="loading"><div><div class="t">GTA 7</div><p>Bygger Sjuby …</p></div></div>
 
   <div id="title" hidden>
-    <div class="ver">Version 1.10 · Sjuby, Norrholmen och Söderholmen</div>
+    <div class="ver">Version 1.11 · Sjuby, Norrholmen och Söderholmen</div>
     <div class="brand">
       <div class="plate" aria-label="GTA 7">
         <div class="eu"><i></i>S</div>
@@ -621,6 +661,18 @@ kbd {
     </div>
   </div>
 
+  <div id="lock" class="overlay" hidden>
+    <div class="panel lk" role="dialog" aria-labelledby="lkTitle">
+      <div class="og-head">
+        <div><div class="og-kick" id="lkKick">ARNES PLÅTASK</div><h2 id="lkTitle">KODLÅS</h2></div>
+        <button class="og-stop" id="lkStop" type="button">SLUTA</button>
+      </div>
+      <div class="lk-wheels" id="lkWheels"></div>
+      <p class="og-hint" id="lkHint"></p>
+      <button class="row primary" id="lkOpen" type="button">ÖPPNA</button>
+    </div>
+  </div>
+
   <div id="pausemenu" class="overlay" hidden>
     <div class="panel" role="dialog" aria-label="Paus">
       <h2>PAUS</h2>
@@ -686,9 +738,9 @@ kbd {
   </div>
 
   <div id="endcard" class="overlay" hidden>
-    <div class="panel" role="dialog" aria-label="Version 1.10 klar">
+    <div class="panel" role="dialog" aria-label="Version 1.11 klar">
       <h2>HUVUDÄVENTYRET KLART!</h2>
-      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma från kryssningen med Sjuby Spider, och på tivolit på Söderholmen tog du Dahlgren och raderade hans bilder av receptet. Och någonstans i Sjuby ringer en telefon – och i kapellet väntar kyrkkaffet. Det var version 1.10. Så här gick din tid i Sjuby:</p>
+      <p class="note">Dahlgrens bullfabrik är stoppad, Bullfesten räddad, Jontes cykelgömma avslöjad – Birger är hemma med Sjuby Spider, Dahlgrens bilder av receptet är raderade, och Arnes sista skattjakt ledde hela vägen till det som aldrig stod i receptet. Nu doftar hela Sjuby kardemumma – och Dahlgren diskar. Det var version 1.11. Så här gick din tid i Sjuby:</p>
       <dl id="endStats"></dl>
       <div class="rows">
         <button class="row primary" id="eContinue" type="button">KÖR VIDARE</button>

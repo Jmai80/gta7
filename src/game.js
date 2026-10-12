@@ -13,6 +13,9 @@ import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
 export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3, spider: 1, skate: 1 };
+// (v1.11) the windmill on Norrholmen: its sails turn on the game's clock (render.js follows millA), and
+// "Arnes skattjakt" can brake them (millHold). Radians a second, and how fast they stop and speed up again
+export const MILL = { w: 0.45, brake: 0.42, spin: 0.3 };
 const TRAFFIC_TARGET = 12;
 const PED_TARGET = 22;
 
@@ -26,6 +29,8 @@ export class Game {
     this.listeners = {};
     this.time = 0;
     this.coasterT = 0;
+    this.millA = 0; this.millW = MILL.w; this.millHold = false; // (v1.11) the windmill's sails
+    this.lock = null;      // (v1.11) a combination lock on the screen (lock.js), put there by a job
     this.money = 0;
     this.stats = {
       carsStolen: 0, carsJacked: 0, crashes: 0, pedsKnocked: 0, maxSpeed: 0, driven: 0, honks: 0, stuntJumps: 0, bestJump: 0,
@@ -221,6 +226,10 @@ export class Game {
   step(dt, input) {
     this.time += dt;
     this.coasterT += dt;                   // (v1.7) Måsen's own clock: it stands still while it is broken (mission.js)
+    // (v1.11) the windmill: held still by its brake, or back up to speed (no random numbers)
+    const mw = (this.millHold ? 0 : MILL.w) - this.millW;
+    this.millW += Math.max(-MILL.brake * dt, Math.min(MILL.spin * dt, mw));
+    this.millA += this.millW * dt;
     this.input = input; // missions read held buttons (hoisting a flag)
     const p = this.player;
     p.update(dt, input);

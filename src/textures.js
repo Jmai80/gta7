@@ -151,6 +151,23 @@ const PAINTERS = {
     if (lines.length === 1) {
       fitText(g, lines[0], w * 0.9, h * (d.font ? d.font * 1.25 : 0.7));
       g.fillText(lines[0], x + w / 2, y + h * 0.54);
+    } else if (d.rows) {
+      // (v1.11) a heading and a column of rows under it: the psalm board in the chapel
+      const top = h * 0.24, n = lines.length - 1, rh = (h - top - h * 0.07) / n;
+      fitText(g, lines[0], w * 0.8, h * 0.13);
+      g.fillText(lines[0], x + w / 2, y + top * 0.6);
+      g.fillStyle = 'rgba(255,255,255,0.08)';
+      for (let i = 0; i < n; i++) g.fillRect(x + w * 0.12, y + top + rh * i + rh * 0.08, w * 0.76, rh * 0.84);
+      g.fillStyle = d.fg || '#111';
+      for (let i = 0; i < n; i++) { fitText(g, lines[i + 1], w * 0.7, rh * 0.74); g.fillText(lines[i + 1], x + w / 2, y + top + rh * (i + 0.53)); }
+    } else if (lines.length >= 3) {
+      // (v1.11) three lines: the first two as usual, a smaller third at the bottom (it used to be left out)
+      fitText(g, lines[0], w * 0.9, h * (d.font ? d.font * 0.9 : 0.42));
+      g.fillText(lines[0], x + w / 2, y + h * 0.3);
+      fitText(g, lines[1], w * 0.88, h * 0.24, 700);
+      g.fillText(lines[1], x + w / 2, y + h * 0.58);
+      fitText(g, lines[2], w * 0.8, h * 0.18, 600);
+      g.fillText(lines[2], x + w / 2, y + h * 0.81);
     } else {
       fitText(g, lines[0], w * 0.9, h * (d.font ? d.font * 1.05 : 0.5));
       g.fillText(lines[0], x + w / 2, y + h * 0.36);
@@ -214,8 +231,8 @@ const PAINTERS = {
     g.bezierCurveTo(cx - s * 1.2, cy - s * 0.1, cx - s * 0.55, cy - s * 0.95, cx, cy - s * 0.35);
     g.bezierCurveTo(cx + s * 0.55, cy - s * 0.95, cx + s * 1.2, cy - s * 0.1, cx, cy + s * 0.75); g.fill();
     g.fillStyle = '#3a2618'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    fitText(g, 'A + G', s * 1.1, h * 0.2); g.fillText('A + G', cx, cy - s * 0.05);
-    fitText(g, '1971', s * 0.8, h * 0.13, 700); g.fillText('1971', cx, cy + s * 0.32);
+    fitText(g, 'A + G', s * 1.1, h * 0.19); g.fillText('A + G', cx, cy - s * 0.1);
+    fitText(g, '1971', s * 0.98, h * 0.17, 800); g.fillText('1971', cx, cy + s * 0.3);   // (v1.11: bigger – it is a code now)
   },
   // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
   lyckoland(g, d, x, y, w, h) {
@@ -314,7 +331,7 @@ export function makeSignAtlas(signs) {
   for (const [id, d] of Object.entries(all)) {
     const key = JSON.stringify(d);
     if (!byKey.has(key)) {
-      const ppm = Math.min(72, 900 / d.w, 260 / d.h);
+      const ppm = Math.min(d.ppm || 72, 900 / d.w, 260 / d.h);   // ((v1.11) d.ppm: sharper, for a sign you read up close)
       byKey.set(key, { ids: [], d, pw: Math.ceil(d.w * ppm), ph: Math.ceil(d.h * ppm) });
     }
     byKey.get(key).ids.push(id);

@@ -139,6 +139,13 @@ export class FlagQuest {
     if (this.prompt !== 'PRATA') return false;
     const m = this.mgr, p = this.game.player, gun = this.gun;
     gun.standH = Math.atan2(p.x - gun.x, p.z - gun.z);
+    if (this.huntPin) { // (v1.11) outside the konditori, waiting for Arne's treasure hunt (or after it)
+      const lines = m.done.has('skattjakt') ? ['Arnes bullar … äntligen.', 'Ta en bulle till, lilla vän!', 'Dahlgren diskar som en tok. Vem kunde tro det?']
+        : m.active && m.active.id === 'skattjakt' ? ['Lös Arnes gåtor, lilla vän! Vi väntar här.', 'Fastnar du så tryck på uppdragsrutan – jag kanske minns.'] : ['Kom hit, lilla vän – jag har något att visa dig.'];
+      this.huntTalk = ((this.huntTalk ?? -1) + 1) % lines.length;
+      this.say(lines[this.huntTalk]);
+      return true;
+    }
     if (m.active && m.active.id === 'kyrkkaffe') { // (v1.10) the church buns are on their way
       this.say(m.active.stage === 'ride' ? 'Bullarna kallnar, lilla vän! Kapellet ligger på Söderholmen.' : 'Hälsa Inga!');
       return true;

@@ -95,7 +95,8 @@ export const CHAPEL_FURN = [
 
 const SIGNS = {
   altarpiece: { def: { lines: ['FRID', 'VARE MED ER'], bg: '#24365e', fg: '#f2d27a', font: 0.46, border: '#d9b23a' }, x: 4, y: 1.85, z: 13.958, rot: Math.PI, w: 1.7, h: 1.0 }, // (v1.10: in front of its frame, which hid it)
-  psalms: { def: { lines: ['PSALM', '12  ·  287', '649'], bg: '#3b2a1e', fg: '#f4efe4', font: 0.36, border: '#d9b23a' }, x: 7.988, y: 1.7, z: 3.0, rot: -Math.PI / 2, w: 0.8, h: 0.9 },
+  // (v1.11) the three psalm numbers in a column, as on a real psalm board (the middle one is a code in "Arnes skattjakt")
+  psalms: { def: { lines: ['PSALM', '12', '287', '649'], rows: true, ppm: 220, bg: '#3b2a1e', fg: '#f4efe4', border: '#d9b23a' }, x: 7.988, y: 1.75, z: 3.0, rot: -Math.PI / 2, w: 0.62, h: 1.15 },
   welcome: { def: { lines: ['SÖDERHOLMENS', 'KAPELL', '1890'], bg: '#f4efe4', fg: '#24365e', font: 0.34, border: '#24365e' }, x: 0.012, y: 1.7, z: 2.6, rot: Math.PI / 2, w: 0.9, h: 0.8 },
 };
 
