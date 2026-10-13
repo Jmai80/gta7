@@ -12,7 +12,7 @@ import { PIZZA_CAR } from './config.js';
 import { ISLE } from './island.js';
 import { makeRng } from './rng.js';
 
-export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 3, spider: 1, skate: 1 };
+export const CAPACITY = { sedan: 24, van: 14, bike: 2, racebike: 1, citybike: 8, spider: 1, skate: 1 };
 // (v1.11) the windmill on Norrholmen: its sails turn on the game's clock (render.js follows millA), and
 // "Arnes skattjakt" can brake them (millHold). Radians a second, and how fast they stop and speed up again
 export const MILL = { w: 0.45, brake: 0.42, spin: 0.3 };

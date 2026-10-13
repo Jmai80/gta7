@@ -19,6 +19,7 @@ import { PIZZA_ROOM, PIZZA_DOOR } from './pizzeria.js';
 import { MILL_ROOM, MILL_DOOR } from './millroom.js';
 import { KOND, KOND_DOOR } from './konditori.js';
 import { FYR, FYR_DOOR, FYR_OUT, fyrFloor } from './fyren.js';
+import { SHED, SHED_DOOR } from './vedbod.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { spawnPed, removePed } from './hideout.js';
@@ -42,6 +43,7 @@ export const PLACES = {
   mill: { inside: MILL_ROOM, out: { x: MILL_DOOR.x, z: MILL_DOOR.z, h: MILL_DOOR.h } },                // the windmill → out on its rocks (v1.13)
   konditori: { inside: KOND, out: { x: KOND_DOOR.x, z: KOND_DOOR.z - 0.6, h: Math.PI } },             // Sjuby Konditori → the square, facing north (v1.14)
   fyren: { inside: FYR, out: { x: FYR_OUT.x, z: FYR_OUT.z, h: FYR_OUT.h } },                          // the lighthouse → down the steps (v1.15)
+  shed: { inside: SHED, out: { x: SHED_DOOR.x + 0.9, z: SHED_DOOR.z + 0.4, h: Math.PI / 2 } },         // Signe's woodshed → her back yard (v1.16)
 };
 
 // the people in the chapel: Inga in black with a white collar, and three in the pews

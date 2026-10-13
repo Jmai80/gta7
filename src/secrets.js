@@ -39,6 +39,7 @@ export const SECRETS = [
     text: 'Där ute! Något stort och grönt med pucklar … och så var det borta. Sjubyodjuret finns!' },
 ];
 export const SECRET_COUNT = SECRETS.length;
+export const SKATE_NOVA = { x: 78.6, z: 31.4, h: Math.PI / 2 };   // (v1.16) where Nova keeps Jonte's skateboard
 const BY = Object.fromEntries(SECRETS.map((s) => [s.id, s]));
 
 // the sea monster out in the harbour, north of the pier: up out of the water for a while every 75 s
@@ -98,7 +99,7 @@ export class Secrets {
     const g = this.game, p = g.player, m = this.mgr;
     this.prompt = null; this.near = null;
     // the skateboard: put on the pitch out of sight, and found the first time you ride it
-    const S = BY.skate, sk = g.skate;
+    const S = g.stats.skateNova ? SKATE_NOVA : BY.skate, sk = g.skate;   // ((v1.16) Nova's now: by her door behind Macken)
     if ((!sk || sk.removed) && !g.indoor && Math.hypot(p.x - S.x, p.z - S.z) < 160 && Math.hypot(p.x - S.x, p.z - S.z) > 35) g.spawnSkate(S.x, S.z, S.h);
     if (p.inCar && p.car.spec.skate) { if (!this.has('skate')) this.find('skate'); return; }
     if (p.state !== 'foot' || p.frozen || g.indoor) return;

@@ -22,6 +22,7 @@ import { pizzaLayout, pizzaInto } from './pizzeria.js';
 import { millLayout, millInto } from './millroom.js';
 import { kondLayout, kondInto } from './konditori.js';
 import { fyrLayout, fyrInto } from './fyren.js';
+import { shedLayout, shedInto } from './vedbod.js';
 
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
@@ -140,7 +141,9 @@ export function interiorLayout() {
   colliders.push(...fyr.colliders);
   Object.assign(signs, fyr.signs);
   signPrims.push(...fyr.signPrims);
-  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor, kond.floor, fyr.floor], signs, signPrims };
+  const shed = shedLayout(); // Signe's woodshed on Söderholmen (v1.16)
+  colliders.push(...shed.colliders);
+  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor, kond.floor, fyr.floor, shed.floor], signs, signPrims };
 }
 
 // ------------------------------------------------------------------ geometry
@@ -283,6 +286,7 @@ export function interiorInto(B) {
   millInto(B); // the windmill (v1.13)
   kondInto(B); // Sjuby Konditori (v1.14)
   fyrInto(B); // the lighthouse (v1.15)
+  shedInto(B); // Signe's woodshed (v1.16)
 }
 
 // door panel for Melker's front door, hinge at the origin, closed along +x (render.js turns it)

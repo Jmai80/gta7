@@ -549,6 +549,12 @@ export class AudioFX {
     else if (kind === 'hit') { this.burst(0.18, 600, 0.12, 'lowpass'); this.tone(160, 0.2, 'sine', 0.1, 0, 90); chak(0.15, 3); }
     else if (kind === 'flee') { for (let i = 0; i < 6; i++) this.burst(0.06, 700, 0.06, 'bandpass', i * 0.09); chak(0.4, 6); }
   }
+  // (v1.16) a tarpaulin pulled off – and a bike bell under it
+  tarp(bike) {
+    if (!this.ctx) return;
+    this.burst(0.35, 900, 0.12, 'bandpass'); this.burst(0.2, 2200, 0.08, 'highpass', 0.08);
+    if (bike) { this.tone(2350, 0.25, 'sine', 0.05, 0.3, 2300); this.tone(2350, 0.3, 'sine', 0.045, 0.48, 2300); }
+  }
   stairs(up) {
     if (!this.ctx) return;
     for (let i = 0; i < 5; i++) { this.tone(up ? 140 + i * 8 : 180 - i * 8, 0.05, 'sine', 0.09, i * 0.08, 90); this.burst(0.06, 1400, 0.03, 'bandpass', i * 0.08); }

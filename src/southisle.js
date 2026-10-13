@@ -297,6 +297,16 @@ export function southInto(H) {
     }
     if (i % 2 === 0) tree(west ? x + 4 : x - 2.2, z + 9.5, i % 4 ? 'oak' : 'birch', 0.8);
   });
+  // (v1.16) Mormor Signe's red woodshed behind the last house ("Birgers kaffe": Jonte hid five bikes in it)
+  {
+    const x0 = -74, z0 = 267, x1 = -70.4, z1 = 269.6, h = 2.2;
+    solid(x0, CURB_H, z0, x1, CURB_H + h, z1, 0x8e2c20, M.BOARDS);
+    P({ t: 'rbox', cx: (x0 + x1) / 2, cy: CURB_H + h, cz: (z0 + z1) / 2, sx: x1 - x0 + 0.5, sy: 0.14, sz: z1 - z0 + 0.5, rot: 0, c: 0x3a3c41, m: M.TILES });
+    box(x1, CURB_H, 267.75, x1 + 0.06, CURB_H + 1.9, 268.85, 0x5b4636, M.BOARDS);
+    box(x1 + 0.06, CURB_H + 0.9, 268.6, x1 + 0.1, CURB_H + 1.0, 268.7, 0xc9ccd0, M.CHROME);
+    for (const dx of [0.6, 1.4, 2.2, 3.0]) box(x0 + dx - 0.05, CURB_H + h - 0.02, z0 - 0.02, x0 + dx + 0.05, CURB_H + h, z1 + 0.02, 0xf2efe8);
+    for (let r = 0; r < 3; r++) box(x0 - 0.7, CURB_H + r * 0.3, z0 + 0.3, x0 - 0.05, CURB_H + r * 0.3 + 0.28, z1 - 0.3, r % 2 ? 0x8a6440 : 0xa07a50, M.PLANKS);   // logs by the west wall
+  }
   const Ch = SOUTH.chapel;
   building({ x0: Ch.x0, z0: Ch.z0, x1: Ch.x1, z1: Ch.z1, h: 4.2, c: 0xf2efe8, m: M.FALU, cell: [2.6, 4.2], roof: 'gable', roofH: 3.4, roofC: 0x3a3c41, axis: 'z', overhang: 0.3, mapC: 0xd8d4cc });
   {

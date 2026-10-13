@@ -39,6 +39,8 @@ import { ODJUR, ODJUR_MAX, surfacing, upAt } from '../src/odjuret.js';
 import { POND } from '../src/secrets.js';
 import { FYR, FYR_DOOR, fyrFloor } from '../src/fyren.js';
 import { SKAT, SKAT_MAX, OWNERS, BIRD } from '../src/skatbo.js';
+import { KAFFE, KAFFE_MAX, BIKES as KBIKES } from '../src/kaffe.js';
+import { SHED, SHED_DOOR, TARPS } from '../src/vedbod.js';
 import { CARWASH } from '../src/config.js';
 
 const DT = 1 / 60;
@@ -369,8 +371,12 @@ function startRace(g) {
   g2.mission.done.add('skatbo');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all eighteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.15/.test(d.text) && /Fyren lyser igen/.test(d.text)), 'the last text: version 1.15, the lighthouse shines again');
+  check(!sms2.some(([n]) => n === 'endcard'), "no end card while Birger's coffee is waiting");
+  g2.mission.done.add('kaffe');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all nineteen are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.16/.test(d.text) && /Jontes cyklar är hemma/.test(d.text)), 'the last text: version 1.16, all of Jonte\'s bikes are home');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -4331,7 +4337,7 @@ function sneak(g, job, careful = true, sec = 60) {
   m.talkDone('skatbo'); run(g, 0.5);
   check(m.done.has('skatbo') && g.money - money0 === 5000 + 400 - 100, `done: ${fmt(g.money - money0)} kr (one dive)`);
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.15/.test(d.text)), 'all eighteen parts: the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'eighteen of nineteen parts: no end card yet');
   run(g, 20);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.elsa && /telefonkiosken/.test(d.text)), '  Elsa: go past the phone box one last time');
   // the phone box rings one last time
@@ -4383,6 +4389,144 @@ function sneak(g, job, careful = true, sec = 60) {
       press(g3); run(g3, 0.7); m3.talkDone('skatbo'); run(g3, 0.3);
     }
     check(ok && j.stage === 'back', `seed ${seed} with traffic: all four handed out`);
+  }
+}
+
+// ---------- 47. main quest, part 16: "Birgers kaffe" (v1.16) – coffee, Mormor Signe, the last five bikes ----------
+const UP_TO_SKAT = [...UP_TO_GULD, 'skatbo'];
+function kaffeGame(stats = {}, opts = { traffic: 0, peds: 0 }, seed = 7, fresh = false) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_SKAT);
+  g.mission.restore({ ...s, money: 0, stats, known: fresh ? s.known : [...s.known, 'kaffe'] });
+  return g;
+}
+// ride a bike (or the skateboard) to a point: pedal at it, slow down at the end
+function rideTo(g, x, z, sec = 90, until) {
+  for (let i = 0; i < 60 * sec; i++) {
+    const p = g.player, c = p.car; if (!c) return false;
+    const d = Math.hypot(x - c.x, z - c.z);
+    const want = Math.atan2(x - c.x, z - c.z), err = Math.atan2(Math.sin(want - c.h), Math.cos(want - c.h));
+    g.step(DT, { ...idle, analog: false, moveY: d > 6 ? 1 : d > 1.2 && c.speed < 2.5 ? 0.6 : 0, moveX: Math.max(-1, Math.min(1, err * 2)), handbrake: d < 1.6 && c.speed > 1 });
+    if (until && until()) return true;
+  }
+  return false;
+}
+function mountNear(g, car) { walkHere(g, car.x - Math.cos(car.h) * 1.0, car.z + Math.sin(car.h) * 1.0); g.step(DT, { ...idle, action: true }); run(g, 0.8); return g.player.car === car; }
+{
+  console.log('Birgers kaffe (huvuduppdrag del 16): hela vägen');
+  const g = kaffeGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'tarp', 'hint', 'endcard', 'secret']);
+  check(KAFFE_MAX === 5800 && KBIKES.length === 5 && TARPS.filter((T) => T.bike).length === 5, `up to ${fmt(KAFFE_MAX)} kr; five bikes under seven tarps`);
+  walkHere(g, 60, -20);
+  run(g, 37);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'kaffe') || [])[1];
+  check(sms && sms.from === WHO.birger && /KAFFE/.test(sms.text), 'Birger texts: coffee in his garden');
+  m.accept('kaffe'); run(g, 0.3);
+  walkHere(g, -62.5, -45); run(g, 1.0);
+  check(m.kaffeFolk && m.kaffeFolk.length === 3 && m.kaffeTable, 'Birger, Pia and Jonte at the coffee table in his garden');
+  check(runToward(g, () => [KAFFE.mark.x, KAFFE.mark.z], 6, () => m.active && m.active.id === 'kaffe'), '  in through the gate: it starts');
+  const job = m.active;
+  run(g, 1.3);
+  const t1 = lastTalk(ev, 'kaffe');
+  check(t1 && t1.pages.length === 11 && t1.pages.some((q) => /MORMOR/.test(q.text)) && t1.pages.at(-1).last === 'TILL SÖDERHOLMEN', '  the story over coffee – five more bikes under "MORMOR"');
+  m.talkDone('kaffe'); run(g, 0.3);
+  check(job.stage === 'south' && g.stats.kaffe.at === 1, 'checkpoint: to Söderholmen');
+  // Signe's garden: everything reachable from the road
+  walkHere(g, -55, 262); run(g, 1.0);
+  check(job.signe && job.jonte, 'Mormor Signe and Jonte in her garden');
+  check(runToward(g, () => [KAFFE.gate.x, KAFFE.gate.z], 8, () => job.stage === 'signeTalk'), '  up to her gate: Signe talks');
+  run(g, 0.8);
+  check(lastTalk(ev, 'kaffe').pages.some((q) => /Bullbilen i tjugoåtta år/.test(q.text)), '  "Jag bakade på Bullbilen i tjugoåtta år"');
+  m.talkDone('kaffe'); run(g, 0.3);
+  check(job.stage === 'shed', 'to the woodshed');
+  check(runToward(g, () => [SHED_DOOR.x, SHED_DOOR.z], 10, () => m.prompt === 'GÅ IN'), '  round the house to the shed door: GÅ IN');
+  press(g); run(g, 1.4);
+  check(ind.inside && ind.where === 'shed' && job.stage === 'search', 'inside the woodshed');
+  const unreached = reachable(g, SHED.spawn, TARPS, SHED.room);
+  check(!unreached.length, `every tarp can be walked to (${unreached.length} cut off)`);
+  walkHere(g, SHED.door.x, SHED.door.z); run(g, 0.1);
+  check(m.prompt !== 'GÅ UT', '  no way out before the five bikes are found');
+  for (const T of [...TARPS].reverse()) { walkHere(g, T.x, T.z); run(g, 0.1); if (m.prompt === 'LYFT') press(g); }
+  run(g, 0.8);
+  check(job.lifted.size === 7 && ev.filter(([n, d]) => n === 'tarp' && d.bike).length === 5 && job.stage === 'shedTalk', 'seven tarps: five bikes, Signe\'s juice and an old baker\'s peel from Bullbilen');
+  m.talkDone('kaffe'); run(g, 0.3);
+  walkHere(g, SHED.door.x, SHED.door.z); run(g, 0.1);
+  check(m.prompt === 'GÅ UT', '  GÅ UT'); press(g); run(g, 1.5);
+  check(!g.indoor && job.stage === 'deliver' && KBIKES.every((B) => job.bikes[B.id] && !job.bikes[B.id].removed), 'outside: five bikes in a row behind the shed');
+  check(g.stats.kaffe.at === 2 && g.stats.kaffe.left.length === 5, '  checkpoint: five to hand over');
+  for (const B of KBIKES) {
+    const bike = job.bikes[B.id];
+    const ok = mountNear(g, bike);
+    // (ride most of the way like a bike, then the last bit into the zone)
+    const near = { x: B.zone.x, z: B.zone.z + (B.id === 'nova' || B.id === 'pia' ? 7 : -7) };   // (the lane between the gardens and the churchyard wall)
+    bike.x = near.x; bike.z = near.z; bike.vx = bike.vz = 0; bike.h = Math.atan2(B.zone.x - near.x, B.zone.z - near.z); run(g, 0.5);
+    rideTo(g, B.zone.x, B.zone.z, 20, () => job.stage === 'ownerTalk');
+    run(g, 0.8);
+    const to = lastTalk(ev, 'kaffe');
+    const talked = job.stage === 'ownerTalk';
+    m.talkDone('kaffe'); run(g, 0.3);
+    check(ok && talked && !job.left.includes(B.id), `${B.who}: ${to.pages[0].text.slice(0, 46)}…`);
+    if (B.id === 'rut') {
+      const g2 = kaffeGame({ kaffe: { ...g.stats.kaffe } });
+      g2.mission.accept('kaffe'); run(g2, 0.8);
+      const j2 = g2.mission.active;
+      check(j2 && j2.stage === 'deliver' && j2.left.join() === 'nova,pia' && j2.bikes.nova && !j2.bikes.elsa, '  a reload here: Nova\'s and Pia\'s bikes are left, behind the shed');
+    }
+  }
+  check(job.stage === 'skate' && g.stats.kaffe.at === 3, 'all five home: the skateboard');
+  run(g, 2.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.jonte && /skateboarden/.test(d.text)), '  Jonte texts: the skateboard is his – ride it to Nova');
+  const SK = SECRETS.find((s) => s.id === 'skate');
+  walkHere(g, SK.x + 50, SK.z); run(g, 0.5);
+  check(g.skate && !g.skate.removed, '  the skateboard lies on the football pitch');
+  check(mountNear(g, g.skate) && p.car.spec.skate, '  on the skateboard');
+  const sk = g.skate; sk.x = KAFFE.novaZone.x - 8; sk.z = KAFFE.novaZone.z; sk.h = Math.PI / 2; sk.vx = sk.vz = 0; run(g, 0.3);
+  rideTo(g, KAFFE.novaZone.x, KAFFE.novaZone.z, 20, () => job.stage === 'novaTalk');
+  run(g, 0.8);
+  check(job.stage === 'novaTalk' && lastTalk(ev, 'kaffe').pages.some((q) => /förlåten/.test(q.text)) && g.stats.skateNova && g.stats.secrets.includes('skate'), 'Nova gets Jonte\'s skateboard: "okej. förlåten. TYP förlåten."');
+  m.talkDone('kaffe'); run(g, 0.3);
+  check(job.stage === 'finale' && g.stats.kaffe.at === 4, 'to tant Gun\'s gate');
+  walkHere(g, KAFFE.fin.mark.x + 40, KAFFE.fin.mark.z); run(g, 1.0);
+  check(job.fin && m.kaffeGunPin && Math.hypot(m.flag.gun.x - KAFFE.fin.gun.x, m.flag.gun.z - KAFFE.fin.gun.z) < 0.1, '  Birger, Pia and Jonte by the gate – and Gun inside it');
+  runToward(g, () => [KAFFE.fin.mark.x, KAFFE.fin.mark.z], 15, () => job.stage === 'finaleTalk');
+  run(g, 1.0);
+  check(job.stage === 'finaleTalk' && lastTalk(ev, 'kaffe').pages.some((q) => /lördagar/.test(q.text)), '  Jonte says sorry; Gun: bun rounds on Saturdays, on Arne\'s bike');
+  const money0 = g.money;
+  m.talkDone('kaffe'); run(g, 0.5);
+  check(m.done.has('kaffe') && g.money - money0 === KAFFE_MAX, `done: ${fmt(g.money - money0)} kr`);
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.16/.test(d.text)), 'all nineteen parts: the end card');
+  run(g, 20);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.signe && /bageriet/.test(d.text)), '  Mormor Signe texts: she has heard rumours about the bakery');
+  // afterwards the skateboard is by Nova's door (also after a reload)
+  const g3 = kaffeGame({ kaffe: { at: 5 }, skateNova: true, secrets: ['skate'] });
+  g3.mission.done.add('kaffe');
+  walkHere(g3, 40, 30); run(g3, 1);
+  check(g3.skate && Math.hypot(g3.skate.x - 78.6, g3.skate.z - 31.4) < 0.5, '  the skateboard by Nova\'s door after a reload');
+}
+{
+  console.log('Birgers kaffe: ladda om, trafik');
+  const g = kaffeGame({ kaffe: { at: 4, left: [] } });
+  g.mission.accept('kaffe'); run(g, 0.5);
+  check(g.mission.active && g.mission.active.stage === 'finale', 'a reload at the last step: to Gun\'s gate');
+  const g1 = kaffeGame({ kaffe: { at: 1, left: [] } });
+  g1.mission.accept('kaffe'); run(g1, 0.5);
+  check(g1.mission.active && g1.mission.active.stage === 'south', 'a reload at the first step: to Signe');
+  for (const seed of [3, 11, 19]) {
+    const g3 = kaffeGame({ kaffe: { at: 2, left: KBIKES.map((b) => b.id) } }, {}, seed);
+    const m3 = g3.mission;
+    m3.accept('kaffe'); run(g3, 1.0);
+    const j = m3.active;
+    let ok = true;
+    for (const B of KBIKES) {
+      const bike = j.bikes[B.id];
+      if (!bike || !mountNear(g3, bike)) { ok = false; break; }
+      bike.x = B.zone.x; bike.z = B.zone.z; bike.vx = bike.vz = 0; run(g3, 1.0);
+      if (j.stage !== 'ownerTalk') { ok = false; break; }
+      m3.talkDone('kaffe'); run(g3, 0.3);
+    }
+    check(ok && j.stage === 'skate', `seed ${seed} with traffic: all five bikes home`);
   }
 }
 

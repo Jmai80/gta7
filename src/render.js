@@ -25,6 +25,7 @@ import { MONSTER, monsterRise, DUCKS, duckAt, POND } from './secrets.js';
 import { InsideProps } from './insideview.js';
 import { PropsView } from './propsview.js';
 import { FyrView } from './fyrview.js';
+import { KaffeView } from './kaffeview.js';
 import { FYR, fyrFloor } from './fyren.js';
 import { duckPlace } from './ankor.js';
 
@@ -144,6 +145,7 @@ export class View {
     this.inside = new InsideProps(this.scene, this.matStatic); // (v1.13) the pizzas in Pizzeria Sjuan, the mice in the mill
     this.props = new PropsView(this.scene, this.matStatic, this.atlas); // (v1.14) the golden bun, the magpie, the trays, the championship, the log
     this.fyr = new FyrView(this.scene, this.matStatic); // (v1.15) the magpie in the lantern, her nest, the lamp and its beams
+    this.kaffe = new KaffeView(this.scene, this.matStatic); // (v1.16) Birger's coffee table, the tarps in Signe's shed
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -172,7 +174,7 @@ export class View {
     this.bikes = {};
     // (v1.2) the stolen town bikes going home: one model per colour (Vera's has no saddle)
     const kinds = [['bike', 'bike', {}], ['racebike', 'racebike', { racer: true }]];
-    for (const paint of ['cityOrange', 'cityYellow', 'cityPink']) kinds.push([`citybike:${paint}`, 'citybike', { city: PAINTS[paint].hex, noSaddle: paint === 'cityOrange', paint }]);
+    for (const paint of ['cityOrange', 'cityYellow', 'cityPink', 'cityGreen', 'cityBlue', 'cityLilac', 'cityMint', 'cityNavy']) kinds.push([`citybike:${paint}`, 'citybike', { city: PAINTS[paint].hex, noSaddle: paint === 'cityOrange', paint }]);
     for (const [key, type, opt] of kinds) {
       const P = buildBike(opt.racer || opt.city ? null : this.atlas.uv.konditori, opt), G = P.geo; // (each bike has its own wheel sizes)
       const g = new THREE.Group();
@@ -753,6 +755,7 @@ export class View {
     this.inside.sync(game, this.indoor);
     this.props.sync(game, this.indoor);
     this.fyr.sync(game, this.indoor);
+    this.kaffe.sync(game, this.indoor);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)

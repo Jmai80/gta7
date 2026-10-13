@@ -82,6 +82,11 @@ export const PAINTS = {
   cityYellow: { hex: 0xe2b52a, name: 'gul' },      // Lasse's
   cityPink: { hex: 0xe86aa0, name: 'rosa' },       // and Yasmin's
   skate: { hex: 0x2fb3a8, name: 'turkos' },        // (v1.8) the skateboard
+  cityGreen: { hex: 0x5f9a6a, name: 'grön' },      // (v1.16) the last five stolen bikes: Elsa's,
+  cityBlue: { hex: 0x2c62a8, name: 'blå' },        // kantor Folke's,
+  cityLilac: { hex: 0x9b6fc4, name: 'lila' },      // Tivoli-Rut's,
+  cityMint: { hex: 0x6fd0c0, name: 'mintgrön' },   // Nova's
+  cityNavy: { hex: 0x1d2a44, name: 'marinblå' },   // and Polis-Pia's own
 };
 
 const GRAVITY = 16;
