@@ -4446,7 +4446,8 @@ function mountNear(g, car) { walkHere(g, car.x - Math.cos(car.h) * 1.0, car.z + 
   check(lastTalk(ev, 'kaffe').pages.some((q) => /Bullbilen i tjugoåtta år/.test(q.text)), '  "Jag bakade på Bullbilen i tjugoåtta år"');
   m.talkDone('kaffe'); run(g, 0.3);
   check(job.stage === 'shed', 'to the woodshed');
-  check(runToward(g, () => [SHED_DOOR.x, SHED_DOOR.z], 10, () => m.prompt === 'GÅ IN'), '  round the house to the shed door: GÅ IN');
+  check(walkPath(g, [[-63.0, 267.0], [-74.0, 267.0], [SHED_DOOR.x, SHED_DOOR.z + 1.2], [SHED_DOOR.x, SHED_DOOR.z]], () => m.prompt === 'GÅ IN', 30), '  round the back of the house to the shed door: GÅ IN');
+  check(SHED_DOOR.z < 266 && SHED_DOOR.x < -75, '  the shed stands behind the house (west of it), off the road');
   press(g); run(g, 1.4);
   check(ind.inside && ind.where === 'shed' && job.stage === 'search', 'inside the woodshed');
   const unreached = reachable(g, SHED.spawn, TARPS, SHED.room);

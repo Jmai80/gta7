@@ -297,13 +297,14 @@ export function southInto(H) {
     }
     if (i % 2 === 0) tree(west ? x + 4 : x - 2.2, z + 9.5, i % 4 ? 'oak' : 'birch', 0.8);
   });
-  // (v1.16) Mormor Signe's red woodshed behind the last house ("Birgers kaffe": Jonte hid five bikes in it)
+  // (v1.16) Mormor Signe's red woodshed behind the last house ("Birgers kaffe": Jonte hid five bikes in it).
+  // (v1.17.1) Behind it for real: west of the house (its door faces the lane in the east), the shed door facing south
   {
-    const x0 = -74, z0 = 267, x1 = -70.4, z1 = 269.6, h = 2.2;
+    const x0 = -80.2, z0 = 258.6, x1 = -76.8, z1 = 261.2, h = 2.2, dx0 = -79.0, dx1 = -77.9;
     solid(x0, CURB_H, z0, x1, CURB_H + h, z1, 0x8e2c20, M.BOARDS);
     P({ t: 'rbox', cx: (x0 + x1) / 2, cy: CURB_H + h, cz: (z0 + z1) / 2, sx: x1 - x0 + 0.5, sy: 0.14, sz: z1 - z0 + 0.5, rot: 0, c: 0x3a3c41, m: M.TILES });
-    box(x1, CURB_H, 267.75, x1 + 0.06, CURB_H + 1.9, 268.85, 0x5b4636, M.BOARDS);
-    box(x1 + 0.06, CURB_H + 0.9, 268.6, x1 + 0.1, CURB_H + 1.0, 268.7, 0xc9ccd0, M.CHROME);
+    box(dx0, CURB_H, z1, dx1, CURB_H + 1.9, z1 + 0.06, 0x5b4636, M.BOARDS);
+    box(dx1 - 0.2, CURB_H + 0.9, z1 + 0.06, dx1 - 0.1, CURB_H + 1.0, z1 + 0.1, 0xc9ccd0, M.CHROME);
     for (const dx of [0.6, 1.4, 2.2, 3.0]) box(x0 + dx - 0.05, CURB_H + h - 0.02, z0 - 0.02, x0 + dx + 0.05, CURB_H + h, z1 + 0.02, 0xf2efe8);
     for (let r = 0; r < 3; r++) box(x0 - 0.7, CURB_H + r * 0.3, z0 + 0.3, x0 - 0.05, CURB_H + r * 0.3 + 0.28, z1 - 0.3, r % 2 ? 0x8a6440 : 0xa07a50, M.PLANKS);   // logs by the west wall
   }

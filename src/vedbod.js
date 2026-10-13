@@ -18,8 +18,8 @@ const S = 7, D = 5;
 const X = INDOOR.x - 22, Y = INDOOR.y, Z = INDOOR.z - 24;
 
 // outside: the shed door on Söderholmen (southisle.js builds the shed behind Signe's house)
-export const SHED_DOOR = { x: -69.6, z: 268.3, r: 1.2 };
-export const SHED_BOX = { x0: -74, z0: 267, x1: -70.4, z1: 269.6 };
+export const SHED_DOOR = { x: -78.45, z: 262.2, r: 1.2 };            // (v1.17.1: behind the house, west of it – not out on the road)
+export const SHED_BOX = { x0: -80.2, z0: 258.6, x1: -76.8, z1: 261.2 };
 
 // the tarpaulins: where the lump is (tarp, along a wall), where you stand to lift it (at), and what is under it:
 // one of the five bikes (by its owner's id) or something of Signe's

@@ -43,7 +43,7 @@ export const KAFFE = {
   signeJonte: { x: -65.4, z: 260.1, h: Math.PI / 2 },
   gate: { x: -62.6, z: 261.5, r: 1.9 },
   // the five bikes, in a row behind the shed once they are out
-  yard: { x: -72.6, z: 271.6, step: 1.9, h: Math.PI / 2 },
+  yard: { x: -84.2, z: 264.4, step: 1.9, h: Math.PI / 2 },   // (v1.17.1: behind the house, south of the shed – off the road)
   // Nova behind Macken (the skateboard), and Gun's gate (the last scene)
   nova: { x: 81.6, z: 30.8, h: 0 },
   novaZone: { x: 80.0, z: 31.9, r: 2.6 },

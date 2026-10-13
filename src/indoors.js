@@ -46,7 +46,7 @@ export const PLACES = {
   konditori: { inside: KOND, out: { x: KOND_DOOR.x, z: KOND_DOOR.z - 0.6, h: Math.PI } },             // Sjuby Konditori → the square, facing north (v1.14)
   fyren: { inside: FYR, out: { x: FYR_OUT.x, z: FYR_OUT.z, h: FYR_OUT.h } },                          // the lighthouse → down the steps (v1.15)
   bageri: { inside: BAK, out: { x: BAK_DOOR.x - 0.2, z: BAK_DOOR.z + 0.75, h: 0 } },                     // the bakery → its yard (v1.17)
-  shed: { inside: SHED, out: { x: SHED_DOOR.x + 0.9, z: SHED_DOOR.z + 0.4, h: Math.PI / 2 } },         // Signe's woodshed → her back yard (v1.16)
+  shed: { inside: SHED, out: { x: SHED_DOOR.x + 0.5, z: SHED_DOOR.z + 0.9, h: 0 } },         // Signe's woodshed → her back yard (v1.16)
 };
 
 // the people in the chapel: Inga in black with a white collar, and three in the pews

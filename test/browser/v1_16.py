@@ -146,7 +146,7 @@ async def main(name, w, h, mobile):
         await talk_through(pg, at=[(4, '05_signe', 300)])
         await pg.evaluate(STEP, [0.4, None])
         D = VB['D']
-        ok = await at_prompt(pg, [[-63.0, 266.5], [D['x'] + 0.6, D['z']], [D['x'], D['z']]], 'GÅ IN', 16)
+        ok = await at_prompt(pg, [[-63.0, 267.0], [-74.0, 267.0], [D['x'], D['z'] + 1.2], [D['x'], D['z']]], 'GÅ IN', 24)
         await pg.evaluate(STEP, [1.5, None])
         steps['shed'] = ok and (await pg.evaluate(INFO))['where'] == 'shed'
         await pg.wait_for_timeout(3000)
@@ -209,9 +209,7 @@ async def main(name, w, h, mobile):
         steps['finale'] = t >= 0 and i3
         await pg.evaluate(STEP, [16, None])
         await frames(pg, 6)
-        steps['endcard'] = await pg.evaluate('() => !document.getElementById("endcard").hidden')
-        await shot(pg, name, '15_endcard', 4)
-        await pg.evaluate('window.__gta.resume()')
+        steps['no_endcard_yet'] = await pg.evaluate('() => document.getElementById("endcard").hidden')   # (part 17 is still to come)
         print(name, 'steps', json.dumps(steps), 'money', await pg.evaluate('window.__gta.game.money'))
         ok = all(steps.values())
         print(name, 'V1_16', 'ok' if ok else 'FAIL')
