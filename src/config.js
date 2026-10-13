@@ -47,7 +47,7 @@ export const RED_REWARD = 1000;
 export const DELIVERY_REWARD = 5000;
 
 // ---- version 0.2: three contacts with missions that can be done in any order ----
-export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia', nova: 'Nova (Kims lillasyster)', tove: 'Livräddar-Tove', hanna: 'Hanna (Ebbes mamma)', rut: 'Tivoli-Rut', inga: 'Kyrkoherde Inga', majken: 'Mjölnar-Majken', elsa: 'Elsa (Söderholmen)', birger: 'Birger (grannen)', jonte: 'Jonte', signe: 'Mormor Signe' };
+export const WHO = { lasse: 'Lasse (Verkstan)', sanna: 'Sanna (Pizzerian)', kim: 'Kim (Macken)', gun: 'Tant Gun (Storgatan)', yasmin: 'Yasmin (Hörnlivs)', leif: 'Lås-Leif (Skolgatan)', samuel: 'Melker', bengt: 'Bagar-Bengt', anon: 'Okänt nummer', game: 'GTA 7', fia: 'Vera (Salong Saxen)', pia: 'Polis-Pia', nova: 'Nova (Kims lillasyster)', tove: 'Livräddar-Tove', hanna: 'Hanna (Ebbes mamma)', rut: 'Tivoli-Rut', inga: 'Kyrkoherde Inga', majken: 'Mjölnar-Majken', elsa: 'Elsa (Söderholmen)', birger: 'Birger (grannen)', jonte: 'Jonte', signe: 'Mormor Signe', ingvar: 'Ingvar (fyren)' };
 export const PIZZERIA = { x: -33.4, z: -22, r: 2.4 };               // Sanna's marker on the sidewalk outside Pizzeria Sjuan
 export const PIZZA_CAR = { x: -52.75, z: -21.95, h: Math.PI / 2 };  // the pizza car's stall, across Kungsgatan
 // Pizza stops: the marker sits in the traffic lane (x, z), the customer waits on the sidewalk (cx, cz)

@@ -87,6 +87,7 @@ export const PAINTS = {
   cityLilac: { hex: 0x9b6fc4, name: 'lila' },      // Tivoli-Rut's,
   cityMint: { hex: 0x6fd0c0, name: 'mintgrön' },   // Nova's
   cityNavy: { hex: 0x1d2a44, name: 'marinblå' },   // and Polis-Pia's own
+  kex: { hex: 0x2a5aa8, name: 'blå' },             // (v1.18) Kexfabriken's van (sjubyview.js paints its name over the board)
 };
 
 const GRAVITY = 16;

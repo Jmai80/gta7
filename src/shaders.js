@@ -14,6 +14,8 @@ export function makeUniforms() {
     uZenith: { value: new THREE.Color(0x4f86d4) },
     uShadow: { value: null },
     uShadowRect: { value: new THREE.Vector4(-160, -160, 1 / 320, 1 / 320) },
+    uShadow2: { value: null },                                        // (v1.18) Västerholmen, west of the first map
+    uShadowRect2: { value: new THREE.Vector4(-410, -150, 1 / 190, 1 / 220) },
     uSigns: { value: null },
     uNoise: { value: null },
     uTime: { value: 0 },
@@ -200,6 +202,15 @@ uniform vec3 uHorizon;
 uniform vec3 uZenith;
 uniform sampler2D uShadow;
 uniform vec4 uShadowRect;
+uniform sampler2D uShadow2;
+uniform vec4 uShadowRect2;
+// (v1.18) the baked shadows: the big map, or west of x = -200 the small one over Västerholmen (both sampled, so
+// the mipmaps see no branch)
+vec2 shadowAt(vec2 p) {
+  vec2 a = texture2D(uShadow, (p - uShadowRect.xy) * uShadowRect.zw).rg;
+  vec2 b = texture2D(uShadow2, (p - uShadowRect2.xy) * uShadowRect2.zw).rg;
+  return mix(a, b, step(p.x, -200.0));
+}
 uniform sampler2D uSigns;
 uniform sampler2D uNoise;
 uniform float uTime;
@@ -411,14 +422,14 @@ void main() {
 #if defined(VEHICLE) || defined(HUMAN)
   {
     vec2 sp = vW.xz - uSunDir.xz * (max(vW.y, 0.0) / uSunDir.y);
-    vec2 s = texture2D(uShadow, (sp - uShadowRect.xy) * uShadowRect.zw).rg;
+    vec2 s = shadowAt(sp);
     sh = s.r; ao = mix(1.0, s.g, 0.7);
   }
 #elif defined(INTERIOR)
   if (N.y < 0.5) ao = mix(0.62, 1.0, smoothstep(0.15, 2.2, vW.y));
 #else
   if (N.y > 0.5 && vW.y < 1.2) {
-    vec2 s = texture2D(uShadow, (vW.xz - uShadowRect.xy) * uShadowRect.zw).rg;
+    vec2 s = shadowAt(vW.xz);
     sh = s.r; ao = s.g;
   } else if (N.y < 0.5) {
     ao = mix(0.7, 1.0, smoothstep(0.1, 2.4, vW.y));

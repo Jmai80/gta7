@@ -10,6 +10,7 @@ import { treeCasters } from './trees.js';
 import { interiorLayout } from './interior.js';
 import { islandInto, onIsle, ISLE, BEACH } from './island.js';
 import { southInto, onSouth, SOUTH, SOUTH_ROADS } from './southisle.js';
+import { westInto, onWest, WEST, WEST_ROADS, KEX } from './westisle.js';
 import { secretsInto } from './secrets.js';
 
 // Material codes understood by the world shader (see shaders.js)
@@ -37,6 +38,9 @@ export const DIRS = [
 export const rightOf = (d) => (d + 1) & 3;
 export const leftOf = (d) => (d + 3) & 3;
 export const opposite = (d) => (d + 2) & 3;
+
+// (v1.18) the poles for the strings of lights over the square on Sjubydagen (sjubyview.js draws them)
+export const SJUBY_POLES = [[2.5, 0.5], [2.5, 15.5], [-10.5, 15.5], [-10.5, -0.5]];
 
 export function onRoad(x, z) {
   const hw = ROAD_W / 2;
@@ -714,6 +718,20 @@ export function createLayout(seed = 7) {
     colliders.push({ t: 'box', x0: FEST.table.x0, z0: FEST.table.z0, x1: FEST.table.x1, z1: FEST.table.z1, h: 0, hUp: CURB_H + 0.8, fest: true });
     // (v1.14) the bun championship's two bakers' stands, either side of it (up only while the championship is)
     for (const x of [-12.6, 0.6]) colliders.push({ t: 'box', x0: x - 0.45, z0: 9.3, x1: x + 0.45, z1: 9.9, h: 0, hUp: CURB_H + 0.8, bm: true });
+    // (v1.18) Sjubydagen on the square (sjubyview.js draws it): Knäck's stand and the bun stand on the west side – a
+    // back wall, two side walls and a counter each (the one inside stands free) – and the stage's backdrop in the east
+    for (const z0 of [9.0, 2.0]) {
+      for (const [x0, zz0, x1, zz1] of [[-16.6, z0, -16.2, z0 + 3.2], [-16.6, z0, -14.2, z0 + 0.3], [-16.6, z0 + 2.9, -14.2, z0 + 3.2], [-14.2, z0, -13.7, z0 + 3.2]]) {
+        colliders.push({ t: 'box', x0, z0: zz0, x1, z1: zz1, h: 0, hUp: CURB_H + 1.1, sjuby: true });
+      }
+    }
+    colliders.push({ t: 'box', x0: 19.6, z0: 4.0, x1: 20.0, z1: 12.0, h: 0, hUp: CURB_H + 4.2, sjuby: true });
+    for (const z of [3.4, 12.6]) colliders.push({ t: 'circle', x: 19.4, z, r: 0.45, h: 0, hUp: CURB_H + 3.0, sjuby: true });
+    for (const [x, z] of SJUBY_POLES) colliders.push({ t: 'circle', x, z, r: 0.14, h: 0, hUp: CURB_H + 4.6, sjuby: true });
+    signs.sjubydagen = { lines: ['SJUBYDAGEN'], bg: '#c0302a', fg: '#ffffff', border: '#ffd34d', font: 0.62, w: 7.4, h: 1.4 };
+    signs.sjubykex = { kind: 'kex', sub: 'Sjubykex · 20 kr', w: 3.0, h: 0.62, ppm: 140 };
+    signs.bullstand = { lines: ['SJUBYBULLAR', 'Bullbilens bageri · gratis'], bg: '#f6ead2', fg: '#b8261f', border: '#e58fa8', w: 3.0, h: 0.62, ppm: 140 };
+    signs.kexvan = { kind: 'kex', w: 1.86, h: 0.78, ppm: 140 };
     // square with fountain. (v1.14.2) The stone rim is a ring – like the park pond's before v1.8.1 it used to be
     // a whole stone disc lying over the water, so the basin looked dry. Water in the basin and in the bowl on top,
     // and streams falling from the bowl's lip.
@@ -1085,9 +1103,14 @@ export function createLayout(seed = 7) {
       signs.stangtz = { w: 6.4, h: 1.3, kind: 'closed', sub: 'Öppnar snart' };
       zones.gateN = { x: bdg.at, z, y: 0 };
     } else {
-      solid(Math.min(bx0, bx1), 0, Math.min(bz0, bz1), Math.max(bx0, bx1), 1.1, Math.max(bz0, bz1), 0xd2342c, M.PLAIN);
-      const [ssx, ssz] = along(bdg.barrier + 0.35, 0);
-      sign('stangt' + bdg.axis, { kind: 'closed' }, ssx, 1.75, ssz, 6.4, 1.3, Math.PI / 2);
+      // (v1.18) the west bridge: a gate like the north one, shut until "Sjubydagen" (Kexfabriken's private road)
+      const x = bdg.barrier, z = bdg.at;
+      colBox(x - 0.3, z - 5, x + 0.3, z + 5, 1.1, { gate: 'west', hClosed: 1.1 });
+      colBox(x - 5.3, z - 5, x - 0.3, z - 4.4, 0, { gateSide: 'west', hOpen: 1.1 });
+      colBox(x - 5.3, z + 4.4, x - 0.3, z + 5, 0, { gateSide: 'west', hOpen: 1.1 });
+      signs.stangtx = { w: 6.4, h: 1.3, kind: 'closed', sub: 'Privat väg · Kexfabriken' };
+      zones.gateWest = { x, z, y: 0 };
+      void bx0; void bz0; void bx1; void bz1;
     }
     for (const l of [-4.4, 4.4]) {
       const [cx, cz] = along(bdg.barrier + 2.5, l);
@@ -1173,11 +1196,19 @@ export function createLayout(seed = 7) {
   inside.floors.push(...floorsSouth);
   // (v1.8) the Easter eggs' props (secrets.js): the phone box, the ducks, the stump, the golden bun …
   secretsInto({ P, box, solid, sign, colCircle, colBox, casters, M });
+  // =====================================================================
+  // VÄSTERHOLMEN (v1.18): the island across the west bridge, with Kexfabriken (westisle.js). Last of all, like
+  // Söderholmen: its trees draw from the layout's random numbers, after everything else has had its own.
+  // =====================================================================
+  westInto({
+    P, box, solid, area, poly, sign, colBox, colOBox, colCircle, castBox, building, tree, lamp, bench, hedge, woodFence, meshFence, mark,
+    R, M, COL, casters, footprints, parked, zones, loops, blocks, ramps, signs,
+  });
 
   return {
     prims, colliders, casters, signs, ramps, parked, blocks, footprints, craneTop, loops, goals,
     zones, kioskSpots, marks, nodes, floors: inside.floors, interiorSigns: inside.signPrims,
-    millSails, isleRoads: isle.roads, southRoads: SOUTH_ROADS, gps: gpsGraph(nodes, isle.roads),
+    millSails, isleRoads: isle.roads, southRoads: SOUTH_ROADS, westRoads: WEST_ROADS, gps: gpsGraph(nodes, isle.roads),
   };
 }
 
@@ -1234,7 +1265,29 @@ function gpsGraph(nodes, roads) {
   link(sTown, sBridge); link(sBridge, sLand); link(sLand, sSpine[0]);
   const lot = add((SOUTH.parking.x0 + SOUTH.parking.x1) / 2, 214, 'south');
   link(lot, nearest(sLoop, (SOUTH.parking.x0 + SOUTH.parking.x1) / 2, 198));
+  // (v1.18) Västerholmen: Storgatan on over the west bridge, the road from the landing, the ring road, and the
+  // way into Kexfabriken's yard (straight on from the junction) up to the docks
+  const wChain = (R) => {
+    const ids = [];
+    let acc = 1e9, prev = null;
+    R.pts.forEach((p, i) => {
+      if (prev) acc += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+      prev = p;
+      if (acc >= 12 || i === R.pts.length - 1) { ids.push(add(p[0], p[1], 'west')); acc = 0; }
+    });
+    for (let i = 1; i < ids.length; i++) link(ids[i - 1], ids[i]);
+    if (R.closed) link(ids[ids.length - 1], ids[0]);
+    return ids;
+  };
+  const wLoop = wChain(WEST_ROADS.wloop), wSpine = wChain(WEST_ROADS.wspine);
+  const wEnd = wSpine[wSpine.length - 1];
+  for (const l of near2(wLoop, WEST.junction.x, WEST.junction.z)) link(wEnd, l);
+  const wTown = nodes.find((q) => q.x === -120 && q.z === -40).id;
+  const wBridge = add(-178, -40, 'bridge'), wLand = add(-229, -40, 'bridge');
+  link(wTown, wBridge); link(wBridge, wLand); link(wLand, wSpine[0]);
+  const kGate = add(KEX.gate.x - 2, -40, 'west'), kYard = add(-290, -46, 'west'), kDock = add(KEX.truck.x + 1.6, KEX.truck.z, 'west');
+  link(wEnd, kGate); link(kGate, kYard); link(kYard, kDock);
   return { nodes: G };
 }
 
-export { onIsle, ISLE, onSouth, SOUTH };
+export { onIsle, ISLE, onSouth, SOUTH, onWest, WEST };

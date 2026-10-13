@@ -17,19 +17,21 @@ import { KOND, KOND_WALLS, KOND_FURN } from './konditori.js';
 import { FYR, FYR_WALLS, FYR_FURN } from './fyren.js';
 import { SHED, SHED_WALLS, SHED_FURN } from './vedbod.js';
 import { BAK, BAK_WALLS, BAK_FURN } from './bageriet.js';
+import { FAB, FAB_WALLS, FAB_FURN } from './kexhall.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
+import { WEST, KEX, KEXGATAN } from './westisle.js';
 import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds, FYR.bounds, SHED.bounds, BAK.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds, FYR.bounds, SHED.bounds, BAK.bounds, FAB.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
 const MAP_PX = 2;
-const MAP = { x0: -170, z0: -430, x1: 170, z1: 300 };   // the town, Norrholmen up north and Söderholmen down south
+const MAP = { x0: -430, z0: -430, x1: 170, z1: 300 };   // the town, Norrholmen up north, Söderholmen down south and (v1.18) Västerholmen in the west
 
 export class HUD {
   constructor(root, layout) {
@@ -105,7 +107,7 @@ export class HUD {
     const P = (v) => (v + 170) * MAP_PX;                 // x (and town z) to pixels
     const Q = (z) => (z - MAP.z0) * MAP_PX;              // z to pixels
     g.fillStyle = '#244f5c'; g.fillRect(0, 0, c.width, c.height);
-    g.translate(0, Q(-170));                             // the town part keeps its old drawing code below
+    g.translate((-170 - MAP.x0) * MAP_PX, Q(-170));      // the town part keeps its old drawing code below
     g.fillStyle = '#4b5a4c'; g.fillRect(P(-146), P(-146), 292 * MAP_PX, 292 * MAP_PX);
     for (const b of L.blocks) {
       g.fillStyle = '#' + b.c.toString(16).padStart(6, '0');
@@ -122,10 +124,8 @@ export class HUD {
       g.fillRect(P(-RING), P(r - 5), 2 * RING * MAP_PX, 10 * MAP_PX);
     }
     g.fillRect(P(35), P(-233), 10 * MAP_PX, 108 * MAP_PX);   // the north bridge (its gate is drawn live)
-    g.fillRect(P(-200), P(-45), 75 * MAP_PX, 10 * MAP_PX);
+    g.fillRect(P(-233), P(-45), 108 * MAP_PX, 10 * MAP_PX); // the west bridge (v1.18: to Västerholmen; its gate is drawn live)
     g.fillRect(P(-45), P(125), 10 * MAP_PX, 58 * MAP_PX);   // (v1.6) the south bridge
-    g.fillStyle = '#d2342c';
-    g.fillRect(P(-179), P(-46), 2 * MAP_PX, 12 * MAP_PX);
     // pond + pitch
     const z = L.zones;
     if (z.pond) { g.fillStyle = '#2f6a76'; g.beginPath(); g.arc(P(z.pond.x), P(z.pond.z), z.pond.r * MAP_PX, 0, 7); g.fill(); }
@@ -133,7 +133,30 @@ export class HUD {
     if (z.pier) { g.fillStyle = '#8a6a48'; g.fillRect(P(z.pier.x0), P(z.pier.z0), (z.pier.x1 - z.pier.x0) * MAP_PX, (z.pier.z1 - z.pier.z0) * MAP_PX); }
     this.drawIsle(g, P, L);
     this.drawSouth(g, P, L);
+    this.drawWest(g, P, L);
     return c;
+  }
+
+  // (v1.18) Västerholmen on the map: the shore, the roads, Kexfabriken's yard and buildings, the quay
+  drawWest(g, P, L) {
+    const path = (pts) => { g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z)))); g.closePath(); };
+    g.fillStyle = '#4f6448'; path(WEST.coast); g.fill();
+    const rect = (R, col) => { g.fillStyle = col; g.fillRect(P(R.x0), P(R.z0), (R.x1 - R.x0) * MAP_PX, (R.z1 - R.z0) * MAP_PX); };
+    rect(KEX.fence, '#56664e');
+    rect(KEX.yard, '#3d4249');
+    rect(WEST.quay, '#8a8780');
+    g.strokeStyle = '#d8d3c6'; g.lineWidth = 8 * MAP_PX; g.lineJoin = 'round'; g.lineCap = 'round';
+    for (const R of Object.values(L.westRoads || {})) {
+      g.beginPath();
+      R.pts.forEach(([x, z], i) => (i ? g.lineTo(P(x), P(z)) : g.moveTo(P(x), P(z))));
+      if (R.closed) g.closePath();
+      g.stroke();
+    }
+    g.fillStyle = '#3d4249'; g.fillRect(P(KEX.gate.x), P(KEX.gate.z0), 14 * MAP_PX, (KEX.gate.z1 - KEX.gate.z0) * MAP_PX);
+    rect(KEX.hall, '#9fb0c4');
+    rect(KEX.office, '#b8c0c8');
+    g.fillStyle = '#c0c6cc'; for (const [x, z] of KEX.silos) { g.beginPath(); g.arc(P(x), P(z), 2.4 * MAP_PX, 0, 7); g.fill(); }
+    g.fillStyle = '#9a8f80'; for (const [x, z] of KEXGATAN) g.fillRect(P(x), P(z), 7 * MAP_PX, 6 * MAP_PX);
   }
 
   // Norrholmen on the map: the shore, the beach, the roads, the allotments and the buildings
@@ -310,6 +333,14 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of BAK_WALLS) g.fillRect(X(Bh.x0 + x0), Zs(Bh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#3b3027'; g.fillRect(X(Bh.x0 + 11.8), Zs(Bh.z0 + 9), 1.0 * IN_PX, 0.2 * IN_PX);
+    // Kexfabriken's hall (v1.18): grey floor, the U of the biscuit line, the oven, the door in the east wall
+    const Fh = FAB.room;
+    rect(Fh.x0, Fh.z0, Fh.x1, Fh.z1, '#5f666e');
+    FAB_FURN.slice(0, -1).forEach(([x0, z0, x1, z1], i) => { g.fillStyle = i < 3 ? '#c8c4bc' : '#2b3037'; g.fillRect(X(Fh.x0 + x0), Zs(Fh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX); });
+    g.fillStyle = '#d2342c'; g.fillRect(X(Fh.x0), Zs(Fh.z0 + 8.6), 0.5 * IN_PX, 0.8 * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of FAB_WALLS) g.fillRect(X(Fh.x0 + x0), Zs(Fh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#1f4fa0'; g.fillRect(X(Fh.x0 + 28), Zs(Fh.z0 + 8.5), 0.2 * IN_PX, 1.2 * IN_PX);
     return c;
   }
 
@@ -438,6 +469,7 @@ export class HUD {
     const s = k / MAP_PX;
     g.drawImage(this.mapImg, -(p.x - MAP.x0) * MAP_PX * s, -(p.z - MAP.z0) * MAP_PX * s, this.mapImg.width * s, this.mapImg.height * s);
     if (!game.gateN || !game.gateN.open) { g.fillStyle = '#d2342c'; g.fillRect((34 - p.x) * k, (-179 - p.z) * k, 12 * k, 2 * k); } // the north gate, shut
+    if (!game.gateWest || !game.gateWest.open) { g.fillStyle = '#d2342c'; g.fillRect((-179 - p.x) * k, (-46 - p.z) * k, 2 * k, 12 * k); } // (v1.18) the west gate, shut
     const T = game.missionActive ? game.mission.targets : [];
     const line = (pts, color, width) => {
       g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.lineCap = 'round';

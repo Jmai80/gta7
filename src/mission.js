@@ -53,6 +53,9 @@
 //                          among the houses by the chapel, the last five stolen bikes, the skateboard, sorry to Gun (v1.16)
 //   B  Bagar-Bengt:        "Bullbilens bageri" – main quest, part 17: Kexfabriken wants the bakery; Signe and flour against
 //                          the clock, Stora Bertha lit, the belt, the opening – and Knäck has a copy of the recipe (v1.17)
+//   G  Tant Gun:           "Sjubydagen" – main quest, part 18, the end of the first chapter: the party, the houses by
+//                          the chapel, Knäck steals the recipe, the west bridge opens, Kexfabriken on Västerholmen,
+//                          the evening on the square, fireworks and credits – and a ship at the quay (v1.18)
 //   H  Hanna:              "Ankorna i dammen" – side quest: four rubber ducks blown out of the park pond (v1.14)
 //   N  Nova:               "Odjurets bild" – side quest: photograph Sjubyodjuret from the end of the pier (v1.14)
 // The pizza job, the race, Melker's flat and the pier take over while they run (one at a time).
@@ -71,6 +74,7 @@ import { GoldenBunJob, guldWorld, guldSave, GULD, GULD_MAX } from './guldbullen.
 import { NestJob, skatWorld, skatSave, SKAT, SKAT_MAX } from './skatbo.js';
 import { CoffeeJob, kaffeWorld, kaffeSave, KAFFE, KAFFE_MAX } from './kaffe.js';
 import { BakeryJob, bageriWorld, bageriSave, BAGERI, BAGERI_MAX } from './bullbageri.js';
+import { SjubyJob, sjubyWorld, sjubySave, SJUBY } from './sjubydagen.js';
 import { DucksJob, ankorWorld, ankorSave, ANKOR } from './ankor.js';
 import { MonsterJob, odjurWorld, ODJUR, ODJUR_MAX } from './odjuret.js';
 import {
@@ -353,6 +357,14 @@ export const QUESTS = [
     reward: `upp till ${fmt(BAGERI_MAX)} kr`, where: 'Bullbilens bageri på Norrholmen – sedan Söderholmen och kvarnen',
   },
   {
+    // main quest, part 18 (v1.18), the last of the first chapter: Sjubydagen – the houses by the chapel, Knäck steals
+    // the recipe, the west bridge to Västerholmen, Kexfabriken, the evening on the square
+    id: 'sjuby', letter: 'G', who: WHO.gun, title: 'Sjubydagen', color: '#c58be0', x: SJUBY.mark.x, z: SJUBY.mark.z, r: SJUBY.mark.r, Job: SjubyJob, main: true,
+    after: 'bageri', at: 30, needFoot: 'Kliv ur – tant Gun står vid konditoriets fönster.',
+    text: 'Lilla vän! Det är SJUBYDAGEN i dag. Hela stan är på torget, och jag har ställt Arnes recept i konditoriets fönster – originalet. Kom och se! Knäck har en kexmonter alldeles bredvid. Fräckt.',
+    reward: `${fmt(SJUBY.pay)} kr`, where: 'Torget, utanför Sjuby Konditori – sedan Söderholmen och Västerholmen',
+  },
+  {
     // side quest (v1.14) with the secret "Gummiankorna": the storm blew four of Ebbe's ducks out of the park pond
     id: 'ankor', letter: 'H', who: WHO.hanna, title: 'Ankorna i dammen', color: '#2fb3a8', x: ANKOR.mark.x, z: ANKOR.mark.z, r: ANKOR.mark.r, Job: DucksJob,
     side: true, sms: true, after: 'ebbe', at: 60, needFoot: 'Kliv ur – Hanna och Ebbe står vid dammen i parken.',
@@ -370,7 +382,7 @@ export const QUESTS = [
 const BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 const COLOR_OF = {};
 for (const q of QUESTS) if (!(q.who in COLOR_OF)) COLOR_OF[q.who] = q.color; // a contact's color: their first quest's
-export const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo', 'kaffe', 'bageri']; // all twenty → the end card; the side quests are a bonus
+export const MAIN = ['lasse', 'pizza', 'race', 'samuel', 'overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo', 'kaffe', 'bageri', 'sjuby']; // all twenty-one → the end card (the end of the first chapter); the side quests are a bonus
 const SAVE_VERSION = 2;                    // v0.3 saves add known/seen/tracked; v0.2 saves still load
 
 export class Missions {
@@ -414,6 +426,8 @@ export class Missions {
   doneTime(id) { return (this.flags.doneAt || {})[id] ?? 0; } // when a quest was finished (0: before this session)
   // the north bridge to Norrholmen is open once tant Gun has sent you for Arne's bike
   get bridgeOpen() { return this.known.has('cykel') || this.done.has('cykel'); }
+  // (v1.18) the west bridge to Västerholmen: open once Kexfabriken's van has driven through it in "Sjubydagen"
+  get westOpen() { if (this.done.has('sjuby')) return true; const S = this.game.stats.sjuby; return !!((S && S.at >= 3) || (this.active && this.active.id === 'sjuby' && this.active.gateOpen)); }
   get gunVisible() { return this.restored || this.known.has('flag') || this.t >= BY_ID.flag.at; }
   // the action button's label: the lift, something the running job wants (take the keys), or tant Gun
   get prompt() { return this.game.indoors.prompt || (this.active && this.active.prompt) || this.flag.prompt || this.rides.prompt || this.secrets.prompt; }
@@ -570,6 +584,7 @@ export class Missions {
       case 'moss': { const S = miceSave(this.game); return S && S.at === 1 ? 'Släpp mössen vid Bullbilens gamla bageri' : S && S.at === 2 ? 'Lämna Kimchi hos Nova bakom Macken' : 'Fånga mössen i kvarnen på Norrholmen'; }
       case 'ankor': { const S = ankorSave(this.game); const n = S && S.home ? S.home.length : 0; return n ? `Hitta resten av ankorna (${n} av 4 hemma)` : 'Möt Hanna och Ebbe vid dammen i parken'; }
       case 'odjuret': return 'Möt Nova på kajen vid bryggan i hamnen';
+      case 'sjuby': { const S = sjubySave(this.game); return S && S.at === 1 ? 'Hjälp grannarna bland husen vid kapellet' : S && S.at === 2 ? 'Kör efter kexbilen från torget' : S && S.at === 3 ? 'Till Kexfabriken på Västerholmen' : S && S.at === 4 ? 'Kvällen på torget – alla väntar vid scenen' : 'Till tant Gun på torget'; }
       case 'bageri': { const S = bageriSave(this.game); return S && S.at === 1 ? 'Hämta Signe och mjölet till bageriet – innan sju' : S && S.at === 2 ? 'In i bageriet – Signe väntar vid Stora Bertha' : S && S.at === 3 ? 'Invigningen på bageriets gård' : 'Till Bullbilens bageri på Norrholmen'; }
       case 'kaffe': { const S = kaffeSave(this.game); return S && S.at === 1 ? 'Till Mormor Signe bland husen vid kapellet' : S && S.at === 2 ? 'Cykla hem de sista cyklarna till sina ägare' : S && S.at === 3 ? 'Åk Jontes skateboard till Nova' : S && S.at === 4 ? 'Till tant Guns grind' : 'Kaffe hos Birger på Storgatan'; }
       case 'skatbo': { const S = skatSave(this.game); return S && S.at === 1 ? 'Dela ut sakerna ur skatboet till sina ägare' : S && S.at === 2 ? 'Tillbaka till fyren – Ingvar och Elsa väntar' : 'Möt Ingvar och Elsa inne i fyren på Norrholmen'; }
@@ -653,6 +668,7 @@ export class Missions {
     skatWorld(this);                  // (v1.15) Skatans bo: where you were, Ingvar away from his cottage, the lamp
     kaffeWorld(this);                 // (v1.16) Birgers kaffe: the coffee table, Gun at her gate for the last scene
     bageriWorld(this);                // (v1.17) Bullbilens bageri: Dahlgren, Knäck and Bengt in the yard; Stora Bertha
+    sjubyWorld(this);                 // (v1.18) Sjubydagen: Gun, Knäck and Pia on the square, the decorations, the evening
     ankorWorld(this);                 // (v1.14) Hanna and Ebbe by the pond, the ducks out in the town
     odjurWorld(this);                 // (v1.14) Nova on the quay
     if (coasterStuck(this)) g.coasterT = CO_STUCK_T; // (v1.7) Måsen stands still until it is mended
@@ -782,11 +798,13 @@ export class Missions {
     if (this.flags.allDone || !this.allDone()) return;
     this.flags.allDone = true;
     const g = this.game;
-    const wait = ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo', 'kaffe', 'bageri'].includes(last) ? 4.3 : 0; // after the last talk and the texts
+    // (v1.18) after "Sjubydagen" the end card comes straight after the show; otherwise after the last talk and the texts
+    const finale = last === 'sjuby';
+    const wait = finale ? -5.4 : ['overlamning', 'cykel', 'kassaskap', 'konditori', 'syltburken', 'fabriken', 'bullfest', 'cykelgomman', 'birger', 'utsikten', 'skattjakt', 'flaskpost', 'guldbullen', 'skatbo', 'kaffe', 'bageri'].includes(last) ? 4.3 : 0;
     const side = QUESTS.filter((q) => q.side && !this.done.has(q.id)).length;
-    this.later(7.2 + wait, () => this.sms(WHO.game, side
-      ? `Det var allt i version 1.17! Bullbilens bageri bakar igen – men Knäck har en kopia av Arnes recept. Fortsättning följer på Sjubydagen. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra.`
-      : 'Det var allt i version 1.17! Bullbilens bageri bakar igen – men Knäck har en kopia av Arnes recept. Fortsättning följer på Sjubydagen. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge.'));
+    this.later(7.2 + wait + (finale ? 6 : 0), () => this.sms(WHO.game, side
+      ? `Tack för att du spelade första kapitlet av GTA 7 (version 1.18)! Västerholmen är öppen – kör över västra bron och titta. Har du hittat alla åtta hemligheterna? Du har ${side === 1 ? 'ett sidouppdrag' : `${side} sidouppdrag`} kvar att göra. Kapitel två kommer.`
+      : 'Tack för att du spelade första kapitlet av GTA 7 (version 1.18)! Västerholmen är öppen – kör över västra bron och titta. Har du hittat alla åtta hemligheterna? Kör runt fritt så länge – kapitel två kommer.'));
     this.later(9.8 + wait, () => g.emit('endcard', { stats: { ...g.stats, money: g.money } }));
   }
 
@@ -852,6 +870,7 @@ export class Missions {
       case 'ankor': return { text: 'Gå till dammen (H)', sub: this.game.player.inCar ? 'Parkera vid parken' : 'Hanna och Ebbe står vid dammen i parken' };
       case 'odjuret': return { text: 'Möt Nova (N)', sub: this.game.player.inCar ? 'Parkera vid hamnen' : 'Kajen vid bryggan i hamnen' };
       case 'guldbullen': { const S = guldSave(this.game); if (S && S.at > 0) return { text: 'Den gyllene bullen', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till konditoriet (G)', sub: this.game.player.inCar ? 'Parkera vid torget' : 'Gå in genom dörren mot torget' }; }
+      case 'sjuby': { const S = sjubySave(this.game); if (S && S.at > 0) return { text: 'Sjubydagen', sub: 'Torget – följ uppdraget för att fortsätta' }; return { text: 'Till torget (G)', sub: this.game.player.inCar ? 'Kliv ur vid konditoriet' : 'Tant Gun vid konditoriets fönster' }; }
       case 'bageri': { const S = bageriSave(this.game); if (S && S.at > 0) return { text: 'Bullbilens bageri', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till bageriet (B)', sub: this.game.player.z < -229 ? (this.game.player.inCar ? 'Parkera på bageriets gård' : 'Gården framför lastkajen') : 'Över norra bron till Norrholmen' }; }
       case 'kaffe': { const S = kaffeSave(this.game); if (S && S.at > 0) return { text: 'Birgers kaffe', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Kaffe hos Birger (B)', sub: this.game.player.inCar ? 'Parkera på Storgatan' : 'Hans trädgård, granne med tant Gun' }; }
       case 'skatbo': { const S = skatSave(this.game); if (S && S.at > 0) return { text: 'Skatans bo', sub: 'Följ uppdraget för att fortsätta' }; return { text: 'Till fyren (E)', sub: this.game.player.z < -229 ? (this.game.player.inCar ? 'Parkera och gå uppför stentrappan' : 'Den gröna dörren på fyrens östra sida') : 'Över norra bron till Norrholmen' }; }

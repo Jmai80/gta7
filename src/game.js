@@ -45,6 +45,7 @@ export class Game {
     this.input = null;
     this.camFocus = null;  // { x, y, z }: something a mission wants the camera to look at
     this.gateN = { open: false, k: 0, init: false }; // the gate on the north bridge (k: 0 shut … 1 open)
+    this.gateWest = { open: false, k: 0, init: false }; // (v1.18) the gate on the west bridge, to Västerholmen
     this.traffic = new Traffic(this);
     this.peds = new Peds(this);
     this.player = new Player(this);
@@ -308,18 +309,22 @@ export class Game {
   }
 
   // the north bridge opens when the story gets there (mission.bridgeOpen); the gate swings open
+  // (v1.18) and the west bridge when Kexfabriken's van drives through in "Sjubydagen" (mission.westOpen)
   updateGate(dt) {
-    const G = this.gateN, want = !!(this.missionActive && this.mission.bridgeOpen);
-    if (want !== G.open || !G.init) {
-      G.open = want;
-      for (const c of this.layout.colliders) {
-        if (c.gate === 'north') c.h = want ? 0 : c.hClosed;
-        else if (c.gateSide === 'north') c.h = want ? c.hOpen : 0;
+    const one = (G, side, want) => {
+      if (want !== G.open || !G.init) {
+        G.open = want;
+        for (const c of this.layout.colliders) {
+          if (c.gate === side) c.h = want ? 0 : c.hClosed;
+          else if (c.gateSide === side) c.h = want ? c.hOpen : 0;
+        }
+        if (!G.init && want) G.k = 1;
+        G.init = true;
       }
-      if (!G.init && want) G.k = 1;
-      G.init = true;
-    }
-    G.k = Math.max(0, Math.min(1, G.k + (G.open ? dt : -dt) / 2.6));
+      G.k = Math.max(0, Math.min(1, G.k + (G.open ? dt : -dt) / 2.6));
+    };
+    one(this.gateN, 'north', !!(this.missionActive && this.mission.bridgeOpen));
+    one(this.gateWest, 'west', !!(this.missionActive && this.mission.westOpen));
   }
 
   visible(x, z) {

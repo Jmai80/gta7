@@ -618,6 +618,45 @@ export class AudioFX {
     else if (kind === 'angry') { this.tone(196, 0.32, 'sawtooth', 0.05, 0, 147); this.tone(185, 0.38, 'square', 0.025, 0.08, 139); }
   }
 
+  // ---- (v1.18) Sjubydagen: the bunting, the harmonium, Måns, the bell from 1972 and Folke's waltz, Ronny's van and
+  // the barrier, the biscuit line (its alarm, the emergency stop, the plug pulled), the crowd and the fireworks
+  sjuby(kind) {
+    if (!this.ctx) return;
+    if (kind === 'fanfare') this.bun('fanfare');
+    else if (kind === 'take' || kind === 'hang') { this.burst(0.12, 1800, 0.12, 'bandpass'); this.tone(990, 0.08, 'triangle', 0.03, 0.06); }
+    else if (kind === 'lift') { this.tone(90, 0.3, 'sine', 0.1, 0, 70); this.tone(196, 0.5, 'sawtooth', 0.02, 0.05); }
+    else if (kind === 'set') { this.tone(80, 0.2, 'sine', 0.14, 0, 55); [262, 330, 392].forEach((f, i) => this.tone(f, 0.6, 'triangle', 0.025, 0.15 + i * 0.02)); }
+    else if (kind === 'done') { this.tone(1046.5, 0.1, 'triangle', 0.045); this.tone(1318.5, 0.18, 'triangle', 0.04, 0.09); }
+    else if (kind === 'cat') { this.tone(720, 0.42, 'sawtooth', 0.03, 0, 480); this.tone(1080, 0.4, 'triangle', 0.015, 0.02, 700); this.tone(760, 0.3, 'sawtooth', 0.025, 0.7, 520); }
+    else if (kind === 'engine') { this.tone(55, 0.7, 'sawtooth', 0.05, 0, 28); this.burst(0.08, 400, 0.5, 'lowpass'); }
+    else if (kind === 'bell') { this.churchBell(); setTimeout(() => this.churchBell(0.9), 1500); setTimeout(() => this.churchBell(0.8), 3000); }
+    else if (kind === 'valsen') {
+      // Sjubyvalsen on a reedy harmonium: oom-pa-pa under a little tune, in 3/4
+      const N = { C3: 130.8, F3: 174.6, G3: 196, C4: 261.6, D4: 293.7, E4: 329.6, F4: 349.2, G4: 392, A4: 440, B4: 493.9, C5: 523.3 };
+      const bars = [['C3', 'E4', 'G4', 'G4'], ['C3', 'E4', 'G4', 'C5'], ['F3', 'F4', 'A4', 'A4'], ['F3', 'A4', 'G4', 'F4'], ['G3', 'D4', 'F4', 'F4'], ['G3', 'F4', 'E4', 'D4'], ['C3', 'E4', 'G4', 'E4'], ['C3', 'C4', 'C4', 'C4']];
+      const beat = 0.36, reed = (f, at, d, v) => { this.tone(f, d, 'sawtooth', v * 0.35, at); this.tone(f, d, 'triangle', v, at); this.tone(f * 2, d, 'sine', v * 0.3, at); };
+      bars.forEach(([b, m1, m2, m3], i) => {
+        const t = i * beat * 3;
+        reed(N[b], t, beat * 0.9, 0.03); reed(N[b] * 2, t + beat, beat * 0.5, 0.018); reed(N[b] * 2, t + beat * 2, beat * 0.5, 0.018);
+        reed(N[m1], t, beat * 0.95, 0.035); reed(N[m2], t + beat, beat * 0.95, 0.035); reed(N[m3], t + beat * 2, beat * 0.95, 0.035);
+      });
+    }
+    else if (kind === 'phone') this.phoneRing();
+    else if (kind === 'horn') { this.tone(330, 0.5, 'square', 0.035); this.tone(415, 0.5, 'square', 0.03); }
+    else if (kind === 'gate') { this.burst(0.1, 900, 0.1, 'bandpass'); this.tone(110, 2.4, 'sawtooth', 0.02, 0.1, 140); this.burst(0.12, 700, 0.15, 'bandpass', 2.5); }
+    else if (kind === 'belt') { this.tone(70, 0.4, 'sine', 0.12, 0, 50); this.tone(110, 1.2, 'square', 0.02, 0.1, 150); this.burst(0.06, 1500, 1.0, 'bandpass', 0.1); }
+    else if (kind === 'warn') for (let i = 0; i < 4; i++) this.tone(880, 0.16, 'square', 0.04, i * 0.32);
+    else if (kind === 'plug') { this.burst(0.2, 3000, 0.08, 'highpass'); this.tone(240, 0.9, 'sawtooth', 0.04, 0.05, 40); }
+    else if (kind === 'stop') { this.tone(70, 0.3, 'sine', 0.2, 0, 40); this.burst(0.3, 600, 0.25, 'lowpass'); this.tone(150, 1.2, 'sawtooth', 0.035, 0.05, 45); [523, 659, 784].forEach((f, i) => this.tone(f, 0.18, 'triangle', 0.04, 0.6 + i * 0.12)); }
+    else if (kind === 'cheer') { for (let i = 0; i < 4; i++) this.burst(0.07, 900 + i * 300, 1.4, 'bandpass', i * 0.08); for (let i = 0; i < 14; i++) this.burst(0.05, 2600, 0.03, 'highpass', 0.1 + i * 0.09 + (i % 3) * 0.02); }
+    else if (kind === 'boom' || kind === 'bigboom') {
+      const big = kind === 'bigboom';
+      this.tone(big ? 48 : 62, big ? 1.1 : 0.7, 'sine', big ? 0.26 : 0.18, 0, 30);
+      this.burst(big ? 0.4 : 0.28, 320, big ? 1.4 : 0.9, 'lowpass');
+      for (let i = 0; i < (big ? 14 : 8); i++) this.burst(0.05, 4800, 0.03, 'highpass', 0.35 + i * 0.07 + (i % 3) * 0.03);
+    }
+  }
+
   // spotted! a sharp sting
   caught() {
     if (!this.ctx) return;

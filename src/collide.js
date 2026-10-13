@@ -1,6 +1,6 @@
 // Static collision world: uniform grid of colliders + ground height (roads, curbs, ramps).
 import { CURB_H } from './config.js';
-import { onRoad, onIsland, onIsle, onSouth } from './layout.js';
+import { onRoad, onIsland, onIsle, onSouth, onWest } from './layout.js';
 
 export class CollisionWorld {
   constructor(layout, cell = 8) {
@@ -69,7 +69,7 @@ export class CollisionWorld {
       }
     }
     if (onRoad(x, z)) return 0;
-    if (onIsland(x, z) || onIsle(x, z) || onSouth(x, z)) return CURB_H;
+    if (onIsland(x, z) || onIsle(x, z) || onSouth(x, z) || onWest(x, z)) return CURB_H;
     return -3;
   }
 

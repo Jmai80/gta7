@@ -2,11 +2,14 @@
 // roads on Norrholmen). Used by the yellow GPS line on the minimap and by the chasing Bullbilen van.
 import { onIsle } from './island.js';
 import { onSouth } from './southisle.js';
+import { onWest } from './westisle.js';
 
-// which piece of land a point is on: the town island, a bridge, Norrholmen or Söderholmen (v1.6)
+// which piece of land a point is on: the town island, a bridge, Norrholmen, Söderholmen (v1.6) or Västerholmen (v1.18)
 export function landOf(x, z) {
   if (Math.abs(x - 40) < 7 && z < -140 && z > -233.5) return 'bridge';
   if (Math.abs(x + 40) < 7 && z > 140 && z < 183.4) return 'bridge';
+  if (Math.abs(z + 40) < 7 && x < -140 && x > -233.5) return 'bridge';   // (v1.18) the west bridge
+  if (onWest(x, z) || x < -233.4) return 'west';
   if (onSouth(x, z) || (z > 183.4 && x < 150)) return 'south';
   return onIsle(x, z) || z < -229 ? 'isle' : 'town';
 }

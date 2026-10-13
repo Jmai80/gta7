@@ -44,6 +44,10 @@ import { SHED, SHED_DOOR, TARPS } from '../src/vedbod.js';
 import { BAGERI, BAGERI_MAX } from '../src/bullbageri.js';
 import { BAK, BAK_DOOR } from '../src/bageriet.js';
 import { CARWASH } from '../src/config.js';
+import { SJUBY, HOUSE_BITS, CREDITS, ROCKETS } from '../src/sjubydagen.js';
+import { FAB, FAB_DOOR, BELT, beltAt } from '../src/kexhall.js';
+import { KEX, WEST, onWest, westRoadDist } from '../src/westisle.js';
+import { MAIN } from '../src/mission.js';
 
 const DT = 1 / 60;
 const WHO_PIA = 'Polis-Pia';
@@ -381,8 +385,12 @@ function startRace(g) {
   g2.mission.done.add('bageri');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all twenty are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.17/.test(d.text) && /Knäck har en kopia/.test(d.text)), 'the last text: version 1.17, Knäck has a copy of the recipe');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while Sjubydagen is left (Knäck has the copy)');
+  g2.mission.done.add('sjuby');
+  g2.mission.checkAllDone('sjuby');
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all twenty-one are done (the end of the first chapter)');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.18/.test(d.text) && /första kapitlet/.test(d.text) && /kapitel två/i.test(d.text)), 'the last text: thank you for the first chapter (version 1.18) – chapter two is coming');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -4638,7 +4646,7 @@ function driveBak(g, x, z, until, sec = 30) {
   m.talkDone('bageri'); run(g, 0.5);
   check(m.done.has('bageri') && g.money - money0 === 5000 + 11 * 50 && !job.ribbon, `done: ${fmt(g.money - money0)} kr`);
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.17/.test(d.text)), 'all twenty parts: the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'no end card yet: Sjubydagen is left');
   run(g, 20);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.pia && /monter/.test(d.text)), '  Pia: Knäck has a stand on the square on Sjubydagen');
   // afterwards: the bakery is open – Bengt and Signe inside
@@ -4677,5 +4685,253 @@ function driveBak(g, x, z, until, sec = 30) {
   }
 }
 
+// ---------- 49. main quest, part 18: "Sjubydagen" (v1.18) – the houses by the chapel, the chase over the west bridge,
+// Kexfabriken on Västerholmen, the evening on the square: the end of the first chapter ----------
+const UP_TO_BAGERI = [...UP_TO_KAFFE, 'bageri'];
+function sjGame(stats = {}, opts = { traffic: 0, peds: 0 }, seed = 7, fresh = false) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_BAGERI);
+  g.mission.restore({ ...s, money: 0, stats, known: fresh ? s.known : [...s.known, 'sjuby'] });
+  return g;
+}
+// walk along points; pace 1 with analog off is the keyboard's walk (2.9 m/s indoors)
+function walkPts(g, pts, until, maxSec = 60, pace = 0.55, analog = true) {
+  let i = 0;
+  for (let k = 0; k < 60 * maxSec; k++) {
+    const p = g.player, [x, z] = pts[Math.min(i, pts.length - 1)];
+    if (Math.hypot(x - p.x, z - p.z) < 0.6) { if (i < pts.length - 1) i++; else { g.step(DT, idle); if (until && until()) return true; continue; } }
+    g.step(DT, { ...idle, analog, camYaw: Math.atan2(x - p.x, z - p.z), moveY: pace });
+    if (until && until()) return true;
+  }
+  return false;
+}
+function sjEnterCar(g, car) { const d = car.local(-1.6, 0.3); walkHere(g, d.x, d.z); g.step(DT, { ...idle, action: true }); run(g, 1.2); return g.player.car === car; }
+// steer the player's car along points (the error to the next point, speed control)
+function drivePath(g, pts, until, sec = 120, vmax = 16) {
+  let i = 0;
+  for (let k = 0; k < 60 * sec; k++) {
+    const c = g.player.car; if (!c) return false;
+    const [x, z] = pts[Math.min(i, pts.length - 1)];
+    const d = Math.hypot(x - c.x, z - c.z);
+    if (d < 6 && i < pts.length - 1) { i++; continue; }
+    const want = Math.atan2(x - c.x, z - c.z), err = Math.atan2(Math.sin(want - c.h), Math.cos(want - c.h));
+    const last = i === pts.length - 1, tgt = last ? (d > 3 ? Math.min(vmax, d * 0.6) : 0) : Math.abs(err) > 0.5 ? 7 : vmax;
+    const fwd = c.vx * Math.sin(c.h) + c.vz * Math.cos(c.h);
+    g.step(DT, { ...idle, analog: false, moveY: fwd < tgt ? 0.9 : fwd > tgt + 1.5 ? -1 : 0, moveX: Math.max(-1, Math.min(1, -err * 2)), handbrake: last && d < 2 && c.speed > 0.5 });
+    if (until && until()) return true;
+  }
+  return false;
+}
+// follow a van a few metres behind it
+function followVan(g, job, sec) {
+  let maxD = 0;
+  for (let k = 0; k < 60 * sec && job.stage === 'chase'; k++) {
+    const c = g.player.car, v = job.truck;
+    if (!c || !v) break;
+    const aim = v.local(0, -9);
+    const d = Math.hypot(v.x - c.x, v.z - c.z); maxD = Math.max(maxD, d);
+    const want = Math.atan2(aim.x - c.x, aim.z - c.z), err = Math.atan2(Math.sin(want - c.h), Math.cos(want - c.h));
+    const tgt = d > 30 ? 16 : d > 14 ? v.speed + 2 : Math.max(0, v.speed - 2);
+    const fwd = c.vx * Math.sin(c.h) + c.vz * Math.cos(c.h);
+    g.step(DT, { ...idle, analog: false, moveY: fwd < tgt ? 0.9 : fwd > tgt + 1.5 ? -1 : 0, moveX: Math.max(-1, Math.min(1, -err * 2)) });
+  }
+  return maxD;
+}
+{
+  console.log('Sjubydagen (huvuduppdrag del 18): hela vägen');
+  const g = sjGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'sjuby', 'hint', 'endcard', 'say', 'credits', 'cinema']);
+  check(MAIN.length === 21 && MAIN.at(-1) === 'sjuby', 'Sjubydagen is the twenty-first and last main part');
+  check(!g.gateWest.open, 'the west bridge is shut');
+  walkHere(g, 20, 30);
+  run(g, 37);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'sjuby') || [])[1];
+  check(sms && sms.from === WHO.gun && /SJUBYDAGEN/.test(sms.text), 'Gun texts: Sjubydagen, the recipe in the window');
+  m.accept('sjuby'); run(g, 0.3);
+  walkHere(g, 40, 30); run(g, 1.0);
+  check(m.sjubyFolk && m.sjubyFolk.length === 3 && m.sjubyUp, 'Gun, Knäck and Pia on the square; the decorations are up');
+  check(g.layout.colliders.filter((c) => c.sjuby).every((c) => c.h > 0), '  the stands and the stage\'s backdrop are solid');
+  walkHere(g, -2, 8.5);
+  check(runToward(g, () => [SJUBY.mark.x, SJUBY.mark.z], 12, () => m.active && m.active.id === 'sjuby'), '  up to Gun: it starts');
+  const job = m.active;
+  run(g, 1.2);
+  check(lastTalk(ev, 'sjuby').pages.some((q) => /sista raden/.test(q.text)), '  Knäck\'s copy lacks the last line; Gun has never read it');
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'houses' && g.stats.sjuby.at === 1, 'checkpoint: the houses by the chapel');
+  walkHere(g, -45, 200); run(g, 1.0);
+  check(job.house && job.house.signe && job.house.folke && job.house.elsa && job.truck && job.ronny && job.cat, 'Signe, Folke and Elsa at their gates, Ronny\'s van on the car park, Måns under it');
+  // Signe: the bunting
+  check(walkPts(g, [[-58, 227], [-62.6, 233], [-62.4, 258], [SJUBY.talk.signe.x, SJUBY.talk.signe.z]], () => m.prompt === 'PRATA' && job.talkWho === 'signe', 40, 1), `to Signe: PRATA (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`); press(g); run(g, 0.5);
+  check(/vedboden/.test(lastTalk(ev, 'sjuby').pages.map((q) => q.text).join(' ')), '  the bunting is in her woodshed');
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.signeAt === 'shed', '  to the shed');
+  check(walkPts(g, [[-63, 266.5], [-72, 267.5], [-78.45, 263.6], [SHED_DOOR.x, SHED_DOOR.z]], () => m.prompt === 'GÅ IN', 30, 1), '  round the house to the shed door: GÅ IN');
+  press(g); run(g, 1.8);
+  check(ind.inside && ind.where === 'shed', '  inside the shed');
+  check(runToward(g, () => [SJUBY.box.x, SJUBY.box.z], 8, () => m.prompt === 'TA'), '  the blue box: TA'); press(g);
+  check(job.carry === 'vimplar', '  the bunting in your arms');
+  walkHere(g, SHED.door.x, SHED.door.z); run(g, 0.2); check(m.prompt === 'GÅ UT', '  GÅ UT'); press(g); run(g, 1.8);
+  check(!ind.inside && job.signeAt === 'hang', 'out: three poles to hang it on');
+  for (let k = 0; k < 3; k++) {
+    const P = SJUBY.poles[k];
+    check(runToward(g, () => [P.x, P.z], 30, () => m.prompt === 'HÄNG UPP'), `  pole ${k + 1}: HÄNG UPP`); press(g);
+  }
+  check(job.signeAt === 'done' && (g.stats.sjuby.h & HOUSE_BITS.signe), 'the bunting is up (saved)');
+  // Folke: the harmonium
+  check(walkPts(g, [[SJUBY.talk.folke.x, SJUBY.talk.folke.z]], () => m.prompt === 'PRATA' && job.talkWho === 'folke', 40, 1), 'to Folke: PRATA'); press(g); run(g, 0.5);
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(walkPts(g, [[-63.4, 231.5], [SJUBY.organ.x + 0.4, SJUBY.organ.z]], () => m.prompt === 'BÄR', 20, 1), '  through his gate to the harmonium: BÄR'); press(g);
+  check(job.carry === 'orgel', '  carrying it');
+  const t0 = g.time;
+  check(walkPts(g, [[-63.4, 231.5], [-60.5, 231.5], [SJUBY.organTo.x, SJUBY.organTo.z]], () => m.prompt === 'SÄTT NER', 30, 1), '  to the chapel door: SÄTT NER');
+  check(g.time - t0 > 9 / SJUBY.carry, `  slowly (${(g.time - t0).toFixed(1)} s)`);
+  press(g);
+  check(job.folkeAt === 'done' && job.organAt === 'chapel' && !job.carry, 'the harmonium is by the chapel');
+  // Elsa: Måns under the van
+  check(walkPts(g, [[-60, 230], [-62.6, 236], [SJUBY.talk.elsa.x, SJUBY.talk.elsa.z]], () => m.prompt === 'PRATA' && job.talkWho === 'elsa', 40, 1), 'to Elsa: PRATA'); press(g); run(g, 0.5);
+  check(/Måns/.test(lastTalk(ev, 'sjuby').pages[0].text), '  Måns is gone');
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(walkPts(g, [[-62.6, 236], [-58, 228], [job.ronny.x, job.ronny.z + 1]], () => m.prompt === 'PRATA', 40, 1), '  Ronny by the van: PRATA'); press(g); run(g, 0.5);
+  check(/Kexfabriken/.test(lastTalk(ev, 'sjuby').pages[0].text), '  Ronny drives for Kexfabriken now');
+  for (const q of lastTalk(ev, 'sjuby').pages) if (q.fx) m.talkFx('sjuby', q.fx);
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(!job.engine && job.elsaAt === 'cat', '  the engine off');
+  check(runToward(g, () => [job.cat.x, job.cat.z], 10, () => m.prompt === 'LOCKA'), '  LOCKA'); press(g);
+  run(g, 14);
+  check(job.elsaAt === 'done' && job.cat.state === 'home', 'Måns runs home to Elsa');
+  run(g, 0.5);
+  check(job.stage === 'gather', 'all three: to the chapel at twelve');
+  check(runToward(g, () => [SJUBY.bell.x, SJUBY.bell.z], 30, () => job.stage === 'bellTalk'), '  in front of the tower: the bell');
+  run(g, 1.2);
+  const bt = lastTalk(ev, 'sjuby');
+  check(bt.pages.some((q) => /1972/.test(q.text)) && bt.pages.some((q) => /RONALD/.test(q.text)) && bt.pages.some((q) => /tavelram/.test(q.text)), '  1972, Signe sees Ronny, Ingvar sees Knäck with a frame');
+  check(g.spider && Math.hypot(g.spider.x - SJUBY.spider.x, g.spider.z - SJUBY.spider.z) < 1, '  the Spider on the car park');
+  for (const q of bt.pages) if (q.fx) m.talkFx('sjuby', q.fx);
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'chase' && g.stats.sjuby.at === 2 && m.recipeHome === false, 'checkpoint: the chase – the recipe is gone from the window');
+  check(sjEnterCar(g, g.spider), 'into the Spider');
+  run(g, 3);
+  // drive: car park → the loop → the bridge → Kungsgatan
+  const route1 = [[-45, 205], [-40, 198], [-40, 175], [-40, 140], [-37.5, 100], [-37.5, 50]];
+  drivePath(g, route1, () => job.moving, 90);
+  check(job.inTown && job.moving, `the van waits on Kungsgatan, then drives off as you come (${Math.round(Math.hypot(job.truck.x - p.car.x, job.truck.z - p.car.z))} m)`);
+  // follow it
+  const maxD = followVan(g, job, 140);
+  check(job.gateOpen && g.gateWest.open, 'the barrier on the west bridge opens for the van');
+  check(['yard', 'enter'].includes(job.stage) && g.stats.sjuby.at === 3, `the van at Kexfabriken's docks (checkpoint; you were at most ${Math.round(maxD)} m behind)`);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.ingvar && /Storgatan/.test(d.text)) && ev.some(([n, d]) => n === 'sms' && d.from === WHO.kim), '  Ingvar on the radio, Kim at the corner');
+  check(onWest(p.car.x, p.car.z), '  you are on Västerholmen');
+  g.step(DT, { ...idle, action: true }); run(g, 1.2);
+  check(runToward(g, () => [job.ronny.x, job.ronny.z], 20, () => m.prompt === 'PRATA'), 'Ronny by the van: PRATA'); press(g); run(g, 0.5);
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'enter', '  into the hall');
+  check(runToward(g, () => [FAB_DOOR.x, FAB_DOOR.z], 20, () => m.prompt === 'GÅ IN'), '  the staff door: GÅ IN'); press(g); run(g, 1.8);
+  check(ind.inside && ind.where === 'fabrik' && job.stage === 'hallTalk', 'inside Kexfabriken: Knäck by the line');
+  const Xo = FAB.room.x0, Zo = FAB.room.z0;
+  const unreached = reachable(g, FAB.spawn, [FAB.stop, FAB.door, { x: Xo + 1.5, z: Zo + 12 }, { x: Xo + 12, z: Zo + 15.2 }, { x: Xo + 18, z: Zo + 9 }], FAB.room);
+  check(!unreached.length, `the emergency stop, the door and the belt can be walked to (${unreached.length} cut off)`);
+  const ht = lastTalk(ev, 'sjuby');
+  for (const q of ht.pages) if (q.fx) m.talkFx('sjuby', q.fx);
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'belt' && job.beltOn && ind.noExit, 'the belt runs – no way out until it is stopped');
+  // the dead end first: into the middle of the U, then round by the south wall at a walk (keyboard pace)
+  walkPts(g, [[Xo + 18, Zo + 9.1]], null, 6, 1, false);
+  const deadEnd = !(m.prompt === 'NÖDSTOPP');
+  walkPts(g, [[Xo + 27.2, Zo + 10.4], [Xo + 27.2, Zo + 17.2], [Xo + 17, Zo + 17.2], [Xo + 11.2, Zo + 15.4], [Xo + 8.4, Zo + 15.4], [Xo + 1.6, Zo + 15.4], [Xo + 1.4, Zo + 9.0]], () => m.prompt === 'NÖDSTOPP', 40, 1, false);
+  check(deadEnd && m.prompt === 'NÖDSTOPP' && job.beltOn, `round by the south wall at a walk: NÖDSTOPP (${Math.round((BELT.len - job.recipeS) / FAB.speed)} s to spare, after the dead end)`);
+  press(g);
+  check(job.stopped && g.stats.sjubyLeft > 0, '  the belt stops');
+  const R = beltAt(job.recipeS);
+  check(walkPts(g, [[Xo + 1.6, Zo + 15.4], [R.x, Zo + 15.2]], () => m.prompt === 'TA RECEPTET', 20, 1), 'the recipe on the belt: TA RECEPTET'); press(g); run(g, 1.0);
+  check(job.stage === 'caughtTalk' && job.inside.pia && lastTalk(ev, 'sjuby').pages.some((q) => /var hennes Arne fick det ifrån/.test(q.text)), 'Pia comes; Knäck: ask where Arne got it from');
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'home' && g.stats.sjuby.at === 4 && job.carry === 'recept', 'checkpoint: home to the square with the recipe');
+  walkHere(g, FAB.door.x, FAB.door.z); run(g, 0.2); press(g); run(g, 1.8);
+  check(!ind.inside, '  out on the docks');
+  // to the square: teleport near it, as evening falls
+  walkHere(g, 25, -2); run(g, 50);
+  check(g.dusk > 0.9, `evening falls (${g.dusk.toFixed(2)})`);
+  check(job.crowd && job.crowd.length === SJUBY.crowd.length + 2, `everyone on the square (${job.crowd.length})`);
+  check(runToward(g, () => [SJUBY.finale.x, SJUBY.finale.z], 20, () => job.stage === 'finaleTalk'), 'in front of the stage: the last scene'); run(g, 1.2);
+  const ft = lastTalk(ev, 'sjuby');
+  check(ft.pages.some((q) => q.note && /Baka till hela Sjuby/.test(q.text)), '  Gun reads the last line: "Baka till hela Sjuby. /Arne"');
+  const money0 = g.money;
+  m.talkDone('sjuby'); run(g, 0.3);
+  check(job.stage === 'show' && ev.some(([n, d]) => n === 'cinema' && d.on), 'the show: fireworks');
+  run(g, SJUBY.show + 1);
+  check(ev.filter(([n, d]) => n === 'sjuby' && /boom/.test(d.kind)).length === ROCKETS.length, `  ${ROCKETS.length} rockets`);
+  check(ev.filter(([n, d]) => n === 'credits' && d.title).length === CREDITS.length, '  the credits');
+  check(m.done.has('sjuby') && g.money - money0 === SJUBY.pay && ev.some(([n, d]) => n === 'banner' && /FÖRSTA KAPITLET/.test(d.title)), `done: ${fmt(g.money - money0)} kr – SLUT PÅ FÖRSTA KAPITLET`);
+  run(g, 6);
+  check(ev.some(([nn]) => nn === 'endcard'), 'all twenty-one parts: the end card');
+  check(m.westOpen && g.gateWest.open && m.shipIn, 'the west bridge stays open; the ship is at the quay');
+  run(g, 90);
+  check(ev.some(([nn, d]) => nn === 'sms' && /första kapitlet/.test(d.text)) && ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.anon && /Kardemumma/.test(d.text)), '  texts: thank you – and an unknown number: M/S Kardemumma');
+  check(g.dusk < 0.1, '  morning again (the evening fades)');
+}
+{
+  console.log('Sjubydagen: ladda om, för sent, trafik');
+  // a reload at the chase: the van waits on Kungsgatan, the Spider behind it
+  const g = sjGame({ sjuby: { at: 2 } });
+  const m = g.mission, ev = record(g, ['sms', 'banner', 'toast', 'sjuby']);
+  walkHere(g, SJUBY.mark.x + 2, SJUBY.mark.z - 2); run(g, 0.3);
+  check(m.isOpen('sjuby'), 'a reload at the chase: the quest is open');
+  m.accept('sjuby'); run(g, 0.2);
+  walkHere(g, SJUBY.mark.x, SJUBY.mark.z); run(g, 0.5);
+  const job = m.active;
+  check(job && job.stage === 'chase' && job.inTown && job.truck && g.spider && Math.hypot(g.spider.x - SJUBY.spiderTown.x, g.spider.z - SJUBY.spiderTown.z) < 1, '  the van on Kungsgatan, the Spider behind it');
+  check(job.moving, '  you are close: it drives off');
+  // walk away and wait: it gets away
+  walkHere(g, 40, -380); run(g, SJUBY.loseT + 4);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail') && ev.some(([n, d]) => n === 'sms' && d.from === WHO.pia && /Kungsgatan/.test(d.text)), 'too far behind for too long: it gets away – Pia: start again at the square');
+  check(!g.vehicles.some((v) => v.kex), '  the van is gone (out of sight)');
+  run(g, 7);
+  check(m.active && m.active.stage === 'chase' && m.active.inTown && g.vehicles.filter((v) => v.kex).length === 1, '  followed again: it starts over, the van back on Kungsgatan');
+  // a reload at Kexfabriken: the van at the docks, Ronny beside it, the gate open
+  const g2 = sjGame({ sjuby: { at: 3 } });
+  check(g2.mission.westOpen, 'a reload at Kexfabriken: the west bridge is open');
+  g2.mission.accept('sjuby'); run(g2, 0.2); walkHere(g2, SJUBY.mark.x, SJUBY.mark.z); run(g2, 0.5);
+  const j2 = g2.mission.active;
+  check(j2 && j2.stage === 'yard' && j2.truck && Math.hypot(j2.truck.x - KEX.truck.x, j2.truck.z - KEX.truck.z) < 0.5 && j2.ronny && g2.gateWest.open, '  the van at the docks, Ronny beside it');
+  // inside: too late – Ronny pulls the plug, and it starts again
+  walkHere(g2, SJUBY.ronnyDock.x + 1.2, SJUBY.ronnyDock.z + 0.4); run(g2, 0.2);
+  check(g2.mission.prompt === 'PRATA', '  PRATA'); press(g2); run(g2, 0.5); g2.mission.talkDone('sjuby'); run(g2, 0.3);
+  walkHere(g2, FAB_DOOR.x, FAB_DOOR.z); run(g2, 0.2); press(g2); run(g2, 1.8);
+  for (const q of lastTalk(record(g2, []), 'sjuby')?.pages || []) void q;
+  g2.mission.talkFx('sjuby', 'belt'); g2.mission.talkDone('sjuby'); run(g2, 0.3);
+  check(j2.stage === 'belt' && j2.beltOn && g2.indoors.noExit, 'inside: the belt runs');
+  const ev2 = record(g2, ['toast', 'sjuby']);
+  run(g2, BELT.len / FAB.speed + 1);
+  check(ev2.some(([n, d]) => n === 'sjuby' && d.kind === 'plug') && ev2.some(([n, d]) => n === 'toast' && /Ronny drog ur sladden/.test(d.text)), 'too late: Ronny pulls the plug at the last second');
+  run(g2, 3);
+  check(j2.stage === 'belt' && j2.beltOn && j2.recipeS < 6 && j2.tries === 2, '  and Knäck puts it on the belt again');
+  walkHere(g2, FAB.stop.x + 0.4, FAB.stop.z); run(g2, 0.1);
+  check(g2.mission.prompt === 'NÖDSTOPP', '  NÖDSTOPP'); press(g2);
+  check(j2.stopped && g2.stats.sjubyTries === 2, '  stopped on the second try');
+  // a reload in the evening: straight to the square
+  const g3 = sjGame({ sjuby: { at: 4 } });
+  g3.mission.accept('sjuby'); run(g3, 0.2); walkHere(g3, SJUBY.mark.x, SJUBY.mark.z); run(g3, 1.0);
+  const j3 = g3.mission.active;
+  check(j3 && j3.stage === 'home' && j3.carry === 'recept' && j3.crowd, 'a reload in the evening: everyone at the stage, the recipe in your hands');
+  walkHere(g3, SJUBY.finale.x, SJUBY.finale.z); run(g3, 0.5);
+  check(j3.stage === 'finaleTalk', '  in front of the stage: the last scene');
+  // afterwards: the hall is open, the decorations are down
+  const g4 = sjGame({ sjuby: { at: 5 } });
+  g4.mission.done.add('sjuby'); run(g4, 1);
+  check(g4.gateWest.open && g4.layout.colliders.filter((c) => c.sjuby).every((c) => c.h === 0), 'afterwards: the west bridge open, the stands on the square gone');
+  walkHere(g4, FAB_DOOR.x, FAB_DOOR.z); run(g4, 0.2);
+  check(g4.mission.prompt === 'GÅ IN', '  GÅ IN at Kexfabriken'); press(g4); run(g4, 1.6);
+  check(g4.indoors.inside && g4.indoors.where === 'fabrik', '  the hall, the line standing still');
+  // the van in traffic: three seeds, from Kungsgatan to the docks
+  for (const seed of [3, 11, 19]) {
+    const g5 = sjGame({ sjuby: { at: 2 } }, {}, seed);
+    g5.mission.accept('sjuby'); run(g5, 0.2); walkHere(g5, SJUBY.mark.x, SJUBY.mark.z); run(g5, 0.5);
+    const j5 = g5.mission.active;
+    let ok = !!(j5 && j5.stage === 'chase' && sjEnterCar(g5, g5.spider));
+    if (ok) { drivePath(g5, [[-37.5, 20]], () => j5.moving, 20); followVan(g5, j5, 160); ok = ['yard', 'enter'].includes(j5.stage) && g5.gateWest.open; }
+    check(ok, `seed ${seed} with traffic: after the van all the way to Kexfabriken (${j5 && j5.stage})`);
+  }
+}
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');
 process.exit(fails ? 1 : 0);

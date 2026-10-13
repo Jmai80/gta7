@@ -15,7 +15,7 @@ const RONNY = { who: 'Ronny', letter: 'R', color: '#8a6a4a' };
 const YOU = { who: 'Du', letter: 'DU', color: '#ffcf33', you: true };
 export const PIA_LOOK = { shirt: 0x2c4a7a, pants: 0x1d2a44, skin: 0xd9a77e, hair: 0x3a2618, height: 1.0, bulk: 1.05, style: ST.bun | ST.cap, accent: 0x1d2a44 };
 // Jonte's cousin: the same blond hair, a beard, a cap and a worn work jacket
-const RONNY_LOOK = { shirt: 0x6b6f3a, pants: 0x2b2e35, skin: 0xf0c8a8, hair: 0xd9b26b, height: 1.06, bulk: 1.18, style: ST.beard | ST.cap | ST.jacket, accent: 0x4a3a2a };
+export const RONNY_LOOK = { shirt: 0x6b6f3a, pants: 0x2b2e35, skin: 0xf0c8a8, hair: 0xd9b26b, height: 1.06, bulk: 1.18, style: ST.beard | ST.cap | ST.jacket, accent: 0x4a3a2a };
 const SEARCH_T = 0.8; // seconds of rummaging before you see what is there
 
 export function meetPages() {

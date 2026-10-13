@@ -57,6 +57,7 @@ export function homecomingWorld(mgr) {
   }
   if (mgr.birger && mgr.done.has('birger') && hiddenFrom(g, mgr.birger.x, mgr.birger.z)) { removePed(g, mgr.birger); mgr.birger = null; }
   if (!mgr.done.has('birger')) return;
+  if (mgr.active && mgr.active.holdSpider) return;   // (v1.18) "Sjubydagen" has lent it out at the chapel
   if ((mgr.spiderT = (mgr.spiderT || 0) - 1 / 60) > 0) return;
   mgr.spiderT = 2;
   const S = H.spot, sp = g.spider;

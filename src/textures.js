@@ -64,8 +64,8 @@ function boxBlur(src, dst, W, H, r) {
 }
 
 // Baked sun shadows and ambient occlusion for the town, Norrholmen (north of it) and Söderholmen
-// (south, v1.6): 3.2 px/m.
-export function makeShadowMap(layout, W = 1024, H = 2496, rect = { x0: -160, z0: -480, w: 320, h: 780 }) {
+// (south, v1.6): 3.2 px/m. (v1.18) A second, small map covers Västerholmen in the west (`only`: which casters).
+export function makeShadowMap(layout, W = 1024, H = 2496, rect = { x0: -160, z0: -480, w: 320, h: 780 }, only = null) {
   const k = W / rect.w;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
@@ -75,7 +75,7 @@ export function makeShadowMap(layout, W = 1024, H = 2496, rect = { x0: -160, z0:
     g.fillRect(0, 0, W, H);
     g.fillStyle = color;
     for (const c of layout.casters) {
-      if (!filter(c)) continue;
+      if (!filter(c) || (only && !only(c))) continue;
       const proj = casterPoints(c).map(([x, y, z]) => [(x - SUN.x * (y / SUN.y) - rect.x0) * k, (z - SUN.z * (y / SUN.y) - rect.z0) * k]);
       const h = hull(proj);
       if (h.length < 3) continue;
@@ -97,7 +97,7 @@ export function makeShadowMap(layout, W = 1024, H = 2496, rect = { x0: -160, z0:
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#5a5a5a';
   for (const c of layout.casters) {
-    if (c.t !== 'sphere') continue;
+    if (c.t !== 'sphere' || (only && !only(c))) continue;
     g.beginPath(); g.arc((c.x - rect.x0) * k, (c.z - rect.z0) * k, c.r * 0.9 * k, 0, Math.PI * 2); g.fill();
   }
   px = g.getImageData(0, 0, W, H).data;
@@ -319,6 +319,22 @@ const PAINTERS = {
     g.fillStyle = '#c0302a'; g.fillText('LYCKOLAND', x + w / 2 + h * 0.03, y + h * 0.65 + h * 0.03);
     g.fillStyle = '#ffd34d'; g.fillText('LYCKOLAND', x + w / 2, y + h * 0.65);
   },
+  // (v1.18) Kexfabriken's name: white capitals on blue, a square golden biscuit with holes on the left, and a line
+  // under it (d.sub) when the sign has room
+  kex(g, d, x, y, w, h) {
+    g.fillStyle = '#1f4fa0'; g.fillRect(x, y, w, h);
+    g.strokeStyle = '#f2c21b'; g.lineWidth = Math.max(2, h * 0.05); g.strokeRect(x + h * 0.06, y + h * 0.06, w - h * 0.12, h - h * 0.12);
+    const s = h * 0.62, bx = x + h * 0.22, by = y + (h - s) / 2;
+    g.fillStyle = '#d9a441'; roundRect(g, bx, by, s, s, s * 0.12); g.fill();
+    g.strokeStyle = '#b07a22'; g.lineWidth = Math.max(1, s * 0.05); roundRect(g, bx + s * 0.08, by + s * 0.08, s * 0.84, s * 0.84, s * 0.1); g.stroke();
+    g.fillStyle = '#9a6a1a';
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { g.beginPath(); g.arc(bx + s * (0.28 + i * 0.22), by + s * (0.28 + j * 0.22), s * 0.035, 0, 7); g.fill(); }
+    const tx = bx + s + h * 0.22, tw = x + w - h * 0.2 - tx, sub = d.sub;
+    g.fillStyle = '#ffffff'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    fitText(g, 'KEXFABRIKEN', tw, h * (sub ? 0.5 : 0.62));
+    g.fillText('KEXFABRIKEN', tx, y + h * (sub ? 0.4 : 0.52));
+    if (sub) { g.fillStyle = '#f2c21b'; fitText(g, sub, tw, h * 0.2, 700); g.fillText(sub, tx, y + h * 0.76); }
+  },
   closed(g, d, x, y, w, h) {
     const n = 10;
     for (let i = 0; i < n; i++) {
@@ -387,7 +403,7 @@ const PAINTERS = {
 };
 
 export function makeSignAtlas(signs) {
-  const W = 1024, H = 2048;
+  const W = 2048, H = 2048;   // ((v1.18) twice as wide: Västerholmen and Sjubydagen filled the old one)
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const g = canvas.getContext('2d');

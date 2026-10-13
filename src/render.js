@@ -27,6 +27,7 @@ import { PropsView } from './propsview.js';
 import { FyrView } from './fyrview.js';
 import { KaffeView } from './kaffeview.js';
 import { BakView } from './bakview.js';
+import { SjubyView } from './sjubyview.js';
 import { FYR, fyrFloor } from './fyren.js';
 import { duckPlace } from './ankor.js';
 
@@ -52,6 +53,10 @@ export class View {
     const shadow = makeShadowMap(layout);
     this.U.uShadow.value = shadow.tex;
     this.U.uShadowRect.value.set(shadow.rect.x0, shadow.rect.z0, 1 / shadow.rect.w, 1 / shadow.rect.h);
+    // (v1.18) Västerholmen's own little map (3.2 px/m), west of the big one
+    const sh2 = makeShadowMap(layout, 608, 704, { x0: -410, z0: -150, w: 190, h: 220 }, (c) => (c.x ?? c.x0) < -200);
+    this.U.uShadow2.value = sh2.tex;
+    this.U.uShadowRect2.value.set(sh2.rect.x0, sh2.rect.z0, 1 / sh2.rect.w, 1 / sh2.rect.h);
     this.atlas = makeSignAtlas(layout.signs);
     this.U.uSigns.value = this.atlas.tex;
     this.U.uNoise.value = noiseTexture();
@@ -148,6 +153,7 @@ export class View {
     this.fyr = new FyrView(this.scene, this.matStatic); // (v1.15) the magpie in the lantern, her nest, the lamp and its beams
     this.kaffe = new KaffeView(this.scene, this.matStatic); // (v1.16) Birger's coffee table, the tarps in Signe's shed
     this.bak = new BakView(this.scene, this.matStatic); // (v1.17) the dough on the belt, Stora Bertha's glow, the ribbon
+    this.sjuby = new SjubyView(this.scene, this.matStatic, this.atlas); // (v1.18) Sjubydagen: the party, the van, the belt, fireworks, the ship
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -275,35 +281,44 @@ export class View {
   }
 
   // the gate on the north bridge: two red-and-white halves that swing open toward Norrholmen,
-  // and the AVSTÄNGT sign on top while it is shut
+  // and the AVSTÄNGT sign on top while it is shut. (v1.18) The west bridge has one too (toward Västerholmen):
+  // each gate is a group turned so that its local -z points away from the town.
   makeGate(layout) {
-    const Z = layout.zones.gateN;
-    if (!Z) return;
-    const L = 4.95;
-    const half = (dir) => {
-      const B = new GeomBuilder();
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * L, b = ((i + 1) / 5) * L;
-        B.box(dir > 0 ? a : -b, 0.36, -0.2, dir > 0 ? b : -a, 1.08, 0.2, i % 2 ? 0xf2f0ea : 0xd2342c, 0);
+    this.gates = [];
+    const one = (Z, rot, uvKey, state) => {
+      if (!Z) return;
+      const grp = new THREE.Group();
+      grp.position.set(Z.x, Z.y, Z.z); grp.rotation.y = rot;
+      const L = 4.95;
+      const half = (dir) => {
+        const B = new GeomBuilder();
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * L, b = ((i + 1) / 5) * L;
+          B.box(dir > 0 ? a : -b, 0.36, -0.2, dir > 0 ? b : -a, 1.08, 0.2, i % 2 ? 0xf2f0ea : 0xd2342c, 0);
+        }
+        for (const f of [0.35, L - 0.5]) B.box(dir * f - 0.07, 0, -0.32, dir * f + 0.07, 0.38, 0.32, 0x3b4148);
+        B.box(dir > 0 ? 0 : -0.16, 0, -0.16, dir > 0 ? 0.16 : 0, 1.25, 0.16, 0x3b4148); // the hinge post
+        const m = new THREE.Mesh(B.toGeometry(THREE), this.matStatic);
+        m.position.set(-dir * 5, 0, 0);
+        grp.add(m);
+        return m;
+      };
+      const G = { group: grp, a: half(1), b: half(-1), sign: null, state };
+      const uv = this.atlas.uv[uvKey];
+      if (uv) {
+        const S = new GeomBuilder();
+        const [u0, v0, u1, v1] = uv, w = 6.4, h = 1.3;
+        S.quad([-w / 2, -h / 2, 0.22], [-w / 2, h / 2, 0.22], [w / 2, h / 2, 0.22], [w / 2, -h / 2, 0.22], 0xffffff, M.SIGN, [[u0, v0], [u0, v1], [u1, v1], [u1, v0]], [0, 0, 1]);
+        S.box(-w / 2, -h / 2, 0.1, w / 2, h / 2, 0.2, 0xd2342c);
+        G.sign = new THREE.Mesh(S.toGeometry(THREE), this.matStatic);
+        G.sign.position.set(0, 1.75 - Z.y, 0);
+        grp.add(G.sign);
       }
-      for (const f of [0.35, L - 0.5]) B.box(dir * f - 0.07, 0, -0.32, dir * f + 0.07, 0.38, 0.32, 0x3b4148);
-      B.box(dir > 0 ? 0 : -0.16, 0, -0.16, dir > 0 ? 0.16 : 0, 1.25, 0.16, 0x3b4148); // the hinge post
-      const m = new THREE.Mesh(B.toGeometry(THREE), this.matStatic);
-      m.position.set(Z.x - dir * 5, Z.y, Z.z);
-      this.scene.add(m);
-      return m;
+      this.scene.add(grp);
+      this.gates.push(G);
     };
-    this.gateW = half(1); this.gateE = half(-1);
-    const uv = this.atlas.uv.stangtz;
-    if (uv) {
-      const S = new GeomBuilder();
-      const [u0, v0, u1, v1] = uv, w = 6.4, h = 1.3;
-      S.quad([-w / 2, -h / 2, 0.22], [-w / 2, h / 2, 0.22], [w / 2, h / 2, 0.22], [w / 2, -h / 2, 0.22], 0xffffff, M.SIGN, [[u0, v0], [u0, v1], [u1, v1], [u1, v0]], [0, 0, 1]);
-      S.box(-w / 2, -h / 2, 0.1, w / 2, h / 2, 0.2, 0xd2342c);
-      this.gateSign = new THREE.Mesh(S.toGeometry(THREE), this.matStatic);
-      this.gateSign.position.set(Z.x, 1.75, Z.z);
-      this.scene.add(this.gateSign);
-    }
+    one(layout.zones.gateN, 0, 'stangtz', 'gateN');
+    one(layout.zones.gateWest, Math.PI / 2, 'stangtx', 'gateWest');
   }
 
   makeMarkers() {
@@ -470,7 +485,7 @@ export class View {
     this.cone.renderOrder = 4;
     g.add(this.cone);
     this.indoor = false;
-    this.outLight = { sun: this.U.uSunCol.value.clone(), sky: this.U.uSkyCol.value.clone(), gnd: this.U.uGndCol.value.clone() };
+    this.outLight = { sun: this.U.uSunCol.value.clone(), sky: this.U.uSkyCol.value.clone(), gnd: this.U.uGndCol.value.clone(), hor: this.U.uHorizon.value.clone(), zen: this.U.uZenith.value.clone() };
     this.outFog = [this.fog.near, this.fog.far];
   }
 
@@ -606,7 +621,7 @@ export class View {
     this.sky.visible = !on;
     for (const b of this.brushes) b.visible = !on;
     if (this.gunFlag) this.gunFlag.visible = !on;
-    if (this.gateW) { this.gateW.visible = this.gateE.visible = !on; }
+    for (const G of this.gates || []) G.group.visible = !on;
     const U = this.U, L = this.outLight;
     if (on) {
       U.uSunCol.value.setRGB(1.0, 0.86, 0.68).multiplyScalar(0.55);
@@ -619,6 +634,24 @@ export class View {
       this.fog.color.setHex(0xeedac3); this.fog.near = this.outFog[0]; this.fog.far = this.outFog[1];
       this.renderer.setClearColor(0xeedac3);
     }
+    this.duskK = -1;   // ((v1.18) the evening, if any, goes on again outside)
+  }
+
+  // (v1.18) the evening of Sjubydagen: game.dusk 0 … 1 turns the light warm and low, the sky violet over an orange
+  // horizon, the haze rosy – the lamps, the lit windows and the strings of bulbs (M.LIGHT) glow against it
+  applyDusk(game) {
+    const k = this.indoor ? 0 : Math.max(0, Math.min(1, game.dusk || 0));
+    if (this.indoor || Math.abs(k - (this.duskK ?? -1)) < 0.002) return;
+    this.duskK = k;
+    const U = this.U, L = this.outLight, c = new THREE.Color();
+    const mix = (dst, base, r, g, b, f) => { dst.copy(base).lerp(c.setRGB(r, g, b), k * f); };
+    mix(U.uSunCol.value, L.sun, 0.62, 0.36, 0.24, 1);
+    mix(U.uSkyCol.value, L.sky, 0.2, 0.19, 0.3, 1);
+    mix(U.uGndCol.value, L.gnd, 0.14, 0.1, 0.1, 1);
+    U.uHorizon.value.copy(L.hor).lerp(c.setHex(0xe07a52), k);
+    U.uZenith.value.copy(L.zen).lerp(c.setHex(0x1b1f4a), k);
+    this.fog.color.setHex(0xeedac3).lerp(c.setHex(0x7a5a6a), k);
+    this.renderer.setClearColor(this.fog.color);
   }
 
   syncIndoor(game, dt) {
@@ -759,13 +792,17 @@ export class View {
     this.fyr.sync(game, this.indoor);
     this.kaffe.sync(game, this.indoor);
     this.bak.sync(game, this.indoor);
+    this.sjuby.sync(game, this.indoor);
+    this.applyDusk(game);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;
     if (this.world.mill) this.world.mill.rotation.z = -(game.millA ?? this.time * 0.45);  // the windmill on Norrholmen (v1.11: on the game's clock)
-    if (this.gateW && game.gateN) {
-      const a = game.gateN.k * Math.PI / 2 * 0.98;
-      this.gateW.rotation.y = a; this.gateE.rotation.y = -a;
-      if (this.gateSign) this.gateSign.visible = !this.indoor && game.gateN.k < 0.01;
+    for (const G of this.gates || []) {
+      const st = game[G.state];
+      if (!st) continue;
+      const a = st.k * Math.PI / 2 * 0.98;
+      G.a.rotation.y = a; G.b.rotation.y = -a;
+      if (G.sign) G.sign.visible = !this.indoor && st.k < 0.01;
     }
     if (this.gunFlag) {
       // folded at the foot of the pole; unfurls on the way up and flutters at the top

@@ -240,6 +240,23 @@ function wire(g) {
   g.on('tarp', (e) => { audio.tarp(e.bike); buzz(e.bike ? [15, 30, 15] : 10); }); // (v1.16) Birgers kaffe
   g.on('lamp', () => { audio.lamp(); buzz([20, 40, 60]); });
   g.on('photo', (e) => { audio.photo(e.kind); if (e.kind === 'snap') { flashPhoto(e.good); buzz(e.good ? [20, 30, 20] : 15); } }); // (v1.14) Odjurets bild
+  // (v1.18) Sjubydagen: the bell, the waltz, the van, the belt and its emergency stop, fireworks – and the last scene's
+  // black bars and credits
+  g.on('sjuby', (e) => {
+    audio.sjuby(e.kind);
+    if (e.kind === 'stop') { buzz([40, 30, 80]); view.rig.shake = 0.2; }
+    else if (e.kind === 'plug') buzz([60, 40, 60]);
+    else if (e.kind === 'bigboom') buzz(25);
+    else if (e.kind === 'hang' || e.kind === 'take') buzz(12);
+  });
+  g.on('cinema', (e) => { $('game').classList.toggle('cinema', !!e.on); if (!e.on) $('credits').classList.remove('on'); });
+  g.on('credits', (e) => {
+    const c = $('credits');
+    c.classList.remove('on');
+    clearTimeout(creditT);
+    if (!e.title) return;
+    creditT = setTimeout(() => { $('crTitle').textContent = e.title; $('crSub').textContent = e.sub || ''; c.classList.toggle('last', !!e.last); c.classList.add('on'); }, 450);
+  });
   g.on('endcard', (e) => showEnd(e.stats));
 }
 
@@ -550,7 +567,7 @@ function restart() {
   $('shop').hidden = true; pendingShop = false;
   $('log').hidden = true;
   $('talk').hidden = true;
-  $('game').classList.remove('talking');
+  $('game').classList.remove('talking', 'cinema');
   audio.horn(false); audio.washing(false);
   view.washing = false;
   game = new Game({ layout, settings, missionActive: true });
@@ -565,6 +582,7 @@ function restart() {
   audio.resume();
 }
 
+let creditT = 0;
 function showEnd(s) {
   saveProgress();
   const rows = [
@@ -595,6 +613,7 @@ function showEnd(s) {
     ['Skatans bo', s.skatDives != null ? (s.skatDives ? `skatan dök ${s.skatDives} ${s.skatDives === 1 ? 'gång' : 'gånger'}` : 'skatan dök aldrig') : '–'],
     ['Birgers kaffe', s.kaffeBikes ? `${s.kaffeBikes} cyklar hem${s.skateNova ? ', skateboarden till Nova' : ''}` : '–'],
     ['Bullbilens bageri', s.bageriKnots != null ? `${s.bageriKnots} av 12 bullar knutna` : '–'],
+    ['Sjubydagen', s.sjubyLeft != null ? `bandet stoppat ${s.sjubyLeft} s från ugnen${s.sjubyTries > 1 ? ` (${s.sjubyTries}:e försöket)` : ''}` : '–'],
     ['Ankorna i dammen', s.ankor && s.ankor.done ? 'Alla fem hemma' : '–'],
     ['Odjurets bild', s.odjur ? `3 bra bilder på ${s.odjur.shots} försök` : '–'],
     ['Hemligheter', `${(s.secrets || []).length} av ${SECRET_COUNT}`],

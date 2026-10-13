@@ -246,6 +246,7 @@ export class Player {
     if (mag > 0.12) {
       if (input.analog) speed = mag > 0.86 ? 6.0 : 1.5 + ((mag - 0.12) / 0.74) * 2.2;
       else speed = input.sprint ? 6.4 : g.indoor ? 2.9 : 3.9; // indoors you walk a little slower (and quietly)
+      if (this.carryMax) speed = Math.min(speed, this.carryMax);   // (v1.18) carrying something heavy (Folke's harmonium)
     }
     // a mission walks you somewhere (up to the bench on the pier): straight there, at a calm pace
     const A = this.autoWalk;
