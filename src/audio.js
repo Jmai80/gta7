@@ -549,6 +549,20 @@ export class AudioFX {
     else if (kind === 'hit') { this.burst(0.18, 600, 0.12, 'lowpass'); this.tone(160, 0.2, 'sine', 0.1, 0, 90); chak(0.15, 3); }
     else if (kind === 'flee') { for (let i = 0; i < 6; i++) this.burst(0.06, 700, 0.06, 'bandpass', i * 0.09); chak(0.4, 6); }
   }
+  // (v1.17) the bakery: flour sacks, the oven catching, the belt starting, a ball dropped, a knot tied (or missed), a
+  // lump into the oven, the ribbon cut
+  bageri(kind) {
+    if (!this.ctx) return;
+    if (kind === 'sacks') for (let i = 0; i < 3; i++) { this.burst(0.18, 500, 0.12, 'lowpass', i * 0.22); this.tone(90, 0.12, 'sine', 0.08, i * 0.22, 60); }
+    else if (kind === 'fire') { for (let i = 0; i < 3; i++) { this.tone(150, 0.08, 'sine', 0.16, i * 0.25, 90); this.burst(0.1, 900, 0.05, 'bandpass', i * 0.25); } this.burst(0.25, 600, 1.4, 'lowpass', 0.8); this.tone(70, 1.4, 'sawtooth', 0.03, 0.8, 90); }
+    else if (kind === 'start') { this.tone(110, 0.6, 'square', 0.02, 0, 150); this.burst(0.05, 1500, 0.6, 'bandpass'); }
+    else if (kind === 'drop') { this.tone(180, 0.08, 'sine', 0.06, 0, 110); }
+    else if (kind === 'knot') { this.tone(880, 0.06, 'triangle', 0.04); this.tone(1320, 0.1, 'triangle', 0.035, 0.06); }
+    else if (kind === 'miss') this.tone(220, 0.1, 'square', 0.02);
+    else if (kind === 'lump') this.tone(150, 0.12, 'sine', 0.05, 0, 100);
+    else if (kind === 'in') this.burst(0.06, 2400, 0.08, 'bandpass');
+    else if (kind === 'rip') { this.burst(0.25, 3000, 0.25, 'highpass'); [523, 659, 784, 1046].forEach((f, i) => this.tone(f, i === 3 ? 0.5 : 0.14, 'square', 0.03, 0.2 + i * 0.13)); }
+  }
   // (v1.16) a tarpaulin pulled off – and a bike bell under it
   tarp(bike) {
     if (!this.ctx) return;

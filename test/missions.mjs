@@ -41,6 +41,8 @@ import { FYR, FYR_DOOR, fyrFloor } from '../src/fyren.js';
 import { SKAT, SKAT_MAX, OWNERS, BIRD } from '../src/skatbo.js';
 import { KAFFE, KAFFE_MAX, BIKES as KBIKES } from '../src/kaffe.js';
 import { SHED, SHED_DOOR, TARPS } from '../src/vedbod.js';
+import { BAGERI, BAGERI_MAX } from '../src/bullbageri.js';
+import { BAK, BAK_DOOR } from '../src/bageriet.js';
 import { CARWASH } from '../src/config.js';
 
 const DT = 1 / 60;
@@ -375,8 +377,12 @@ function startRace(g) {
   g2.mission.done.add('kaffe');
   g2.mission.checkAllDone();
   run(g2, 10.5);
-  check(sms2.some(([n]) => n === 'endcard'), 'end card when all nineteen are done');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.16/.test(d.text) && /Jontes cyklar är hemma/.test(d.text)), 'the last text: version 1.16, all of Jonte\'s bikes are home');
+  check(!sms2.some(([n]) => n === 'endcard'), 'no end card while the bakery is for sale');
+  g2.mission.done.add('bageri');
+  g2.mission.checkAllDone();
+  run(g2, 10.5);
+  check(sms2.some(([n]) => n === 'endcard'), 'end card when all twenty are done');
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.17/.test(d.text) && /Knäck har en kopia/.test(d.text)), 'the last text: version 1.17, Knäck has a copy of the recipe');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -4496,7 +4502,7 @@ function mountNear(g, car) { walkHere(g, car.x - Math.cos(car.h) * 1.0, car.z + 
   m.talkDone('kaffe'); run(g, 0.5);
   check(m.done.has('kaffe') && g.money - money0 === KAFFE_MAX, `done: ${fmt(g.money - money0)} kr`);
   run(g, 15);
-  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.16/.test(d.text)), 'all nineteen parts: the end card');
+  check(!ev.some(([nn]) => nn === 'endcard'), 'nineteen of twenty parts: no end card yet');
   run(g, 20);
   check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.signe && /bageriet/.test(d.text)), '  Mormor Signe texts: she has heard rumours about the bakery');
   // afterwards the skateboard is by Nova's door (also after a reload)
@@ -4527,6 +4533,146 @@ function mountNear(g, car) { walkHere(g, car.x - Math.cos(car.h) * 1.0, car.z + 
       m3.talkDone('kaffe'); run(g3, 0.3);
     }
     check(ok && j.stage === 'skate', `seed ${seed} with traffic: all five bikes home`);
+  }
+}
+
+// ---------- 48. main quest, part 17: "Bullbilens bageri" (v1.17) – Stora Bertha, the belt, Knäck's copy ----------
+const UP_TO_KAFFE = [...UP_TO_SKAT, 'kaffe'];
+function bakGame(stats = {}, opts = { traffic: 0, peds: 0 }, seed = 7, fresh = false) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_KAFFE);
+  g.mission.restore({ ...s, money: 0, stats, known: fresh ? s.known : [...s.known, 'bageri'] });
+  return g;
+}
+// put the player in a sedan at (x, z), heading h (a fresh car, out of the traffic)
+function bakCarAt(g, x, z, h) {
+  const c = g.addVehicle('sedan', 'blue', x, z, h);
+  c.parkedSpot = true;
+  walkHere(g, x - Math.cos(h) * 1.6, z + Math.sin(h) * 1.6);
+  g.step(DT, { ...idle, action: true }); run(g, 1.2);
+  return g.player.car === c ? c : null;
+}
+function driveBak(g, x, z, until, sec = 30) {
+  for (let i = 0; i < 60 * sec; i++) {
+    const c = g.player.car; if (!c) return false;
+    const d = Math.hypot(x - c.x, z - c.z), want = Math.atan2(x - c.x, z - c.z), err = Math.atan2(Math.sin(want - c.h), Math.cos(want - c.h));
+    const tgt = d > 3 ? Math.min(12, d * 0.7) : 0, fwd = c.vx * Math.sin(c.h) + c.vz * Math.cos(c.h);
+    g.step(DT, { ...idle, analog: false, moveY: fwd < tgt ? 0.8 : fwd > tgt + 1 ? -1 : 0, moveX: Math.max(-1, Math.min(1, -err * 2)), handbrake: d < 2 && c.speed > 0.5 });
+    if (until && until()) return true;
+  }
+  return false;
+}
+{
+  console.log('Bullbilens bageri (huvuduppdrag del 17): hela vägen');
+  const g = bakGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'bageri', 'hint', 'endcard', 'say']);
+  check(BAGERI_MAX === 5600, `up to ${fmt(BAGERI_MAX)} kr`);
+  walkHere(g, 60, -20);
+  run(g, 37);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'bageri') || [])[1];
+  check(sms && sms.from === WHO.bengt && /Kexfabriken/.test(sms.text), 'Bengt texts: Dahlgren is selling the bakery to Kexfabriken');
+  m.accept('bageri'); run(g, 0.3);
+  walkHere(g, 93, -290); run(g, 1.0);
+  check(m.bageriFolk && m.bageriFolk.length === 3, 'Dahlgren, Knäck and Bengt in the bakery yard');
+  check(runToward(g, () => [BAGERI.mark.x, BAGERI.mark.z], 12, () => m.active && m.active.id === 'bageri'), '  up to them: it starts');
+  const job = m.active;
+  run(g, 1.2);
+  check(lastTalk(ev, 'bageri').pages.some((q) => /klockan sju/.test(q.text)) && lastTalk(ev, 'bageri').pages.at(-1).last === 'IN I BAGERIET', '  Knäck\'s offer – and Dahlgren: buns on the belt by seven, or he sells');
+  m.talkDone('bageri'); run(g, 0.3);
+  check(job.stage === 'enter', 'to the new door at the east end of the front');
+  check(runToward(g, () => [BAK_DOOR.x, BAK_DOOR.z], 12, () => m.prompt === 'GÅ IN'), '  round the dock to the door: GÅ IN');
+  press(g); run(g, 1.8);
+  check(ind.inside && ind.where === 'bageri' && job.stage === 'hallTalk', 'inside the bake hall: Stora Bertha, cold');
+  const unreached = reachable(g, BAK.spawn, [BAK.station, BAK.door, BAK.talk], BAK.room);
+  check(!unreached.length, `the belt, the door and the bakers can be walked to (${unreached.length} cut off)`);
+  m.talkDone('bageri'); run(g, 0.3);
+  check(job.stage === 'errands' && g.stats.bageri.at === 1, 'checkpoint: the errands, against the clock');
+  walkHere(g, BAK.door.x, BAK.door.z); run(g, 0.1); press(g); run(g, 1.4);
+  run(g, 1);
+  check(/Klockan 23/.test(m.sub), `  the clock: ${m.sub}`);
+  // on foot at Signe's car park: a car is needed
+  walkHere(g, BAGERI.signeZone.x, BAGERI.signeZone.z); run(g, 0.5);
+  check(job.signe && job.signeState === 'wait' && ev.some(([n, d]) => n === 'toast' && /behöver en bil/.test(d.text)), 'Signe at the chapel\'s car park – on foot: "Du behöver en bil"');
+  const car = bakCarAt(g, BAGERI.signeZone.x - 12, BAGERI.signeZone.z, Math.PI / 2);
+  check(!!car, '  a car');
+  driveBak(g, BAGERI.signeZone.x, BAGERI.signeZone.z, () => job.signeState === 'talk', 20);
+  run(g, 0.6);
+  check(job.signeState === 'talk' && lastTalk(ev, 'bageri').pages.some((q) => /tårta i väskan/.test(q.text)), '  Signe: "kör försiktigt, jag har tårta i väskan"');
+  m.talkDone('bageri'); run(g, 0.3);
+  check(job.signeState === 'car' && job.signe.state === 'lounge' && Math.hypot(job.signe.x - car.x, job.signe.z - car.z) < 1.2, '  she rides in the passenger seat');
+  // the mill: the flour (teleport the car to the road by the mill's gate)
+  car.x = 37; car.z = -312; car.h = Math.PI; car.vx = car.vz = 0; run(g, 0.5);
+  driveBak(g, BAGERI.mjolZone.x, BAGERI.mjolZone.z, () => job.mjol === 'car', 20);
+  check(job.mjol === 'car' && job.signeState === 'car', 'Majken loads three sacks of flour (Signe still beside you)');
+  car.x = 70; car.z = -296; car.h = Math.PI / 2; car.vx = car.vz = 0; run(g, 0.5);
+  driveBak(g, BAGERI.yard.x, BAGERI.yard.z, () => job.stage === 'back', 20);
+  check(job.stage === 'back' && g.stats.bageri.at === 2 && job.clock > 0, `both to the bakery yard in time (${Math.round(job.clock)} s left)`);
+  g.step(DT, { ...idle, action: true }); run(g, 1.2);
+  check(runToward(g, () => [BAK_DOOR.x, BAK_DOOR.z], 20, () => m.prompt === 'GÅ IN'), '  back to the door');
+  press(g); run(g, 1.8);
+  check(job.stage === 'fireTalk' && job.inside && job.inside.length === 3, 'inside: Signe at Stora Bertha');
+  m.talkDone('bageri'); run(g, 0.3);
+  check(job.fired && m.bertha && job.stage === 'band', '  "Tre slag på luckan" – the oven is lit');
+  walkHere(g, BAK.station.x, BAK.station.z); run(g, 0.1);
+  check(m.prompt === 'STARTA', 'the belt: STARTA'); press(g);
+  // shape the balls like a player: press when one is right in front of you (miss one on purpose)
+  let missed = false;
+  for (let i = 0; i < 60 * 40 && job.stage === 'band'; i++) {
+    const b = job.inReach();
+    const go = b && Math.abs(b.x - BAK.window.x) < 0.2 && !(b.k === 5 && !missed);
+    if (b && b.k === 5 && b.x < BAK.window.x - 0.3) missed = true;
+    g.step(DT, { ...idle, action: !!go });
+  }
+  run(g, 1.2);
+  check(job.knots === 11 && ev.filter(([n, d]) => n === 'bageri' && d.kind === 'lump').length === 1, `eleven of twelve knotted, one lump into the oven (${job.knots})`);
+  check(job.stage === 'bandTalk' && g.stats.bageriKnots === 11, '  "Det duger gott"');
+  m.talkDone('bageri'); run(g, 2.0);
+  check(!g.indoor && job.stage === 'opening' && job.crowd && job.crowd.length === 10 && job.ribbon && g.stats.bageri.at === 3, 'seven in the morning: half of Sjuby in the yard, a ribbon on the door');
+  check(runToward(g, () => [BAGERI.mark.x, BAGERI.mark.z], 12, () => job.stage === 'openTalk'), '  to the door: the opening');
+  run(g, 1.2);
+  const to = lastTalk(ev, 'bageri');
+  check(to.pages.some((q) => /Men jag har receptet/.test(q.text)) && to.pages.some((q) => /Sjubydagen/.test(q.text)), '  Knäck: "Ni har bageriet. Men jag har receptet." – and Sjubydagen');
+  const money0 = g.money;
+  m.talkDone('bageri'); run(g, 0.5);
+  check(m.done.has('bageri') && g.money - money0 === 5000 + 11 * 50 && !job.ribbon, `done: ${fmt(g.money - money0)} kr`);
+  run(g, 15);
+  check(ev.some(([nn]) => nn === 'endcard') && ev.some(([nn, d]) => nn === 'sms' && /version 1\.17/.test(d.text)), 'all twenty parts: the end card');
+  run(g, 20);
+  check(ev.some(([nn, d]) => nn === 'sms' && d.from === WHO.pia && /monter/.test(d.text)), '  Pia: Knäck has a stand on the square on Sjubydagen');
+  // afterwards: the bakery is open – Bengt and Signe inside
+  walkHere(g, BAK_DOOR.x, BAK_DOOR.z + 1.5); run(g, 3);
+  walkHere(g, BAK_DOOR.x, BAK_DOOR.z); run(g, 0.2);
+  check(m.prompt === 'GÅ IN', 'afterwards: GÅ IN at the bakery'); press(g); run(g, 1.4);
+  check(ind.bakFolk.length === 2 && m.bertha, '  Bengt and Signe, and Stora Bertha warm');
+  walkHere(g, BAK.talk.x, BAK.talk.z); run(g, 0.1);
+  check(m.prompt === 'PRATA', '  PRATA'); press(g); run(g, 0.3); check(lastTalk(ev, 'bak-talk'), '  one thing each time');
+}
+{
+  console.log('Bullbilens bageri: klockan, ladda om, trafik');
+  // too slow: the clock runs out
+  const g = bakGame({ bageri: { at: 1 } });
+  const m = g.mission, ev = record(g, ['sms', 'banner']);
+  m.accept('bageri'); run(g, 0.5);
+  const job = m.active;
+  check(job && job.stage === 'errands', 'a reload: the errands again, the clock from eleven');
+  run(g, BAGERI.clock + 4);
+  check(!m.active && ev.some(([n, d]) => n === 'banner' && d.kind === 'fail') && ev.some(([n, d]) => n === 'sms' && d.from === WHO.bengt && /en natt till/.test(d.text)), 'the clock runs out: Bengt texts – another night');
+  run(g, 8); m.accept('bageri'); run(g, 0.5);
+  check(m.active && m.active.stage === 'errands' && m.active.clock > BAGERI.clock - 12, '  and it starts again (the clock from eleven)');
+  const g2 = bakGame({ bageri: { at: 3 } });
+  g2.mission.accept('bageri'); run(g2, 1.0);
+  check(g2.mission.active && g2.mission.active.stage === 'opening' && g2.mission.active.crowd, 'a reload at the opening: the crowd in the yard');
+  for (const seed of [3, 11, 19]) {
+    const g3 = bakGame({ bageri: { at: 1 } }, {}, seed);
+    const m3 = g3.mission;
+    m3.accept('bageri'); run(g3, 1.0);
+    const j = m3.active, c = bakCarAt(g3, BAGERI.signeZone.x - 12, BAGERI.signeZone.z, Math.PI / 2);
+    let ok = !!c && j.signe;
+    if (ok) { driveBak(g3, BAGERI.signeZone.x, BAGERI.signeZone.z, () => j.signeState === 'talk', 20); m3.talkDone('bageri'); run(g3, 0.3); ok = j.signeState === 'car'; }
+    if (ok) { c.x = 37; c.z = -312; c.h = Math.PI; c.vx = c.vz = 0; run(g3, 0.3); driveBak(g3, BAGERI.mjolZone.x, BAGERI.mjolZone.z, () => j.mjol === 'car', 20); ok = j.mjol === 'car'; }
+    if (ok) { c.x = 70; c.z = -296; c.h = Math.PI / 2; c.vx = c.vz = 0; run(g3, 0.3); driveBak(g3, BAGERI.yard.x, BAGERI.yard.z, () => j.stage === 'back', 20); ok = j.stage === 'back'; }
+    check(ok, `seed ${seed} with traffic: Signe and the flour to the bakery`);
   }
 }
 

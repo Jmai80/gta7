@@ -20,6 +20,8 @@ import { MILL_ROOM, MILL_DOOR } from './millroom.js';
 import { KOND, KOND_DOOR } from './konditori.js';
 import { FYR, FYR_DOOR, FYR_OUT, fyrFloor } from './fyren.js';
 import { SHED, SHED_DOOR } from './vedbod.js';
+import { BAK, BAK_DOOR } from './bageriet.js';
+import { SIGNE_LOOK } from './kaffe.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
 import { spawnPed, removePed } from './hideout.js';
@@ -43,6 +45,7 @@ export const PLACES = {
   mill: { inside: MILL_ROOM, out: { x: MILL_DOOR.x, z: MILL_DOOR.z, h: MILL_DOOR.h } },                // the windmill → out on its rocks (v1.13)
   konditori: { inside: KOND, out: { x: KOND_DOOR.x, z: KOND_DOOR.z - 0.6, h: Math.PI } },             // Sjuby Konditori → the square, facing north (v1.14)
   fyren: { inside: FYR, out: { x: FYR_OUT.x, z: FYR_OUT.z, h: FYR_OUT.h } },                          // the lighthouse → down the steps (v1.15)
+  bageri: { inside: BAK, out: { x: BAK_DOOR.x - 0.2, z: BAK_DOOR.z + 0.75, h: 0 } },                     // the bakery → its yard (v1.17)
   shed: { inside: SHED, out: { x: SHED_DOOR.x + 0.9, z: SHED_DOOR.z + 0.4, h: Math.PI / 2 } },         // Signe's woodshed → her back yard (v1.16)
 };
 
@@ -83,6 +86,16 @@ const LOG_PAGES = [
   '9 aug 2026. Elsa i fyren.\nLampan tänd. Inget mer\natt skriva i dag.',
 ];
 const LOG = { who: 'Ingvars loggbok', letter: 'L', color: '#2c4a6a', note: true };
+// (v1.17) Bengt and Signe in the bakery, one thing each time
+const BENGT_T = { who: 'Bagar-Bengt', letter: 'B', color: '#d9534f' };
+const SIGNE_T = { who: 'Mormor Signe', letter: 'S', color: '#b5466a' };
+const BAK_TALK = [
+  [SIGNE_T, 'Bertha har inte slocknat en enda gång sedan invigningen. Jag ger henne björkved och säger godnatt.'],
+  [BENGT_T, 'Fyrahundra bullar i morse. Med stött kardemumma. Signe står vid mortelns och ser på mig hela tiden.'],
+  [SIGNE_T, 'Dahlgren sitter på kontoret och räknar. Han har räknat fram att vi går med vinst. Han grät lite.'],
+  [BENGT_T, 'Knäck har köpt en monter på Sjubydagen. Mitt på torget. Han tror att han kan sälja Arnes recept. Det får vi se på.'],
+  [SIGNE_T, 'Mössen under lastkajen får smulorna. Det är bättre än fällor, och de håller ordning på golvet.'],
+];
 // what Inga says when you come back (one each time, in turn)
 const INGA_AGAIN = [
   'Gun skickar fortfarande en påse bullar till kyrkkaffet varje söndag. Ingen vet hur hon får dem så goda.',
@@ -108,6 +121,7 @@ export class Indoors {
     this.chapelFolk = [];  // Inga first, then the three in the pews (only while you are in there)
     this.kondFolk = [];    // (v1.14) Gun behind the counter and a baker at the table, after "Den gyllene bullen"
     this.fyrFolk = [];     // (v1.15) Ingvar and Elsa at the kitchen table, after "Skatans bo"
+    this.bakFolk = [];     // (v1.17) Bengt and Signe in the bakery, after "Bullbilens bageri"
     this.goIn = null;      // which door GÅ IN is at: 'chapel' | 'konditori' | 'fyren'
     this.organ = new Organ(game); // (v1.10) the chapel organ: the psalm in "Kyrkkaffet", free play afterwards
     this.chapelBuns = 0;   // (v1.10) buns on the coffee table by the door (render.js draws them)
@@ -140,6 +154,7 @@ export class Indoors {
       if (where === 'chapel') this.fillChapel();
       if (where === 'konditori' && !g.mission.active) this.fillKonditori();
       if (where === 'fyren' && !g.mission.active) this.fillFyren();
+      if (where === 'bageri' && !g.mission.active) this.fillBakery();
       g.emit('indoor', { on: true });
       if (done) done();
     });
@@ -161,6 +176,8 @@ export class Indoors {
       this.kondFolk = [];
       for (const q of this.fyrFolk) removePed(g, q);
       this.fyrFolk = [];
+      for (const q of this.bakFolk) removePed(g, q);
+      this.bakFolk = [];
       this.noExit = false;
       if (this.organ.open) this.organ.stop();
       this.chapelBuns = 0;
@@ -201,6 +218,8 @@ export class Indoors {
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('guldbullen') && Math.hypot(p.x - KOND_DOOR.x, p.z - KOND_DOOR.z) < KOND_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'konditori'; }
       // (v1.15) the lighthouse, once the lamp is lit again
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('skatbo') && Math.hypot(p.x - FYR_DOOR.x, p.z - FYR_DOOR.z) < FYR_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'fyren'; }
+      // (v1.17) the bakery, open again
+      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('bageri') && Math.hypot(p.x - BAK_DOOR.x, p.z - BAK_DOOR.z) < BAK_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'bageri'; }
       return;
     }
     if (this.samuel) this.samuel.update(dt);
@@ -212,6 +231,7 @@ export class Indoors {
       if (this.priest && Math.hypot(p.x - CHAPEL.talk.x, p.z - CHAPEL.talk.z) < CHAPEL.talk.r) { this.prompt = 'PRATA'; return; }
       if (g.time - this.ropeAt > 1.1 && Math.hypot(p.x - CK.rope.x, p.z - CK.rope.z) < CK.rope.r) this.prompt = 'RINGA';
     }
+    if (this.where === 'bageri' && this.bakFolk[0] && Math.hypot(p.x - BAK.talk.x, p.z - BAK.talk.z) < BAK.talk.r) { this.prompt = 'PRATA'; return; }
     if (this.where === 'konditori' && this.kondFolk[0] && Math.hypot(p.x - KOND.talk.x, p.z - KOND.talk.z) < KOND.talk.r) { this.prompt = 'PRATA'; return; }
     if (this.where === 'tower' && Math.hypot(p.x - INT.lift.x, p.z - INT.lift.z) < INT.lift.r) this.prompt = 'HISS';
     // (v1.15) the lighthouse: the stairs between the floors, Ingvar at his table, the logbook
@@ -233,6 +253,7 @@ export class Indoors {
     if (this.prompt === 'PRATA' && this.where === 'chapel') { this.talkToInga(); return true; }
     if (this.prompt === 'PRATA' && this.where === 'konditori') { this.talkToGun(); return true; }
     if (this.prompt === 'PRATA' && this.where === 'fyren') { this.talkToIngvar(); return true; }
+    if (this.prompt === 'PRATA' && this.where === 'bageri') { this.talkToBakers(); return true; }
     if (this.prompt === 'LÄS' && this.where === 'fyren') { this.readLog(); return true; }
     if ((this.prompt === 'UPP' || this.prompt === 'NER') && this.stair) { this.climb(this.stair); return true; }
     if (this.prompt === 'RINGA') { this.ringBell(); return true; }
@@ -346,6 +367,23 @@ export class Indoors {
     g.emit('stairs', { up: S.up });
     this.after(0.4, () => { this.place(S.to.x, S.to.z, S.to.h); });
     this.after(0.7, () => { g.emit('fade', { on: false }); this.busy = false; });
+  }
+
+  // ---- (v1.17) the bakery after "Bullbilens bageri": Bengt at the belt, Signe by Stora Bertha
+  fillBakery() {
+    const g = this.game;
+    for (const q of this.bakFolk) removePed(g, q);
+    this.bakFolk = [spawnPed(g, { ...BENGT_LOOK }, BAK.bengt.x, BAK.bengt.z, BAK.bengt.h, 'bengt-out'), spawnPed(g, { ...SIGNE_LOOK }, BAK.signe.x, BAK.signe.z, BAK.signe.h, 'signe')];
+    if (!g.stats.bakVisit) g.emit('toast', { text: 'Bullbilens bageri. Stora Bertha är varm, och det doftar kardemumma.' });
+  }
+
+  talkToBakers() {
+    const g = this.game, p = g.player;
+    const n = g.stats.bakVisit = (g.stats.bakVisit || 0) + 1;
+    p.vx = p.vz = 0;
+    p.h = Math.atan2(BAK.bengt.x - p.x, BAK.bengt.z - p.z);
+    const [who, text] = BAK_TALK[(n - 1) % BAK_TALK.length];
+    g.emit('talk', { id: 'bak-talk', pages: [{ ...who, text, last: 'TACK' }] });
   }
 
   fillFyren() {

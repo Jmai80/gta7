@@ -298,6 +298,11 @@ export function islandInto(H) {
   H.area(44, Y.gateZ0, Y.x0, Y.gateZ1, 0x494c52, M.ASPHALT, PATCH_Y);  // the driveway from the middle road
   building({ x0: Bk.x0, z0: Bk.z0, x1: Bk.x1, z1: Bk.z1, h: 8, c: 0x9a4a33, m: M.BRICKWIN, cell: [3.4, 3.2], topC: 0x55575c, mapC: 0x8a5a48 });
   solid(Bk.x0 + 3, CURB_H, Bk.z1, Bk.x1 - 3, CURB_H + 1.1, Bk.z1 + 2.4, COL.concrete);  // loading dock
+  // (v1.17) a staff door at the east end of the front, past the dock ("Bullbilens bageri": the way into the bake hall)
+  box(Bk.x1 - 1.6, CURB_H, Bk.z1, Bk.x1 - 0.6, CURB_H + 2.15, Bk.z1 + 0.06, 0x5b4636, M.BOARDS);
+  box(Bk.x1 - 0.82, CURB_H + 0.95, Bk.z1 + 0.06, Bk.x1 - 0.72, CURB_H + 1.05, Bk.z1 + 0.1, 0xc9ccd0, M.CHROME);
+  box(Bk.x1 - 1.8, CURB_H, Bk.z1, Bk.x1 - 0.4, CURB_H + 0.1, Bk.z1 + 0.6, 0x8f8a83, M.STONE);
+  box(Bk.x1 - 1.7, CURB_H + 2.15, Bk.z1, Bk.x1 - 0.5, CURB_H + 2.25, Bk.z1 + 0.35, 0x3a3c41);
   // the office (v0.7): a side door on the west wall and the window where the light is always on
   {
     const fx = Bk.x0, dz = -322;
