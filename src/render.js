@@ -28,6 +28,7 @@ import { FyrView } from './fyrview.js';
 import { KaffeView } from './kaffeview.js';
 import { BakView } from './bakview.js';
 import { SjubyView } from './sjubyview.js';
+import { ForbudView } from './forbudview.js';
 import { FYR, fyrFloor } from './fyren.js';
 import { duckPlace } from './ankor.js';
 
@@ -154,6 +155,7 @@ export class View {
     this.kaffe = new KaffeView(this.scene, this.matStatic); // (v1.16) Birger's coffee table, the tarps in Signe's shed
     this.bak = new BakView(this.scene, this.matStatic); // (v1.17) the dough on the belt, Stora Bertha's glow, the ribbon
     this.sjuby = new SjubyView(this.scene, this.matStatic, this.atlas); // (v1.18) Sjubydagen: the party, the van, the belt, fireworks, the ship
+    this.forbud = new ForbudView(this.scene, this.matStatic, this.atlas); // (v1.19) Förbjudet område: the quay, the poster, the guards' fans
     this.makeGate(layout);
     this.makeBike();
     // the bun party on the square (v1.0): the table, the buns, flags and a banner, while the party is up
@@ -793,6 +795,7 @@ export class View {
     this.kaffe.sync(game, this.indoor);
     this.bak.sync(game, this.indoor);
     this.sjuby.sync(game, this.indoor);
+    this.forbud.sync(game, this.indoor);
     this.applyDusk(game);
     this.fest.visible = !!game.festUp && !this.indoor;
     if (this.world.crane) this.world.crane.rotation.y = Math.sin(this.time * 0.06) * 1.3 + 0.6;

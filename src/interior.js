@@ -25,6 +25,7 @@ import { fyrLayout, fyrInto } from './fyren.js';
 import { shedLayout, shedInto } from './vedbod.js';
 import { bakLayout, bakInto } from './bageriet.js';
 import { fabLayout, fabInto } from './kexhall.js';
+import { kontorLayout, kontorInto } from './kexkontor.js';
 
 // material codes (M in layout.js)
 const PLAIN = 0, LIGHT = 3, CHROME = 7, IWALL = 29, PARQUET = 30, FLOORTILE = 31, TV = 32, FABRIC = 33, ITRIM = 34, IGLASS = 35;
@@ -153,7 +154,11 @@ export function interiorLayout() {
   colliders.push(...fab.colliders);
   Object.assign(signs, fab.signs);
   signPrims.push(...fab.signPrims);
-  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor, kond.floor, fyr.floor, shed.floor, bak.floor, fab.floor], signs, signPrims };
+  const kontor = kontorLayout(); // Kexfabriken's office on Västerholmen (v1.19)
+  colliders.push(...kontor.colliders);
+  Object.assign(signs, kontor.signs);
+  signPrims.push(...kontor.signPrims);
+  return { colliders, floors: [{ x0: B.x0, z0: B.z0, x1: B.x1, z1: B.z1, y: Y }, shop.floor, office.floor, salon.floor, birger.floor, nova.floor, chapel.floor, elsa.floor, pizza.floor, mill.floor, kond.floor, fyr.floor, shed.floor, bak.floor, fab.floor, kontor.floor], signs, signPrims };
 }
 
 // ------------------------------------------------------------------ geometry
@@ -299,6 +304,7 @@ export function interiorInto(B) {
   shedInto(B); // Signe's woodshed (v1.16)
   bakInto(B); // Bullbilen's bake hall (v1.17)
   fabInto(B); // Kexfabriken's hall (v1.18)
+  kontorInto(B); // Kexfabriken's office (v1.19)
 }
 
 // door panel for Melker's front door, hinge at the origin, closed along +x (render.js turns it)

@@ -47,7 +47,9 @@ import { CARWASH } from '../src/config.js';
 import { SJUBY, HOUSE_BITS, CREDITS, ROCKETS } from '../src/sjubydagen.js';
 import { FAB, FAB_DOOR, BELT, beltAt } from '../src/kexhall.js';
 import { KEX, WEST, onWest, westRoadDist } from '../src/westisle.js';
-import { MAIN } from '../src/mission.js';
+import { MAIN, CHAPTER1 } from '../src/mission.js';
+import { FORBUD, GUARDS, DISGUISE } from '../src/forbud.js';
+import { KONTOR, KONTOR_DOOR } from '../src/kexkontor.js';
 
 const DT = 1 / 60;
 const WHO_PIA = 'Polis-Pia';
@@ -390,7 +392,14 @@ function startRace(g) {
   g2.mission.checkAllDone('sjuby');
   run(g2, 10.5);
   check(sms2.some(([n]) => n === 'endcard'), 'end card when all twenty-one are done (the end of the first chapter)');
-  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.18/.test(d.text) && /första kapitlet/.test(d.text) && /kapitel två/i.test(d.text)), 'the last text: thank you for the first chapter (version 1.18) – chapter two is coming');
+  check(sms2.some(([n, d]) => n === 'sms' && /första kapitlet/.test(d.text) && /kapitel två/i.test(d.text)), 'the text after the first chapter: chapter two has begun');
+  check(!sms2.some(([n, d]) => n === 'sms' && /version 1\.19/.test(d.text)), 'no "that was all" yet: Förbjudet område (the second chapter) is left');
+  // (v1.19) the first part of the second chapter: no new end card, but the text that this was all for now
+  g2.mission.done.add('forbud');
+  g2.mission.checkAllDone('forbud');
+  run(g2, 15);
+  check(sms2.some(([n, d]) => n === 'sms' && /version 1\.19/.test(d.text) && /kapitel två/i.test(d.text)), 'the last text: that was all in version 1.19 – chapter two has begun');
+  check(sms2.filter(([n]) => n === 'endcard').length === 1, 'the end card only once (after the first chapter)');
   check(g2.mission.objective === 'Fri lek: utforska Sjuby' || g2.mission.choose, `free roam afterwards (${g2.mission.objective})`);
   check(!new Game({ seed: 7, traffic: 0, peds: 0 }).mission.restore({ v: 1, stage: 'free' }), 'old v0.1 saves are ignored');
   // a save from version 0.2 (no quest log yet): Lasse, Sanna and Kim were all in touch
@@ -4742,7 +4751,7 @@ function followVan(g, job, sec) {
   const g = sjGame({}, { traffic: 0, peds: 0 }, 7, true);
   const m = g.mission, p = g.player, ind = g.indoors;
   const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'sjuby', 'hint', 'endcard', 'say', 'credits', 'cinema']);
-  check(MAIN.length === 21 && MAIN.at(-1) === 'sjuby', 'Sjubydagen is the twenty-first and last main part');
+  check(CHAPTER1.length === 21 && CHAPTER1.at(-1) === 'sjuby' && MAIN.length === 22 && MAIN.at(-1) === 'forbud', 'Sjubydagen is the twenty-first and last part of the first chapter, Förbjudet område the twenty-second');
   check(!g.gateWest.open, 'the west bridge is shut');
   walkHere(g, 20, 30);
   run(g, 37);
@@ -4932,6 +4941,164 @@ function followVan(g, job, sec) {
     if (ok) { drivePath(g5, [[-37.5, 20]], () => j5.moving, 20); followVan(g5, j5, 160); ok = ['yard', 'enter'].includes(j5.stage) && g5.gateWest.open; }
     check(ok, `seed ${seed} with traffic: after the van all the way to Kexfabriken (${j5 && j5.stage})`);
   }
+}
+
+// ---------- 50. main quest, part 19: "Förbjudet område" (v1.19) – the reception on the quay, the ban, Vera's
+// disguise, the guards in Kexfabriken's yard, the office and the photo from 1962 ----------
+const UP_TO_SJUBY = [...UP_TO_BAGERI, 'sjuby'];
+function fbGame(stats = {}, opts = { traffic: 0, peds: 0 }, seed = 7, fresh = false) {
+  const g = new Game({ seed, ...opts });
+  const s = livsSave(UP_TO_SJUBY);
+  g.mission.restore({ ...s, money: 0, stats, known: fresh ? s.known : [...s.known, 'forbud'] });
+  return g;
+}
+// a talk: wait for it, apply its effects, close it
+function fbTalk(g, ev, wait = 1.2) { run(g, wait); const t = lastTalk(ev, 'forbud'); if (t) { for (const q of t.pages) if (q.fx) g.mission.talkFx('forbud', q.fx); g.mission.talkDone('forbud'); } run(g, 0.3); return t; }
+function waitFor(g, cond, sec) { for (let k = 0; k < 60 * sec; k++) { if (cond()) return true; g.step(DT, idle); } return cond(); }
+const guard = (job, id) => job.guards && job.guards.find((G) => G.def.id === id);
+{
+  console.log('Förbjudet område (huvuduppdrag del 19): hela vägen');
+  const g = fbGame({}, { traffic: 0, peds: 0 }, 7, true);
+  const m = g.mission, p = g.player, ind = g.indoors;
+  const ev = record(g, ['sms', 'talk', 'toast', 'banner', 'forbud', 'hint', 'endcard', 'say', 'caught']);
+  run(g, 1);
+  check(g.gateWest.open && !m.banned, 'after Sjubydagen the west bridge is open');
+  walkHere(g, 20, 30);
+  run(g, 105);
+  const sms = (ev.find(([n, d]) => n === 'sms' && d.offer === 'forbud') || [])[1];
+  check(sms && sms.from === WHO.kardell && /kardemummakakor/.test(sms.text), 'Kapten Kardell texts: coffee and cardamom biscuits on the quay');
+  m.accept('forbud'); run(g, 0.5);
+  check(m.forbudFolk && m.forbudFolk.length === 6, '  the reception on the quay: Ragnhild, Gun, Bengt, Ingvar, Elsa and Pia');
+  walkHere(g, -312, 44);
+  check(runToward(g, () => [FORBUD.mark.x, FORBUD.mark.z], 10, () => m.active && m.active.id === 'forbud'), 'up to the gangway: it starts');
+  const job = m.active;
+  run(g, 1.3);
+  const intro = lastTalk(ev, 'forbud');
+  check(intro && intro.pages.some((q) => /stött/.test(q.text)) && intro.pages.some((q) => /ankare/i.test(q.text)) && intro.pages.some((q) => /äger ej tillträde/.test(q.text)), '  the biscuits, the anchor ring – and the ban');
+  check(intro.pages.some((q) => q.who === 'Polis-Pia' && /privat mark/.test(q.text)), '  Pia: private land, nothing she can do');
+  fbTalk(g, ev, 0);
+  run(g, 1.6);
+  check(job.stage === 'banned' && g.stats.forbud.at === 1 && m.banned, 'checkpoint: banned');
+  check(Math.hypot(p.x - FORBUD.bridge.x, p.z - FORBUD.bridge.z) < 0.5 && !g.gateWest.open, '  walked back to the town end of the west bridge; the barrier is down');
+  check(m.forbudGuard && g.peds.list.includes(m.forbudGuard), '  Vakt Yngve by the barrier');
+  run(g, 3.5);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.gun && /Vera/.test(d.text)), '  Gun texts: Vera can make you somebody else');
+  check(!runToward(g, () => [-200, -40], 6, () => p.x < -179), '  the barrier stops you');
+  check(ev.some(([n, d]) => n === 'say' && d.who === m.forbudGuard && /lappen|Kaptenens|särskilt/.test(d.text)), '  Yngve knows you from the poster');
+  // Vera
+  walkHere(g, 22, 32.4); run(g, 0.2);
+  check(m.prompt === 'GÅ IN', 'Salong Saxen: GÅ IN'); press(g); run(g, 1.6);
+  check(ind.inside && ind.where === 'salon' && job.vera, '  inside, Vera by the chair');
+  check(runToward(g, () => [job.vera.x, job.vera.z], 8, () => m.prompt === 'PRATA'), '  up to Vera: PRATA'); press(g);
+  const look0 = { ...p.look };
+  run(g, 0.8);
+  check(lastTalk(ev, 'forbud').pages.some((q) => /lösmustasch/.test(q.text)), '  a cap, glasses and a moustache from the theatre club');
+  fbTalk(g, ev, 0);
+  check(p.look.shirt === DISGUISE.shirt && (p.look.style & DISGUISE.style) === DISGUISE.style && look0.shirt !== DISGUISE.shirt, '  in disguise: a blue boiler suit, the cap, the glasses, the moustache');
+  check(job.stage === 'gate' && g.stats.forbud.at === 2, 'checkpoint: in disguise');
+  walkHere(g, SALON.door.x, SALON.door.z); run(g, 0.2); press(g); run(g, 1.6);
+  check(!ind.inside, '  out on Skolgatan');
+  // the barrier
+  const y = m.forbudGuard;
+  walkHere(g, y.x + 1.6, y.z + 0.5); run(g, 0.2);
+  check(m.prompt === 'PRATA', 'Yngve at the barrier: PRATA'); press(g);
+  const gt = fbTalk(g, ev, 0.6);
+  check(gt.pages.some((q) => /Nattskiftet/.test(q.text)), '  "Nattskiftet. Första dagen."');
+  run(g, 0.4);
+  check(job.stage === 'island' && job.gateOpen && g.gateWest.open && job.guards.length === 3, '  the barrier goes up; three guards in Kexfabriken\'s yard');
+  // sneak in: wait outside the gate until Gösta reads his paper, along the hall, behind the pallets, past Rolf
+  walkHere(g, -262, -44.5); run(g, 0.5);
+  const go = guard(job, 'gosta'), ke = guard(job, 'kerstin'), ro = guard(job, 'rolf');
+  check(waitFor(g, () => go.mode === 'read' && go.t > 4.6, 30), '  Gösta reads his paper');
+  const at = (x, z) => () => Math.hypot(p.x - x, p.z - z) < 0.7;
+  check(walkPts(g, [[-278, -45.5], [-300, -46.8], [-316, -48.6], [-322, -48.6]], at(-322, -48.6), 20, 1, false) && !g.stats.forbudCaught, '  past the gate and along the hall, out of reach of Kerstin');
+  check(waitFor(g, () => ke.mode === 'walk' && ke.leg === 0 && ke.ped.x > -312, 60), '  Kerstin walks away to the east');
+  check(walkPts(g, [[-328.6, -42], [-328.6, -31], [-327.6, -29.6]], at(-327.6, -29.6), 15, 1, false) && !g.stats.forbudCaught, '  round the corner, behind the pallets by the office');
+  check(waitFor(g, () => ro.mode === 'walk' && ro.leg === 0 && ro.ped.x > -318, 60) && !g.stats.forbudCaught, '  Rolf walks away from the door');
+  check(walkPts(g, [[-329.0, -27.0], [KONTOR_DOOR.x, KONTOR_DOOR.z]], () => m.prompt === 'GÅ IN', 12, 1, false) && !g.stats.forbudCaught, `  to the office door unseen: GÅ IN (Kerstin ${ke.meter.toFixed(2)}, Rolf ${ro.meter.toFixed(2)}, Gösta ${go.meter.toFixed(2)})`);
+  press(g); run(g, 1.6);
+  check(ind.inside && ind.where === 'kontor' && job.stage === 'office', 'inside Kexfabriken\'s office');
+  check(!reachable(g, KONTOR.spawn, [...Object.values(KONTOR.spots), KONTOR.door], KONTOR.bounds).length, '  the four places and the door can be reached from the door');
+  for (const id of ['desk', 'model', 'chest', 'photo']) {
+    const Q = KONTOR.spots[id];
+    check(runToward(g, () => [Q.x, Q.z], 10, () => m.prompt === 'UNDERSÖK' && job.spot === id), `  ${id}: UNDERSÖK`); press(g);
+    const t = fbTalk(g, ev, 1.0);
+    if (id === 'desk') check(t.pages.some((q) => /R\. Kardell, styrelsens ordförande/.test(q.text)), '    the board\'s letter: signed R. Kardell');
+    if (id === 'chest') check(t.pages.some((q) => /1962/.test(q.text) && /Kockeleven A\./.test(q.text)), '    the logbook: "Kockeleven A." went ashore in Sjuby, 1962');
+    if (id === 'photo') check(t.pages.some((q) => /kockeleven Arne, 19/.test(q.text)), '    the photo: kockeleven Arne, 19');
+  }
+  check(job.stage === 'ragnhild' && job.rag && ind.noExit, 'all four: Ragnhild comes in');
+  run(g, 3.3);
+  const rt = lastTalk(ev, 'forbud');
+  check(rt.pages.some((q) => /1971/.test(q.text)) && rt.pages.some((q) => /receptbok/.test(q.text)) && rt.pages.some((q) => /väntar ombord/.test(q.text)), '  her mother\'s recipe book, Kexfabriken from 1971, "jag väntar ombord"');
+  const money0 = g.money;
+  fbTalk(g, ev, 0);
+  check(m.done.has('forbud') && g.money === money0 + FORBUD.pay && g.stats.forbud.at === 9, `done: ${FORBUD.pay} kr`);
+  check(p.look.shirt === look0.shirt && p.look.style === look0.style, '  the moustache off: your own look again');
+  run(g, 1.0);
+  check(!m.banned && g.gateWest.open && !ind.noExit, '  the ban is lifted: the barrier is up');
+  run(g, 16);
+  check(ev.some(([n, d]) => n === 'sms' && d.from === WHO.gun && /ombord/.test(d.text)), '  Gun texts: she will come on board – soon');
+  check(ev.some(([n, d]) => n === 'sms' && /version 1\.19/.test(d.text)) && !ev.some(([n]) => n === 'endcard'), '  that was all in version 1.19 (no new end card)');
+  walkHere(g, KONTOR.door.x, KONTOR.door.z); run(g, 0.2); press(g); run(g, 1.6);
+  check(!ind.inside, '  out in the yard');
+  walkHere(g, KONTOR_DOOR.x, KONTOR_DOOR.z); run(g, 0.3);
+  check(m.prompt === 'GÅ IN', '  afterwards the office is open: GÅ IN');
+}
+{
+  console.log('Förbjudet område: vakterna ser dig, omladdning');
+  // seen: walked back to the bridge, the disguise still on, Yngve lets you in again
+  const g = fbGame({ forbud: { at: 2 } });
+  const m = g.mission, p = g.player;
+  const ev = record(g, ['talk', 'toast', 'say', 'caught']);
+  m.accept('forbud'); run(g, 0.5);
+  const job = m.active;
+  check(job && job.stage === 'gate' && job.disguised && p.look.shirt === DISGUISE.shirt, 'a reload in disguise: back at the barrier, still in the boiler suit');
+  const y = m.forbudGuard;
+  check(y, '  Yngve by the barrier');
+  walkHere(g, y.x + 1.6, y.z + 0.5); press(g); fbTalk(g, ev, 0.6); run(g, 0.4);
+  check(job.stage === 'island' && g.gateWest.open, '  in through the barrier');
+  const go = guard(job, 'gosta');
+  waitFor(g, () => go.mode === 'look' && go.k === 1, 20);
+  const la = go.def.lookAt[1];
+  walkHere(g, go.ped.x + Math.sin(la) * 3.5, go.ped.z + Math.cos(la) * 3.5);
+  check(waitFor(g, () => job.stage === 'caught', 4), '  right in front of Gösta when he looks up: seen');
+  check(ev.some(([n]) => n === 'caught') && ev.some(([n, d]) => n === 'say' && d.who === go.ped), '  he knows you from the poster');
+  run(g, 3.2);
+  check(job.stage === 'gate' && !g.gateWest.open && Math.hypot(p.x - FORBUD.bridge.x, p.z - FORBUD.bridge.z) < 0.5 && g.stats.forbudCaught === 1, '  walked back to the bridge, the barrier down');
+  check(job.disguised && p.look.shirt === DISGUISE.shirt, '  the disguise is still on');
+  walkHere(g, y.x + 1.6, y.z + 0.5); press(g); run(g, 0.6);
+  check(lastTalk(ev, 'forbud').pages.length === 2 && /igen/.test(lastTalk(ev, 'forbud').pages[0].text), '  Yngve: "Du igen? Ni nya går alltid vilse."');
+  fbTalk(g, ev, 0);
+  check(job.stage === 'island' && g.gateWest.open, '  and lets you in again');
+  // running past a guard: seen from further away
+  const ro = guard(job, 'rolf');
+  waitFor(g, () => ro.mode === 'walk', 30);
+  const fx = ro.ped.x + Math.sin(ro.ped.h) * 10.5, fz = ro.ped.z + Math.cos(ro.ped.h) * 10.5;
+  walkHere(g, fx, fz);
+  let seenRun = false;
+  for (let k = 0; k < 60 && !seenRun; k++) { g.step(DT, { ...idle, analog: false, sprint: true, moveY: 1, camYaw: ro.ped.h + Math.PI / 2 }); seenRun = ro.meter > 0; }
+  check(seenRun, '  running in front of Rolf 10 m away: he notices');
+  // banned and on Västerholmen after a reload: walked back to the bridge
+  const g2 = fbGame({ forbud: { at: 1 } });
+  g2.player.x = -300; g2.player.z = 20; g2.player.y = g2.world.groundHeight(-300, 20);
+  g2.mission.accept('forbud'); run(g2, 2.2);
+  const j2 = g2.mission.active;
+  check(j2 && j2.stage === 'banned' && Math.hypot(g2.player.x - FORBUD.bridge.x, g2.player.z - FORBUD.bridge.z) < 0.5 && !g2.gateWest.open, 'banned and on Västerholmen after a reload: walked back to the bridge');
+  // banned, the quest not followed, but on the island side of the barrier: it lets you out and shuts behind you
+  const g4 = fbGame({ forbud: { at: 2 } });
+  walkHere(g4, -200, -40); run(g4, 1.2);
+  check(g4.gateWest.open && g4.mission.banned && !g4.mission.active, 'banned but on the island side: the barrier lets you out');
+  check(runToward(g4, () => [-165, -40], 12, () => g4.player.x > -170), '  out over the bridge');
+  run(g4, 3.0);
+  check(!g4.gateWest.open, '  and shuts behind you');
+  // a save from before the ban: the bridge stays open
+  const g3 = fbGame({});
+  run(g3, 1);
+  check(g3.gateWest.open && !g3.mission.banned, 'the quest open but not started: the west bridge is still open');
+  // the guards' yard can be walked: from the gate to the office door
+  const unreach = reachable(g3, { x: -270, z: -40 }, [KONTOR_DOOR, { x: -322, z: -48.6 }, { x: -327.6, z: -29.6 }], { x0: -340, z0: -60, x1: -260, z1: -5 });
+  check(!unreach.length, 'the yard: from the gate past the pallets to the office door');
 }
 console.log(fails ? `\n${fails} check(s) failed` : '\nAll mission checks passed');
 process.exit(fails ? 1 : 0);

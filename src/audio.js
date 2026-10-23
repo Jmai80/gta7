@@ -657,6 +657,20 @@ export class AudioFX {
     }
   }
 
+  // (v1.19) "Förbjudet område": the ship's horn, the ban, Vera's scissors, the barrier, searching, the photo, the door
+  forbud(kind) {
+    if (!this.ctx) return;
+    if (kind === 'ship') { this.tone(98, 1.6, 'sawtooth', 0.05, 0.1); this.tone(123.5, 1.6, 'sawtooth', 0.035, 0.1); this.tone(196, 1.5, 'sine', 0.03, 0.15); }
+    else if (kind === 'ban') { this.tone(146.8, 1.4, 'sawtooth', 0.045, 0); this.tone(155.6, 1.4, 'sawtooth', 0.035, 0); this.tone(73.4, 1.8, 'sine', 0.12, 0, 60); }
+    else if (kind === 'disguise') { for (let i = 0; i < 6; i++) this.burst(0.06, 4200, 0.03, 'highpass', i * 0.13); [523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.04, 0.85 + i * 0.09)); }
+    else if (kind === 'gate') { this.burst(0.1, 900, 0.1, 'bandpass'); this.tone(110, 2.4, 'sawtooth', 0.02, 0.1, 140); this.burst(0.12, 700, 0.15, 'bandpass', 2.5); }
+    else if (kind === 'search') { this.burst(0.08, 2600, 0.18, 'bandpass'); this.burst(0.06, 1800, 0.12, 'bandpass', 0.22); }
+    else if (kind === 'found') { this.tone(784, 0.1, 'triangle', 0.04); this.tone(1046.5, 0.16, 'triangle', 0.035, 0.09); }
+    else if (kind === 'photo') { this.burst(0.06, 2200, 0.1, 'bandpass'); [392, 466.2, 587.3, 698.5].forEach((f, i) => this.tone(f, 1.6 - i * 0.2, 'sine', 0.03, 0.3 + i * 0.35)); }
+    else if (kind === 'door') { this.tone(180, 0.5, 'sawtooth', 0.02, 0, 120); this.burst(0.08, 500, 0.2, 'lowpass', 0.45); this.tone(98, 1.6, 'sine', 0.05, 0.9); }
+    else if (kind === 'lift') { [392, 494, 587.3, 784].forEach((f, i) => this.tone(f, 0.5, 'triangle', 0.035, i * 0.14)); }
+  }
+
   // spotted! a sharp sting
   caught() {
     if (!this.ctx) return;

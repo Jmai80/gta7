@@ -22,6 +22,7 @@ import { FYR, FYR_DOOR, FYR_OUT, fyrFloor } from './fyren.js';
 import { SHED, SHED_DOOR } from './vedbod.js';
 import { BAK, BAK_DOOR } from './bageriet.js';
 import { FAB, FAB_DOOR } from './kexhall.js';
+import { KONTOR, KONTOR_DOOR } from './kexkontor.js';
 import { SIGNE_LOOK } from './kaffe.js';
 import { Organ } from './organ.js';
 import { Ped, STYLE_BITS as ST } from './peds.js';
@@ -48,6 +49,7 @@ export const PLACES = {
   fyren: { inside: FYR, out: { x: FYR_OUT.x, z: FYR_OUT.z, h: FYR_OUT.h } },                          // the lighthouse → down the steps (v1.15)
   bageri: { inside: BAK, out: { x: BAK_DOOR.x - 0.2, z: BAK_DOOR.z + 0.75, h: 0 } },                     // the bakery → its yard (v1.17)
   fabrik: { inside: FAB, out: { x: FAB_DOOR.x + 0.6, z: FAB_DOOR.z, h: Math.PI / 2 } },                  // Kexfabriken's hall → the docks (v1.18)
+  kontor: { inside: KONTOR, out: { x: KONTOR_DOOR.x + 0.6, z: KONTOR_DOOR.z, h: Math.PI / 2 } },         // Kexfabriken's office → the yard (v1.19)
   shed: { inside: SHED, out: { x: SHED_DOOR.x + 0.5, z: SHED_DOOR.z + 0.9, h: 0 } },         // Signe's woodshed → her back yard (v1.16)
 };
 
@@ -158,6 +160,7 @@ export class Indoors {
       if (where === 'fyren' && !g.mission.active) this.fillFyren();
       if (where === 'bageri' && !g.mission.active) this.fillBakery();
       if (where === 'fabrik' && !g.mission.active) g.emit('toast', { text: 'Kexfabriken. Kexlinje ett står still – och det luktar fortfarande vanilj.' });
+      if (where === 'kontor' && !g.mission.active) g.emit('toast', { text: 'Kexfabrikens kontor. Fotot från 1962 hänger kvar på väggen.' });
       g.emit('indoor', { on: true });
       if (done) done();
     });
@@ -225,6 +228,8 @@ export class Indoors {
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('bageri') && Math.hypot(p.x - BAK_DOOR.x, p.z - BAK_DOOR.z) < BAK_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'bageri'; }
       // (v1.18) Kexfabriken's hall on Västerholmen, after Sjubydagen: the line stands still
       if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('sjuby') && Math.hypot(p.x - FAB_DOOR.x, p.z - FAB_DOOR.z) < FAB_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'fabrik'; }
+      // (v1.19) Kexfabriken's office, once the ban is lifted
+      if (!this.busy && !p.frozen && p.state === 'foot' && !g.mission.active && g.mission.done.has('forbud') && Math.hypot(p.x - KONTOR_DOOR.x, p.z - KONTOR_DOOR.z) < KONTOR_DOOR.r) { this.prompt = 'GÅ IN'; this.goIn = 'kontor'; }
       return;
     }
     if (this.samuel) this.samuel.update(dt);

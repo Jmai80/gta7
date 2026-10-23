@@ -296,7 +296,8 @@ export function westInto(H) {
   const Pk = KEX.park;
   for (let k = 0; k <= 7; k++) { const x = Pk.x0 + 1 + k * 2.8; mark([[x - 0.06, Pk.z1 - 5.6], [x + 0.06, Pk.z1 - 5.6], [x + 0.06, Pk.z1], [x - 0.06, Pk.z1]], MARK_Y); }
   // (no parked cars here: they would draw from the game's random numbers at the start and move all the traffic)
-  for (const [x, z, n] of [[-300, -94, 3], [-297.6, -94, 2], [-291, -95.5, 4], [-300, -44, 2]]) {
+  // ((v1.19) and stacks between the hall and the office to hide behind from the guards in "Förbjudet område")
+  for (const [x, z, n] of [[-300, -94, 3], [-297.6, -94, 2], [-291, -95.5, 4], [-300, -44, 2], [-296.5, -31.0, 4], [-312.5, -30.0, 4], [-318.5, -46.0, 3], [-327.6, -28.2, 4]]) {
     solid(x - 0.6, CURB_H, z - 0.5, x + 0.6, CURB_H + 0.14, z + 0.5, 0xa98257, M.PLANKS);
     for (let i = 0; i < n; i++) box(x - 0.55, CURB_H + 0.14 + i * 0.36, z - 0.45, x + 0.55, CURB_H + 0.48 + i * 0.36, z + 0.45, i % 2 ? 0xd8c8a0 : 0xc8b890, M.BOARDS);
     colBox(x - 0.6, z - 0.5, x + 0.6, z + 0.5, CURB_H + 0.5 + n * 0.36);
@@ -337,4 +338,6 @@ export function westInto(H) {
   // the ship's name board (render: sjubyview.js draws the ship once it has come)
   H.signs.shipname = { lines: ['KARDEMUMMA'], bg: '#1d2a44', fg: '#f2efe6', font: 0.7, w: 6.4, h: 1.0 };
   H.signs.shipport = { lines: ['M/S KARDEMUMMA'], bg: '#f2efe6', fg: '#1d2a44', font: 0.6, w: 5.0, h: 0.8 };
+  // (v1.19) the poster by the barrier on the west bridge in "Förbjudet område" (render: forbudview.js)
+  H.signs.forbudlapp = { kind: 'wanted', w: 0.95, h: 1.25, ppm: 150 };
 }

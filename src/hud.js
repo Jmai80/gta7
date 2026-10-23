@@ -18,6 +18,7 @@ import { FYR, FYR_WALLS, FYR_FURN } from './fyren.js';
 import { SHED, SHED_WALLS, SHED_FURN } from './vedbod.js';
 import { BAK, BAK_WALLS, BAK_FURN } from './bageriet.js';
 import { FAB, FAB_WALLS, FAB_FURN } from './kexhall.js';
+import { KONTOR, KONTOR_WALLS, KONTOR_FURN } from './kexkontor.js';
 import { SEE } from './samuel.js';
 import { ISLE, BEACH } from './island.js';
 import { SOUTH, BUMPERS, CAROUSEL, WHEEL } from './southisle.js';
@@ -26,7 +27,7 @@ import { routePoints } from './route.js';
 
 const IN_PX = 24; // indoor floor plan: pixels per metre
 // the indoor plan covers the tower's 7th floor and Hörnlivs (both out at sea)
-const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds, FYR.bounds, SHED.bounds, BAK.bounds, FAB.bounds];
+const IN_ALL = [INT.bounds, SHOP.bounds, OFFICE.bounds, SALON.bounds, HOUSE.bounds, NOVA_ROOM.bounds, CHAPEL.bounds, ELSA_HOUSE.bounds, PIZZA_ROOM.bounds, MILL_ROOM.bounds, KOND.bounds, FYR.bounds, SHED.bounds, BAK.bounds, FAB.bounds, KONTOR.bounds];
 const IN_BOUNDS = { x0: Math.min(...IN_ALL.map((b) => b.x0)), z0: Math.min(...IN_ALL.map((b) => b.z0)), x1: Math.max(...IN_ALL.map((b) => b.x1)), z1: Math.max(...IN_ALL.map((b) => b.z1)) };
 const EYE = '<svg viewBox="0 0 24 16" width="20" height="14"><path d="M1 8 Q12 -3 23 8 Q12 19 1 8Z" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#15181d"/></svg>';
 
@@ -341,6 +342,15 @@ export class HUD {
     g.fillStyle = '#ece5d6';
     for (const [x0, z0, x1, z1] of FAB_WALLS) g.fillRect(X(Fh.x0 + x0), Zs(Fh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
     g.fillStyle = '#1f4fa0'; g.fillRect(X(Fh.x0 + 28), Zs(Fh.z0 + 8.5), 0.2 * IN_PX, 1.2 * IN_PX);
+    // Kexfabriken's office (v1.19): parquet, a blue rug, the desk, the case, the chest, the sofa, the door in the east wall
+    const Kh = KONTOR.room;
+    rect(Kh.x0, Kh.z0, Kh.x1, Kh.z1, '#6b4a32');
+    rect(Kh.x0 + 3.6, Kh.z0 + 2.7, Kh.x0 + 9.2, Kh.z0 + 6.2, '#2a3a5a');
+    g.fillStyle = '#2b2018';
+    for (const [x0, z0, x1, z1] of KONTOR_FURN.slice(0, -1)) g.fillRect(X(Kh.x0 + x0), Zs(Kh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#ece5d6';
+    for (const [x0, z0, x1, z1] of KONTOR_WALLS) g.fillRect(X(Kh.x0 + x0), Zs(Kh.z0 + z0), (x1 - x0) * IN_PX, (z1 - z0) * IN_PX);
+    g.fillStyle = '#2a3a4a'; g.fillRect(X(Kh.x0 + 12), Zs(Kh.z0 + 4.0), 0.2 * IN_PX, 1.2 * IN_PX);
     return c;
   }
 
@@ -507,6 +517,20 @@ export class HUD {
       this.route[0] = [p.x, p.z];
       line(this.route, '#ffcf33', Math.max(3, 4.5 * (W / 150)));
     } else this.route = null;
+    // (v1.19) where the guards in Kexfabriken's yard look, and the guards themselves
+    if (game.missionActive && job && job.guards) {
+      for (const Gd of job.guards) {
+        const c = Gd.cone, X0 = (c.x - p.x) * k, Z0 = (c.z - p.z) * k;
+        if (c.on > 0.05) {
+          g.fillStyle = `rgba(255, ${Math.round(220 - c.alert * 150)}, ${Math.round(120 - c.alert * 90)}, ${0.42 * c.on})`;
+          g.beginPath(); g.moveTo(X0, Z0);
+          for (let i = 0; i <= 10; i++) { const an = c.dir - c.half + (2 * c.half * i) / 10; g.lineTo(X0 + Math.sin(an) * c.range * k, Z0 + Math.cos(an) * c.range * k); }
+          g.closePath(); g.fill();
+        }
+        g.fillStyle = '#1d2a44'; g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(1.2, W / 110);
+        g.beginPath(); g.arc(X0, Z0, Math.max(2.6, 3.2 * (W / 150)), 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+    }
     g.restore();
     // blips (upright), clamped to the rim
     const cr = Math.cos(rot), sr = Math.sin(rot);
@@ -792,21 +816,29 @@ HUD.prototype.updateEye = function updateEye(game, view) {
   const sam = game.indoor ? game.indoors.samuel : null;
   const p = game.player;
   let vis = false;
+  const tmp = this.eyeTmp || (this.eyeTmp = {});
+  const show = (st, meter) => {
+    vis = true;
+    el.style.transform = `translate(${tmp.x}px, ${tmp.y}px)`;
+    if (st !== this.eyeState) {
+      this.eyeState = st;
+      el.className = st;
+      el.querySelector('span').innerHTML = st === 'phone' ? '…' : st === 'warn' ? '?' : st === 'caught' ? '!' : EYE;
+    }
+    el.style.setProperty('--m', meter.toFixed(3));
+  };
   if (sam && Math.hypot(p.x - sam.ped.x, p.z - sam.ped.z) < 16) {
-    const h = sam.head, tmp = this.eyeTmp || (this.eyeTmp = {});
+    const h = sam.head;
     const standing = sam.ped.state !== 'lounge';
     view.project(sam.ped.x, standing ? sam.ped.y + 2.45 : h[1] + 0.62, standing ? sam.ped.z : h[2], tmp);
-    if (tmp.visible) {
-      vis = true;
-      el.style.transform = `translate(${tmp.x}px, ${tmp.y}px)`;
-      const st = sam.icon;
-      if (st !== this.eyeState) {
-        this.eyeState = st;
-        el.className = st;
-        el.querySelector('span').innerHTML = st === 'phone' ? '…' : st === 'warn' ? '?' : st === 'caught' ? '!' : EYE;
-      }
-      el.style.setProperty('--m', sam.meter.toFixed(3));
-    }
+    if (tmp.visible) show(sam.icon, sam.meter);
+  }
+  // (v1.19) the guard most sure about you in Kexfabriken's yard ("Förbjudet område")
+  const job = !sam && game.mission ? game.mission.active : null;
+  const E = job && job.eye;
+  if (E) {
+    view.project(E.ped.x, E.ped.y + 2.45, E.ped.z, tmp);
+    if (tmp.visible) show(E.meter >= 1 ? 'caught' : E.icon, E.meter);
   }
   if (el.hidden === vis) el.hidden = !vis;
 };

@@ -305,6 +305,104 @@ const PAINTERS = {
     g.fillStyle = '#2a3a6a';
     g.fillText(cap, x + w / 2, y + h * 0.9);
   },
+  // (v1.19) the poster by the barrier on the west bridge: TILLTRÄDE FÖRBJUDET over a photocopied face (yours:
+  // brown hair, a dark jacket over a blue shirt), and Kexfabriken's line at the bottom
+  wanted(g, d, x, y, w, h) {
+    g.fillStyle = '#f4f1e8'; g.fillRect(x, y, w, h);
+    g.fillStyle = '#c0302a'; g.fillRect(x, y, w, h * 0.2);
+    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'TILLTRÄDE', w * 0.86, h * 0.085); g.fillText('TILLTRÄDE', x + w / 2, y + h * 0.06);
+    fitText(g, 'FÖRBJUDET', w * 0.9, h * 0.1); g.fillText('FÖRBJUDET', x + w / 2, y + h * 0.145);
+    // the photo: grey, a little crooked, like a copy of a copy
+    const px = x + w * 0.16, py = y + h * 0.25, pw = w * 0.68, ph = h * 0.48;
+    g.fillStyle = '#b9b6ae'; g.fillRect(px, py, pw, ph);
+    const cx = px + pw / 2, hr = pw * 0.2;
+    g.fillStyle = '#4a4f5a'; roundRect(g, cx - pw * 0.36, py + ph * 0.72, pw * 0.72, ph * 0.3, pw * 0.1); g.fill();   // the jacket
+    g.fillStyle = '#6f87a8'; g.fillRect(cx - pw * 0.1, py + ph * 0.72, pw * 0.2, ph * 0.28);                          // the blue shirt
+    g.fillStyle = '#d8c2ae'; g.fillRect(cx - hr * 0.35, py + ph * 0.6, hr * 0.7, ph * 0.14);                           // the neck
+    g.fillStyle = '#d8c2ae'; g.beginPath(); g.ellipse(cx, py + ph * 0.45, hr, hr * 1.18, 0, 0, 7); g.fill();          // the face
+    g.fillStyle = '#7a5a3a'; g.beginPath(); g.ellipse(cx, py + ph * 0.32, hr * 1.06, hr * 0.62, 0, Math.PI, 0); g.fill(); // the hair
+    g.fillRect(cx - hr * 1.06, py + ph * 0.3, hr * 0.3, hr * 0.5);
+    g.fillStyle = '#2a2a2e'; for (const s2 of [-1, 1]) { g.beginPath(); g.arc(cx + s2 * hr * 0.38, py + ph * 0.45, hr * 0.1, 0, 7); g.fill(); }
+    g.strokeStyle = '#2a2a2e'; g.lineWidth = Math.max(1, hr * 0.08); g.beginPath(); g.moveTo(cx - hr * 0.3, py + ph * 0.6); g.lineTo(cx + hr * 0.3, py + ph * 0.6); g.stroke();
+    g.fillStyle = 'rgba(40,40,40,0.18)'; for (let i = 0; i < 9; i++) g.fillRect(px, py + (i + 0.5) * ph / 9, pw, 1);   // copier lines
+    g.strokeStyle = '#2a2a2e'; g.lineWidth = Math.max(1, w * 0.008); g.strokeRect(px, py, pw, ph);
+    // the text under it
+    g.fillStyle = '#1d1f22';
+    fitText(g, 'DENNA PERSON ÄGER EJ', w * 0.88, h * 0.055, 800); g.fillText('DENNA PERSON ÄGER EJ', x + w / 2, y + h * 0.79);
+    fitText(g, 'TILLTRÄDE TILL VÄSTERHOLMEN', w * 0.88, h * 0.055, 800); g.fillText('TILLTRÄDE TILL VÄSTERHOLMEN', x + w / 2, y + h * 0.855);
+    g.fillStyle = '#1f4fa0'; g.fillRect(x, y + h * 0.9, w, h * 0.1);
+    g.fillStyle = '#ffffff'; fitText(g, 'KEXFABRIKEN AB · STYRELSEN', w * 0.84, h * 0.05, 700); g.fillText('KEXFABRIKEN AB · STYRELSEN', x + w / 2, y + h * 0.95);
+    // tape at the corners
+    g.fillStyle = 'rgba(240,230,190,0.75)';
+    for (const [tx, ty, a] of [[0.08, 0.22, -0.6], [0.92, 0.22, 0.6]]) { g.save(); g.translate(x + w * tx, y + h * ty); g.rotate(a); g.fillRect(-w * 0.08, -h * 0.015, w * 0.16, h * 0.03); g.restore(); }
+  },
+  // (v1.19) the photo on the wall in Kexfabriken's office: M/S Kardemumma, July 1962. A sepia print in a white
+  // border – the ship's rail and a life ring, the sea behind, a bearded captain in his cap, a little girl with
+  // plaits, and a young cook in white with a tall hat holding up a tray of buns. A caption in ink.
+  photo1962(g, d, x, y, w, h) {
+    g.fillStyle = '#f2ecdc'; g.fillRect(x, y, w, h);
+    const px = x + w * 0.05, py = y + h * 0.06, pw = w * 0.9, ph = h * 0.74;
+    const grd = g.createLinearGradient(0, py, 0, py + ph);
+    grd.addColorStop(0, '#d6c6a2'); grd.addColorStop(0.42, '#c2ad84'); grd.addColorStop(0.46, '#9a8564'); grd.addColorStop(1, '#7a6648');
+    g.fillStyle = grd; g.fillRect(px, py, pw, ph);
+    // the sea and an island on the horizon
+    g.fillStyle = 'rgba(90,75,55,0.5)'; g.beginPath(); g.ellipse(px + pw * 0.82, py + ph * 0.44, pw * 0.16, ph * 0.04, 0, Math.PI, 0); g.fill();
+    g.strokeStyle = 'rgba(255,245,220,0.25)'; g.lineWidth = 1;
+    for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(px + pw * (0.05 + i * 0.16), py + ph * (0.5 + (i % 3) * 0.03)); g.lineTo(px + pw * (0.12 + i * 0.16), py + ph * (0.5 + (i % 3) * 0.03)); g.stroke(); }
+    // the deck and the rail
+    g.fillStyle = '#8a7656'; g.fillRect(px, py + ph * 0.8, pw, ph * 0.2);
+    g.strokeStyle = '#e8dcc0'; g.lineWidth = ph * 0.02;
+    g.beginPath(); g.moveTo(px, py + ph * 0.6); g.lineTo(px + pw, py + ph * 0.6); g.stroke();
+    for (let i = 0; i <= 10; i++) { g.beginPath(); g.moveTo(px + pw * i / 10, py + ph * 0.6); g.lineTo(px + pw * i / 10, py + ph * 0.8); g.stroke(); }
+    // a life ring on the rail: KARDEMUMMA
+    const lx = px + pw * 0.1, ly = py + ph * 0.66, lr = pw * 0.065;
+    g.strokeStyle = '#efe6d2'; g.lineWidth = lr * 0.55; g.beginPath(); g.arc(lx, ly, lr, 0, 7); g.stroke();
+    g.strokeStyle = '#8a4a3a'; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(lx, ly, lr, i * Math.PI / 2 + 0.2, i * Math.PI / 2 + 0.6); g.stroke(); }
+    // people: [x along the photo, height, body colour, hair colour, hat]
+    const person = (fx, hk, body, hair, hat) => {
+      const cx = px + pw * fx, top = py + ph * (0.86 - 0.62 * hk), bw = pw * (0.07 + 0.05 * hk), hr = pw * (0.022 + 0.018 * hk);
+      const foot = py + ph * 0.86;
+      g.fillStyle = body; roundRect(g, cx - bw / 2, top + hr * 1.8, bw, foot - (top + hr * 1.8), bw * 0.3); g.fill();
+      g.fillStyle = '#e2c8a0'; g.beginPath(); g.arc(cx, top + hr, hr, 0, 7); g.fill();
+      g.fillStyle = hair; g.beginPath(); g.arc(cx, top + hr * 0.8, hr * 1.04, Math.PI * 1.05, Math.PI * 1.95); g.fill();
+      g.fillStyle = '#3a2a1a'; for (const s2 of [-1, 1]) { g.beginPath(); g.arc(cx + s2 * hr * 0.38, top + hr * 1.05, hr * 0.11, 0, 7); g.fill(); }
+      if (hat === 'cap') { g.fillStyle = '#2a2420'; g.fillRect(cx - hr * 1.1, top - hr * 0.15, hr * 2.2, hr * 0.55); g.fillStyle = '#efe6d2'; g.fillRect(cx - hr * 0.3, top - hr * 0.05, hr * 0.6, hr * 0.25); g.fillStyle = '#2a2420'; g.fillRect(cx - hr * 1.3, top + hr * 0.35, hr * 1.5, hr * 0.15); }
+      if (hat === 'beard') { g.fillStyle = '#6a5a4a'; g.beginPath(); g.arc(cx, top + hr * 1.35, hr * 0.75, 0.1, Math.PI - 0.1); g.fill(); }
+      if (hat === 'chef') { g.fillStyle = '#f4efe2'; roundRect(g, cx - hr * 0.85, top - hr * 1.5, hr * 1.7, hr * 1.6, hr * 0.5); g.fill(); g.fillRect(cx - hr * 0.95, top - hr * 0.1, hr * 1.9, hr * 0.3); }
+      if (hat === 'plaits') { g.strokeStyle = hair; g.lineWidth = hr * 0.35; for (const s2 of [-1, 1]) { g.beginPath(); g.moveTo(cx + s2 * hr * 0.9, top + hr); g.lineTo(cx + s2 * hr * 1.0, top + hr * 2.8); g.stroke(); } }
+      return { cx, top, hr, bw };
+    };
+    const capt = person(0.36, 0.98, '#2e2a2a', '#5a4a3a', 'cap');                 // the captain in his dark uniform
+    g.fillStyle = '#6a5a4a'; g.beginPath(); g.arc(capt.cx, capt.top + capt.hr * 1.4, capt.hr * 0.8, 0.1, Math.PI - 0.1); g.fill(); // his beard
+    const girl = person(0.5, 0.52, '#c8b8a0', '#6a4a2a', 'plaits');               // Ragnhild, 8, in a light dress
+    const arne = person(0.68, 0.94, '#f2ede0', '#2a2018', 'chef');                // Arne, 19, the cook in white
+    // the captain's hand on the girl's shoulder; Arne holds up a tray of buns
+    g.strokeStyle = '#2e2a2a'; g.lineWidth = capt.bw * 0.28; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(capt.cx + capt.bw * 0.35, capt.top + capt.hr * 2.6); g.lineTo(girl.cx - girl.bw * 0.3, girl.top + girl.hr * 2.2); g.stroke();
+    g.strokeStyle = '#f2ede0'; g.lineWidth = arne.bw * 0.26;
+    const tx = arne.cx + arne.bw * 0.15, ty = arne.top + arne.hr * 2.4;
+    g.beginPath(); g.moveTo(arne.cx - arne.bw * 0.35, arne.top + arne.hr * 2.6); g.lineTo(tx - pw * 0.06, ty); g.stroke();
+    g.beginPath(); g.moveTo(arne.cx + arne.bw * 0.35, arne.top + arne.hr * 2.6); g.lineTo(tx + pw * 0.06, ty); g.stroke();
+    g.fillStyle = '#5a4a3a'; g.fillRect(tx - pw * 0.09, ty - ph * 0.012, pw * 0.18, ph * 0.025);
+    g.fillStyle = '#a0784a'; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(tx - pw * 0.07 + i * pw * 0.035, ty - ph * 0.025, pw * 0.016, 0, 7); g.fill(); }
+    g.fillStyle = '#3a2a1a'; g.beginPath(); g.arc(arne.cx, arne.top + arne.hr * 1.3, arne.hr * 0.35, 0.2, Math.PI - 0.2); g.fill(); // a big smile
+    // age: a vignette, a crease and a corner gone
+    const vg = g.createRadialGradient(px + pw / 2, py + ph / 2, ph * 0.2, px + pw / 2, py + ph / 2, pw * 0.62);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(60,40,20,0.5)');
+    g.fillStyle = vg; g.fillRect(px, py, pw, ph);
+    g.strokeStyle = 'rgba(255,250,235,0.4)'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(px + pw * 0.62, py); g.lineTo(px + pw * 0.58, py + ph); g.stroke();
+    g.fillStyle = '#f2ecdc'; g.beginPath(); g.moveTo(px + pw, py + ph); g.lineTo(px + pw - pw * 0.06, py + ph); g.lineTo(px + pw, py + ph - ph * 0.08); g.fill();
+    // the caption, in ink on the white border
+    const caps = ['M/S Kardemumma, juli 1962', 'kapten Kardell · Ragnhild, 8 år · kockeleven Arne, 19'];
+    let fs = h * 0.068;
+    g.font = `italic 600 ${fs}px Georgia, serif`;
+    while (fs > 4 && Math.max(...caps.map((c) => g.measureText(c).width)) > w * 0.9) { fs *= 0.93; g.font = `italic 600 ${fs}px Georgia, serif`; }
+    g.fillStyle = '#2a3a6a'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(caps[0], x + w / 2, y + h * 0.855);
+    g.fillText(caps[1], x + w / 2, y + h * 0.935);
+  },
   // (v1.6) the arch over the tivoli gate on Söderholmen: the name in yellow with bulbs round it
   lyckoland(g, d, x, y, w, h) {
     g.fillStyle = '#1d2f6b'; g.fillRect(x, y, w, h);
